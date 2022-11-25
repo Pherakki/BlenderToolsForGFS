@@ -27,13 +27,15 @@ Please make the repository owner aware if additional contributors are missing fr
 
 ## Supported Formats
 The status of the code is tabulated for the different filetypes and versions given in the sections below, with the following keys:
+
 | Key | Status | Definition |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 |✔️| Supported | Import/export is production-ready .|
 |🟡| Partial Support | An incomplete, but partially usable import/export operation exists.|
 |❌| Not supported | Insufficient code exists for useful import/export. |
 
 ### GMD
+
 | Version | Present In | Import | Export |
-|---|---|---|---|
+|:---:|:---:|:---:|:---:|
 | 0x01105100 | Persona 5 Royal (PC) | ❌ | ❌ |
