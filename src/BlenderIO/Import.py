@@ -191,14 +191,14 @@ def build_nodes(name, meshes, list_of_bones, parent, armature, node, parent_tran
 
     for attachment in node.attachments:
         if attachment.type == 4:
-            import_mesh(name, meshes, attachment.data, armature, matrix)
+            import_mesh(name, meshes, attachment.data, armature, bone)
 
     idx = len(list_of_bones) - 1
     
     for child in node.children:
         build_nodes(name, meshes, list_of_bones, idx, armature, child, matrix)
     
-def import_mesh(name, meshes, mesh, armature, matrix):
+def import_mesh(name, meshes, mesh, armature, bone):
     meshobj_name = f"{name}_{len(meshes)}"
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
     bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
@@ -262,8 +262,11 @@ def import_mesh(name, meshes, mesh, armature, matrix):
     bpy_mesh.validate(verbose=True, clean_customdata=False)
     
     bpy_mesh.update()
-    bpy_mesh.transform(matrix)
     bpy_mesh.update()
+    
+    constraint = bpy_mesh_object.constraints.new("CHILD_OF")
+    constraint.target = armature
+    constraint.subtarget = bone.name
     
     bpy.context.view_layer.objects.active = armature
         
