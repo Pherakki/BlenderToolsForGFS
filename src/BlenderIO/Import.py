@@ -160,11 +160,17 @@ def import_model(gfs, name):
         bpy.ops.object.mode_set(mode='EDIT')
         list_of_bones = []
         meshes = []
-        build_nodes(name, meshes, list_of_bones, -1, armature, model.nodes[0], Matrix.Identity(4))
+        list_of_nodes = []
+        fetch_nodes(model.nodes[0], list_of_nodes)
+        build_nodes(name, meshes, model.skinning_data.matrix_palette, list_of_nodes, list_of_bones, -1, armature, model.nodes[0], Matrix.Identity(4))
         bpy.ops.object.mode_set(mode='OBJECT')
 
+def fetch_nodes(node, node_list):
+    node_list.append(node)
+    for child in node.children[::-1]:
+        fetch_nodes(child, node_list)
 
-def build_nodes(name, meshes, list_of_bones, parent, armature, node, parent_transform):
+def build_nodes(name, meshes, matrix_palette, list_of_nodes, list_of_bones, parent, armature, node, parent_transform):
     position = Matrix.Translation(node.position)
     rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
     scale = Matrix.Diagonal([*node.scale, 1])
@@ -189,20 +195,22 @@ def build_nodes(name, meshes, list_of_bones, parent, armature, node, parent_tran
     if parent != -1:
         bone.parent = list_of_bones[parent]
 
+
     for attachment in node.attachments:
         if attachment.type == 4:
-            import_mesh(name, meshes, attachment.data, armature, bone)
+            # Need to delay this until all bones are constructed/a list of nodes can be passed in
+            import_mesh(name, meshes, attachment.data, matrix_palette, list_of_nodes, list_of_bones, armature, bone)
 
     idx = len(list_of_bones) - 1
     
     for child in node.children:
-        build_nodes(name, meshes, list_of_bones, idx, armature, child, matrix)
+        build_nodes(name, meshes, matrix_palette, list_of_nodes, list_of_bones, idx, armature, child, matrix)
     
-def import_mesh(name, meshes, mesh, armature, bone):
+def import_mesh(name, meshes, mesh, matrix_palette, list_of_nodes, bones, armature, bone):
+    
     meshobj_name = f"{name}_{len(meshes)}"
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
     bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
-    meshes.append(bpy_mesh_object)
     
     bpy.context.view_layer.objects.active = bpy_mesh_object
     
@@ -221,8 +229,23 @@ def import_mesh(name, meshes, mesh, armature, bone):
     add_uv_map(bpy_mesh, [v.texcoord5 for v in mesh.vertices], "UV5")
     add_uv_map(bpy_mesh, [v.texcoord6 for v in mesh.vertices], "UV6")
     add_uv_map(bpy_mesh, [v.texcoord7 for v in mesh.vertices], "UV7")
-    
 
+    # Rig
+    if mesh.vertices[0].indices is not None:
+        groups = {}
+        for vert_idx, v in enumerate(mesh.vertices):
+            for local_bone_idx, weight in zip(v.indices[::-1], v.weights):
+                if weight == 0.:
+                    continue
+                bone_idx = matrix_palette[local_bone_idx]
+                if bone_idx not in groups:
+                    groups[bone_idx] = []
+                groups[bone_idx].append((vert_idx, weight))
+        for bone_idx, vg in groups.items():
+            vertex_group = bpy_mesh_object.vertex_groups.new(name=list_of_nodes[bone_idx].name)
+            for vert_idx, vert_weight in vg:
+                vertex_group.add([vert_idx], vert_weight, 'REPLACE')
+                
     # Assign normals
     # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
     # which a few of these comments below are also taken from
