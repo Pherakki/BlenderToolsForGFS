@@ -3,6 +3,8 @@ from ....serialization.utils import safe_format, hex32_format
 from .MaterialBinary import MaterialBinary
 from .ModelBinary import ModelBinary
 from .TextureBinary import TextureBinary
+from .AnimationBinary import AnimationDataBinary
+
 
 class GFS0ContainerBinary(Serializable):
     SIZE = 0x0C
@@ -25,7 +27,7 @@ class GFS0ContainerBinary(Serializable):
         self.version      = rw.rw_uint32(self.version)
         self.type         = rw.rw_uint32(self.type)
         self.size         = rw.rw_uint32(self.size)
-        rw.assert_equal(self.version, 0x01105100)
+        rw.assert_equal(self.version in [0x01105070, 0x01105100], True)
         
         # This is a really ugly bit of code that is difficult to read.
         # It's an extremely simple switch, nothing logically complicated...
@@ -52,6 +54,8 @@ class GFS0ContainerBinary(Serializable):
             self.count = rw.rw_uint32(self.count)
             self.data = rw.rw_obj_array(self.data, TextureBinary, self.count)
         elif self.type == 0x000100FD: # Animations
-            self.data = rw.rw_bytestring(self.data, self.size - self.SIZE)
+            self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
+            self.data = AnimationDataBinary()
+            rw.rw_obj(self.data)
         else:
             raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
