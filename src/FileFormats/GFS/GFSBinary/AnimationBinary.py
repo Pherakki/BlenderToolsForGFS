@@ -1,6 +1,12 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
+from .CommonStructures import ObjectName, PropertyBinary
 
+class ParticlesError(Exception):
+    pass
+
+class LayerError(Exception):
+    pass
 
 class AnimationDataBinary(Serializable):
     def __init__(self, endianness='>'):
@@ -13,7 +19,7 @@ class AnimationDataBinary(Serializable):
         
         self.animations = None
         self.blend_animations = None
-        self.extra_data = None
+        self.unknown_anim_chunk = None
         
     def __repr__(self):
         return f"[GFDBinary::AnimationData {safe_format(self.flags, hex32_format)}] Anims: {self.anim_count} Blend Anims: {self.blend_anim_count} Extra: {bool((self.flags >> 2) & 1)}"
@@ -22,9 +28,12 @@ class AnimationDataBinary(Serializable):
         self.flags = rw.rw_uint32(self.flags)
         self.anim_count = rw.rw_uint32(self.anim_count)
         self.animations = rw.rw_obj_array(self.animations, AnimationBinary, self.anim_count)
-        # self.blend_anim_count = rw.rw_uint32(self.blend_anim_count)
-        # if (self.flags & 4):
-        #     pass
+        self.blend_anim_count = rw.rw_uint32(self.blend_anim_count)
+        self.blend_animations = rw.rw_obj_array(self.blend_animations, AnimationBinary, self.blend_anim_count)
+        if (self.flags & 4):
+            if rw.mode() == "read":
+                self.unknown_anim_chunk = UnknownAnimationChunk(self.context.endianness)
+            rw.rw_obj(self.unknown_anim_chunk)
 
 class AnimationBinary(Serializable):
     def __init__(self, endianness='>'):
@@ -34,8 +43,18 @@ class AnimationBinary(Serializable):
         self.flags = None
         self.duration = None
         self.controller_count = None
-        
         self.controllers = []
+        
+        #self.particle_count = None
+        #self.particle_data = ParticleData()
+        self.unknown_anim_chunk = None
+        # Bounding boxes should probably go into a custom datatype
+        self.bounding_box_max_dims = None
+        self.bounding_box_min_dims = None
+        self.speed = None
+        self.property_count = None
+        self.properties = []
+        
         
     def __repr__(self):
         return f"[GFDBinary::Animation {safe_format(self.flags, hex32_format)}] {self.duration}"
@@ -46,6 +65,25 @@ class AnimationBinary(Serializable):
         self.controller_count = rw.rw_uint32(self.controller_count)
         self.controllers = rw.rw_obj_array(self.controllers, AnimationControllerBinary, self.controller_count)
         
+        # Only certain flags used for certain chunk versions..?
+        if self.flags & 0x10000000:
+            raise ParticlesError()
+        if self.flags & 0x20000000:
+            if rw.mode() == "read":
+                self.unknown_anim_chunk = UnknownAnimationChunk(self.context.endianness)
+            rw.rw_obj(self.unknown_anim_chunk)
+        if self.flags & 0x80000000:
+            raise LayerError # Layer
+        if self.flags & 0x40000000:
+            self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
+            self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
+        if self.flags & 0x02000000:
+            self.speed = rw.rw_float32(self.speed)
+        if self.flags & 0x00800000:
+            self.property_count = rw.rw_uint32(self.property_count)
+            self.properties = rw.rw_obj_array(self.properties, PropertyBinary, self.property_count)
+            
+        # Catch other flags being set?
 class AnimationControllerBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -53,8 +91,7 @@ class AnimationControllerBinary(Serializable):
         
         self.type = None
         self.target_id = None
-        self.target_name = None
-        self.target_name_hash = None
+        self.target_name = ObjectName(endianness)
         self.track_count = None
         
         self.tracks = []
@@ -65,8 +102,7 @@ class AnimationControllerBinary(Serializable):
     def read_write(self, rw):
         self.type = rw.rw_uint32(self.type)
         self.target_id = rw.rw_uint16(self.target_id)
-        self.target_name = rw.rw_uint16_sized_str(self.target_name)
-        self.target_name_hash = rw.rw_uint32(self.target_name_hash)
+        self.target_name = rw.rw_obj(self.target_name)
         self.track_count = rw.rw_uint32(self.track_count)
         self.tracks = rw.rw_obj_array(self.tracks, AnimationTrackBinary, self.track_count)
         
@@ -95,7 +131,9 @@ class AnimationTrackBinary(Serializable):
         
         # Should use this to decide which "keyframe attributes" to r/w?
         # Need to figure out all kf attributes first since many overlap..?
-        if self.keyframe_type == 2:
+        if self.keyframe_type == 1:
+            kf_type = KeyframeType1
+        elif self.keyframe_type == 2:
             kf_type = KeyframeType2
         elif self.keyframe_type == 12:
             kf_type = KeyframeType12
@@ -117,6 +155,21 @@ class AnimationTrackBinary(Serializable):
             self.base_scale = rw.rw_float32s(self.base_scale, 3)
 
 # Should probably come up with a different way to organise the r/w of these data..?!
+class KeyframeType1(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.position = None
+        self.rotation = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType1] {self.position} {self.rotation}"
+        
+    def read_write(self, rw):
+        self.position = rw.rw_float32s(self.position, 3)
+        self.rotation = rw.rw_float32s(self.rotation, 4)
+
 class KeyframeType2(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -206,3 +259,31 @@ class KeyframeType29(Serializable):
     def read_write(self, rw):
         self.unknown = rw.rw_float16s(self.unknown, 2) # Not sure, only seen 0s so far
         print(self)
+        
+class UnknownAnimationChunk(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.anim_1 = AnimationBinary(endianness)
+        self.unknown_1 = None
+        self.anim_2 = AnimationBinary(endianness)
+        self.unknown_2 = None
+        self.anim_3 = AnimationBinary(endianness)
+        self.unknown_3 = None
+        self.anim_4 = AnimationBinary(endianness)
+        self.unknown_4 = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::UnknownAnimationChunk] {self.unknown_1} {self.unknown_2} {self.unknown_3} {self.unknown_4}"
+        
+    def read_write(self, rw):
+        rw.rw_obj(self.anim_1)
+        self.unknown_1 = rw.rw_float32(self.unknown_1)
+        rw.rw_obj(self.anim_2)
+        self.unknown_2 = rw.rw_float32(self.unknown_2)
+        rw.rw_obj(self.anim_3)
+        self.unknown_3 = rw.rw_float32(self.unknown_3)
+        rw.rw_obj(self.anim_4)
+        self.unknown_4 = rw.rw_float32(self.unknown_4)
+
