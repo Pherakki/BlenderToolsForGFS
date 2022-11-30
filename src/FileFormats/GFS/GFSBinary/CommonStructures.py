@@ -1,5 +1,24 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format, hex32_format
+from ....serialization.Serializable import Serializable
+from ....serialization.utils import safe_format, hex32_format
+
+
+class ObjectName(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.name_size = None
+        self.name      = None
+        self.name_hash = None
+        
+    def __repr__(self):
+        return f"[GFS::ObjName] {safe_format(self.name_hash, hex32_format)} {self.name}"
+    
+    def read_write(self, rw):
+        self.name_size = rw.rw_uint16(self.name_size)
+        self.name      = rw.rw_str(self.name, self.name_size, encoding="ascii") # Could be shift-jis, utf8
+        self.name_hash = rw.rw_uint32(self.name_hash)
+
 
 
 class PropertyBinary(Serializable):
@@ -8,21 +27,17 @@ class PropertyBinary(Serializable):
         self.context.endianness = endianness
         
         self.type = None
-        self.name_size = None
-        self.name = None
-        self.hash = None
+        self.name = ObjectName(endianness)
         self.size = None
         
         self.data = None
         
     def __repr__(self):
-        return f"[GFD::SceneContainer::SceneNode::Property] {self.type} {self.key} {safe_format(self.hash, hex32_format)} {self.size} {self.data}"
+        return f"[GFD::SceneContainer::SceneNode::Property] {self.name} {self.type} {self.size} {self.data}"
     
     def read_write(self, rw):
         self.type = rw.rw_uint32(self.type)
-        self.name_size = rw.rw_uint16(self.name_size)
-        self.name = rw.rw_str(self.name, self.name_size)
-        self.hash = rw.rw_uint32(self.hash)
+        self.name = rw.rw_obj(self.name)
         self.size = rw.rw_uint32(self.size)
         
         if self.type == 1:

@@ -1,6 +1,6 @@
 from ......serialization.Serializable import Serializable
+from ...CommonStructures import ObjectName, PropertyBinary
 from .NodeAttachmentBinary import NodeAttachmentBinary
-from .PropertyBinary import PropertyBinary
 
 
 class SceneNodeBinary(Serializable):
@@ -8,8 +8,7 @@ class SceneNodeBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.name = None
-        self.hash = None
+        self.name = ObjectName()
         self.position = None
         self.rotation = None
         self.scale = None
@@ -27,8 +26,7 @@ class SceneNodeBinary(Serializable):
         return f"[GFD::SceneContainer::SceneNode] {self.name}, {self.child_count} children"
         
     def read_write(self, rw, node_list): 
-        self.name        = rw.rw_uint16_sized_str(self.name)
-        self.hash        = rw.rw_uint32(self.hash)
+        self.name        = rw.rw_obj(self.name)
         self.position    = rw.rw_float32s(self.position, 3)
         self.rotation    = rw.rw_float32s(self.rotation, 4)
         self.scale       = rw.rw_float32s(self.scale, 3)

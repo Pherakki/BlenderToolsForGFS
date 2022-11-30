@@ -1,5 +1,6 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
+from .CommonStructures import ObjectName
 
 
 class MaterialBinary(Serializable):
@@ -7,8 +8,7 @@ class MaterialBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.name         = None
-        self.hash         = None
+        self.name         = ObjectName(endianness)
         self.flags        = None
         self.ambient      = None
         self.diffuse      = None
@@ -42,7 +42,7 @@ class MaterialBinary(Serializable):
         self.attributes = []
         
     def __repr__(self):
-        return f"[GFD::Material] {self.name} {safe_format(self.hash, hex32_format)} "                            \
+        return f"[GFD::Material] {self.name} "                                                                   \
                f"{safe_format(self.flags, hex32_format)} "                                                       \
                f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "                           \
                f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "                         \
@@ -53,8 +53,7 @@ class MaterialBinary(Serializable):
                f"{self.disable_backface_culling} {self.unknown_0x6A} {self.attribute_count}"
 
     def read_write(self, rw):
-        self.name         = rw.rw_uint16_sized_str(self.name)
-        self.hash         = rw.rw_uint32(self.hash) # Let's start counting from here...
+        self.name         = rw.rw_obj(self.name)
         self.flags        = rw.rw_uint32(self.flags)
         
         self.ambient      = rw.rw_float32s(self.ambient, 4)
@@ -115,16 +114,14 @@ class TextureRefBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.name = None
-        self.hash = None
+        self.name     = ObjectName(endianness)
         self.unknowns = None
         
     def __repr__(self):
-        return f"[GFD::Material::TextureRef] {self.name} {safe_format(self.hash, hex32_format)} {self.unknowns}"
+        return f"[GFD::Material::TextureRef] {self.name} {self.unknowns}"
         
     def read_write(self, rw):
-        self.name         = rw.rw_uint16_sized_str(self.name)
-        self.hash         = rw.rw_uint32(self.hash)
+        self.name         = rw.rw_obj(self.name)
         self.unknowns     = rw.rw_uint32s(self.unknowns, 0x12)
 
 
