@@ -32,11 +32,10 @@ class GFS0Binary(Serializable):
                     rw.assert_equal(ctr.size, rw.tell() - start_offset)
                 
                 # Check if final container
-                if ctr.type == 0 or ctr.type == 0x000100FD: # Only true for 0x01105070?
+                if ctr.type == 0 or ctr.type == 0x000100FD:
                     finished = True
                     
-            # Clean up and check there's no more data
-            rw.align(rw.tell(), 0x10)
+            # Check there's no more data
             rw.assert_at_eof()
                 
         else:

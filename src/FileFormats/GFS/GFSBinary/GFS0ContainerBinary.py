@@ -31,11 +31,11 @@ class GFS0ContainerBinary(Serializable):
         
         # This is a really ugly bit of code that is difficult to read.
         # It's an extremely simple switch, nothing logically complicated...
-        # Need to make this easier on the eyes.
+        # Just need to make this easier on the eyes.
         if self.type == 0x00000000:
-            return
+            self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
         elif self.type == 0x00000001:
-            return
+            pass
         elif self.type == 0x00010003: # Model
             self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
             if rw.mode() == "read":
@@ -59,3 +59,5 @@ class GFS0ContainerBinary(Serializable):
             rw.rw_obj(self.data)
         else:
             raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
+            
+        rw.assert_equal(self.padding_0x0C, 0)
