@@ -3,6 +3,8 @@ from .MeshBinary import MeshBinary
 from .CameraBinary import CameraBinary
 from .LightBinary import LightBinary
 
+class HasParticleDataError(Exception):
+    pass
 
 class NodeAttachmentBinary(Serializable):
     def __init__(self, endianness='>'):
@@ -25,8 +27,8 @@ class NodeAttachmentBinary(Serializable):
                 dtype = CameraBinary 
             elif self.type == 6:
                 dtype = LightBinary
-            # elif self.type == 7:
-            #     assert 0
+            elif self.type == 7:
+                raise HasParticleDataError
             # elif self.type == 9:
             #     assert 0
             else:
