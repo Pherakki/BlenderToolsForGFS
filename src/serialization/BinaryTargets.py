@@ -391,7 +391,7 @@ class Reader(BinaryTargetBase):
         assert data == expected, f"Unexpected padding: Expected {expected}, read {data}."
 
     def assert_at_eof(self):
-        if (self.bytestream.read(1) != b''):
+        if (self.peek_bytestring(1) != b''):
             raise Exception("Not at end of file!")
 
     def mode(self):
