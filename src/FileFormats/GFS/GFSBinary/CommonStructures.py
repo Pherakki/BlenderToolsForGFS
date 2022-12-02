@@ -16,7 +16,7 @@ class ObjectName(Serializable):
     
     def read_write(self, rw):
         self.name_size = rw.rw_uint16(self.name_size)
-        self.name      = rw.rw_str(self.name, self.name_size, encoding="ascii") # Could be shift-jis, utf8
+        self.name      = rw.rw_str(self.name, self.name_size, encoding="utf8")
         self.name_hash = rw.rw_uint32(self.name_hash)
 
 
