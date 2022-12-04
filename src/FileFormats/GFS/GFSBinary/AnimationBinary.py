@@ -48,6 +48,7 @@ class AnimationBinary(Serializable):
         #self.particle_count = None
         #self.particle_data = ParticleData()
         self.unknown_anim_chunk = None
+        self.animation_layer = AnimationLayer()
         # Bounding boxes should probably go into a custom datatype
         self.bounding_box_max_dims = None
         self.bounding_box_min_dims = None
@@ -73,7 +74,7 @@ class AnimationBinary(Serializable):
                 self.unknown_anim_chunk = UnknownAnimationChunk(self.context.endianness)
             rw.rw_obj(self.unknown_anim_chunk)
         if self.flags & 0x80000000:
-            raise LayerError # Layer
+            rw.rw_obj(self.animation_layer)
         if self.flags & 0x40000000:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
@@ -286,4 +287,22 @@ class UnknownAnimationChunk(Serializable):
         self.unknown_3 = rw.rw_float32(self.unknown_3)
         rw.rw_obj(self.anim_4)
         self.unknown_4 = rw.rw_float32(self.unknown_4)
+        
+        
+class AnimationLayer(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.flags = None
+        self.name = ObjectName(endianness)
+        self.track = AnimationTrackBinary()
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Layer {safe_format(self.flags, hex32_format)}] {self.name}"
+        
+    def read_write(self, rw):
+        self.flags = rw.rw_uint32(self.flags)
+        rw.rw_obj(self.name)
+        rw.rw_obj(self.track)
 
