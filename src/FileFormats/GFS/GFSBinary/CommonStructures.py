@@ -20,6 +20,34 @@ class ObjectName(Serializable):
         if self.name_size > 0:
             self.name_hash = rw.rw_uint32(self.name_hash)
 
+class SizedObjArray(Serializable):
+    def __init__(self, member_type, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.__member_type = member_type
+        self.count = None
+        self.data = []
+        
+    def __repr__(self):
+        return f"[GFS::Array] {self.count}"
+    
+    def read_write(self, rw):
+        self.count = rw.rw_uint32(self.count)
+        if rw.mode() != "read" and len(self.data):
+            self.__member_type = type(self.data[0])
+        self.data = rw.rw_obj_array(self.data, self.__member_type, self.count)
+
+class Blob(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.data = b''
+        
+    def __repr__(self):
+        return f"[GFS::Blob] {len(self.data)}"
+    
+    def read_write(self, rw, size):
+        self.data = rw.rw_bytestring(self.data, size)
 
 class PropertyBinary(Serializable):
     def __init__(self, endianness=">"):
