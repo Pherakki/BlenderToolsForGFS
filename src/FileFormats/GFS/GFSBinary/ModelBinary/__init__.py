@@ -14,7 +14,7 @@ class ModelBinary(Serializable):
         self.bounding_box_min_dims = None
         self.bounding_sphere_centre = None
         self.bounding_sphere_radius = None
-        self.nodes = [SceneNodeBinary()]
+        self.root_node = SceneNodeBinary()
         
     def __repr__(self):
         return f"[GFD::SceneContainer] {self.unknown_0x00} {safe_format(self.flags, hex32_format)}"
@@ -31,4 +31,4 @@ class ModelBinary(Serializable):
             self.bounding_sphere_centre = rw.rw_float32s(self.bounding_sphere_centre, 3)
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
-        rw.rw_obj(self.nodes[0], self.nodes)
+        rw.rw_obj(self.root_node)
