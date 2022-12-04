@@ -85,6 +85,7 @@ class AnimationBinary(Serializable):
             self.properties = rw.rw_obj_array(self.properties, PropertyBinary, self.property_count)
             
         # Catch other flags being set?
+
 class AnimationControllerBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -136,24 +137,41 @@ class AnimationTrackBinary(Serializable):
             kf_type = KeyframeType1
         elif self.keyframe_type == 2:
             kf_type = KeyframeType2
+        elif self.keyframe_type == 3:
+            kf_type = KeyframeType3
         elif self.keyframe_type == 12:
             kf_type = KeyframeType12
         elif self.keyframe_type == 14:
             kf_type = KeyframeType14
+        elif self.keyframe_type == 23:
+            kf_type = KeyframeType23
+        elif self.keyframe_type == 24:
+            kf_type = KeyframeType24
+        elif self.keyframe_type == 26:
+            kf_type = KeyframeType26
         elif self.keyframe_type == 27:
             kf_type = KeyframeType27
         elif self.keyframe_type == 28:
             kf_type = KeyframeType28
         elif self.keyframe_type == 29:
             kf_type = KeyframeType29
+        elif self.keyframe_type == 31:
+            kf_type = KeyframeType31
+        elif self.keyframe_type == 32:
+            kf_type = KeyframeType32
+        elif self.keyframe_type == 33:
+            kf_type = KeyframeType33
+        elif self.keyframe_type == 35:
+            kf_type = KeyframeType35
         else:
             raise NotImplementedError(f"Unknown Animation Track type: '{self.keyframe_type}'")
             
         self.values = rw.rw_obj_array(self.values, kf_type, self.keyframe_count)
         
-        if self.keyframe_type in [26, 27, 28, 31, 32, 33]:
+        if self.keyframe_type in [26, 27, 28, 31, 32, 33, 34, 35]:
             self.base_position = rw.rw_float32s(self.base_position, 3)
-            self.base_scale = rw.rw_float32s(self.base_scale, 3)
+            if self.keyframe_type != 31:
+                self.base_scale = rw.rw_float32s(self.base_scale, 3)
 
 # Should probably come up with a different way to organise the r/w of these data..?!
 class KeyframeType1(Serializable):
@@ -188,6 +206,19 @@ class KeyframeType2(Serializable):
         self.rotation = rw.rw_float32s(self.rotation, 4)
         self.scale    = rw.rw_float32s(self.scale, 3)
 
+class KeyframeType3(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.unknown = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType3] {self.unknown}"
+        
+    def read_write(self, rw):
+        self.unknown = rw.rw_float32s(self.unknown, 3)
+        
 class KeyframeType12(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -213,7 +244,47 @@ class KeyframeType14(Serializable):
         
     def read_write(self, rw):
         self.scale = rw.rw_float32s(self.scale, 3) # Unconfirmed, looks like a scale
-        print(self)
+
+class KeyframeType23(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.camera_fov = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType23] {self.camera_fov}"
+    
+    def read_write(self, rw):
+        self.camera_fov = rw.rw_float32(self.camera_fov)
+
+class KeyframeType24(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.unknown_float = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType24] {self.unknown_float}"
+    
+    def read_write(self, rw):
+        self.unknown_float = rw.rw_float32(self.unknown_float)
+        
+class KeyframeType26(Serializable): # What is different about this one and 28?!
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.position = None
+        self.rotation = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType26] {self.position} {self.rotation}"
+        
+    def read_write(self, rw):
+        self.position = rw.rw_float16s(self.position, 3)
+        self.rotation = rw.rw_float16s(self.rotation, 4)
         
 class KeyframeType27(Serializable):
     def __init__(self, endianness='>'):
@@ -258,8 +329,66 @@ class KeyframeType29(Serializable):
         return f"[GFDBinary::Animation::Controller::Track::KeyframeType29] {self.unknown}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float16s(self.unknown, 2) # Not sure, only seen 0s so far
-        print(self)
+        self.unknown = rw.rw_float32(self.unknown)
+                       
+class KeyframeType31(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.position = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType31] {self.position}"
+        
+    def read_write(self, rw):
+        self.position = rw.rw_float16s(self.position, 3)
+
+           
+class KeyframeType32(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.rotation = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType32] {self.rotation}"
+        
+    def read_write(self, rw):
+        self.rotation = rw.rw_float16s(self.rotation, 4)
+
+         
+class KeyframeType33(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.scale = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType33] {self.scale}"
+        
+    def read_write(self, rw):
+        self.scale = rw.rw_float16s(self.scale, 3)
+
+         
+class KeyframeType35(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.rotation = None
+        self.scale = None
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType35] {self.rotation} {self.scale}"
+        
+    def read_write(self, rw):
+        self.rotation = rw.rw_float16s(self.rotation, 4)
+        self.scale = rw.rw_float16s(self.scale, 3)
+
+        
         
 class UnknownAnimationChunk(Serializable):
     def __init__(self, endianness='>'):
