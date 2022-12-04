@@ -22,7 +22,7 @@ class AnimationDataBinary(Serializable):
         self.unknown_anim_chunk = None
         
     def __repr__(self):
-        return f"[GFDBinary::AnimationData {safe_format(self.flags, hex32_format)}] Anims: {self.anim_count} Blend Anims: {self.blend_anim_count} Extra: {bool((self.flags >> 2) & 1)}"
+        return f"[GFDBinary::AnimationData {safe_format(self.flags, hex32_format)}] Anims: {self.anim_count} Blend Anims: {self.blend_anim_count} Extra: {safe_format(self.flags, lambda x: bool((x >> 2) & 1))}"
 
     def read_write(self, rw):
         self.flags = rw.rw_uint32(self.flags)
