@@ -63,10 +63,11 @@ class GFS0ContainerBinary(Serializable):
             self.count = rw.rw_uint32(self.count)
             self.data = rw.rw_obj_array(self.data, TextureBinary, self.count)
         elif self.type == 0x000100FD: # Animations
-            raise HasAnimationsError
-        #     self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
-        #     self.data = AnimationDataBinary()
-        #     rw.rw_obj(self.data)
+        #     raise HasAnimationsError
+            self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
+            if rw.mode() == "read":
+                self.data = AnimationDataBinary()
+            rw.rw_obj(self.data)
         else:
             raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
             
