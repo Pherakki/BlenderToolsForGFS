@@ -32,7 +32,7 @@ class GFS0Binary(Serializable):
                     rw.assert_equal(ctr.size, rw.tell() - start_offset)
                 
                 # Check if final container
-                if ctr.type == 0 or ctr.type == 0x000100FD:
+                if rw.peek_bytestring(1) == b'':
                     finished = True
                     
             # Check there's no more data
