@@ -17,8 +17,8 @@ class ObjectName(Serializable):
     def read_write(self, rw):
         self.name_size = rw.rw_uint16(self.name_size)
         self.name      = rw.rw_str(self.name, self.name_size, encoding="utf8")
-        self.name_hash = rw.rw_uint32(self.name_hash)
-
+        if self.name_size > 0:
+            self.name_hash = rw.rw_uint32(self.name_hash)
 
 
 class PropertyBinary(Serializable):
