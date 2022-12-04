@@ -17,7 +17,7 @@ class NodeAttachmentBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode::Attachment] {self.type}"
         
-    def read_write(self, rw):
+    def read_write(self, rw, node_type):
         self.type = rw.rw_uint32(self.type)
         
         if rw.mode() == "read":
