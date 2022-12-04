@@ -362,7 +362,7 @@ class Reader(BinaryTargetBase):
         
     def peek_bytestring(self, count):
         val = self.bytestream.read(count)
-        self.bytestream.seek(-count, 1)
+        self.bytestream.seek(-len(val), 1)
         return val
 
     def rw_obj_array(self, value, obj_constructor, shape, *args, validator=None, **kwargs):
