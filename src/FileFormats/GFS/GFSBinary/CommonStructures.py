@@ -1,24 +1,38 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
+from ..Utils.StringHashing import gfs_string_hash
 
 
 class ObjectName(Serializable):
+    ENCODING = 'utf8'
+    
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.name_size = None
-        self.name      = None
-        self.name_hash = None
+        self.string_size = None
+        self.string      = None
+        self.string_hash = None
+        
+    @classmethod
+    def from_name(cls, name):
+        instance = cls()
+        
+        name_bytestring = name.encode(cls.ENCODING)
+        instance.string = name
+        instance.string_size = len(name_bytestring)
+        instance.string_hash = gfs_string_hash(name_bytestring)
+        
+        return instance
         
     def __repr__(self):
-        return f"[GFS::ObjName] {safe_format(self.name_hash, hex32_format)} {self.name}"
+        return f"[GFS::ObjName] {safe_format(self.string_hash, hex32_format)} {self.string}"
     
     def read_write(self, rw):
-        self.name_size = rw.rw_uint16(self.name_size)
-        self.name      = rw.rw_str(self.name, self.name_size, encoding="utf8")
-        if self.name_size > 0:
-            self.name_hash = rw.rw_uint32(self.name_hash)
+        self.string_size = rw.rw_uint16(self.string_size)
+        self.string      = rw.rw_str(self.string, self.string_size, encoding=self.ENCODING)
+        if self.string_size > 0:
+            self.string_hash = rw.rw_uint32(self.string_hash)
 
 class SizedObjArray(Serializable):
     def __init__(self, member_type, endianness='>'):
