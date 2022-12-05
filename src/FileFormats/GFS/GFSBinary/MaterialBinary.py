@@ -1,6 +1,6 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
-from .CommonStructures import ObjectName
+from .CommonStructures import ObjectName, SizedObjArray
 
 
 class MaterialBinary(Serializable):
@@ -38,8 +38,7 @@ class MaterialBinary(Serializable):
         self.detail_texture     = None
         self.shadow_texture     = None
         
-        self.attribute_count = 0
-        self.attributes = []
+        self.attributes = SizedObjArray(MaterialAttributeBinary)
         
     def __repr__(self):
         return f"[GFD::Material] {self.name} "                                                                   \
@@ -105,8 +104,7 @@ class MaterialBinary(Serializable):
             
         # Attributes
         if self.flags & 0x00010000:
-            self.attribute_count = rw.rw_uint32(self.attribute_count)
-            self.attributes = rw.rw_obj_array(self.attributes, MaterialAttributeBinary, self.attribute_count)
+            rw.rw_obj(self.attributes)
 
 
 class TextureRefBinary(Serializable):
