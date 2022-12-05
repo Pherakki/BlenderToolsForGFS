@@ -8,10 +8,10 @@ class TextureBinary(Serializable):
         self.context.endianness = endianness
         
         self.name = None
-        self.pixel_format = 0
+        self.pixel_format = 1 # Always 1 regardless of DXT encoding?!
         self.data_size = None
         self.data = None
-        self.footer = None
+        self.footer = 0x1010000
         
     def __repr__(self):
         return f"[GFD::TexturesContainer::Texture] {self.name} {safe_format(self.pixel_format, hex32_format)} {self.data_size}"
