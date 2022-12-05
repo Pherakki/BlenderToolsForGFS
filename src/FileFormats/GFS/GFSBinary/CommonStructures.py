@@ -46,6 +46,24 @@ class SizedObjArray(Serializable):
     def __repr__(self):
         return f"[GFS::Array] {self.count}"
     
+    def __len__(self):
+        return len(self.data)
+    
+    def __iter__(self):
+        for obj in self.data:
+            yield obj
+            
+    def __getitem__(self, idx):
+        return self.data[idx]
+    
+    def __setitem__(self, idx, value):
+        assert type(value) == self.__member_type
+        self.data[idx] = value
+        
+    def append(self, item):
+        assert type(item) == self.__member_type
+        self.data.append(item)
+    
     def read_write(self, rw):
         self.count = rw.rw_uint32(self.count)
         if rw.mode() != "read" and len(self.data):
