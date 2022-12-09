@@ -1,5 +1,6 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
+from ...CommonStructures import ObjectName, SizedObjArray
 
 
 class MeshBinary(Serializable):
@@ -9,15 +10,14 @@ class MeshBinary(Serializable):
         
         self.flags = None
         self.vertex_format = None
-        self.face_count = 0
+        self.tri_count = 0
         self.index_type  = None
         self.vertex_count = None
         self.unknown_0x12 = None
         self.vertices = None
-        self.__morph_data = None
+        self.__morph_data = MorphDataBinary()
         self.indices = None
-        self.material_name = None
-        self.material_hash = None
+        self.material_name = ObjectName()
         self.bounding_box_max_dims = None
         self.bounding_box_min_dims = None
         self.bounding_sphere_centre = None
@@ -38,7 +38,7 @@ class MeshBinary(Serializable):
         self.vertex_format = rw.rw_uint32(self.vertex_format)
         
         if self.flags & 0x00000004: # Triangles
-            self.face_count = rw.rw_uint32(self.face_count)
+            self.tri_count  = rw.rw_uint32(self.tri_count)
             self.index_type = rw.rw_uint16(self.index_type)
             
         self.vertex_count = rw.rw_uint32(self.vertex_count)
@@ -61,26 +61,6 @@ class MeshBinary(Serializable):
         if self.vertex_format & 0x40000000: rw_funcs.append(VertexAttributes.rw_color2)
         if self.flags         & 0x00000001: rw_funcs.append(VertexAttributes.rw_weights)
         
-        # Missing vertex format flags:
-        # 0x00000001
-        # 0x00000004
-        # 0x00000008
-        # 0x00000020
-        # 0x00000080
-        # 0x00010000
-        # 0x00020000
-        # 0x00040000
-        # 0x00080000
-        # 0x00100000
-        # 0x00200000
-        # 0x00400000
-        # 0x00800000
-        # 0x01000000
-        # 0x02000000
-        # 0x04000000
-        # 0x08000000
-        # 0x80000000
-        
         self.vertices = rw.rw_obj_array(self.vertices, VertexBinary, self.vertex_count, rw_funcs)
         
         # Do morphs
@@ -90,16 +70,15 @@ class MeshBinary(Serializable):
         # Do indices
         if self.flags & 0x00000004:
             if self.index_type == 1:
-                self.indices = rw.rw_uint16s(self.indices, self.face_count*3)
+                self.indices = rw.rw_uint16s(self.indices, self.tri_count*3)
             elif self.index_type == 2:
-                self.indices = rw.rw_uint32s(self.indices, self.face_count*3)
+                self.indices = rw.rw_uint32s(self.indices, self.tri_count*3)
             else:
                 raise NotImplementedError(f"Unknown Index Type '{self.index_type}'")
                 
         # Do materials
         if self.flags & 0x00000002:
-            self.material_name = rw.rw_uint16_sized_str(self.material_name)
-            self.material_hash = rw.rw_uint32(self.material_hash)
+            rw.rw_obj(self.material_name)
             
         # Bounding box / sphere
         if self.flags & 0x00000008:
