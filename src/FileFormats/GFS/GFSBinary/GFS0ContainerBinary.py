@@ -9,6 +9,8 @@ from .CommonStructures import SizedObjArray, Blob
 class HasAnimationsError(Exception):
     pass
 
+class UnsupportedVersionError(Exception):
+    pass
 
 class GFS0ContainerBinary(Serializable):
     SIZE = 0x0C
@@ -34,7 +36,8 @@ class GFS0ContainerBinary(Serializable):
         self.size         = rw.rw_uint32(self.size)
         
         # Need to be extremely careful here...
-        rw.assert_equal(self.version in [0x01105100], True)
+        if self.version not in [0x01105100] and (rw.mode() == "read" or rw.mode() == "write"):
+            raise UnsupportedVersionError("GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
 
         args = []
         if self.type == 0x00000000:
@@ -70,5 +73,5 @@ class GFS0ContainerBinary(Serializable):
         
         if rw.mode() == "read":
             self.data = dtype()
-        assert type(self.data) == type(dtype())
+        assert type(self.data) == type(dtype()), f"{type(self.data)}, {type(dtype())}"
         rw.rw_obj(self.data, *args) # Can remove *args when Blob can be removed
