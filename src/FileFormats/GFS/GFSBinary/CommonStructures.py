@@ -40,7 +40,7 @@ class SizedObjArray(Serializable):
         self.context.endianness = endianness
         
         self.__member_type = member_type
-        self.count = None
+        self.count = 0
         self.data = []
         
     def __repr__(self):
@@ -60,9 +60,19 @@ class SizedObjArray(Serializable):
         assert type(value) == self.__member_type
         self.data[idx] = value
         
+    def clear(self):
+        self.count = 0
+        self.data = []
+        
     def append(self, item):
         assert type(item) == self.__member_type
         self.data.append(item)
+        self.count += 1
+        
+    def insert(self, idx, item):
+        assert type(item) == self.__member_type
+        self.data.insert(idx, item)
+        self.count += 1
     
     def read_write(self, rw):
         self.count = rw.rw_uint32(self.count)
