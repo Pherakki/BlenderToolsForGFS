@@ -65,8 +65,9 @@ class MeshBinary(Serializable):
         
         # Do morphs
         if self.flags & 0x00000040:
-            rw.rw_obj(self.morph_data)
-            
+            raise NotImplementedError("Mesh morphs are not currently supported")
+            rw.rw_obj(self.morph_data) # Can allow this line to be reached once some models with morphs are found
+        
         # Do indices
         if self.flags & 0x00000004:
             if self.index_type == 1:
