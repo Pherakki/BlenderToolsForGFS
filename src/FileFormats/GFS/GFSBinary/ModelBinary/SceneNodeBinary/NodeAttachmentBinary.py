@@ -6,6 +6,9 @@ from .LightBinary import LightBinary
 class HasParticleDataError(Exception):
     pass
 
+class HasType9Error(Exception):
+    pass
+
 class NodeAttachmentBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -31,6 +34,8 @@ class NodeAttachmentBinary(Serializable):
                 raise HasParticleDataError
             # elif self.type == 9:
             #     assert 0
+            elif self.type == 9:
+                raise HasType9Error
             else:
                 raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")
             self.data = dtype()
