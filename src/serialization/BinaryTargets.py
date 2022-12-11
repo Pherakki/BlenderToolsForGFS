@@ -239,6 +239,9 @@ class BinaryTargetBase:
 
     def rw_obj_array(self, value, obj_constructor, shape, *args, validator=None, **kwargs):
         raise NotImplementedError
+        
+    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
+        raise NotImplementedError
 
     def align(self, offset, alignment, padval=b'\x00'):
         raise NotImplementedError
@@ -260,7 +263,7 @@ class Reader(BinaryTargetBase):
 
     def rw_offset_uint32(self, value, offset, endianness=None):
         return self.rw_uint32(value, endianness) + offset
-
+    
     def _rw_single(self, typecode, size, value, endianness=None):
         if endianness is None:
             endianness = self.context.endianness
@@ -291,7 +294,12 @@ class Reader(BinaryTargetBase):
         return data
 
     def rw_str(self, value, length, encoding='ascii'):
-        return self.bytestream.read(length).decode(encoding)
+        data = self.bytestream.read(length)
+        try:
+            return data.decode(encoding)
+        except Exception as e:
+            print(data)
+            raise e
 
     def rw_cstr(self, value, encoding='ascii', end_char=b"\x00"):
         out = b""
@@ -383,7 +391,15 @@ class Reader(BinaryTargetBase):
         for subshape in shape[1::][::-1]:
             data = chunk_list(data, subshape)
         return data
-
+    
+    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
+        if ctor_args is None: ctor_args = []
+        if ctor_kwargs is None: ctor_kwargs = {}
+        if rw_args is None: rw_args = []
+        if rw_kwargs is None: rw_kwargs = {}
+        obj = obj_constructor(*ctor_args, **ctor_kwargs)
+        return self.rw_obj(obj, *rw_args, **rw_kwargs)
+    
     def align(self, offset, alignment, padval=b'\x00'):
         n_to_read = (alignment - (offset % alignment)) % alignment
         data = self.bytestream.read(n_to_read)
@@ -532,7 +548,12 @@ class Writer(BinaryTargetBase):
             self.rw_obj(d, *args, **kwargs)
 
         return value
-
+    
+    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
+        if rw_args is None: rw_args = []
+        if rw_kwargs is None: rw_kwargs = {}
+        return self.rw_obj(value, *rw_args, **rw_kwargs)
+    
     def align(self, offset, alignment, padval=b'\x00'):
         n_to_read = (alignment - (offset % alignment)) % alignment
         data = padval * (n_to_read // len(padval))
@@ -683,7 +704,12 @@ class OffsetTracker(BinaryTargetBase):
             self.rw_s3Quat(None)
 
         return value
-
+    
+    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
+        if rw_args is None: rw_args = []
+        if rw_kwargs is None: rw_kwargs = {}
+        return self.rw_obj(value, *rw_args, **rw_kwargs)
+    
     def rw_uv(self, value, endianness=None):
         self.rw_float32s(value, 2, endianness)
         return value
