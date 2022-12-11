@@ -107,7 +107,7 @@ def import_materials(gfs):
     # Load materials
     if mat_ctr is not None:
         for mat in ctr.data:
-            bpy_material = bpy.data.materials.new(mat.name)
+            bpy_material = bpy.data.materials.new(mat.name.string)
             material_names.append(bpy_material.name)
             
             bpy_material.use_nodes = True
@@ -136,7 +136,7 @@ def add_texture_to_material_node(nodes, name, texture):
         node = nodes.new('ShaderNodeTexImage')
         node.name = name
         node.label = name
-        node.image = bpy.data.images[texture.name]
+        node.image = bpy.data.images[texture.name.string]
         return node
         
 def import_model(gfs, name):
@@ -161,8 +161,8 @@ def import_model(gfs, name):
         list_of_bones = []
         meshes = []
         list_of_nodes = []
-        fetch_nodes(model.nodes[0], list_of_nodes)
-        build_nodes(name, meshes, model.skinning_data.matrix_palette, list_of_nodes, list_of_bones, -1, armature, model.nodes[0], Matrix.Identity(4))
+        fetch_nodes(model.root_node, list_of_nodes)
+        build_nodes(name, meshes, model.skinning_data.matrix_palette, list_of_nodes, list_of_bones, -1, armature, model.root_node, Matrix.Identity(4))
         bpy.ops.object.mode_set(mode='OBJECT')
 
 def fetch_nodes(node, node_list):
@@ -177,7 +177,7 @@ def build_nodes(name, meshes, matrix_palette, list_of_nodes, list_of_bones, pare
     
     matrix = parent_transform @ (position @ rotation @ scale)
 
-    bone_name = node.name
+    bone_name = node.name.string
     bone = armature.data.edit_bones.new(bone_name)
 
     tail, roll = mat3_to_vec_roll(matrix.to_3x3())
@@ -242,7 +242,7 @@ def import_mesh(name, meshes, mesh, matrix_palette, list_of_nodes, bones, armatu
                     groups[bone_idx] = []
                 groups[bone_idx].append((vert_idx, weight))
         for bone_idx, vg in groups.items():
-            vertex_group = bpy_mesh_object.vertex_groups.new(name=list_of_nodes[bone_idx].name)
+            vertex_group = bpy_mesh_object.vertex_groups.new(name=list_of_nodes[bone_idx].name.string)
             for vert_idx, vert_weight in vg:
                 vertex_group.add([vert_idx], vert_weight, 'REPLACE')
                 
@@ -278,7 +278,7 @@ def import_mesh(name, meshes, mesh, matrix_palette, list_of_nodes, bones, armatu
 
     
     # Set materials
-    active_material = bpy.data.materials[mesh.material_name]
+    active_material = bpy.data.materials[mesh.material_name.string]
     bpy_mesh.materials.append(active_material)
     bpy.data.objects[meshobj_name].active_material = active_material
     
