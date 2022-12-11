@@ -92,6 +92,8 @@ class Blob(Serializable):
         self.data = rw.rw_bytestring(self.data, size)
 
 class PropertyBinary(Serializable):
+    ENCODING = "utf8"
+    
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
@@ -117,7 +119,7 @@ class PropertyBinary(Serializable):
         elif self.type == 3:
             self.data = rw.rw_uint8(self.data)
         elif self.type == 4:
-            self.data = rw.rw_str(self.data, self.size - 1)
+            self.data = rw.rw_str(self.data, self.size - 1, encoding=self.ENCODING)
         elif self.type == 5:
             self.data = rw.rw_uint8s(self.data, 3)
         elif self.type == 6:
