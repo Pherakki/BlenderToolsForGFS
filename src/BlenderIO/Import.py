@@ -91,7 +91,9 @@ def import_textures(gfs):
             with open("tex/" + tex.name, 'wb') as F:
                 F.write(tex.data)
             texture_paths.append(os.getcwd() + "/tex/" + tex.name)
-            bpy.data.images.load(os.getcwd() + "/tex/" + tex.name)
+            img = bpy.data.images.load(os.getcwd() + "/tex/" + tex.name)
+            img.pack()
+            os.remove(os.getcwd() + "/tex/" + tex.name)
     return texture_paths
     
 def import_materials(gfs):
