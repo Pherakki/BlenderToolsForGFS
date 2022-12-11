@@ -85,6 +85,8 @@ class MeshBinary(Serializable):
         if self.flags & 0x00000008:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
+
+        if self.flags & 0x00000010:
             self.bounding_sphere_centre = rw.rw_float32s(self.bounding_sphere_centre, 3)
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
