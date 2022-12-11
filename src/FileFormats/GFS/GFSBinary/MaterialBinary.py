@@ -18,6 +18,10 @@ class MaterialBinary(Serializable):
         self.unknown_0x4C = None
         self.draw_method  = None
         self.unknown_0x51 = None
+        self.unknown_0x52 = None
+        self.unknown_0x53 = None
+        self.unknown_0x54 = None
+        self.unknown_0x55 = None
         self.unknown_0x56 = None
         self.unknown_0x58 = None
         self.unknown_0x5A = None
@@ -62,7 +66,11 @@ class MaterialBinary(Serializable):
         self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
         self.unknown_0x4C = rw.rw_float32(self.unknown_0x4C)
         self.draw_method  = rw.rw_uint8(self.draw_method)
-        self.unknown_0x51 = rw.rw_uint8s(self.unknown_0x51, 5)
+        self.unknown_0x51 = rw.rw_uint8(self.unknown_0x51)
+        self.unknown_0x52 = rw.rw_uint8(self.unknown_0x52)
+        self.unknown_0x53 = rw.rw_uint8(self.unknown_0x53)
+        self.unknown_0x54 = rw.rw_uint8(self.unknown_0x54)
+        self.unknown_0x55 = rw.rw_uint8(self.unknown_0x55)
         self.unknown_0x56 = rw.rw_uint16(self.unknown_0x56)
         self.unknown_0x58 = rw.rw_uint16(self.unknown_0x58)
         self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A)
@@ -140,20 +148,230 @@ class MaterialAttributeBinary(Serializable):
         self.ID = rw.rw_uint16(self.ID)
     
         if self.ID == 0:
-            self.data = rw.rw_bytestring(self.data, 40)
+            dtype = Property0
         elif self.ID == 1:
-            self.data = rw.rw_bytestring(self.data, 52)
+            dtype = Property1
         elif self.ID == 2:
-            self.data = rw.rw_bytestring(self.data, 8)
+            dtype = Property2
         elif self.ID == 3:
-            self.data = rw.rw_bytestring(self.data, 52)
+            dtype = Property3
         elif self.ID == 4:
-            self.data = rw.rw_bytestring(self.data, 81)
+            dtype = Property4
         elif self.ID == 5:
-            self.data = rw.rw_bytestring(self.data, 68)
+            dtype = Property5
         elif self.ID == 6:
-            self.data = rw.rw_bytestring(self.data, 12)
+            dtype = Property6
         elif self.ID == 7:
-            self.data = rw.rw_bytestring(self.data, 0)
+            dtype = Property7
         else:
             raise NotImplementedError(f"Unrecognised Attribute ID: {self.ID}")
+            
+        if rw.mode() == "read":
+            self.data = dtype()
+        
+        if type(self.data) is not dtype:
+            raise ValueError(f"Unexpected Material Attribute type: expected '{dtype}', found '{type(self.data)}")
+        rw.rw_obj(self.data)
+
+class Property0(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.colour = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.flags = None
+        
+    def read_write(self, rw):
+        self.colour = rw.rw_float32s(self.colour, 4)
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.flags = rw.rw_uint32(self.flags)
+        
+class Property1(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.unknown_0x24 = None
+        self.unknown_0x28 = None
+        self.unknown_0x2C = None
+        self.flags = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
+        self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
+        self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
+        self.flags = rw.rw_uint32(self.flags)
+
+class Property2(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
+                
+class Property3(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.unknown_0x24 = None
+        self.unknown_0x28 = None
+        self.unknown_0x2C = None
+        self.flags = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
+        self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
+        self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
+        self.flags = rw.rw_uint32(self.flags)        
+        
+class Property4(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.unknown_0x24 = None
+        self.unknown_0x28 = None
+        self.unknown_0x2C = None
+        self.unknown_0x30 = None
+        self.unknown_0x34 = None
+        self.unknown_0x38 = None
+        self.unknown_0x3C = None
+        self.unknown_0x40 = None
+        self.unknown_0x44 = None
+        self.unknown_0x45 = None
+        self.unknown_0x49 = None
+        self.flags = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
+        self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
+        self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
+        self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
+        self.unknown_0x34 = rw.rw_float32(self.unknown_0x34)
+        self.unknown_0x38 = rw.rw_float32(self.unknown_0x38)
+        self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
+        self.unknown_0x40 = rw.rw_float32(self.unknown_0x40)
+        self.unknown_0x44 = rw.rw_uint8(self.unknown_0x44)
+        self.unknown_0x45 = rw.rw_float32(self.unknown_0x45)
+        self.unknown_0x49 = rw.rw_float32(self.unknown_0x49)
+        self.flags = rw.rw_uint32(self.flags)
+        
+class Property5(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.unknown_0x24 = None
+        self.unknown_0x28 = None
+        self.unknown_0x2C = None
+        self.unknown_0x30 = None
+        self.flags = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
+        self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
+        self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
+        self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
+        self.flags = rw.rw_uint32(self.flags)
+        
+class Property6(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = None
+        
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
+
+class Property7(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+    def read_write(self, rw):
+        pass
