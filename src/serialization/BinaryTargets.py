@@ -240,7 +240,10 @@ class BinaryTargetBase:
     def rw_obj_array(self, value, obj_constructor, shape, *args, validator=None, **kwargs):
         raise NotImplementedError
         
-    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
+    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
+        raise NotImplementedError
+        
+    def rw_obj_variant(self, value, variants, error_message):
         raise NotImplementedError
 
     def align(self, offset, alignment, padval=b'\x00'):
@@ -392,14 +395,19 @@ class Reader(BinaryTargetBase):
             data = chunk_list(data, subshape)
         return data
     
-    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
-        if ctor_args is None: ctor_args = []
-        if ctor_kwargs is None: ctor_kwargs = {}
-        if rw_args is None: rw_args = []
-        if rw_kwargs is None: rw_kwargs = {}
-        obj = obj_constructor(*ctor_args, **ctor_kwargs)
-        return self.rw_obj(obj, *rw_args, **rw_kwargs)
+    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
+        if args is None: args = []
+        if kwargs is None: kwargs = {}
+        obj = obj_constructor()
+        return self.rw_obj(obj, *args, **kwargs)
     
+    def rw_obj_variant(self, value, variants, error_message):
+        variant_id = self.rw_uint32(None)
+        dtype = variants.get(variant_id)
+        if dtype is None:
+            raise NotImplementedError(error_message.format(variant_id))
+        return self.rw_new_obj(None, dtype)
+        
     def align(self, offset, alignment, padval=b'\x00'):
         n_to_read = (alignment - (offset % alignment)) % alignment
         data = self.bytestream.read(n_to_read)
@@ -549,11 +557,18 @@ class Writer(BinaryTargetBase):
 
         return value
     
-    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
-        if rw_args is None: rw_args = []
-        if rw_kwargs is None: rw_kwargs = {}
-        return self.rw_obj(value, *rw_args, **rw_kwargs)
-    
+    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
+        if args is None: args = []
+        if kwargs is None: kwargs = {}
+        return self.rw_obj(value, *args, **kwargs)
+        
+    def rw_obj_variant(self, value, variants, error_message):
+        if not hasattr(value, "VARIANT_TYPE"):
+            raise ValueError(f"Expected an object with a class member VARIANT_TYPE; received '{type(value)}'")
+        self.rw_uint32(value.VARIANT_TYPE)
+        self.rw_obj(value)
+        return value
+        
     def align(self, offset, alignment, padval=b'\x00'):
         n_to_read = (alignment - (offset % alignment)) % alignment
         data = padval * (n_to_read // len(padval))
@@ -705,10 +720,18 @@ class OffsetTracker(BinaryTargetBase):
 
         return value
     
-    def rw_new_obj(self, value, obj_constructor, ctor_args=None, ctor_kwargs=None, rw_args=None, rw_kwargs=None):
-        if rw_args is None: rw_args = []
-        if rw_kwargs is None: rw_kwargs = {}
-        return self.rw_obj(value, *rw_args, **rw_kwargs)
+    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
+        if args is None: args = []
+        if kwargs is None: kwargs = {}
+        return self.rw_obj(value, *args, **kwargs)
+        
+    def rw_obj_variant(self, value, variants, error_message):
+        if not hasattr(value, "VARIANT_TYPE"):
+            raise ValueError(f"Expected an object with a class member VARIANT_TYPE; received '{type(value)}'")
+        self.rw_uint32(value.VARIANT_TYPE)
+        self.rw_obj(value)
+        return value
+        
     
     def rw_uv(self, value, endianness=None):
         self.rw_float32s(value, 2, endianness)
