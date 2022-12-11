@@ -37,7 +37,7 @@ class GFS0ContainerBinary(Serializable):
         
         # Need to be extremely careful here...
         if self.version not in [0x01105100] and (rw.mode() == "read" or rw.mode() == "write"):
-            raise UnsupportedVersionError("GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
+            raise UnsupportedVersionError(f"GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
 
         args = []
         if self.type == 0x00000000:
