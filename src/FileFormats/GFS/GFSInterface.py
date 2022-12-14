@@ -917,7 +917,7 @@ class ModelInterface:
         
         # Need to return mesh binary list here too!
         binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights)
-        
+
         # Settle for just creating same matrix palette, don't care about order...
         # matrix_palette = set()
         # for mesh in meshes:
@@ -942,6 +942,8 @@ class ModelInterface:
                         # for i, (idx, wgt) in enumerate(zip(v.indices, v.weights)):
                         #     if wgt == 0:
                         #         v.indices[i] = 0
-                        v.indices = [old_node_id_to_new_node_id_map[idx] for idx in v.indices[::-1]]
+                        # Need to apply node ID map in here too, but can't
+                        # because the skinning matrix affects it
+                        v.indices = [idx for idx in v.indices[::-1]]
         return binary
         
