@@ -23,6 +23,7 @@ class GFSInterface:
         self.animations = []
         
         self.model = None
+        self.animation_data = None
         self.data_0x000100F8 = None
         self.data_0x000100F9 = None
 
@@ -49,6 +50,8 @@ class GFSInterface:
                 instance.cameras, \
                 instance.lights,  \
                 instance.model = ModelInterface.from_binary(ctr.data, duplicate_data)
+            elif ctr.type == 0x000100FD:
+                instance.animation_data = ctr.data
             elif ctr.type == 0x000100F8:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:
@@ -111,7 +114,19 @@ class GFSInterface:
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
             binary.containers.append(mdl_ctr)
-        
+                    
+        # Model container
+        if self.animation_data is not None:
+            offset = ot.tell()
+            anm_ctr = GFS0ContainerBinary()
+            anm_ctr.version = 0x01105100
+            anm_ctr.type = 0x000100FD
+            
+            anm_ctr.data = self.animation_data
+            ot.rw_obj(anm_ctr)
+            anm_ctr.size = ot.tell() - offset
+            binary.containers.append(anm_ctr)
+            
         # Unknown container
         if self.data_0x000100F9 is not None:
             offset = ot.tell()
