@@ -55,7 +55,6 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100FC: # Textures
             dtype = lambda : SizedObjArray(TextureBinary)
         elif self.type == 0x000100FD: # Animations
-            raise HasAnimationsError
             dtype = AnimationDataBinary
         else:
             raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
