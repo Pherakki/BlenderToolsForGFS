@@ -18,10 +18,11 @@ class GFSInterface:
         self.cameras = []
         self.lights = []
         self.bones = []
-        self.materials = {}
-        self.textures = {}
+        self.materials = []
+        self.textures = []
         self.animations = []
         
+        # Things that need to be removed eventually
         self.model = None
         self.animation_data = None
         self.data_0x000100F8 = None
