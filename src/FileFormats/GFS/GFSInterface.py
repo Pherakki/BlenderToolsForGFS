@@ -128,7 +128,7 @@ class GFSInterface:
             anm_ctr.size = ot.tell() - offset
             binary.containers.append(anm_ctr)
             
-        # Unknown container
+        # Physics container
         if self.data_0x000100F9 is not None:
             offset = ot.tell()
             unk_ctr = GFS0ContainerBinary()
