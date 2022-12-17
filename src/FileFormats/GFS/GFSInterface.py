@@ -539,7 +539,6 @@ class MeshInterface:
         self.flag_0x20000000 = None
         self.flag_0x40000000 = None
         self.flag_0x80000000 = None
-        self.vertex_format = None
     
         self.vertices = None
         self.material_name = None
