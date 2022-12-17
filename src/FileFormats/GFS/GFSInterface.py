@@ -702,34 +702,13 @@ class MeshInterface:
         binary.indices       = self.indices
         binary.material_name = ObjectName.from_name(self.material_name)
         
-      
-        if self.keep_bounding_sphere:
-            if binary.vertex_format & 0x00000002:
-                # This is WRONG but I can't get an iterative Welzl algorithm
-                # working
-                max_dims = [*self.vertices[0].position]
-                min_dims = [*self.vertices[0].position]
-                        
-                for v in self.vertices:
-                    pos = v.position
-                    for i in range(3):
-                        max_dims[i] = max(max_dims[i], pos[i])
-                        min_dims[i] = min(min_dims[i], pos[i])
-                
-                if self.keep_bounding_box:
-                    binary.bounding_box_max_dims = max_dims
-                    binary.bounding_box_min_dims = min_dims
-
-                centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
-                radius = 0.
-                for v in self.vertices:
-                    pos = v.position
-                    dist = (p-c for p, c in zip(pos, centre))
-                    radius = max(sum(d*d for d in dist), radius)
-                binary.bounding_sphere_centre = centre
-                binary.bounding_sphere_radius = radius
-            else:
-                raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
+        make_bounding_volumes(binary, 
+                              self.keep_bounding_box, 
+                              self.keep_bounding_sphere, 
+                              iter(binary.vertices), 
+                              binary.vertex_format & 0x00000002, 
+                              "Mesh is marked for bounding box export, but has no vertex position data", 
+                              "Mesh is marked for bounding sphere export, but has no vertex position data")
         return binary
     
 class CameraInterface:
@@ -872,10 +851,6 @@ class ModelInterface:
         instance = cls()
         
         instance.skinning_data = binary.skinning_data
-        instance.bounding_box_max_dims = binary.bounding_box_max_dims
-        instance.bounding_box_min_dims = binary.bounding_box_min_dims
-        instance.bounding_sphere_centre = binary.bounding_sphere_centre
-        instance.bounding_sphere_radius = binary.bounding_sphere_radius
         instance.keep_bounding_box = binary.flags & 0x00000001 != 0
         instance.keep_bounding_sphere = binary.flags & 0x00000002 != 0
         
@@ -906,30 +881,74 @@ class ModelInterface:
             binary.flags |= 0x00000002
         
         binary.skinning_data = self.skinning_data
-        binary.bounding_box_max_dims = self.bounding_box_max_dims
-        binary.bounding_box_min_dims = self.bounding_box_min_dims
-        binary.bounding_sphere_centre = self.bounding_sphere_centre
-        binary.bounding_sphere_radius = self.bounding_sphere_radius
         
         # Need to return mesh binary list here too!
         binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights)
 
-        # Settle for just creating same matrix palette, don't care about order...
-        # matrix_palette = set()
-        # for mesh in meshes:
-        #     if mesh.vertices[0].indices is not None:
-        #         for v in mesh.vertices:
-        #             for idx, wgt in zip(v.indices, v.weights):
-        #                 if wgt > 0 and idx:
-        #                     matrix_palette.add(idx)
-        
-        # if matrix_palette != set(self.skinning_data.matrix_palette):
-        #     assert 0
+        ####################
+        # BOUNDING VOLUMES #
+        ####################
+        if self.keep_bounding_box or self.keep_bounding_sphere:
+            verts = []
+            for mesh_binary, mesh_node_id in mesh_binaries:
+                if mesh_binary.flags & 0x00000008 != 0:  # Check if you need to do the others here too
+                    mx = mesh_binary.bounding_box_max_dims
+                    mn = mesh_binary.bounding_box_min_dims
+                    verts.extend([
+                        [mx[0], mx[1], mx[2]],
+                        [mx[0], mx[1], mn[2]],
+                        [mx[0], mn[1], mx[2]],
+                        [mx[0], mn[1], mn[2]],
+                        [mn[0], mn[1], mn[2]],
+                        [mn[0], mn[1], mx[2]],
+                        [mn[0], mx[1], mn[2]],
+                        [mn[0], mx[1], mx[2]]
+                    ])
+                
+            if not len(verts):
+                if self.keep_bounding_box:
+                    raise ValueError("Model is marked for bounding box export, but has no meshes with vertex position data")
+                elif self.keep_bounding_sphere:
+                    raise ValueError("Model is marked for bounding sphere export, but has no meshes with vertex position data")
+            
+            
+            max_dims = [*verts[0]]
+            min_dims = [*verts[0]]
+                    
+            for pos in verts:
+                for i in range(3):
+                    max_dims[i] = max(max_dims[i], pos[i])
+                    min_dims[i] = min(min_dims[i], pos[i])
+            
+            # Do box
+            if self.keep_bounding_box:
+                binary.bounding_box_max_dims = max_dims
+                binary.bounding_box_min_dims = min_dims
+                
+            # Do sphere
+            # This is WRONG but I can't get an iterative Welzl algorithm working
+            if self.keep_bounding_sphere:
+                centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
+                radius = 0.
+                for mesh_binary, mesh_node_id in mesh_binaries:
+                    if mesh_binary.vertex_format & 0x00000002 == 0:
+                        continue
+                    for v in mesh_binary.vertices:
+                        pos = v.position
+                        dist = (p-c for p, c in zip(pos, centre))
+                        radius = max(sum(d*d for d in dist), radius)
+                binary.bounding_sphere_centre = centre
+                binary.bounding_sphere_radius = radius
+            
+
+        # matrix_palette = []
+        # for mesh_binary, mesh_node_id in mesh_binaries:
+        #     pass
     
         if binary.skinning_data.matrix_palette is not None:
             # This loses duplicates...
             #idx_lookup = {global_idx: palette_idx for palette_idx, global_idx in enumerate(binary.skinning_data.matrix_palette)}
-            for mesh in mesh_binaries:
+            for mesh, mesh_node_id in mesh_binaries:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
