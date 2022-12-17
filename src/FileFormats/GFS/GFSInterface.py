@@ -690,6 +690,8 @@ class MeshInterface:
         binary.flags |= self.flag_0x40000000 << 30
         binary.flags |= self.flag_0x80000000 << 31
         
+        if len(self.indices) % 3:
+            raise ValueError("Mesh contains {len(self.indices)} indices; must be a multiple of 3")
         binary.tri_count     = len(self.indices) // 3
         binary.index_type    = self.index_type
         binary.vertex_count  = len(self.vertices)
