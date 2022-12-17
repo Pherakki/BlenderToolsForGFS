@@ -554,12 +554,6 @@ class MeshInterface:
         self.keep_bounding_box = None
         self.keep_bounding_sphere = None
         
-        # THINGS THAT SHOULD BE REMOVABLE
-        self.bounding_box_max_dims = None
-        self.bounding_box_min_dims = None
-        self.bounding_sphere_centre = None
-        self.bounding_sphere_radius = None
-        
     
     @classmethod
     def from_binary(cls, node_idx, binary):
@@ -609,12 +603,6 @@ class MeshInterface:
         instance.unknown_0x12    = binary.unknown_0x12
         instance.unknown_float_1 = binary.unknown_float_1
         instance.unknown_float_2 = binary.unknown_float_2
-        
-        # THINGS TO REMOVE
-        instance.bounding_box_max_dims  = list(binary.bounding_box_max_dims)
-        instance.bounding_box_min_dims  = list(binary.bounding_box_min_dims)
-        instance.bounding_sphere_centre = binary.bounding_sphere_centre
-        instance.bounding_sphere_radius = binary.bounding_sphere_radius
         
         return instance
         
@@ -713,31 +701,34 @@ class MeshInterface:
         binary.indices       = self.indices
         binary.material_name = ObjectName.from_name(self.material_name)
         
-        # if binary.vertex_format & 0x00000002: # If there is position data,
-        #     max_dims = [*self.vertices[0].position]
-        #     min_dims = [*self.vertices[0].position]
-            
-        #     for v in self.vertices:
-        #         pos = v.position
-        #         for i in range(3):
-        #             max_dims[i] = max(max_dims[i], pos[i])
-        #             min_dims[i] = min(min_dims[i], pos[i])
-            
-        #     binary.bounding_box_max_dims = max_dims
-        #     binary.bounding_box_min_dims = min_dims
-            
-        # Bounding boxes don't always agree with vertices...
-        # print(self.bounding_box_max_dims, max_dims)
-        # print(self.bounding_box_min_dims, min_dims)
-        # assert self.bounding_box_max_dims == max_dims
-        # assert self.bounding_box_min_dims == min_dims
-        # Bounding spheres are more complicated
-        
-        binary.bounding_box_max_dims = self.bounding_box_max_dims
-        binary.bounding_box_min_dims = self.bounding_box_min_dims
-        binary.bounding_sphere_centre = self.bounding_sphere_centre
-        binary.bounding_sphere_radius = self.bounding_sphere_radius
-        
+      
+        if self.keep_bounding_sphere:
+            if binary.vertex_format & 0x00000002:
+                # This is WRONG but I can't get an iterative Welzl algorithm
+                # working
+                max_dims = [*self.vertices[0].position]
+                min_dims = [*self.vertices[0].position]
+                        
+                for v in self.vertices:
+                    pos = v.position
+                    for i in range(3):
+                        max_dims[i] = max(max_dims[i], pos[i])
+                        min_dims[i] = min(min_dims[i], pos[i])
+                
+                if self.keep_bounding_box:
+                    binary.bounding_box_max_dims = max_dims
+                    binary.bounding_box_min_dims = min_dims
+
+                centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
+                radius = 0.
+                for v in self.vertices:
+                    pos = v.position
+                    dist = (p-c for p, c in zip(pos, centre))
+                    radius = max(sum(d*d for d in dist), radius)
+                binary.bounding_sphere_centre = centre
+                binary.bounding_sphere_radius = radius
+            else:
+                raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
         return binary
     
 class CameraInterface:
