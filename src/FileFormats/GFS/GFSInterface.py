@@ -513,7 +513,7 @@ class MeshInterface:
     def __init__(self):
         self.node   = None
         
-        self.flag_0x00000008 = None
+        self.flag_0x00000001 = None
         self.flag_0x00000020 = None
         self.flag_0x00000080 = None
         self.flag_0x00000100 = None
@@ -580,7 +580,7 @@ class MeshInterface:
         instance.flag_0x00000200 = (binary.flags & 0x00000200) != 0
         instance.flag_0x00000400 = (binary.flags & 0x00000400) != 0
         instance.flag_0x00000800 = (binary.flags & 0x00000800) != 0
-        # 0x00000010 says if unknown floats are present
+        # 0x00001000 says if unknown floats are present
         instance.flag_0x00002000 = (binary.flags & 0x00002000) != 0
         instance.flag_0x00004000 = (binary.flags & 0x00004000) != 0
         instance.flag_0x00008000 = (binary.flags & 0x00008000) != 0
@@ -660,11 +660,13 @@ class MeshInterface:
             
             binary.flags |= (self.vertices[0].indices is not None) << 0
         
+        binary.flags |= self.flag_0x00000001 <<  0
         binary.flags |= (self.material_name is not None) << 1
         binary.flags |= (len(self.indices) > 0) << 2
         binary.flags |= self.keep_bounding_box << 3
         binary.flags |= self.keep_bounding_sphere << 4
         binary.flags |= self.flag_0x00000020 <<  5
+        binary.flags |= (self.morphs.count is not None) << 6
         binary.flags |= self.flag_0x00000080 <<  7
         binary.flags |= self.flag_0x00000100 <<  8
         binary.flags |= self.flag_0x00000200 <<  9
