@@ -60,7 +60,7 @@ class GFSInterface:
         
         return instance
     
-    def to_binary(self):
+    def to_binary(self, duplicate_data=False):
         binary = GFS0Binary()
         
         ot = OffsetTracker()
@@ -110,7 +110,7 @@ class GFSInterface:
             mdl_ctr.version = 0x01105100
             mdl_ctr.type = 0x00010003
             
-            model_binary = self.model.to_binary(self.bones, self.meshes, self.cameras, self.lights)
+            model_binary = self.model.to_binary(self.bones, self.meshes, self.cameras, self.lights, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
@@ -153,6 +153,7 @@ class GFSInterface:
             # ot.rw_obj(unk_ctr)
             # unk_ctr.size = ot.tell() - offset
             binary.containers.append(unk_ctr)
+        
         # End container
         if not (len(binary.containers) == 2 and binary.containers[-1].type == 0x000100FD):
             end_ctr = GFS0ContainerBinary()
@@ -463,7 +464,7 @@ class NodeInterface:
                 attachment.data = elem.to_binary()
                 node.attachments.append(attachment)
                 node.attachment_count += 1
-                binaries.append(attachment.data)
+                binaries.append((attachment.data, elem.node))
             return binaries
                 
         mesh_binaries = add_attachments("Mesh",   4, mesh_list)
