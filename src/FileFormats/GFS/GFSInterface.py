@@ -10,10 +10,13 @@ from .GFSBinary.ModelBinary import ModelBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary import SceneNodeBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary.MeshBinary import MeshBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary.NodeAttachmentBinary import NodeAttachmentBinary
+from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix
 
 
 class GFSInterface:
     def __init__(self):
+        self.keep_bounding_box = False
+        self.keep_bounding_sphere = False
         self.meshes = []
         self.cameras = []
         self.lights = []
@@ -23,7 +26,6 @@ class GFSInterface:
         self.animations = []
         
         # Things that need to be removed eventually
-        self.model = None
         self.animation_data = None
         self.data_0x000100F8 = None
         self.data_0x000100F9 = None
@@ -46,11 +48,13 @@ class GFSInterface:
                 instance.materials = [MaterialInterface.from_binary(mb) for mb in ctr.data]
             elif ctr.type == 0x00010003:
                 # Wrong but it will do as an approximation for now
-                instance.bones,   \
-                instance.meshes,  \
-                instance.cameras, \
-                instance.lights,  \
-                instance.model = ModelInterface.from_binary(ctr.data, duplicate_data)
+                # Need to include other data types in export
+                instance.bones,             \
+                instance.meshes,            \
+                instance.cameras,           \
+                instance.lights,            \
+                instance.keep_bounding_box, \
+                instance.keep_bounding_sphere = ModelInterface.from_binary(ctr.data, duplicate_data)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
             elif ctr.type == 0x000100F8:
@@ -110,7 +114,7 @@ class GFSInterface:
             mdl_ctr.version = 0x01105100
             mdl_ctr.type = 0x00010003
             
-            model_binary = self.model.to_binary(self.bones, self.meshes, self.cameras, self.lights, copy_verts=duplicate_data)
+            model_binary = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.keep_bounding_box, self.keep_bounding_sphere, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
@@ -607,7 +611,6 @@ class MeshInterface:
         
     def to_binary(self):
         binary = MeshBinary()
-        binary.flags = 0
         binary.vertex_format = 0
         
         if len(self.vertices):
@@ -859,51 +862,36 @@ class PropertyInterface:
             raise NotImplementedError(f"Unknown property type '{self.type}'")
             
 class ModelInterface:
-    def __init__(self):
-        self.skinning_data = None
-        self.bounding_box_max_dims = None
-        self.bounding_box_min_dims = None
-        self.bounding_sphere_centre = None
-        self.bounding_sphere_radius = None
-        
-        self.keep_bounding_box = False
-        self.keep_bounding_sphere = False
-        
     @classmethod
     def from_binary(cls, binary, copy_verts=True):
-        instance = cls()
-        
-        instance.skinning_data = binary.skinning_data
-        instance.keep_bounding_box = binary.flags & 0x00000001 != 0
-        instance.keep_bounding_sphere = binary.flags & 0x00000002 != 0
+        #instance.skinning_data = binary.skinning_data
+        keep_bounding_box = binary.flags & 0x00000001 != 0
+        keep_bounding_sphere = binary.flags & 0x00000002 != 0
         
         bones,   \
         meshes,  \
         cameras, \
         lights = NodeInterface.binary_node_tree_to_list(binary.root_node)
         
-        if instance.skinning_data.matrix_palette is not None:
+        if binary.skinning_data.matrix_palette is not None:
             for mesh in meshes:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
                     for v in mesh.vertices:
-                        v.indices = v.indices[::-1]
-                        #v.indices = [instance.skinning_data.matrix_palette[idx] for idx in v.indices[::-1]]
-        return bones, meshes, cameras, lights, instance
+                        #v.indices = v.indices[::-1]
+                        v.indices = [binary.skinning_data.matrix_palette[idx] for idx in v.indices[::-1]]
+        return bones, meshes, cameras, lights, keep_bounding_box, keep_bounding_sphere
         
-    def to_binary(self, bones, meshes, cameras, lights, copy_verts=True):
+    @staticmethod
+    def to_binary(bones, meshes, cameras, lights, keep_bounding_box, keep_bounding_sphere, copy_verts=True):
         binary = ModelBinary()
 
         binary.flags = 0
-        if self.skinning_data.bone_count is not None:
-            binary.flags |= 0x00000004
-        if self.keep_bounding_box:
+        if keep_bounding_box:
             binary.flags |= 0x00000001
-        if self.keep_bounding_sphere:
+        if keep_bounding_sphere:
             binary.flags |= 0x00000002
-        
-        binary.skinning_data = self.skinning_data
         
         # Need to return mesh binary list here too!
         binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights)
@@ -911,7 +899,7 @@ class ModelInterface:
         ####################
         # BOUNDING VOLUMES #
         ####################
-        if self.keep_bounding_box or self.keep_bounding_sphere:
+        if keep_bounding_box or keep_bounding_sphere:
             verts = []
             for mesh_binary, mesh_node_id in mesh_binaries:
                 if mesh_binary.flags & 0x00000008 != 0:  # Check if you need to do the others here too
@@ -929,9 +917,9 @@ class ModelInterface:
                     ])
                 
             if not len(verts):
-                if self.keep_bounding_box:
+                if keep_bounding_box:
                     raise ValueError("Model is marked for bounding box export, but has no meshes with vertex position data")
-                elif self.keep_bounding_sphere:
+                elif keep_bounding_sphere:
                     raise ValueError("Model is marked for bounding sphere export, but has no meshes with vertex position data")
             
             
@@ -944,13 +932,13 @@ class ModelInterface:
                     min_dims[i] = min(min_dims[i], pos[i])
             
             # Do box
-            if self.keep_bounding_box:
+            if keep_bounding_box:
                 binary.bounding_box_max_dims = max_dims
                 binary.bounding_box_min_dims = min_dims
                 
             # Do sphere
             # This is WRONG but I can't get an iterative Welzl algorithm working
-            if self.keep_bounding_sphere:
+            if keep_bounding_sphere:
                 centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
                 radius = 0.
                 for mesh_binary, mesh_node_id in mesh_binaries:
@@ -963,25 +951,76 @@ class ModelInterface:
                 binary.bounding_sphere_centre = centre
                 binary.bounding_sphere_radius = radius
             
-
-        # matrix_palette = []
-        # for mesh_binary, mesh_node_id in mesh_binaries:
-        #     pass
-    
-        if binary.skinning_data.matrix_palette is not None:
-            # This loses duplicates...
-            #idx_lookup = {global_idx: palette_idx for palette_idx, global_idx in enumerate(binary.skinning_data.matrix_palette)}
+        #########################
+        # CREATE MATRIX PALETTE #
+        #########################
+        found_indices = False
+        for mesh_binary, mesh_node_id in mesh_binaries:
+            if mesh_binary.flags & 0x00000001:
+                found_indices = True
+                break
+            
+        if found_indices:
+            binary.flags |= 0x00000004
+            
+            # GENERATE SKINNING DATA STRUCTURE
+            world_matrices = [None]*len(bones)
+            for i, bone in enumerate(bones):
+                local_matrix = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+                if bone.parent > -1:
+                    world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent], local_matrix)
+                else:
+                    world_matrices[i] = local_matrix
+            
+            ibpms = []
+            matrix_palette = []
+            matrix_cache = {}
+            index_lookup = {}
+            for mesh_binary, mesh_node_id in mesh_binaries:
+                node_matrix = world_matrices[mesh_node_id]
+                if mesh_binary.flags & 0x00000001:
+                    indices = set()
+                    for vertex in mesh_binary.vertices:
+                        for idx, wgt in zip(vertex.indices[::-1], vertex.weights):
+                            if wgt > 0:
+                                indices.add(idx)
+                                
+                    for idx in sorted(indices):
+                        inv_index_matrix = invert_transform_matrix(world_matrices[idx])
+                        ibpm = multiply_transform_matrices(inv_index_matrix, node_matrix)
+                        if idx not in matrix_cache:
+                            matrix_cache[idx] = {}
+                            
+                        matching_matrix_found = False
+                        for palette_idx, palette_ibpm in matrix_cache[idx].items():
+                            if are_matrices_close(ibpm, palette_ibpm, atol=0.01, rtol=0.05):
+                                index_lookup[(mesh_node_id, idx)] = palette_idx
+                                matching_matrix_found = True
+                                break
+                            
+                        if not matching_matrix_found:
+                            palette_idx = len(matrix_palette)
+                            matrix_cache[idx][palette_idx] = ibpm
+                            matrix_palette.append(idx)
+                            ibpms.append(ibpm)
+                            index_lookup[(mesh_node_id, idx)] = palette_idx
+            
+            binary.skinning_data.matrix_palette = matrix_palette
+            binary.skinning_data.ibpms = ibpms
+            binary.skinning_data.bone_count = len(matrix_palette)
+            
+            # REMAP VERTEX INDICES
             for mesh, mesh_node_id in mesh_binaries:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
                     for v in mesh.vertices:
-                        #v.indices = [idx_lookup[idx] for idx in v.indices]
-                        # for i, (idx, wgt) in enumerate(zip(v.indices, v.weights)):
-                        #     if wgt == 0:
-                        #         v.indices[i] = 0
-                        # Need to apply node ID map in here too, but can't
-                        # because the skinning matrix affects it
-                        v.indices = [idx for idx in v.indices[::-1]]
+                        # Need to factor in remapped nodes
+                        #v.indices = [idx for idx in v.indices[::-1]]
+                        indices = [index_lookup.get((mesh_node_id, idx), 0) for idx in v.indices]
+                        for wgt_idx, wgt in enumerate(v.weights):
+                            if wgt == 0:
+                                indices[wgt_idx] = 0
+                        v.indices = indices[::-1]
         return binary
         
