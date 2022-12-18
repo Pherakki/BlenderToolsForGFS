@@ -17,7 +17,7 @@ class ModelBinary(Serializable):
         self.root_node = SceneNodeBinary()
         
     def __repr__(self):
-        return f"[GFD::SceneContainer] {self.unknown_0x00} {safe_format(self.flags, hex32_format)}"
+        return f"[GFD::SceneContainer] {safe_format(self.flags, hex32_format)}"
 
     def read_write(self, rw):
         self.flags = rw.rw_uint32(self.flags)
