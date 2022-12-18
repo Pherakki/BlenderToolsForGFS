@@ -9,6 +9,7 @@ from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion, Vector
 
 from ..FileFormats.GFS.GFSInterface import GFSInterface
+from .Utils.ErrorPopup import handle_errors
 
 
 class TemporaryFile:
@@ -89,7 +90,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
             
         return {'FINISHED'}
     
-    #@handle_errors
+    @handle_errors
     def execute(self, context):
         self.import_file(context, self.filepath)
 

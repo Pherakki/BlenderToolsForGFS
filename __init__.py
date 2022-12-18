@@ -22,6 +22,7 @@ bl_info = {
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
+    from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
 
     
     
@@ -62,7 +63,7 @@ if "bpy" in locals():
         # bpy.utils.register_class(GFSExportSubmenu)
         # bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
         
-        # bpy.utils.register_class(MessagePopup)
+        bpy.utils.register_class(MessagePopup)
     
     
     def unregister():
@@ -74,4 +75,4 @@ if "bpy" in locals():
         # bpy.utils.unregister_class(GFSExportSubmenu)
         # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
         
-        # bpy.utils.unregister_class(MessagePopup)
+        bpy.utils.unregister_class(MessagePopup)
