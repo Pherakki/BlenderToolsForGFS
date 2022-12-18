@@ -8,8 +8,8 @@ class MeshBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = None
-        self.vertex_format = None
+        self.flags = 0
+        self.vertex_format = 0
         self.tri_count = 0
         self.index_type  = None
         self.vertex_count = None
