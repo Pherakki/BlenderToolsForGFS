@@ -168,6 +168,17 @@ class GFSInterface:
             binary.containers.append(end_ctr)
             
         return binary
+    
+    def add_node(self, parent_idx, name, position, rotation, scale, unknown_float, properties):
+        node = NodeInterface()
+        node.parent_idx = parent_idx
+        node.name = name
+        node.position = position
+        node.rotation = rotation
+        node.scale = scale
+        node.unknown_float = unknown_float
+        node.properties = properties
+        self.bones.append(node)
 
 class TextureInterface:
     def __init__(self):
