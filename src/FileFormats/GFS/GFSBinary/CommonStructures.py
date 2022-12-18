@@ -132,3 +132,34 @@ class PropertyBinary(Serializable):
             self.data = rw.rw_bytestring(self.data, self.size)
         else:
             raise NotImplementedError(f"Unknown Property Type '{self.type}'")
+
+class BitVector(Serializable):
+    __slots__ = ("_value")
+    
+    def __init__(self, endianness=">"):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self._value = 0
+        
+    def read_write(self, rw):
+        self._value = rw.rw_uint32(self._value)
+        
+    def set_bit(self, bit, value):
+        self._value &= ~(1 << bit)
+        self._value |= (1 << bit)
+    
+    def get_bit(self, bit):
+        return self._value & (1 << bit)
+    
+    def __and__(self, value):
+        return self._value & value
+    
+    def __iand(self, value):
+        self._value &= value
+        
+    def __or__(self, value):
+        return self._value | value
+    
+    def __ior(self, value):
+        self._value |= value
