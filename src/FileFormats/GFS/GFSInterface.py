@@ -702,13 +702,36 @@ class MeshInterface:
         binary.indices       = self.indices
         binary.material_name = ObjectName.from_name(self.material_name)
         
-        make_bounding_volumes(binary, 
-                              self.keep_bounding_box, 
-                              self.keep_bounding_sphere, 
-                              iter(binary.vertices), 
-                              binary.vertex_format & 0x00000002, 
-                              "Mesh is marked for bounding box export, but has no vertex position data", 
-                              "Mesh is marked for bounding sphere export, but has no vertex position data")
+        ####################
+        # BOUNDING VOLUMES #
+        ####################
+        if self.keep_bounding_sphere:
+            if binary.vertex_format & 0x00000002:
+                # This is WRONG but I can't get an iterative Welzl algorithm
+                # working
+                max_dims = [*self.vertices[0].position]
+                min_dims = [*self.vertices[0].position]
+                        
+                for v in self.vertices:
+                    pos = v.position
+                    for i in range(3):
+                        max_dims[i] = max(max_dims[i], pos[i])
+                        min_dims[i] = min(min_dims[i], pos[i])
+                
+                if self.keep_bounding_box:
+                    binary.bounding_box_max_dims = max_dims
+                    binary.bounding_box_min_dims = min_dims
+                centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
+                radius = 0.
+                for v in self.vertices:
+                    pos = v.position
+                    dist = (p-c for p, c in zip(pos, centre))
+                    radius = max(sum(d*d for d in dist), radius)
+                binary.bounding_sphere_centre = centre
+                binary.bounding_sphere_radius = radius
+            else:
+                raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
+                
         return binary
     
 class CameraInterface:
