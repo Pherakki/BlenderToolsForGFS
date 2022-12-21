@@ -26,9 +26,9 @@ class GFSInterface:
         self.animations = []
         
         # Things that need to be removed eventually
-        self.animation_data = None
+        self.animation_data  = None
         self.data_0x000100F8 = None
-        self.data_0x000100F9 = None
+        self.physics_data    = None
 
 
     @classmethod
@@ -60,7 +60,7 @@ class GFSInterface:
             elif ctr.type == 0x000100F8:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:
-                instance.data_0x000100F9 = ctr.data
+                instance.physics_data = ctr.data
         
         return instance
     
@@ -135,15 +135,14 @@ class GFSInterface:
         # Physics container
         if self.data_0x000100F9 is not None:
             offset = ot.tell()
-            unk_ctr = GFS0ContainerBinary()
-            unk_ctr.version = 0x01105100
-            unk_ctr.type = 0x000100F9
+            physics_ctr = GFS0ContainerBinary()
+            physics_ctr.version = 0x01105100
+            physics_ctr.type = 0x000100F9
             
-            unk_ctr.data = self.data_0x000100F9
-            unk_ctr.size = len(self.data_0x000100F9.data) + 0x10
-            # ot.rw_obj(unk_ctr)
-            # unk_ctr.size = ot.tell() - offset
-            binary.containers.append(unk_ctr)
+            physics_ctr.data = self.physics_data
+            ot.rw_obj(physics_ctr)
+            physics_ctr.size = ot.tell() - offset
+            binary.containers.append(physics_ctr)
             
         # Unknown container
         if self.data_0x000100F8 is not None:
@@ -179,6 +178,23 @@ class GFSInterface:
         node.unknown_float = unknown_float
         node.properties = properties
         self.bones.append(node)
+        
+    def add_mesh(self, node_id, vertices, material_name, indices, morphs, unknown_0x12, unknown_float_1, unknown_float_2, keep_bounding_box, keep_bounding_sphere):
+        mesh = MeshInterface()
+        mesh.node            = node_id
+        mesh.vertices        = vertices
+        mesh.material_name   = material_name
+        mesh.indices         = indices
+        #mesh.morphs = morphs
+        mesh.unknown_0x12    = unknown_0x12
+        mesh.unknown_float_1 = unknown_float_1
+        mesh.unknown_float_2 = unknown_float_2
+        
+        mesh.index_type = 2 if max(indices) >= 2**16 else 1
+        mesh.keep_bounding_box    = keep_bounding_box
+        mesh.keep_bounding_sphere = keep_bounding_sphere
+        
+        self.meshes.append(mesh)
 
 class TextureInterface:
     def __init__(self):
