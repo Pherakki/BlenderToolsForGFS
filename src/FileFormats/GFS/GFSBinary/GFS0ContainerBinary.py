@@ -1,6 +1,6 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
-from .MaterialBinary import MaterialBinary
+from .Materials.Binary import MaterialBinary
 from .ModelBinary import ModelBinary
 from .TextureBinary import TextureBinary
 from .AnimationBinary import AnimationDataBinary
