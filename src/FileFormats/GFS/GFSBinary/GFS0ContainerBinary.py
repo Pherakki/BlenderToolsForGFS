@@ -4,6 +4,7 @@ from .Materials.Binary import MaterialBinary
 from .ModelBinary import ModelBinary
 from .TextureBinary import TextureBinary
 from .AnimationBinary import AnimationDataBinary
+from .Physics import get_physics_container
 from .CommonStructures import SizedObjArray, Blob
 
 class HasAnimationsError(Exception):
@@ -48,8 +49,8 @@ class GFS0ContainerBinary(Serializable):
             dtype = ModelBinary
         elif self.type == 0x000100F8: # Unknown
             dtype = Blob
-        elif self.type == 0x000100F9: # Unknown
-            dtype = Blob
+        elif self.type == 0x000100F9: # Physics
+            dtype = get_physics_container(self.version)
         elif self.type == 0x000100FB: # Materials
             dtype = lambda : SizedObjArray(MaterialBinary)
         elif self.type == 0x000100FC: # Textures
@@ -62,7 +63,7 @@ class GFS0ContainerBinary(Serializable):
 
         if self.type == 0x00000001:
             return
-        elif self.type in [0x000100F8, 0x000100F9]: # Can be removed later
+        elif self.type in [0x000100F8]: # Can be removed later
             args = [self.size - 0x10]
         
         self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)

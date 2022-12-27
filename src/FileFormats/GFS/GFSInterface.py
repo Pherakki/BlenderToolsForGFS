@@ -121,7 +121,7 @@ class GFSInterface:
             mdl_ctr.size = ot.tell() - offset
             binary.containers.append(mdl_ctr)
                     
-        # Model container
+        # Animation container
         if self.animation_data is not None:
             offset = ot.tell()
             anm_ctr = GFS0ContainerBinary()
@@ -134,7 +134,7 @@ class GFSInterface:
             binary.containers.append(anm_ctr)
             
         # Physics container
-        if self.data_0x000100F9 is not None:
+        if self.physics_data is not None:
             offset = ot.tell()
             physics_ctr = GFS0ContainerBinary()
             physics_ctr.version = 0x01105100
