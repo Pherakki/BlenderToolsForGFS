@@ -3,7 +3,7 @@ from ....serialization.utils import safe_format, hex32_format
 from .Materials.Binary import MaterialBinary
 from .ModelBinary import ModelBinary
 from .TextureBinary import TextureBinary
-from .AnimationBinary import AnimationDataBinary
+from .Animations.Binary import AnimationDataBinary
 from .Physics import get_physics_container
 from .CommonStructures import SizedObjArray, Blob
 
