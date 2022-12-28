@@ -4,7 +4,7 @@ from .Materials.Binary import MaterialBinary
 from .ModelBinary import ModelBinary
 from .TextureBinary import TextureBinary
 from .Animations.Binary import AnimationDataBinary
-from .Physics import get_physics_container
+from .Physics.Binary import PhysicsBinary
 from .CommonStructures import SizedObjArray, Blob
 
 class HasAnimationsError(Exception):
@@ -50,7 +50,7 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100F8: # Unknown
             dtype = Blob
         elif self.type == 0x000100F9: # Physics
-            dtype = get_physics_container(self.version)
+            dtype = PhysicsBinary
         elif self.type == 0x000100FB: # Materials
             dtype = lambda : SizedObjArray(MaterialBinary)
         elif self.type == 0x000100FC: # Textures
@@ -75,4 +75,4 @@ class GFS0ContainerBinary(Serializable):
         if rw.mode() == "read":
             self.data = dtype()
         assert type(self.data) == type(dtype()), f"{type(self.data)}, {type(dtype())}"
-        rw.rw_obj(self.data, *args) # Can remove *args when Blob can be removed
+        rw.rw_obj(self.data, self.version, *args) # Can remove *args when Blob can be removed

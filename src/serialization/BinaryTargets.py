@@ -240,7 +240,7 @@ class BinaryTargetBase:
     def rw_obj_array(self, value, obj_constructor, shape, *args, validator=None, **kwargs):
         raise NotImplementedError
         
-    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
+    def rw_new_obj(self, value, obj_constructor, *args, **kwargs):
         raise NotImplementedError
         
     def rw_obj_variant(self, value, variants, error_message):
@@ -395,9 +395,7 @@ class Reader(BinaryTargetBase):
             data = chunk_list(data, subshape)
         return data
     
-    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
-        if args is None: args = []
-        if kwargs is None: kwargs = {}
+    def rw_new_obj(self, value, obj_constructor, *args, **kwargs):
         obj = obj_constructor()
         return self.rw_obj(obj, *args, **kwargs)
     
@@ -557,9 +555,7 @@ class Writer(BinaryTargetBase):
 
         return value
     
-    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
-        if args is None: args = []
-        if kwargs is None: kwargs = {}
+    def rw_new_obj(self, value, obj_constructor, *args, **kwargs):
         return self.rw_obj(value, *args, **kwargs)
         
     def rw_obj_variant(self, value, variants, error_message):
@@ -720,9 +716,7 @@ class OffsetTracker(BinaryTargetBase):
 
         return value
     
-    def rw_new_obj(self, value, obj_constructor, args=None, kwargs=None):
-        if args is None: args = []
-        if kwargs is None: kwargs = {}
+    def rw_new_obj(self, value, obj_constructor, *args, **kwargs):
         return self.rw_obj(value, *args, **kwargs)
         
     def rw_obj_variant(self, value, variants, error_message):

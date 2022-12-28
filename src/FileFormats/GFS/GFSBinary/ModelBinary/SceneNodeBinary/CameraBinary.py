@@ -18,7 +18,7 @@ class CameraBinary(Serializable):
         return f"[GFD::SceneContainer::SceneNode::Attachment::Camera] {safe_format(self.transform, list)}" \
             f"{self.zNear} {self.zFar} {self.fov} {self.aspect_ratio} {self.unknown_0x50}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.view_matrix  = rw.rw_float32s(self.view_matrix, 16)
         self.zNear        = rw.rw_float32(self.zNear)
         self.zFar         = rw.rw_float32(self.zFar)

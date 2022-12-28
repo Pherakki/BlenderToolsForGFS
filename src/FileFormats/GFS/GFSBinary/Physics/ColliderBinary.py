@@ -2,7 +2,7 @@ from .....serialization.Serializable import Serializable
 from ..CommonStructures import ObjectName
 
 
-class ColliderBinaryBase(Serializable):
+class ColliderBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
@@ -20,7 +20,7 @@ class ColliderBinaryBase(Serializable):
         else:
             return f"[GFS::Physics::Collider] <Nameless> {self.capsule_radius} {self.capsule_height} {self.unknown_0x0A}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.collider_type = rw.rw_uint16(self.collider_type)
         if self.collider_type == 0:
             self.capsule_radius = rw.rw_float32(self.capsule_radius)
@@ -33,4 +33,4 @@ class ColliderBinaryBase(Serializable):
         self.unknown_0x0A = rw.rw_float32s(self.unknown_0x0A, 16)
         self.has_name = rw.rw_uint8(self.has_name)
         if self.has_name:
-            rw.rw_obj(self.name)
+            rw.rw_obj(self.name, version)

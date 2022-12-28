@@ -1,17 +1,11 @@
 from .....serialization.Serializable import Serializable
 
-from .PhysicsBoneBinary import PhysicsBoneBase,      \
-                               PhysicsBone_0x1104130
-from .ColliderBinary import ColliderBinaryBase
-from .BoneLinkBinary import PhysicsBoneLinkBinaryBase,      \
-                            PhysicsBoneLinkBinary_0x1104130
+from .PhysicsBoneBinary import PhysicsBoneBinary
+from .ColliderBinary import ColliderBinary
+from .BoneLinkBinary import PhysicsBoneLinkBinary
 
 
-class PhysicsBinaryBase(Serializable):
-    PHYSICS_BONE_TYPE      = PhysicsBoneBase
-    COLLIDER_TYPE          = ColliderBinaryBase
-    PHYSICS_BONE_LINK_TYPE = PhysicsBoneLinkBinaryBase
-    
+class PhysicsBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
@@ -32,7 +26,7 @@ class PhysicsBinaryBase(Serializable):
     def __repr__(self):
         return f"[GFS::Physics] {self.physics_bone_count} Bones, {self.collider_count} Colliders, {self.physics_bone_link_count} Bone Links, {self.unknown_0x00} {self.unknown_0x04} {self.unknown_0x08} {self.unknown_0x0C} {self.unknown_0x10}"
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00            = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04            = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08            = rw.rw_float32(self.unknown_0x08)
@@ -42,11 +36,8 @@ class PhysicsBinaryBase(Serializable):
         self.collider_count          = rw.rw_uint32(self.collider_count)
         self.physics_bone_link_count = rw.rw_uint32(self.physics_bone_link_count)
         
-        self.physics_bones      = rw.rw_obj_array(self.physics_bones,      self.PHYSICS_BONE_TYPE,      self.physics_bone_count)
-        self.colliders          = rw.rw_obj_array(self.colliders,          self.COLLIDER_TYPE,          self.collider_count)
-        self.physics_bone_links = rw.rw_obj_array(self.physics_bone_links, self.PHYSICS_BONE_LINK_TYPE, self.physics_bone_link_count)
+        self.physics_bones      = rw.rw_obj_array(self.physics_bones,      PhysicsBoneBinary,     self.physics_bone_count,      version)
+        self.colliders          = rw.rw_obj_array(self.colliders,          ColliderBinary,        self.collider_count,          version)
+        self.physics_bone_links = rw.rw_obj_array(self.physics_bone_links, PhysicsBoneLinkBinary, self.physics_bone_link_count, version)
         
 
-class PhysicsBinary_0x1104130(PhysicsBinaryBase):
-    PHYSICS_BONE_TYPE      = PhysicsBone_0x1104130
-    PHYSICS_BONE_LINK_TYPE = PhysicsBoneLinkBinary_0x1104130

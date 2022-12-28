@@ -20,7 +20,7 @@ class AnimationTrackBinary(Serializable):
     def __repr__(self):
         return f"[GFDBinary::Animation::Controller::Track {safe_format(self.keyframe_type, hex32_format)}] Keyframes: {self.keyframe_count}"
 
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.keyframe_type  = rw.rw_uint32(self.keyframe_type)
         self.keyframe_count = rw.rw_uint32(self.keyframe_count)
         

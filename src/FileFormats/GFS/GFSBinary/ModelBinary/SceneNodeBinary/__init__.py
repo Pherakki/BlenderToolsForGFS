@@ -23,17 +23,17 @@ class SceneNodeBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode] {self.name}, {self.attachment_count} attachments, {self.properties.count} properties, {self.children.count} children"
         
-    def read_write(self, rw):
-        self.name        = rw.rw_obj(self.name)
+    def read_write(self, rw, version):
+        self.name        = rw.rw_obj(self.name, version)
         self.position    = rw.rw_float32s(self.position, 3)
         self.rotation    = rw.rw_float32s(self.rotation, 4)
         self.scale       = rw.rw_float32s(self.scale, 3)
         
         self.attachment_count = rw.rw_uint32(self.attachment_count)
-        self.attachments = rw.rw_obj_array(self.attachments, NodeAttachmentBinary, self.attachment_count, type(self))
+        self.attachments = rw.rw_obj_array(self.attachments, NodeAttachmentBinary, self.attachment_count, type(self), version)
         self.has_properties = rw.rw_uint8(self.has_properties)
         if self.has_properties:
-            rw.rw_obj(self.properties)
+            rw.rw_obj(self.properties, version)
         self.float = rw.rw_float32(self.float)
         
-        rw.rw_obj(self.children)
+        rw.rw_obj(self.children, version)

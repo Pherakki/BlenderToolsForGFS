@@ -1,7 +1,7 @@
 from .....serialization.Serializable import Serializable
 from .....serialization.utils import safe_format, hex32_format
 from ..CommonStructures import ObjectName, PropertyBinary, SizedObjArray, BitVector
-from .AnimController import AnimationControllerBinary_0x01080010 as AnimationControllerBinary
+from .AnimController import AnimationControllerBinary
 from .AnimTrack import AnimationTrackBinary
 
 
@@ -57,13 +57,13 @@ class AnimationDataBinary(Serializable):
     def __repr__(self):
         return f"[GFDBinary::AnimationData {safe_format(self.flags._value, hex32_format)}] Anims: {self.anim_count} Blend Anims: {self.blend_anim_count} Extra: {safe_format(self.flags, lambda x: bool(x.has_unknown_chunk))}"
 
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_obj(self.flags)
-        rw.rw_obj(self.animations)
-        rw.rw_obj(self.blend_animations)
+        rw.rw_obj(self.animations, version)
+        rw.rw_obj(self.blend_animations, version)
         
         if self.flags.has_unknown_chunk:
-            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk)
+            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk, version)
 
 
 class AnimationFlags(BitVector):
@@ -124,10 +124,10 @@ class AnimationBinary(Serializable):
     def __repr__(self):
         return f"[GFDBinary::Animation {safe_format(self.flags, hex32_format)}] {self.duration}"
 
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags       = rw.rw_obj(self.flags)
         self.duration    = rw.rw_float32(self.duration)
-        self.controllers = rw.rw_obj(self.controllers)
+        self.controllers = rw.rw_obj(self.controllers, version)
         
         # Only certain flags used for certain chunk versions..?
         if self.flags.has_particles:
@@ -136,16 +136,16 @@ class AnimationBinary(Serializable):
             # rw.rw_obj(self.particle_data)
             raise ParticlesError()
         if self.flags.has_unknown_chunk:
-            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk)
+            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk, version)
         if self.flags.has_extra_data:
-            rw.rw_obj(self.extra_track_data)
+            rw.rw_obj(self.extra_track_data, version)
         if self.flags.has_bounding_box:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
         if self.flags.has_speed:
             self.speed = rw.rw_float32(self.speed)
         if self.flags.has_properties:
-            rw.rw_obj(self.properties)
+            rw.rw_obj(self.properties, version)
 
 
 class UnknownAnimationChunk(Serializable):
@@ -165,14 +165,14 @@ class UnknownAnimationChunk(Serializable):
     def __repr__(self):
         return f"[GFDBinary::Animation::UnknownAnimationChunk] {self.unknown_1} {self.unknown_2} {self.unknown_3} {self.unknown_4}"
         
-    def read_write(self, rw):
-        rw.rw_obj(self.anim_1)
+    def read_write(self, rw, version):
+        rw.rw_obj(self.anim_1, version)
         self.unknown_1 = rw.rw_float32(self.unknown_1)
-        rw.rw_obj(self.anim_2)
+        rw.rw_obj(self.anim_2, version)
         self.unknown_2 = rw.rw_float32(self.unknown_2)
-        rw.rw_obj(self.anim_3)
+        rw.rw_obj(self.anim_3, version)
         self.unknown_3 = rw.rw_float32(self.unknown_3)
-        rw.rw_obj(self.anim_4)
+        rw.rw_obj(self.anim_4, version)
         self.unknown_4 = rw.rw_float32(self.unknown_4)
         
         
@@ -185,11 +185,11 @@ class ExtraTrackData(Serializable):
         self.name = ObjectName(endianness)
         self.track = AnimationTrackBinary()
         
-    def __repr__(self):
+    def __repr__(self, version):
         return f"[GFDBinary::Animation::ExtraTrackData {safe_format(self.flags, hex32_format)}] {self.name}"
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_uint32(self.flags)
-        rw.rw_obj(self.name)
-        rw.rw_obj(self.track)
+        rw.rw_obj(self.name, version)
+        rw.rw_obj(self.track, version)
 

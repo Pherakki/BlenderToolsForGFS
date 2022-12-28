@@ -64,7 +64,7 @@ class LightBinary(Serializable):
             
         return out
             
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_uint32(self.flags)
         self.type = rw.rw_uint32(self.type)
         self.color_1 = rw.rw_float32s(self.color_1, 4)

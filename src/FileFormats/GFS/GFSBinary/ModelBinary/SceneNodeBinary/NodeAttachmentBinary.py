@@ -2,6 +2,8 @@ from ......serialization.Serializable import Serializable
 from .MeshBinary import MeshBinary
 from .CameraBinary import CameraBinary
 from .LightBinary import LightBinary
+from .ParticleBinary import ParticleBinary
+from .ParticleLeafBinary import ParticleLeafBinary
 
 class HasParticleDataError(Exception):
     pass
@@ -20,7 +22,7 @@ class NodeAttachmentBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode::Attachment] {self.type}"
         
-    def read_write(self, rw, node_type):
+    def read_write(self, rw, node_type, version):
         self.type = rw.rw_uint32(self.type)
         
         if rw.mode() == "read":
@@ -32,12 +34,13 @@ class NodeAttachmentBinary(Serializable):
                 dtype = LightBinary
             elif self.type == 7:
                 raise HasParticleDataError
-            # elif self.type == 9:
-            #     assert 0
+                dtype = lambda : ParticleBinary(node_type)
+            elif self.type == 8:
+                dtype = ParticleLeafBinary
             elif self.type == 9:
                 raise HasType9Error
             else:
                 raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")
             self.data = dtype()
             
-        rw.rw_obj(self.data)
+        rw.rw_obj(self.data, version)

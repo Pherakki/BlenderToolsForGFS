@@ -13,7 +13,7 @@ class ObjectName(Serializable):
         self.string_size = None
         self.string      = None
         self.string_hash = None
-        
+    
     @classmethod
     def from_name(cls, name):
         instance = cls()
@@ -24,15 +24,21 @@ class ObjectName(Serializable):
         instance.string_hash = gfs_string_hash(name_bytestring)
         
         return instance
-        
+    
     def __repr__(self):
         return f"[GFS::ObjName] {safe_format(self.string_hash, hex32_format)} {self.string}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
+        # TODO: Replace if statement with something more self-documenting
         self.string_size = rw.rw_uint16(self.string_size)
         self.string      = rw.rw_str(self.string, self.string_size, encoding=self.ENCODING)
+        if version > 0x01080010:
+            self.rw_hash(rw)
+
+    def rw_hash(self, rw):
         if self.string_size > 0:
             self.string_hash = rw.rw_uint32(self.string_hash)
+            string_hash = gfs_string_hash(self.string.encode(self.ENCODING))
 
 class SizedObjArray(Serializable):
     def __init__(self, member_type, endianness='>'):
@@ -44,7 +50,7 @@ class SizedObjArray(Serializable):
         self.data = []
         
     def __repr__(self):
-        return f"[GFS::Array] {self.count}"
+        return f"[GFS::Array] {self.count} {self.__member_type}"
     
     def __len__(self):
         return len(self.data)
@@ -74,11 +80,11 @@ class SizedObjArray(Serializable):
         self.data.insert(idx, item)
         self.count += 1
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.count = rw.rw_uint32(self.count)
         if rw.mode() != "read" and len(self.data):
             self.__member_type = type(self.data[0])
-        self.data = rw.rw_obj_array(self.data, self.__member_type, self.count)
+        self.data = rw.rw_obj_array(self.data, self.__member_type, self.count, version)
 
 class Blob(Serializable):
     def __init__(self, endianness='>'):
@@ -88,8 +94,9 @@ class Blob(Serializable):
     def __repr__(self):
         return f"[GFS::Blob] {len(self.data)}"
     
-    def read_write(self, rw, size):
+    def read_write(self, rw, version, size):
         self.data = rw.rw_bytestring(self.data, size)
+
 
 class PropertyBinary(Serializable):
     ENCODING = "utf8"
@@ -107,9 +114,9 @@ class PropertyBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode::Property] {self.name} {self.type} {self.size} {self.data}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.type = rw.rw_uint32(self.type)
-        self.name = rw.rw_obj(self.name)
+        self.name = rw.rw_obj(self.name, version)
         self.size = rw.rw_uint32(self.size)
         
         if self.type == 1:
@@ -132,6 +139,7 @@ class PropertyBinary(Serializable):
             self.data = rw.rw_bytestring(self.data, self.size)
         else:
             raise NotImplementedError(f"Unknown Property Type '{self.type}'")
+
 
 class BitVector(Serializable):
     __slots__ = ("_value")

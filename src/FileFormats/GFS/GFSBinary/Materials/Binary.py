@@ -1,7 +1,7 @@
 from .....serialization.Serializable import Serializable
 from .....serialization.utils import safe_format, hex32_format
 from ..CommonStructures import ObjectName, SizedObjArray, BitVector
-from .TextureReference import TextureRefBinaryBase, TextureRefBinary_0x01080010
+from .TextureReference import TextureRefBinary
 
 
 class MaterialFlags(BitVector):
@@ -39,9 +39,7 @@ class MaterialFlags(BitVector):
     flag_31                = BitVector.DEF_FLAG(0x1F)
 
 
-class MaterialBinaryBase(Serializable):
-    TEXTURE_REF_TYPE = TextureRefBinaryBase
-    
+class MaterialBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
@@ -93,8 +91,8 @@ class MaterialBinaryBase(Serializable):
                f"{safe_format(self.unknown_0x60, hex32_format)} {safe_format(self.unknown_0x64, hex32_format)} " \
                f"{self.disable_backface_culling} {self.unknown_0x6A} {self.attribute_count}"
 
-    def read_write(self, rw):
-        self.name         = rw.rw_obj(self.name)
+    def read_write(self, rw, version):
+        self.name         = rw.rw_obj(self.name, version)
         self.flags        = rw.rw_obj(self.flags)
         
         self.ambient      = rw.rw_float32s(self.ambient, 4)
@@ -120,25 +118,20 @@ class MaterialBinaryBase(Serializable):
         self.unknown_0x6A = rw.rw_uint32(self.unknown_0x6A) # NOT present for 0x01105080
         
         # Handle textures
-        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    self.TEXTURE_REF_TYPE)
-        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     self.TEXTURE_REF_TYPE)
-        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_new_obj(self.specular_texture,   self.TEXTURE_REF_TYPE)
-        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_new_obj(self.reflection_texture, self.TEXTURE_REF_TYPE)
-        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_new_obj(self.highlight_texture,  self.TEXTURE_REF_TYPE)
-        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_new_obj(self.glow_texture,       self.TEXTURE_REF_TYPE)
-        if self.flags.has_night_texture:      self.night_texture      = rw.rw_new_obj(self.night_texture,      self.TEXTURE_REF_TYPE)
-        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_new_obj(self.detail_texture,     self.TEXTURE_REF_TYPE)
-        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_new_obj(self.shadow_texture,     self.TEXTURE_REF_TYPE)
+        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureRefBinary, version)
+        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     TextureRefBinary, version)
+        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_new_obj(self.specular_texture,   TextureRefBinary, version)
+        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_new_obj(self.reflection_texture, TextureRefBinary, version)
+        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_new_obj(self.highlight_texture,  TextureRefBinary, version)
+        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_new_obj(self.glow_texture,       TextureRefBinary, version)
+        if self.flags.has_night_texture:      self.night_texture      = rw.rw_new_obj(self.night_texture,      TextureRefBinary, version)
+        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_new_obj(self.detail_texture,     TextureRefBinary, version)
+        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_new_obj(self.shadow_texture,     TextureRefBinary, version)
             
         # Attributes
         if self.flags.has_attributes:
-            rw.rw_obj(self.attributes)
+            rw.rw_obj(self.attributes, version)
 
-
-class MaterialBinary_0x01080010(MaterialBinaryBase):
-    TEXTURE_REF_TYPE = TextureRefBinary_0x01080010
-
-MaterialBinary = MaterialBinary_0x01080010
 
 class MaterialAttributeBinary(Serializable):
     def __init__(self, endianness=">"):
@@ -150,9 +143,9 @@ class MaterialAttributeBinary(Serializable):
         self.data  = []
         
     def __repr__(self):
-        return f"[GFD::Material::Attribute] {safe_format(self.flags, hex32_format)} {self.ID} {safe_format(self.data, list)}"
+        return f"[GFD::Material::AttributeBinary] {safe_format(self.flags, hex32_format)} {self.ID} {safe_format(self.data, list)}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_uint16(self.flags)
         self.ID = rw.rw_uint16(self.ID)
     

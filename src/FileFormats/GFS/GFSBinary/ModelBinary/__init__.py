@@ -19,7 +19,7 @@ class ModelBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer] {safe_format(self.flags, hex32_format)}"
 
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_uint32(self.flags)
         
         if self.flags & 0x00000004:
@@ -31,4 +31,4 @@ class ModelBinary(Serializable):
             self.bounding_sphere_centre = rw.rw_float32s(self.bounding_sphere_centre, 3)
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
-        rw.rw_obj(self.root_node)
+        rw.rw_obj(self.root_node, version)

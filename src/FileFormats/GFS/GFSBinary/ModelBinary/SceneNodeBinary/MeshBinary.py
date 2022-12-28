@@ -1,6 +1,6 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, SizedObjArray
+from ...CommonStructures import ObjectName, SizedObjArray, BitVector
 
 
 class MeshBinary(Serializable):
@@ -33,7 +33,7 @@ class MeshBinary(Serializable):
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {safe_format(self.flags, hex32_format)} {safe_format(self.vertex_format, hex32_format)}"
     
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.flags = rw.rw_uint32(self.flags)
         self.vertex_format = rw.rw_uint32(self.vertex_format)
         
@@ -79,7 +79,7 @@ class MeshBinary(Serializable):
                 
         # Do materials
         if self.flags & 0x00000002:
-            rw.rw_obj(self.material_name)
+            rw.rw_obj(self.material_name, version)
             
         # Bounding box / sphere
         if self.flags & 0x00000008:

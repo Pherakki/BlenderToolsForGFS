@@ -13,9 +13,9 @@ class TextureBinary(Serializable):
         self.footer = 0x1010000
         
     def __repr__(self):
-        return f"[GFD::Texture] {self.name} {self.filetype} {self.data_size}"
+        return f"[GFD::TextureBinary] {self.name} {self.filetype} {self.data_size}"
 
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.name      = rw.rw_uint16_sized_str(self.name)
         self.filetype  = rw.rw_uint16(self.filetype)
         self.data_size = rw.rw_uint32(self.data_size)
