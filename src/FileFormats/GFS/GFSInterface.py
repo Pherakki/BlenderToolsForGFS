@@ -11,7 +11,7 @@ from .GFSBinary.ModelBinary.SceneNodeBinary.NodeAttachmentBinary import NodeAtta
 from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix
 
 from .MaterialInterface import MaterialInterface, MaterialBinary
-from .TextureInterface import TextureInterface, TextureBinary
+from .GFSBinary.Textures import TextureInterface, TextureBinary
 
 
 class GFSInterface:

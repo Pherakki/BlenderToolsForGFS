@@ -1,4 +1,4 @@
-from .GFSBinary.TextureBinary import TextureBinary
+from .Binary import TextureBinary
 
 
 class TextureInterface:
