@@ -12,6 +12,7 @@ from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, a
 
 from .MaterialInterface import MaterialInterface, MaterialBinary
 from .GFSBinary.Textures import TextureInterface, TextureBinary
+from .AnimationInterface import AnimationInterface
 
 
 class GFSInterface:
@@ -58,6 +59,7 @@ class GFSInterface:
                 instance.keep_bounding_sphere = ModelInterface.from_binary(ctr.data, duplicate_data)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
+                instance.animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.animations]
             elif ctr.type == 0x000100F8:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:
