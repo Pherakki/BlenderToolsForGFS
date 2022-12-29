@@ -14,8 +14,8 @@ class AnimationTrackBinary(Serializable):
         self.frames = []
         self.values = []
         
-        self.base_position = None
-        self.base_scale    = None
+        self.base_position = [1., 1., 1.]
+        self.base_scale    = [1., 1., 1.]
         
     def __repr__(self):
         return f"[GFDBinary::Animation::Controller::Track {safe_format(self.keyframe_type, hex32_format)}] Keyframes: {self.keyframe_count}"
