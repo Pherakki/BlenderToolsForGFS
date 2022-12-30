@@ -68,14 +68,14 @@ class GFSInterface:
         
         return instance
     
-    def to_binary(self, duplicate_data=False):
+    def to_binary(self, version, duplicate_data=False):
         binary = GFS0Binary()
         
         ot = OffsetTracker()
         
         # Start container
         start_ctr = GFS0ContainerBinary()
-        start_ctr.version = 0x01105100
+        start_ctr.version = version
         start_ctr.type = 0x00000001
         ot.rw_obj(start_ctr)
         start_ctr.size = 0
@@ -85,7 +85,7 @@ class GFSInterface:
         if len(self.materials): # Unless textures are stored externally?
             offset = ot.tell()
             tex_ctr = GFS0ContainerBinary()
-            tex_ctr.version = 0x01105100
+            tex_ctr.version = version
             tex_ctr.type = 0x000100FC
             
             tex_array = SizedObjArray(TextureBinary)
@@ -100,7 +100,7 @@ class GFSInterface:
         if len(self.materials):
             offset = ot.tell()
             mat_ctr = GFS0ContainerBinary()
-            mat_ctr.version = 0x01105100
+            mat_ctr.version = version
             mat_ctr.type = 0x000100FB
             
             mat_array = MaterialPayload()
@@ -115,7 +115,7 @@ class GFSInterface:
         if len(self.bones):
             offset = ot.tell()
             mdl_ctr = GFS0ContainerBinary()
-            mdl_ctr.version = 0x01105100
+            mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
             model_binary = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.keep_bounding_box, self.keep_bounding_sphere, copy_verts=duplicate_data)
@@ -128,7 +128,7 @@ class GFSInterface:
         if self.animation_data is not None:
             offset = ot.tell()
             anm_ctr = GFS0ContainerBinary()
-            anm_ctr.version = 0x01105100
+            anm_ctr.version = version
             anm_ctr.type = 0x000100FD
             
             anm_ctr.data = self.animation_data
@@ -140,7 +140,7 @@ class GFSInterface:
         if self.physics_data is not None:
             offset = ot.tell()
             physics_ctr = GFS0ContainerBinary()
-            physics_ctr.version = 0x01105100
+            physics_ctr.version = version
             physics_ctr.type = 0x000100F9
             
             physics_ctr.data = self.physics_data
@@ -152,7 +152,7 @@ class GFSInterface:
         if self.data_0x000100F8 is not None:
             offset = ot.tell()
             unk_ctr = GFS0ContainerBinary()
-            unk_ctr.version = 0x01105100
+            unk_ctr.version = version
             unk_ctr.type = 0x000100F8
             
             unk_ctr.data = self.data_0x000100F8
@@ -164,7 +164,7 @@ class GFSInterface:
         # End container
         if not (len(binary.containers) == 2 and binary.containers[-1].type == 0x000100FD):
             end_ctr = GFS0ContainerBinary()
-            end_ctr.version = 0x01105100
+            end_ctr.version = version
             end_ctr.type = 0x00000000
             
             end_ctr.size = 0
