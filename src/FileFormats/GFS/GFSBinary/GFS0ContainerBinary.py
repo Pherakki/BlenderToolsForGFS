@@ -3,9 +3,10 @@ from ....serialization.utils import safe_format, hex32_format
 from .Materials.Binary import MaterialPayload
 from .ModelBinary import ModelBinary
 from .Textures.Binary import TexturePayload
-from .Animations.Binary import AnimationDataBinary
+from .Animations.Binary import AnimationPayload
 from .Physics.Binary import PhysicsPayload
-from .CommonStructures import SizedObjArray, Blob
+from .CommonStructures import Blob
+
 
 class HasAnimationsError(Exception):
     pass
@@ -56,7 +57,7 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100FC: # Textures
             dtype = TexturePayload
         elif self.type == 0x000100FD: # Animations
-            dtype = AnimationDataBinary
+            dtype = AnimationPayload
         else:
             raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
             

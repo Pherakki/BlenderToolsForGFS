@@ -1,5 +1,5 @@
-from .....serialization.Serializable import Serializable
-from ..CommonStructures import ObjectName, SizedObjArray
+from ......serialization.Serializable import Serializable
+from ...CommonStructures import ObjectName, SizedObjArray
 from .AnimTrack import AnimationTrackBinary
 
 

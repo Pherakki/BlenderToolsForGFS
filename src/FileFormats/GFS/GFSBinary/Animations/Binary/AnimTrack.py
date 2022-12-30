@@ -1,5 +1,5 @@
-from .....serialization.Serializable import Serializable
-from .....serialization.utils import safe_format, hex32_format
+from ......serialization.Serializable import Serializable
+from ......serialization.utils import safe_format, hex32_format
 
 
 class AnimationTrackBinary(Serializable):
@@ -106,9 +106,9 @@ class AnimationTrackBinary(Serializable):
         self.values = rw.rw_obj_array(self.values, kf_type, self.keyframe_count)
         
         # Flag instead?!
-        if self.keyframe_type in [26, 27, 28, 31, 32, 33, 34, 35]:
+        if self.keyframe_type in [26, 27, 28, 31, 32, 33, 34, 35]: # If has float16 pos...
             self.base_position = rw.rw_float32s(self.base_position, 3)
-            if self.keyframe_type != 31:
+            if self.keyframe_type != 31: # If has float16 scale...
                 self.base_scale = rw.rw_float32s(self.base_scale, 3)
 
 

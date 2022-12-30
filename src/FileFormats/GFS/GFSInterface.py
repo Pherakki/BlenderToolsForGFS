@@ -3,7 +3,7 @@ import copy
 from ...serialization.BinaryTargets import OffsetTracker
 from .GFSBinary import GFS0Binary
 from .GFSBinary.CommonStructures import ObjectName, PropertyBinary
-from .GFSBinary.GFS0ContainerBinary import GFS0ContainerBinary, SizedObjArray
+from .GFSBinary.GFS0ContainerBinary import GFS0ContainerBinary
 from .GFSBinary.ModelBinary import ModelBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary import SceneNodeBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary.MeshBinary import MeshBinary
@@ -14,7 +14,8 @@ from .GFSBinary.Materials.Interface import MaterialInterface
 from .GFSBinary.Materials.Binary import MaterialPayload
 from .GFSBinary.Textures.Interface import TextureInterface
 from .GFSBinary.Textures.Binary import TexturePayload
-from .AnimationInterface import AnimationInterface
+from .GFSBinary.Animations.Interface import AnimationInterface
+from .GFSBinary.Animations.Binary import AnimationPayload
 
 
 class GFSInterface:
