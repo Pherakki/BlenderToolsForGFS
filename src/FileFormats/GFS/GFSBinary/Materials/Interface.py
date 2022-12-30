@@ -1,4 +1,4 @@
-from .GFSBinary.Materials.Binary import MaterialBinary
+from .Binary import MaterialBinary
 
 
 class MaterialInterface:

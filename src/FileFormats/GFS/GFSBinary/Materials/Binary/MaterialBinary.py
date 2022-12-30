@@ -1,6 +1,6 @@
-from .....serialization.Serializable import Serializable
-from .....serialization.utils import safe_format, hex32_format
-from ..CommonStructures import ObjectName, SizedObjArray, BitVector
+from ......serialization.Serializable import Serializable
+from ......serialization.utils import safe_format, hex32_format
+from ...CommonStructures import ObjectName, SizedObjArray, BitVector
 from .TextureReference import TextureRefBinary
 
 

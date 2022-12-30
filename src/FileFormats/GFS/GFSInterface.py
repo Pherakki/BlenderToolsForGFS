@@ -10,7 +10,8 @@ from .GFSBinary.ModelBinary.SceneNodeBinary.MeshBinary import MeshBinary
 from .GFSBinary.ModelBinary.SceneNodeBinary.NodeAttachmentBinary import NodeAttachmentBinary
 from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix
 
-from .MaterialInterface import MaterialInterface, MaterialBinary
+from .GFSBinary.Materials.Interface import MaterialInterface
+from .GFSBinary.Materials.Binary import MaterialPayload
 from .GFSBinary.Textures import TextureInterface, TextureBinary
 from .AnimationInterface import AnimationInterface
 
@@ -102,7 +103,7 @@ class GFSInterface:
             mat_ctr.version = 0x01105100
             mat_ctr.type = 0x000100FB
             
-            mat_array = SizedObjArray(MaterialBinary)
+            mat_array = MaterialPayload()
             mat_array.data = [mi.to_binary() for mi in self.materials]
             mat_array.count = len(mat_array.data)
             mat_ctr.data = mat_array
