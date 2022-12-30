@@ -1,1 +1,1 @@
-from .Binary import PhysicsBinary
+from .Binary import PhysicsPayload

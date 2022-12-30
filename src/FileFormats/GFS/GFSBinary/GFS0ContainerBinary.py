@@ -4,7 +4,7 @@ from .Materials.Binary import MaterialPayload
 from .ModelBinary import ModelBinary
 from .Textures.Binary import TextureBinary
 from .Animations.Binary import AnimationDataBinary
-from .Physics.Binary import PhysicsBinary
+from .Physics.Binary import PhysicsPayload
 from .CommonStructures import SizedObjArray, Blob
 
 class HasAnimationsError(Exception):
@@ -50,7 +50,7 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100F8: # Unknown
             dtype = Blob
         elif self.type == 0x000100F9: # Physics
-            dtype = PhysicsBinary
+            dtype = PhysicsPayload
         elif self.type == 0x000100FB: # Materials
             dtype = MaterialPayload
         elif self.type == 0x000100FC: # Textures
