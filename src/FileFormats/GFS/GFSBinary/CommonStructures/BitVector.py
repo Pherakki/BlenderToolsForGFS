@@ -34,6 +34,12 @@ class BitVector(Serializable):
     def __ior__(self, value):
         self._value |= value
         return self
+    
+    def __getitem__(self, idx):
+        return self.get_bit(idx)
+    
+    def __setitem__(self, idx, value):
+        self.set_bit(idx, value)
 
     @staticmethod
     def DEF_FLAG(bit):
