@@ -12,7 +12,8 @@ from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, a
 
 from .GFSBinary.Materials.Interface import MaterialInterface
 from .GFSBinary.Materials.Binary import MaterialPayload
-from .GFSBinary.Textures import TextureInterface, TextureBinary
+from .GFSBinary.Textures.Interface import TextureInterface
+from .GFSBinary.Textures.Binary import TexturePayload
 from .AnimationInterface import AnimationInterface
 
 
@@ -88,7 +89,7 @@ class GFSInterface:
             tex_ctr.version = version
             tex_ctr.type = 0x000100FC
             
-            tex_array = SizedObjArray(TextureBinary)
+            tex_array = TexturePayload()
             tex_array.data = [ti.to_binary() for ti in self.textures]
             tex_array.count = len(tex_array.data)
             tex_ctr.data = tex_array

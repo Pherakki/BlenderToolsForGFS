@@ -2,7 +2,7 @@ from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
 from .Materials.Binary import MaterialPayload
 from .ModelBinary import ModelBinary
-from .Textures.Binary import TextureBinary
+from .Textures.Binary import TexturePayload
 from .Animations.Binary import AnimationDataBinary
 from .Physics.Binary import PhysicsPayload
 from .CommonStructures import SizedObjArray, Blob
@@ -54,7 +54,7 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100FB: # Materials
             dtype = MaterialPayload
         elif self.type == 0x000100FC: # Textures
-            dtype = lambda : SizedObjArray(TextureBinary)
+            dtype = TexturePayload
         elif self.type == 0x000100FD: # Animations
             dtype = AnimationDataBinary
         else:
