@@ -2,8 +2,6 @@ from ......serialization.Serializable import Serializable
 from .MeshBinary import MeshBinary
 from .CameraBinary import CameraBinary
 from .LightBinary import LightBinary
-from .ParticleBinary import ParticleBinary
-from .ParticleLeafBinary import ParticleLeafBinary
 
 class HasParticleDataError(Exception):
     pass
@@ -34,7 +32,7 @@ class NodeAttachmentBinary(Serializable):
                 dtype = LightBinary
             elif self.type == 7:
                 raise HasParticleDataError
-                dtype = lambda : ParticleBinary(node_type)
+                dtype = ParticleBinary
             elif self.type == 8:
                 dtype = ParticleLeafBinary
             elif self.type == 9:

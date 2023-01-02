@@ -1,4 +1,4 @@
-from .....serialization.Serializable import Serializable
+from ......serialization.Serializable import Serializable
 
 
 class SkinningDataBinary(Serializable):

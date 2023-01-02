@@ -1,7 +1,7 @@
 from ....serialization.Serializable import Serializable
 from ....serialization.utils import safe_format, hex32_format
 from .Materials.Binary import MaterialPayload
-from .ModelBinary import ModelBinary
+from .Model.Binary import ModelPayload
 from .Textures.Binary import TexturePayload
 from .Animations.Binary import AnimationPayload
 from .Physics.Binary import PhysicsPayload
@@ -47,7 +47,7 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x00000001:
             pass
         elif self.type == 0x00010003: # Model
-            dtype = ModelBinary
+            dtype = ModelPayload
         elif self.type == 0x000100F8: # Unknown
             dtype = Blob
         elif self.type == 0x000100F9: # Physics

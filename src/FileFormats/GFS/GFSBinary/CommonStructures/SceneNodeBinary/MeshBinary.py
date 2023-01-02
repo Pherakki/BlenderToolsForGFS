@@ -3,13 +3,83 @@ from ......serialization.utils import safe_format, hex32_format
 from ...CommonStructures import ObjectName, SizedObjArray, BitVector
 
 
+class MeshFlags(BitVector):
+    has_weights         = BitVector.DEF_FLAG(0x00)
+    has_material        = BitVector.DEF_FLAG(0x01)
+    has_indices         = BitVector.DEF_FLAG(0x02)
+    has_bounding_box    = BitVector.DEF_FLAG(0x03)
+    has_bounding_sphere = BitVector.DEF_FLAG(0x04)
+    flag_5              = BitVector.DEF_FLAG(0x05)
+    has_morphs          = BitVector.DEF_FLAG(0x06)
+    flag_7              = BitVector.DEF_FLAG(0x07)
+    flag_8              = BitVector.DEF_FLAG(0x08)
+    flag_9              = BitVector.DEF_FLAG(0x09)
+    flag_10             = BitVector.DEF_FLAG(0x0A)
+    flag_11             = BitVector.DEF_FLAG(0x0B)
+    has_unknown_floats  = BitVector.DEF_FLAG(0x0C)
+    flag_13           = BitVector.DEF_FLAG(0x0D)
+    flag_14           = BitVector.DEF_FLAG(0x0E)
+    flag_15           = BitVector.DEF_FLAG(0x0F)
+    flag_16           = BitVector.DEF_FLAG(0x10)
+    flag_17           = BitVector.DEF_FLAG(0x11)
+    flag_18           = BitVector.DEF_FLAG(0x12)
+    flag_19           = BitVector.DEF_FLAG(0x13)
+    flag_20           = BitVector.DEF_FLAG(0x14)
+    flag_21           = BitVector.DEF_FLAG(0x15)
+    flag_22           = BitVector.DEF_FLAG(0x16)
+    flag_23           = BitVector.DEF_FLAG(0x17)
+    flag_24           = BitVector.DEF_FLAG(0x18)
+    flag_25           = BitVector.DEF_FLAG(0x19)
+    flag_26           = BitVector.DEF_FLAG(0x1A)
+    flag_27           = BitVector.DEF_FLAG(0x1B)
+    flag_28           = BitVector.DEF_FLAG(0x1C)
+    flag_29           = BitVector.DEF_FLAG(0x1D)
+    flag_30           = BitVector.DEF_FLAG(0x1E)
+    flag_31           = BitVector.DEF_FLAG(0x1F)
+
+
+class VertexFormat(BitVector):
+    flag_0            = BitVector.DEF_FLAG(0x00)
+    has_positions     = BitVector.DEF_FLAG(0x01)
+    flag_2            = BitVector.DEF_FLAG(0x02)
+    flag_3            = BitVector.DEF_FLAG(0x03)
+    has_normals       = BitVector.DEF_FLAG(0x04)
+    flag_5            = BitVector.DEF_FLAG(0x05)
+    has_color1        = BitVector.DEF_FLAG(0x06)
+    flag_7            = BitVector.DEF_FLAG(0x07)
+    has_texcoord_0    = BitVector.DEF_FLAG(0x08)
+    has_texcoord_1    = BitVector.DEF_FLAG(0x09)
+    has_texcoord_2    = BitVector.DEF_FLAG(0x0A)
+    has_texcoord_3    = BitVector.DEF_FLAG(0x0B)
+    has_texcoord_4    = BitVector.DEF_FLAG(0x0C)
+    has_texcoord_5    = BitVector.DEF_FLAG(0x0D)
+    has_texcoord_6    = BitVector.DEF_FLAG(0x0E)
+    has_texcoord_7    = BitVector.DEF_FLAG(0x0F)
+    flag_16           = BitVector.DEF_FLAG(0x10)
+    flag_17           = BitVector.DEF_FLAG(0x11)
+    flag_18           = BitVector.DEF_FLAG(0x12)
+    flag_19           = BitVector.DEF_FLAG(0x13)
+    flag_20           = BitVector.DEF_FLAG(0x14)
+    flag_21           = BitVector.DEF_FLAG(0x15)
+    flag_22           = BitVector.DEF_FLAG(0x16)
+    flag_23           = BitVector.DEF_FLAG(0x17)
+    flag_24           = BitVector.DEF_FLAG(0x18)
+    flag_25           = BitVector.DEF_FLAG(0x19)
+    flag_26           = BitVector.DEF_FLAG(0x1A)
+    flag_27           = BitVector.DEF_FLAG(0x1B)
+    has_tangents      = BitVector.DEF_FLAG(0x1C)
+    has_binormals     = BitVector.DEF_FLAG(0x1D)
+    has_color2        = BitVector.DEF_FLAG(0x1E)
+    flag_31           = BitVector.DEF_FLAG(0x1F)
+    
+    
 class MeshBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = 0
-        self.vertex_format = 0
+        self.flags = MeshFlags(endianness)
+        self.vertex_format = VertexFormat(endianness)
         self.tri_count = 0
         self.index_type  = None
         self.vertex_count = None
@@ -34,10 +104,10 @@ class MeshBinary(Serializable):
         return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {safe_format(self.flags, hex32_format)} {safe_format(self.vertex_format, hex32_format)}"
     
     def read_write(self, rw, version):
-        self.flags = rw.rw_uint32(self.flags)
-        self.vertex_format = rw.rw_uint32(self.vertex_format)
+        self.flags         = rw.rw_obj(self.flags)
+        self.vertex_format = rw.rw_obj(self.vertex_format)
         
-        if self.flags & 0x00000004: # Triangles
+        if self.flags.has_indices: # Triangles
             self.tri_count  = rw.rw_uint32(self.tri_count)
             self.index_type = rw.rw_uint16(self.index_type)
             
@@ -45,31 +115,31 @@ class MeshBinary(Serializable):
         self.unknown_0x12 = rw.rw_uint32(self.unknown_0x12)
         
         rw_funcs = []
-        if self.vertex_format & 0x00000002: rw_funcs.append(VertexAttributes.rw_position)
-        if self.vertex_format & 0x00000010: rw_funcs.append(VertexAttributes.rw_normal)
-        if self.vertex_format & 0x10000000: rw_funcs.append(VertexAttributes.rw_tangent)
-        if self.vertex_format & 0x20000000: rw_funcs.append(VertexAttributes.rw_binormal)
-        if self.vertex_format & 0x00000040: rw_funcs.append(VertexAttributes.rw_color1)
-        if self.vertex_format & 0x00000100: rw_funcs.append(VertexAttributes.rw_texcoord0)
-        if self.vertex_format & 0x00000200: rw_funcs.append(VertexAttributes.rw_texcoord1)
-        if self.vertex_format & 0x00000400: rw_funcs.append(VertexAttributes.rw_texcoord2)
-        if self.vertex_format & 0x00000800: rw_funcs.append(VertexAttributes.rw_texcoord3)
-        if self.vertex_format & 0x00001000: rw_funcs.append(VertexAttributes.rw_texcoord4)
-        if self.vertex_format & 0x00002000: rw_funcs.append(VertexAttributes.rw_texcoord5)
-        if self.vertex_format & 0x00004000: rw_funcs.append(VertexAttributes.rw_texcoord6)
-        if self.vertex_format & 0x00008000: rw_funcs.append(VertexAttributes.rw_texcoord7)
-        if self.vertex_format & 0x40000000: rw_funcs.append(VertexAttributes.rw_color2)
-        if self.flags         & 0x00000001: rw_funcs.append(VertexAttributes.rw_weights)
+        if self.vertex_format.has_positions:  rw_funcs.append(VertexAttributes.rw_position)
+        if self.vertex_format.has_normals:    rw_funcs.append(VertexAttributes.rw_normal)
+        if self.vertex_format.has_tangents:   rw_funcs.append(VertexAttributes.rw_tangent)
+        if self.vertex_format.has_binormals:  rw_funcs.append(VertexAttributes.rw_binormal)
+        if self.vertex_format.has_color1:     rw_funcs.append(VertexAttributes.rw_color1)
+        if self.vertex_format.has_texcoord_0: rw_funcs.append(VertexAttributes.rw_texcoord0)
+        if self.vertex_format.has_texcoord_1: rw_funcs.append(VertexAttributes.rw_texcoord1)
+        if self.vertex_format.has_texcoord_2: rw_funcs.append(VertexAttributes.rw_texcoord2)
+        if self.vertex_format.has_texcoord_3: rw_funcs.append(VertexAttributes.rw_texcoord3)
+        if self.vertex_format.has_texcoord_4: rw_funcs.append(VertexAttributes.rw_texcoord4)
+        if self.vertex_format.has_texcoord_5: rw_funcs.append(VertexAttributes.rw_texcoord5)
+        if self.vertex_format.has_texcoord_6: rw_funcs.append(VertexAttributes.rw_texcoord6)
+        if self.vertex_format.has_texcoord_7: rw_funcs.append(VertexAttributes.rw_texcoord7)
+        if self.vertex_format.has_color2:     rw_funcs.append(VertexAttributes.rw_color2)
+        if self.flags.has_weights:            rw_funcs.append(VertexAttributes.rw_weights)
         
         self.vertices = rw.rw_obj_array(self.vertices, VertexBinary, self.vertex_count, rw_funcs)
         
         # Do morphs
-        if self.flags & 0x00000040:
+        if self.flags.has_morphs:
             raise NotImplementedError("Mesh morphs are not currently supported")
             rw.rw_obj(self.morph_data) # Can allow this line to be reached once some models with morphs are found
         
         # Do indices
-        if self.flags & 0x00000004:
+        if self.flags.has_indices:
             if self.index_type == 1:
                 self.indices = rw.rw_uint16s(self.indices, self.tri_count*3)
             elif self.index_type == 2:
@@ -78,20 +148,20 @@ class MeshBinary(Serializable):
                 raise NotImplementedError(f"Unknown Index Type '{self.index_type}'")
                 
         # Do materials
-        if self.flags & 0x00000002:
+        if self.flags.has_material:
             rw.rw_obj(self.material_name, version)
             
         # Bounding box / sphere
-        if self.flags & 0x00000008:
+        if self.flags.has_bounding_box:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
 
-        if self.flags & 0x00000010:
+        if self.flags.has_bounding_sphere:
             self.bounding_sphere_centre = rw.rw_float32s(self.bounding_sphere_centre, 3)
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
         # Unknown floats
-        if self.flags & 0x00001000:
+        if self.flags.has_unknown_floats:
             self.unknown_float_1 = rw.rw_float32(self.unknown_float_1)
             self.unknown_float_2 = rw.rw_float32(self.unknown_float_2)
 
