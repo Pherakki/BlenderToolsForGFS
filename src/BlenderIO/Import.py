@@ -4,7 +4,6 @@ import math
 import tempfile
 
 import bpy
-import bmesh
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion, Vector
 import numpy as np
@@ -233,36 +232,8 @@ def add_texture_to_material_node(bpy_material, name, texture):
 
 def import_pincushion_model(gfs, name):
     initial_obj = bpy.context.view_layer.objects.active
-    
-    # bpy_nodes       = [None]*len(gfs.bones)
-    # bone_transforms = [None]*len(gfs.bones)
-    # for i, node in enumerate(gfs.bones):
-    #     bpy_node = bpy.data.objects.new(node.name, None)
-    #     bpy.context.scene.collection.objects.link(bpy_node)
-    #     bpy_node.empty_display_size = 2
-    #     bpy_node.empty_display_type = 'ARROWS'  
-    #     if node.parent != -1:
-    #         bpy_node.parent = bpy_nodes[node.parent]
-        
-    #     bpy_node.scale = node.scale
-    #     bpy_node.rotation_mode = "QUATERNION"
-    #     bpy_node.rotation_quaternion = Quaternion([node.rotation[3], *node.rotation[0:3]])
-    #     bpy_node.location = node.position
-        
-    #     bpy_nodes[i] = bpy_node
-        
-    #     if node.parent != -1:
-    #         bpy_node.parent = bpy_nodes[node.parent]
-    #         parent_transform = bone_transforms[node.parent]
-    #     else:
-    #         parent_transform = Matrix([
-    #             [1., 0.,  0., 0.],
-    #             [0., 0., -1., 0.],
-    #             [0., 1.,  0., 0.],
-    #             [0., 0.,  0., 1.]
-    #         ])
-    
-    armature_name = "Armature"
+
+    armature_name = f"{name}_armature"
     main_armature = bpy.data.objects.new(armature_name, bpy.data.armatures.new(armature_name))
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
@@ -315,7 +286,7 @@ def import_pincushion_model(gfs, name):
     for node_idx, armature_index_set in armature_indices.items():
         armature_index_set = sorted(armature_index_set)
         
-        armature_name = f"{bpy_node_names[node_idx]}_armature"
+        armature_name = f"{name}_{bpy_node_names[node_idx]}_armature"
         armature = bpy.data.objects.new(armature_name, bpy.data.armatures.new(armature_name))
         bpy.context.collection.objects.link(armature)
         # armature.parent = bpy_nodes[node_idx]
