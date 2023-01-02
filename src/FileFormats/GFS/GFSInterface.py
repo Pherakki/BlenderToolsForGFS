@@ -1,5 +1,5 @@
 from ...serialization.BinaryTargets import OffsetTracker
-from .GFSBinary import GFS0Binary
+from .Binary import GFS0Binary
 from .GFSBinary.GFS0ContainerBinary import GFS0ContainerBinary
 
 from .GFSBinary.Materials.Interface import MaterialInterface
