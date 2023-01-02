@@ -25,6 +25,8 @@ This is a Blender importer for the GFS file format. The research for this format
 
 Please make the repository owner aware if additional contributors are missing from this list.
 
+Additionally, thanks to DniweTamp in the Persona Modding Community for helping me understand some aspects of the format.
+
 ## Supported Formats
 The status of the code is tabulated for the different filetypes and versions given in the sections below, with the following keys:
 
