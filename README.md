@@ -20,14 +20,9 @@ You can also access the documentation from within Blender by inspecting the drop
 | [Supported Formats](#supported-formats) | Formats supported by the plugin. |
 
 ## Acknowledgements
-This is a Blender importer for the GFS file format. The research for this format was carried out by the following people, which directly enabled this plugin to be written:
-- TGE
-- PolarSoda
-- mrdudesworkshop
+This is a Blender importer for the GFS file format. The GFS format code has been heavily derived from [GFD Studio](https://github.com/tge-was-taken/GFD-Studio), TGE's [3DS Max importer](https://github.com/tge-was-taken/GFD-Studio/tree/master/Resources/GfdImporter), and the [010 Editor templates](https://github.com/CherryCreamSoda/010-Editor-Templates/blob/master/templates/p5_gfd.bt). Deep thanks are given to all those who have contributed to the understanding of the format.
 
-Please make the repository owner aware if additional contributors are missing from this list.
-
-Additionally, thanks to DniweTamp in the Persona Modding Community for helping me understand some aspects of the format.
+Additionally, thanks to DniweTamp in the Persona Modding Community for assisting in the comprehension some aspects of the format.
 
 ## Supported Formats
 The status of the code is tabulated for the different filetypes and versions given in the sections below, with the following keys:
