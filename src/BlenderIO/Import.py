@@ -275,22 +275,10 @@ def import_pincushion_model(gfs, name):
         bpy_bone = main_armature.data.edit_bones.new(node.name)
         if node.parent != -1:
             bpy_bone.parent  = bpy_nodes[node.parent]
-            parent_transform = bone_transforms[node.parent]
-        else:
-            parent_transform = Matrix([
-                [1., 0.,  0., 0.],
-                [0., 0., -1., 0.],
-                [0., 1.,  0., 0.],
-                [0., 0.,  0., 1.]
-            ])
-            
-        position = Matrix.Translation(node.position)
-        rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
-        scale = Matrix.Diagonal([*node.scale, 1])
-        
-        matrix = parent_transform @ (position @ rotation @ scale)
 
-    
+        matrix = node.bind_pose_matrix
+        matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
+
         tail, roll = mat3_to_vec_roll(matrix.to_3x3())
         tail *= 10  # Make this scale with the model size in the future, for convenience
         
@@ -347,6 +335,11 @@ def import_pincushion_model(gfs, name):
             bpy_bone = armature.data.edit_bones.new(bpy_node_names[idx])
 
             matrix = bone_transforms[node_idx].inverted() @ bone_transforms[idx]
+            
+            pos, rot, scl = matrix.decompose()
+            pos = Matrix.Diagonal([*scl, 1.]) @ Matrix.Translation(pos)
+            matrix = pos @ rot.to_matrix().to_4x4()
+            
             tail, roll = mat3_to_vec_roll(matrix.to_3x3())
             tail *= 10  # Make this scale with the model size in the future, for convenience
             
