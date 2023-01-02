@@ -737,23 +737,32 @@ def import_animations(gfs, model_gfs, armature):
             # Get rotations
             if node.name in track_database:
                 rotations = {k: v for k, v in track_database[node.name].rotations.items()}
+                rotation_frames = list(track_database[node.name].rotations.keys())
                 
                 base_pos  = track_database[node.name].base_position
                 positions = {k: [bv*bp for bv, bp in zip(v, base_pos)] for k, v in track_database[node.name].positions.items()}
+                position_frames = list(track_database[node.name].positions.keys())
                 
                 base_scale = track_database[node.name].base_scale
                 scales = {k: [bv*bp for bv, bp in zip(v, base_scale)] for k, v in track_database[node.name].scales.items()}
+                scale_frames = list(track_database[node.name].scales.keys())
                 
                 if len(rotations) == 0:
                     rotations = {0: [0., 0., 0., 1.]}
+                    rotation_frames = []
                 if len(positions) == 0:
                     positions = {0: [0., 0., 0.]}
+                    position_frames = []
                 if len(scales) == 0:
                     scales = {0: [1., 1., 1.]}
+                    scale_frames = []
             else:
                 rotations = {0: [0., 0., 0., 1.]}
                 positions = {0: [0., 0., 0.]}
                 scales    = {0: [1., 1., 1.]}
+                rotation_frames = []
+                position_frames = []
+                scale_frames = []
             
             # Now interpolate...
             for frame in frames:
@@ -785,13 +794,14 @@ def import_animations(gfs, model_gfs, armature):
               
             # Create animations
             if len(rotations) != 0:
+            if len(rotation_frames) != 0:
                 fcs = []
                 for i, quat_idx in enumerate([3, 0, 1, 2]):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
-                    fc.keyframe_points.add(count=len(rotations))
+                    fc.keyframe_points.add(count=len(rotation_frames))
                     fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(fps*elem + 1) for elem in rotations.keys()],
-                                                                    [elem[quat_idx] for elem in rotations.values()]) for x in
+                                                   [x for co in zip([float(fps*frame + 1) for frame in rotation_frames],
+                                                                    [rotations[frame][quat_idx] for frame in rotation_frames]) for x in
                                                     co])
                     fc.group = actiongroup
                     fc.lock = True
@@ -802,14 +812,14 @@ def import_animations(gfs, model_gfs, armature):
                     fc.lock = False
                     
 
-            if len(positions) != 0:
+            if len(position_frames) != 0:
                 fcs = []
                 for i in range(3):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
-                    fc.keyframe_points.add(count=len(positions))
+                    fc.keyframe_points.add(count=len(position_frames))
                     fc.keyframe_points.foreach_set("co",
-                                                    [x for co in zip([float(fps*elem + 1) for elem in positions.keys()],
-                                                                    [elem[i] for elem in positions.values()]) for x in
+                                                    [x for co in zip([float(fps*frame + 1) for frame in position_frames],
+                                                                    [positions[frame][i] for frame in position_frames]) for x in
                                                     co])
                     fc.group = actiongroup
                     for k in fc.keyframe_points:
@@ -822,14 +832,14 @@ def import_animations(gfs, model_gfs, armature):
                     fc.lock = False
                     
 
-            if len(scales) != 0:
+            if len(scale_frames) != 0:
                 fcs = []
                 for i in range(3):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
-                    fc.keyframe_points.add(count=len(scales))
+                    fc.keyframe_points.add(count=len(scale_frames))
                     fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(fps*elem + 1) for elem in scales.keys()],
-                                                                    [elem[i] for elem in scales.values()]) for x in
+                                                   [x for co in zip([float(fps*frame + 1) for frame in scale_frames],
+                                                                    [scales[frame][i] for frame in scale_frames]) for x in
                                                     co])
                     fc.group = actiongroup
                     for k in fc.keyframe_points:
