@@ -1,6 +1,6 @@
 import copy
 
-from ...Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix
+from ...Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix, ibpm_to_transform_matrix, bake_scale_into_position
 from ..CommonStructures import ObjectName
 from ..CommonStructures.SceneNodeBinary import SceneNodeBinary
 from ..CommonStructures.SceneNodeBinary.MeshBinary import MeshBinary
@@ -11,21 +11,23 @@ from .Binary import ModelPayload
 
 class NodeInterface:
     def __init__(self):
-        self.parent_idx = None
-        self.name = None
-        self.position = None
-        self.rotation = None
-        self.scale = None
-        self.unknown_float = None
-        self.properties = [] # Property interfaces?
+        self.parent_idx       = None
+        self.name             = None
+        self.position         = None
+        self.rotation         = None
+        self.scale            = None
+        self.bind_pose_matrix = None
+        self.unknown_float    = None
+        self.properties       = [] # Property interfaces?
     
     @classmethod
     def binary_node_tree_to_list(cls, binary):
-        node_list = []
-        mesh_list = []
-        camera_list = []
-        light_list = []
+        node_list        = []
+        mesh_list        = []
+        camera_list      = []
+        light_list       = []
         cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list)
+        
         return node_list, mesh_list, camera_list, light_list
         
     @classmethod
@@ -93,7 +95,7 @@ class NodeInterface:
             cls._push_node_into_tree(cn_id, node_children, node_collection, id_map)
 
     @classmethod
-    def from_binary(cls, binary, parent_idx):
+    def from_binary(cls, binary, parent_idx, bind_pose_matrix=None):
         instance = cls()
         
         instance.parent = parent_idx
@@ -101,6 +103,7 @@ class NodeInterface:
         instance.position = binary.position
         instance.rotation = binary.rotation
         instance.scale = binary.scale
+        instance.bind_pose_matrix = bind_pose_matrix
         instance.unknown_float = binary.float
         instance.properties = binary.properties.data # Interface?!?
         
@@ -389,14 +392,54 @@ class ModelInterface:
         cameras, \
         lights = NodeInterface.binary_node_tree_to_list(binary.root_node)
         
-        if binary.skinning_data.matrix_palette is not None:
+        nodes_with_ibpms = {}
+        if binary.flags.has_skin_data is not None:
             for mesh in meshes:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
+                    # Remap indices from local indices to global indices
+                    palette_indices = set()
                     for v in mesh.vertices:
-                        #v.indices = v.indices[::-1]
+                        for idx, wgt in zip(v.indices[::-1], v.weights):
+                            if wgt > 0:
+                                palette_indices.add(idx)
                         v.indices = [binary.skinning_data.matrix_palette[idx] for idx in v.indices[::-1]]
+                    
+                    # Link IBPMs to the nodes they are relative to
+                    palette_indices = sorted(palette_indices)
+                    node_idx = mesh.node
+                    for palette_idx in palette_indices:
+                        weighted_node_idx = binary.skinning_data.matrix_palette[palette_idx]
+                        weighted_ibpm     = binary.skinning_data.ibpms[palette_idx]
+                        bpm               = invert_transform_matrix(ibpm_to_transform_matrix(weighted_ibpm))
+                        
+                        if weighted_node_idx not in nodes_with_ibpms:
+                            nodes_with_ibpms[weighted_node_idx] = []
+                        nodes_with_ibpms[weighted_node_idx].append((node_idx, bpm))
+        
+        # Now construct bind poses for bones
+        world_pose_matrices = [None]*len(bones)
+        world_pose_matrices[0] = transforms_to_matrix(bones[0].position, bones[0].rotation, bones[0].scale)
+        for i, bone in enumerate(bones[1:]):
+            i = i+1
+            local_bpm = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+            world_pose_matrices[i] = multiply_transform_matrices(world_pose_matrices[bone.parent], local_bpm)
+            
+        for i, bone in enumerate(bones):
+            if i in nodes_with_ibpms:
+                # Average together all bpms for the node
+                # Hopefully they're all similar
+                contributing_matrices = []
+                for node_idx, bpm in nodes_with_ibpms[i]:
+                    world_matrix = multiply_transform_matrices(world_pose_matrices[node_idx], bpm)
+                    contributing_matrices.append(bake_scale_into_position(world_matrix))
+                n = len(contributing_matrices)
+                bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
+            else:
+                bone.bind_pose_matrix = bake_scale_into_position(world_pose_matrices[i])
+
+                    
         return bones, meshes, cameras, lights, keep_bounding_box, keep_bounding_sphere
         
     @staticmethod
