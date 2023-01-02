@@ -726,50 +726,49 @@ def import_animations(gfs, model_gfs, armature):
                 continue
             data_track = track_database[node.name]
             
-            max_frames = max((
+            fps = 30
+            
+            frames = sorted(set([
                 *list(data_track.rotations.keys()),
                 *list(data_track.positions.keys()),
-                *list(data_track.scales.keys())))
-            max_frames = int(max_frames*30)
-
-            # Get individual transforms
+                *list(data_track.scales.keys())
+            ]))
+            
+            # Get rotations
             if node.name in track_database:
-                rotations = {int(k*30): v for k, v in track_database[node.name].rotations.items()}
-                if len(rotations) == 0:
-                    rotations = {i: [0., 0., 0., 1.] for i in range(max_frames)}
-            else:
-                rotations = {i: [0., 0., 0., 1.] for i in range(max_frames)}
-            if node.name in track_database:
+                rotations = {k: v for k, v in track_database[node.name].rotations.items()}
+                
                 base_pos  = track_database[node.name].base_position
-                positions = {int(30*k): [bv*bp for bv, bp in zip(v, base_pos)] for k, v in track_database[node.name].positions.items()}
+                positions = {k: [bv*bp for bv, bp in zip(v, base_pos)] for k, v in track_database[node.name].positions.items()}
                 
-                if len(positions) == 0:
-                    positions = {i: [0., 0., 0.] for i in range(max_frames)}
-            else:
-                positions = {i: [0., 0., 0.] for i in range(max_frames)}
-            if node.name in track_database:
                 base_scale = track_database[node.name].base_scale
-                scales = {int(30*k): [bv*bp for bv, bp in zip(v, base_scale)] for k, v in track_database[node.name].scales.items()}
+                scales = {k: [bv*bp for bv, bp in zip(v, base_scale)] for k, v in track_database[node.name].scales.items()}
                 
+                if len(rotations) == 0:
+                    rotations = {0: [0., 0., 0., 1.]}
+                if len(positions) == 0:
+                    positions = {0: [0., 0., 0.]}
                 if len(scales) == 0:
-                    scales = {i: [1., 1., 1.] for i in range(max_frames)}
+                    scales = {0: [1., 1., 1.]}
             else:
-                scales = {i: [1., 1., 1.] for i in range(max_frames)}
-                
+                rotations = {0: [0., 0., 0., 1.]}
+                positions = {0: [0., 0., 0.]}
+                scales    = {0: [1., 1., 1.]}
+            
             # Now interpolate...
-            for i in range(max_frames):
-                if i not in rotations:
-                    rotations[i] = interpolate_keyframe_dict(rotations, i, slerp)
-                if i not in positions:
-                    positions[i] = interpolate_keyframe_dict(positions, i, lerp)
-                if i not in scales:
-                    scales[i] = interpolate_keyframe_dict(scales, i, lerp)
+            for frame in frames:
+                if frame not in rotations:
+                    rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
+                if frame not in positions:
+                    positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
+                if frame not in scales:
+                    scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
             
             # Now create transform matrices...
             o_rotations = {}
             o_positions = {}
             o_scales    = {}
-            for i in range(max_frames):
+            for i in frames:
                 pos_mat = Matrix.Translation(positions[i])
                 rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
                 scl_mat = Matrix.Diagonal([*scales[i], 1])
@@ -791,7 +790,7 @@ def import_animations(gfs, model_gfs, armature):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
                     fc.keyframe_points.add(count=len(rotations))
                     fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(elem + 1) for elem in rotations.keys()],
+                                                   [x for co in zip([float(fps*elem + 1) for elem in rotations.keys()],
                                                                     [elem[quat_idx] for elem in rotations.values()]) for x in
                                                     co])
                     fc.group = actiongroup
@@ -809,7 +808,7 @@ def import_animations(gfs, model_gfs, armature):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
                     fc.keyframe_points.add(count=len(positions))
                     fc.keyframe_points.foreach_set("co",
-                                                    [x for co in zip([float(elem + 1) for elem in positions.keys()],
+                                                    [x for co in zip([float(fps*elem + 1) for elem in positions.keys()],
                                                                     [elem[i] for elem in positions.values()]) for x in
                                                     co])
                     fc.group = actiongroup
@@ -829,7 +828,7 @@ def import_animations(gfs, model_gfs, armature):
                     fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
                     fc.keyframe_points.add(count=len(scales))
                     fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(elem + 1) for elem in scales.keys()],
+                                                   [x for co in zip([float(fps*elem + 1) for elem in scales.keys()],
                                                                     [elem[i] for elem in scales.values()]) for x in
                                                     co])
                     fc.group = actiongroup
