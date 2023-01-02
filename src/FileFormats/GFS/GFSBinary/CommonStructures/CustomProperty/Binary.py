@@ -1,5 +1,5 @@
-from .....serialization.Serializable import Serializable
-from .ObjectName import ObjectName
+from ......serialization.Serializable import Serializable
+from ..ObjectName import ObjectName
 
 
 class PropertyBinary(Serializable):
