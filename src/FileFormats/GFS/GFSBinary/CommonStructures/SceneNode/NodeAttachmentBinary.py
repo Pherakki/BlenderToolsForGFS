@@ -32,9 +32,6 @@ class NodeAttachmentBinary(Serializable):
                 dtype = LightBinary
             elif self.type == 7:
                 raise HasParticleDataError
-                dtype = ParticleBinary
-            elif self.type == 8:
-                dtype = ParticleLeafBinary
             elif self.type == 9:
                 raise HasType9Error
             else:

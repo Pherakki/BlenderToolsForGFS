@@ -8,7 +8,8 @@ from .GFSBinary.Materials.Binary import MaterialPayload
 from .GFSBinary.Textures.Interface import TextureInterface
 from .GFSBinary.Textures.Binary import TexturePayload
 from .GFSBinary.Animations.Interface import AnimationInterface
-from .GFSBinary.Model.Interface import NodeInterface, ModelInterface, MeshInterface
+from .GFSBinary.Model.Interface import ModelInterface
+from .GFSBinary.CommonStructures import NodeInterface, MeshInterface
 
 
 class GFSInterface:

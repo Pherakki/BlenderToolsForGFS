@@ -1,1 +1,0 @@
-from .NodeBinary import SceneNodeBinary
