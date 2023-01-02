@@ -764,7 +764,6 @@ def import_animations(gfs, model_gfs, armature):
             scales = o_scales
               
             # Create animations
-            if len(rotations) != 0:
             if len(rotation_frames) != 0:
                 fcs = []
                 for i, quat_idx in enumerate([3, 0, 1, 2]):
