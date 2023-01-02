@@ -89,6 +89,29 @@ def invert_matrix(AM, IM):
     return IM
 
 
+def ibpm_to_transform_matrix(ibpm):
+    out = [
+        0., 0., 0., 0.,
+        0., 0., 0., 0.,
+        0., 0., 0., 0.
+    ]
+    
+    out[0]  = ibpm[0]
+    out[1]  = ibpm[4]
+    out[2]  = ibpm[8]
+    out[3]  = ibpm[12]
+    out[4]  = ibpm[1]
+    out[5]  = ibpm[5]
+    out[6]  = ibpm[9]
+    out[7]  = ibpm[13]
+    out[8]  = ibpm[2]
+    out[9]  = ibpm[6]
+    out[10] = ibpm[10]
+    out[11] = ibpm[14]
+    
+    return out
+
+
 def invert_transform_matrix(matrix):
     out = [
         0., 0., 0., 0.,
@@ -135,3 +158,26 @@ def invert_transform_matrix(matrix):
     out[11] = -(out[8]*matrix[3] + out[9]*matrix[7] + out[10]*matrix[11])
     
     return out
+
+
+def bake_scale_into_position(matrix):
+    scale_x = (matrix[0]**2 + matrix[4]**2 + matrix[ 8]**2)**.5
+    scale_y = (matrix[1]**2 + matrix[5]**2 + matrix[ 9]**2)**.5
+    scale_z = (matrix[2]**2 + matrix[6]**2 + matrix[10]**2)**.5
+    
+    matrix[0] /= scale_x
+    matrix[4] /= scale_x
+    matrix[8] /= scale_x
+    matrix[3] *= scale_x
+    
+    matrix[1] /= scale_y
+    matrix[5] /= scale_y
+    matrix[9] /= scale_y
+    matrix[7] *= scale_y
+    
+    matrix[2] /= scale_z
+    matrix[6] /= scale_z
+    matrix[10] /= scale_z
+    matrix[11] *= scale_z
+    
+    return matrix
