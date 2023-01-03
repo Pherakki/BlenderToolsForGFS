@@ -154,9 +154,11 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         gfs = GFSInterface.from_file(filepath)
         
-        textures  = import_textures(gfs)
-        materials = import_materials(gfs, textures)
-        armature  = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        textures                = import_textures(gfs)
+        materials               = import_materials(gfs, textures)
+        armature, bind_matrices = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        
+        create_rest_pose(armature, gfs.bones, bind_matrices)
         
         return {'FINISHED'}
     
@@ -343,8 +345,94 @@ def import_pincushion_model(gfs, name):
     # Reset state
     bpy.context.view_layer.objects.active = initial_obj
 
-    return main_armature
+    return main_armature, bone_transforms
 
+
+def create_rest_pose(armature, nodes, bind_matrices):
+    prev_obj = bpy.context.view_layer.objects.active
+    
+    armature.animation_data_create()
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode="POSE")
+
+    track_name = "rest_pose"
+    action = bpy.data.actions.new(track_name)
+
+    # Base action
+    for (node, bind_matrix) in zip(nodes, bind_matrices):
+        bone_name = node.name
+        
+        actiongroup = action.groups.new(bone_name)
+
+
+        parent_bind_matrix = bind_matrices[node.parent] if node.parent > -1 else Matrix.Identity(4)
+        local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrix
+                
+        rest_position = Matrix.Translation(node.position)
+        rest_rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
+        rest_scale    = Matrix.Diagonal([*node.scale, 1])
+        rest_matrix   = rest_position @ rest_rotation @ rest_scale
+        
+        pos, quat, scale = (rest_matrix @ local_bind_matrix.inverted()).decompose()
+        position = [pos.x, pos.y, pos.z]
+        rotation = [quat.x, quat.y, quat.z, quat.w]
+        scale    = [scale.x, scale.y, scale.z]
+          
+        # Create animations
+        fcs = []
+        for i, quat_idx in enumerate([3, 0, 1, 2]):
+            fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
+            fc.keyframe_points.add(count=1)
+            fc.keyframe_points.foreach_set("co", [1, rotation[quat_idx]])
+            fc.group = actiongroup
+            fc.lock = True
+            fcs.append(fc)
+        for fc in fcs:
+            fc.update()
+        for fc in fcs:
+            fc.lock = False
+            
+        fcs = []
+        for i in range(3):
+            fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
+            fc.keyframe_points.add(count=1)
+            fc.keyframe_points.foreach_set("co", [1, position[i]])
+            fc.group = actiongroup
+            for k in fc.keyframe_points:
+                k.interpolation = "LINEAR"
+            fc.lock = True
+            fcs.append(fc)
+        for fc in fcs:
+            fc.update()
+        for fc in fcs:
+            fc.lock = False
+        
+        fcs = []
+        for i in range(3):
+            fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
+            fc.keyframe_points.add(count=1)
+            fc.keyframe_points.foreach_set("co", [1, scale[i]])
+            fc.group = actiongroup
+            for k in fc.keyframe_points:
+                k.interpolation = "LINEAR"
+            fc.lock = True
+            fcs.append(fc)
+        for fc in fcs:
+            fc.update()
+        for fc in fcs:
+            fc.lock = False
+
+    armature.animation_data.action = action
+    track = armature.animation_data.nla_tracks.new()
+    track.name = track_name
+    track.mute = True
+    nla_strip = track.strips.new(action.name, action.frame_range[0], action)
+    #nla_strip.scale = 24 / animation_data.playback_rate
+    #nla_strip.blend_type = "COMBINE"
+    armature.animation_data.action = None
+    
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.context.view_layer.objects.active = prev_obj
 
 
 def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, bpy_node, transform):
