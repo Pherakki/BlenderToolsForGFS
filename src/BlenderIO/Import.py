@@ -441,13 +441,13 @@ def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, bpy
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
     bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
     
-    bpy.context.view_layer.objects.active = bpy_mesh_object
-    
     # Generate geometry
     positions = [v.position for v in mesh.vertices]
     new_tris = [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])]
     bpy_mesh_object.data.from_pydata(positions, [], new_tris)
     bpy.context.collection.objects.link(bpy_mesh_object)
+    
+    bpy.context.view_layer.objects.active = bpy_mesh_object
 
     # Create UVs
     add_uv_map(bpy_mesh, [v.texcoord0 for v in mesh.vertices], "UV0")
