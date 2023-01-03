@@ -426,7 +426,7 @@ def create_rest_pose(armature, nodes, bind_matrices):
     track = armature.animation_data.nla_tracks.new()
     track.name = track_name
     track.mute = True
-    nla_strip = track.strips.new(action.name, action.frame_range[0], action)
+    nla_strip = track.strips.new(action.name, 1, action) # All actions imported to frame 1
     #nla_strip.scale = 24 / animation_data.playback_rate
     #nla_strip.blend_type = "COMBINE"
     armature.animation_data.action = None
