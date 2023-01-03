@@ -1,0 +1,141 @@
+\documentclass{article}
+
+% ############### %
+% PACKAGE IMPORTS %
+% ############### %
+\usepackage[utf8]{inputenc}
+%\usepackage[margin=80pt]{geometry}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{shadows}
+
+% ################ %
+% ENVIRONMENT DEFS %
+% ################ %
+\newenvironment{guide}[1]
+{
+	\begin{center}
+		\begin{tcolorbox}[%
+			colback=black!20, 
+			boxrule=0pt, 
+			title=Step-by-step: #1,
+			enhanced,
+			breakable,
+			overlay unbroken={%
+                \draw[line width=1pt, black, rounded corners]
+        	    (frame.north west) rectangle (frame.south east);
+			},
+    		overlay first={%
+        		 \draw[line width=1pt, black, rounded corners]
+        	    (frame.south west) -- (frame.north west) -- (frame.north east) -- (frame.south east);
+                \draw[line width=1pt, black]
+                (frame.south west) -- (frame.south east);
+            },
+    		overlay middle={%
+                \draw[line width=1pt, black]
+        	    (frame.north west) rectangle (frame.south east);
+        	},
+    		overlay last={%
+                \draw[line width=1pt, black, rounded corners]
+        	    (frame.north west) -- (frame.south west) -- (frame.south east) -- (frame.north east);
+                \draw[line width=1pt, black]
+                (frame.north west) -- (frame.north east);
+           	}
+        ]{}
+    	\begin{enumerate}
+}
+{
+    		\end{enumerate}
+    	\end{tcolorbox}
+	\end{center}  	 
+}
+
+\newcommand{\guideimage}[1]
+{
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{#1}
+	\end{center}
+}
+
+
+% Adapted from this StackExchange post:
+% https://tex.stackexchange.com/a/5227
+\newcommand*\keystroke[1]
+{
+	\raisebox{-1.5pt}
+	{
+		\hspace{-8pt}
+		\begin{tikzpicture}
+		\node
+		[
+			draw,
+			fill=black!65,
+			drop shadow={shadow xshift=0.25ex,shadow yshift=-0.25ex,fill=black,opacity=0.75},
+      		rectangle,
+      		rounded corners=2pt,
+      		inner sep=3pt,
+      		outer sep=0pt,
+      		line width=0.5pt,
+      		font=\scriptsize\sffamily,
+      		text=black!10
+    	]
+    	{
+    		\hspace*{0.5pt}\tt #1\hspace*{0.5pt}
+    	}
+    	;
+    	\end{tikzpicture}
+		\hspace{-8pt}
+  	}
+}
+
+% ############## %
+% VARIABLE SETUP %
+% ############## %
+\title{Blender Tools for GFS Documentation}
+\author{Pherakki}
+\date{v0.1}
+
+
+% ############## %
+% DOCUMENT START %
+% ############## %
+\begin{document}
+\maketitle
+\pagenumbering{gobble}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic} 
+
+\section{Getting Started}
+\clearpage
+
+\section{Import}
+\subsection{Importing Field Models}
+Field models are typically in such large units that they exceed the default render distance of Blender. In this instance, you may find it useful to increase Blender's render distance.\\
+\begin{guide}{Increasing Blender's Render Distance}
+\item Press the \keystroke{N} key to open the \textbf{Sidebar}.
+\guideimage{images/import/import_field_open_menu.png}
+\item Click the \textbf{View} tab in the \textbf{Sidebar}.
+\guideimage{images/import/import_field_open_view.png}
+\item Change the value in the \textbf{End} box to a value large enough for you to comfortably navigate the model.
+\guideimage{images/import/import_field_set_distance.png}
+\item Press the \keystroke{N} key to close the \textbf{Sidebar}.
+\end{guide}
+\clearpage
+
+\section{Manipulating Data}
+\clearpage
+
+\section{Export}
+\subsection{Preparing Data for Export}
+\clearpage
+
+\section{BlenderToolsForGFS as a Python Library}
+\clearpage
+
+\end{document}
