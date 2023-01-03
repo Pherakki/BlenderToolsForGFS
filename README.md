@@ -1,5 +1,5 @@
 # BlenderToolsForGFS
-A Blender 2.83 plugin for importing and exporting GFS files.
+A Blender 2.81+ plugin for importing and exporting GFS files.
 
 ⚠ **NOTE: THIS IS IS AN IN-DEVELOPMENT REPOSITORY. THIS PLUGIN IS NOT READY FOR ANY KIND OF PRODUCTION USE.** ⚠
 
