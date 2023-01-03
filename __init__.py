@@ -4,7 +4,7 @@ try:
 except:
     pass
 
-from .src.FileFormats.GFS.Binary import GFS0Binary
+from .src.FileFormats.GFS import GFSBinary
     
 bl_info = {
         "name": "GFS Import/Export (.GMD)",

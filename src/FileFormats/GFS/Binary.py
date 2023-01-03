@@ -1,8 +1,8 @@
 from ...serialization.Serializable import Serializable
-from .GFSBinary.GFS0ContainerBinary import GFS0ContainerBinary
+from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
 
 
-class GFS0Binary(Serializable):
+class GFSBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness

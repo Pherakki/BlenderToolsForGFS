@@ -8,7 +8,7 @@ from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion, Vector
 import numpy as np
 
-from ..FileFormats.GFS.GFSInterface import GFSInterface
+from ..FileFormats.GFS import GFSInterface
 from .Utils.ErrorPopup import handle_errors
 
 

@@ -1,14 +1,14 @@
 from ...serialization.BinaryTargets import OffsetTracker
-from .Binary import GFS0Binary
-from .GFSBinary.GFS0ContainerBinary import GFS0ContainerBinary
+from .Binary import GFSBinary
+from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
 
-from .GFSBinary.Materials.Interface import MaterialInterface
-from .GFSBinary.Materials.Binary import MaterialPayload
-from .GFSBinary.Textures.Interface import TextureInterface
-from .GFSBinary.Textures.Binary import TexturePayload
-from .GFSBinary.Animations.Interface import AnimationInterface
-from .GFSBinary.Model.Interface import ModelInterface
-from .GFSBinary.CommonStructures import NodeInterface, MeshInterface
+from .SubComponents.Materials.Interface import MaterialInterface
+from .SubComponents.Materials.Binary import MaterialPayload
+from .SubComponents.Textures.Interface import TextureInterface
+from .SubComponents.Textures.Binary import TexturePayload
+from .SubComponents.Animations.Interface import AnimationInterface
+from .SubComponents.Model.Interface import ModelInterface
+from .SubComponents.CommonStructures import NodeInterface, MeshInterface
 
 
 class GFSInterface:
@@ -31,7 +31,7 @@ class GFSInterface:
 
     @classmethod
     def from_file(cls, filepath):
-        binary = GFS0Binary()
+        binary = GFSBinary()
         binary.read(filepath)
         return cls.from_binary(binary, duplicate_data=False)
 
@@ -64,7 +64,7 @@ class GFSInterface:
         return instance
     
     def to_binary(self, version, duplicate_data=False):
-        binary = GFS0Binary()
+        binary = GFSBinary()
         
         ot = OffsetTracker()
         
