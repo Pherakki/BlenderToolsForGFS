@@ -1,6 +1,6 @@
 import copy
 
-from ...Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix, ibpm_to_transform_matrix, bake_scale_into_position
+from ...Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix, ibpm_to_transform_matrix, bake_scale_into_position, invert_pos_rot_matrix
 from ..CommonStructures.SceneNode import NodeInterface
 from .Binary import ModelPayload
 
@@ -16,7 +16,7 @@ class ModelInterface:
         meshes,  \
         cameras, \
         lights = NodeInterface.binary_node_tree_to_list(binary.root_node)
-        
+
         nodes_with_ibpms = {}
         if binary.flags.has_skin_data is not None:
             for mesh in meshes:
@@ -37,7 +37,7 @@ class ModelInterface:
                     for palette_idx in palette_indices:
                         weighted_node_idx = binary.skinning_data.matrix_palette[palette_idx]
                         weighted_ibpm     = binary.skinning_data.ibpms[palette_idx]
-                        bpm               = invert_transform_matrix(ibpm_to_transform_matrix(weighted_ibpm))
+                        bpm               = invert_pos_rot_matrix(ibpm_to_transform_matrix(weighted_ibpm))
                         
                         if weighted_node_idx not in nodes_with_ibpms:
                             nodes_with_ibpms[weighted_node_idx] = []

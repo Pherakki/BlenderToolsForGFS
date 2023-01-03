@@ -74,6 +74,7 @@ def are_matrices_close(a, b, atol, rtol):
 """
 Borrowed from https://github.com/ThomIves/MatrixInverse,
 following from this answer https://stackoverflow.com/a/62940942
+Errors out if main diagonal is a zero vector?!
 """
 def invert_matrix(AM, IM):
     for fd in range(len(AM)):
@@ -111,6 +112,30 @@ def ibpm_to_transform_matrix(ibpm):
     
     return out
 
+
+def invert_pos_rot_matrix(matrix):
+    out = [
+        0., 0., 0., 0.,
+        0., 0., 0., 0.,
+        0., 0., 0., 0.
+    ]
+    
+    
+    # Transpose rotation part, calculate translations
+    out[0]  = matrix[0]
+    out[1]  = matrix[4]
+    out[2]  = matrix[8]
+    out[3]  = -(out[0]*matrix[3] + out[1]*matrix[7] + out[2]*matrix[11])
+    out[4]  = matrix[1]
+    out[5]  = matrix[5]
+    out[6]  = matrix[9]
+    out[7]  = -(out[4]*matrix[3] + out[5]*matrix[7] + out[6]*matrix[11])
+    out[8]  = matrix[2]
+    out[9]  = matrix[6]
+    out[10] = matrix[10]
+    out[11] = -(out[8]*matrix[3] + out[9]*matrix[7] + out[10]*matrix[11])
+    
+    return out
 
 def invert_transform_matrix(matrix):
     out = [
