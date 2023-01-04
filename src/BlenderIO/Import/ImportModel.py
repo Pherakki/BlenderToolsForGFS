@@ -82,6 +82,7 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
     constraint = armature.constraints.new("CHILD_OF")
     constraint.target = main_armature
     constraint.subtarget = bpy_node_names[node_idx]
+    constraint.inverse_matrix = Matrix.Identity(4)
     
     # Cache the Blender states we are going to change
     before_armature_obj = bpy.context.view_layer.objects.active
