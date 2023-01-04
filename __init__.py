@@ -23,7 +23,7 @@ bl_info = {
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
-
+    from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
     
     
     class GFSImportSubmenu(bpy.types.Menu):
@@ -64,6 +64,8 @@ if "bpy" in locals():
         # bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
         
         bpy.utils.register_class(MessagePopup)
+        
+        bpy.utils.register_class(GFSToolsPinnedArmatureToolsPanel)
     
     
     def unregister():
@@ -76,3 +78,6 @@ if "bpy" in locals():
         # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
         
         bpy.utils.unregister_class(MessagePopup)
+        
+        bpy.utils.unregister_class(GFSToolsPinnedArmatureToolsPanel)
+        
