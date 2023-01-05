@@ -53,7 +53,7 @@ def import_pincushion_model(gfs, name):
         
     # Import meshes and armature-parent them to the relevant pinned armature
     for i, mesh in enumerate(gfs.meshes):
-        import_pinned_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, pinned_armatures[mesh.node], bpy_nodes[mesh.node], bone_transforms[mesh.node])
+        import_pinned_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, main_armature, pinned_armatures[mesh.node], bpy_nodes[mesh.node], bone_transforms[mesh.node])
     
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -63,6 +63,11 @@ def import_pincushion_model(gfs, name):
 
 
 def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bpy_node_names, bone_transforms):
+    # TODO: Enable this when implementing mesh->bone parenting
+    # Enable this when ready, double-check that it causes no issues
+    # if len(armature_index_set) == 0:
+    #     return None
+    
     # Order the bone indices we intend to import
     armature_index_set = sorted(armature_index_set)
     
@@ -72,10 +77,8 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
     bpy.context.collection.objects.link(armature)
     
     # Parent the pinned armature to the main armature
-    # Parenting is massively preferred over the child-of constraint,
-    # but might introduce bugs?!
-    # Need to understand this better
-    
+    # Probably works, but let's get the export working before messing about
+    # with this
     # armature.parent = main_armature
     # armature.parent_type = "BONE"
     # armature.parent_bone = bpy_node_names[node_idx]
@@ -121,7 +124,10 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
     return armature
     
 
-def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, bpy_node, transform):
+def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, main_armature, armature, bpy_node, transform):
+    # Cache the Blender states we are going to change
+    prev_obj = bpy.context.view_layer.objects.active
+    
     # What about vertex merging?
     meshobj_name = f"{name}_{idx}"
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
@@ -197,18 +203,23 @@ def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, bpy
     bpy.data.objects[meshobj_name].active_material = active_material
     
     bpy_mesh.validate(verbose=True, clean_customdata=False)
-    #bpy_mesh.transform(armature.matrix_local)
     
     bpy_mesh.update()
     bpy_mesh.update()
     
     # Activate rigging
-    #bpy_mesh.transform(transform)
+    # TODO: Enable this when implementing mesh->bone parenting
+    # Enable this when ready, double-check that it causes no issues
+    # if armature is None:
+    #     bpy_mesh_object.parent = main_armature
+    #     bpy_mesh_object.parent_type = "BONE"
+    #     bpy_mesh_object.parent_bone = bpy_node_names[idx]
+    # else:
     bpy_mesh_object.parent = armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
     
-    bpy.context.view_layer.objects.active = armature
+    bpy.context.view_layer.objects.active = prev_obj
 
 
 def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, transform):
