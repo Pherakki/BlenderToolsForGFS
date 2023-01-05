@@ -48,7 +48,11 @@ class ModelInterface:
         world_pose_matrices[0] = transforms_to_matrix(bones[0].position, bones[0].rotation, bones[0].scale)
         for i, bone in enumerate(bones[1:]):
             i = i+1
-            local_bpm = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+            scale = list(bone.scale)
+            for scale_idx, scale_elem in enumerate(scale):
+                if scale_elem < 10**-7:
+                    scale[scale_idx] = 1.
+            local_bpm = transforms_to_matrix(bone.position, bone.rotation, scale)
             world_pose_matrices[i] = multiply_transform_matrices(world_pose_matrices[bone.parent], local_bpm)
             
         for i, bone in enumerate(bones):
