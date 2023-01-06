@@ -14,8 +14,8 @@ bl_info = {
         "blender": (2, 81, 0),
         "location": "File > Import, File > Export",
         "warning": "",
-        #"wiki_url": "https://github.com/Pherakki/Blender-Tools-for-DSCS",
-        #"tracker_url": "https://github.com/Pherakki/Blender-Tools-for-DSCS/issues",
+        #"wiki_url": "https://github.com/Pherakki/BlenderToolsforGFS",
+        #"tracker_url": "https://github.com/Pherakki/BlenderToolsforGFS/issues",
         "category": "Import-Export",
         }
     
