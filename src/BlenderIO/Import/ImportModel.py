@@ -55,6 +55,10 @@ def import_pincushion_model(gfs, name):
     for i, mesh in enumerate(gfs.meshes):
         import_pinned_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, main_armature, pinned_armatures[mesh.node], bpy_nodes[mesh.node], bone_transforms[mesh.node])
     
+    # Import cameras
+    for i, cam in enumerate(gfs.cameras):
+        import_camera("camera", i, cam, main_armature, bpy_node_names)
+    
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.context.view_layer.objects.active = initial_obj
@@ -302,3 +306,28 @@ def add_uv_map(bpy_mesh, texcoords, name):
         uv_layer = bpy_mesh.uv_layers.new(name=name, do_init=True)
         for loop_idx, loop in enumerate(bpy_mesh.loops):
             uv_layer.data[loop_idx].uv = texcoords[loop.vertex_index]
+
+def import_camera(name, i, camera, armature, bpy_node_names):
+    bpy_camera = bpy.data.cameras.new(f"{name}_{i}")
+    
+    # Import attributes
+    bpy_camera.type       = "PERSP"
+    bpy_camera.clip_start = camera.zNear
+    bpy_camera.clip_end   = camera.zFar
+    bpy_camera.angle      = camera.fov
+    
+    # Custom properties
+    bpy.camera["unknown_0x50"] = camera.unknown_0x50
+    bpy.camera["aspect_ratio"] = camera.aspect_ratio
+    bpy.camera["unknown_0x50"] = camera.unknown_0x50
+    
+    bpy.camera["view_matrix_0"] = camera.view_matrix[ 0: 4]
+    bpy.camera["view_matrix_1"] = camera.view_matrix[ 4: 8]
+    bpy.camera["view_matrix_2"] = camera.view_matrix[ 8:12]
+    bpy.camera["view_matrix_3"] = camera.view_matrix[12:16]
+
+    # Link to the armature
+    bpy_camera.parent = armature
+    bpy_camera.parent_type = "BONE"
+    bpy_camera.parent_bone = bpy_node_names[camera.node]
+
