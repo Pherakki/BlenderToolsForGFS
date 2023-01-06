@@ -154,7 +154,7 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
         except InconsistentVersionsError:
             inconsistent_versions_errors.append(file)
         except Exception as e:
-            unspecified_errors.append(str(e))
+            unspecified_errors.append((file, str(e)))
             
     anim_error_count            = len(anim_errors)
     particle_error_count        = len(particle_errors)
@@ -184,7 +184,14 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
     print("-", ignored_files_count,         "files failed due to being on the hardcoded 'ignore' list")
     
     if unspecified_error_count > 0:
+        print()
         print("UNACCEPTABLE FAILURES:")
         print("-", unspecified_errors, "files failed due to unspecified errors")
+        print()
+        max_print = 10
+        if unspecified_error_count > max_print:
+            print(f"The first {max_print} of these are:")
+        for filepath, err in unspecified_errors[:max_print]:
+            print(filepath + ":", err)
         
     return unspecified_error_count > 0
