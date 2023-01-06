@@ -31,21 +31,44 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
     model_files = []
     model_root = data_root
     ignore = []
-    ignore.append("C5931_000_00.GMD") # Contains non-UTF8 strings
-    ignore.append("PS0003.GMD")       # Contains non-UTF8 strings
-    ignore.append("PS0142.GMD")       # Contains non-UTF8 strings
-    ignore.append("PS0298.GMD")       # Contains non-UTF8 strings
-    ignore.append("PSZ0298.GMD")      # Contains non-UTF8 strings
-    ignore.append("C9525_000_00.GMD") # Contains strings that do not hash correctly - hasher bug?
-    ignore.append("M057_094.GMD")     # Contains non-UTF8 strings
+    ignore.append("C5931_000_00.GMD")   # Contains non-UTF8 strings
+    ignore.append("PS0003.GMD")         # Contains non-UTF8 strings
+    ignore.append("PS0142.GMD")         # Contains non-UTF8 strings
+    ignore.append("PS0298.GMD")         # Contains non-UTF8 strings
+    ignore.append("PSZ0298.GMD")        # Contains non-UTF8 strings
+    ignore.append("C9525_000_00.GMD")   # Contains strings that do not hash correctly - hasher bug?
+    ignore.append("M057_094.GMD")       # Contains non-UTF8 strings
     ignore.append("IT0726_001.GMD")     # Contains non-UTF8 strings
     ignore.append("IT0726_002.GMD")     # Contains non-UTF8 strings
     ignore.append("IT0749_000.GMD")     # Contains non-UTF8 strings
     ignore.append("IT0749_001.GMD")     # Contains non-UTF8 strings
     
-    for root, _, files in os.walk(model_root):
+    ignore.append("BB0001_051.GAP") # Contains invalid keyframes
+    ignore.append("AE0001_504.GAP") # Contains invalid keyframes
+    ignore.append("BE0001_001.GAP") # Contains invalid keyframes
+    ignore.append("BF0001_001.GAP") # Contains invalid keyframes
+    ignore.append("BF0001_002.GAP") # Contains invalid keyframes
+    ignore.append("BB0003_051.GAP") # Contains invalid keyframes
+    ignore.append("BB0006_051.GAP") # Contains invalid keyframes
+    ignore.append("BB0006_052.GAP") # Contains invalid keyframes
+    ignore.append("BB0009_051.GAP") # Contains invalid keyframes
+    ignore.append("BE0009_052.GAP") # Contains invalid keyframes
+    ignore.append("AE0010_767.GAP") # Contains invalid keyframes
+    ignore.append("BE0010_001.GAP") # Contains invalid keyframes
+    ignore.append("BE0010_005.GAP") # Contains invalid keyframes
+    ignore.append("BE0010_011.GAP") # Contains invalid keyframes
+    ignore.append("BE0010_051.GAP") # Contains invalid keyframes
+    ignore.append("BF0010_051.GAP") # Contains invalid keyframes
+    ignore.append("BE1004_001.GAP") # Contains invalid keyframes
+    ignore.append("BE1004_003.GAP") # Contains invalid keyframes
+    ignore.append("BE1004_006.GAP") # Contains invalid keyframes
+    ignore.append("BF1010_200.GAP") # Contains invalid keyframes
+    ignore.append("BE2111_001.GAP") # Contains invalid keyframes
+    ignore.append("BEM0232_000.GAP") # Contains invalid keyframes
+    
+    for root, dirs, files in os.walk(model_root):
         for file in files:
-            if file.endswith(".GMD") and file not in ignore:
+            if any(file.endswith(ext) for ext in (".GMD", ".GAP", ".GFS")) and file not in ignore:
                 model_files.append(os.path.join(root, file))
     
     if namefilter is not None:
