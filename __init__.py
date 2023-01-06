@@ -24,6 +24,8 @@ if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
     from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
+    from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
+    from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     
     
     class GFSImportSubmenu(bpy.types.Menu):
@@ -51,33 +53,47 @@ if "bpy" in locals():
     # def menu_func_export(self, context):
     #     self.layout.menu(GFSExportSubmenu.bl_idname)
     
+    CLASSES = (
+        ImportGFS,
+        GFSImportSubmenu,
+        #ExportGFS,
+        #GFSExportSubmenu
+        MessagePopup,
+        GFSToolsPinnedArmatureToolsPanel,
+        OBJECT_PT_GFSToolsTextureRefPanel,
+    )
+    
+    PROP_GROUPS = (
+        (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
+    )
+    
+    LIST_ITEMS = (
+        (bpy.types.TOPBAR_MT_file_import, menu_func_import),
+        #(bpy.types.TOPBAR_MT_file_export, menu_func_export)
+    )
     
     def register():
         blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
        
-        bpy.utils.register_class(ImportGFS)
-        bpy.utils.register_class(GFSImportSubmenu)
-        bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+        for classtype in CLASSES:
+            bpy.utils.register_class(classtype)
         
-        # bpy.utils.register_class(ExportGFS)
-        # bpy.utils.register_class(GFSExportSubmenu)
-        # bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-        
-        bpy.utils.register_class(MessagePopup)
-        
-        bpy.utils.register_class(GFSToolsPinnedArmatureToolsPanel)
+        for obj, name, prop_type in PROP_GROUPS:
+            bpy.utils.register_class(prop_type)
+            setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
+            
+        for obj, elem in LIST_ITEMS:
+            obj.append(elem)
     
-    
+
     def unregister():
-        bpy.utils.unregister_class(ImportGFS)
-        bpy.utils.unregister_class(GFSImportSubmenu)
-        bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
-        
-        # bpy.utils.unregister_class(ExportGFS)
-        # bpy.utils.unregister_class(GFSExportSubmenu)
-        # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
-        
-        bpy.utils.unregister_class(MessagePopup)
-        
-        bpy.utils.unregister_class(GFSToolsPinnedArmatureToolsPanel)
+        for classtype in CLASSES[::-1]:
+            bpy.utils.unregister_class(classtype)
+
+        for obj, name, prop_type in PROP_GROUPS[::-1]:
+            delattr(obj, name)
+            bpy.utils.unregister_class(prop_type)
+            
+        for obj, elem in LIST_ITEMS:
+            obj.remove(elem)
         
