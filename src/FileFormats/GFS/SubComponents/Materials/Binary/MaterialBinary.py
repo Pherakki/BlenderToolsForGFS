@@ -1,10 +1,10 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, SizedObjArray, BitVector
+from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20
 from .TextureReference import TextureRefBinary
 
 
-class MaterialFlags(BitVector):
+class MaterialFlags(BitVector0x20):
     flag_0                 = BitVector.DEF_FLAG(0x00)
     flag_1                 = BitVector.DEF_FLAG(0x01)
     flag_2                 = BitVector.DEF_FLAG(0x02)
@@ -133,12 +133,31 @@ class MaterialBinary(Serializable):
             rw.rw_obj(self.attributes, version)
 
 
+class MaterialAttributeFlags(BitVector0x10):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    
+    
 class MaterialAttributeBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = None
+        self.flags = MaterialAttributeFlags(endianness)
         self.ID    = None
         self.data  = []
         
@@ -146,7 +165,7 @@ class MaterialAttributeBinary(Serializable):
         return f"[GFD::Material::AttributeBinary] {safe_format(self.flags, hex32_format)} {self.ID} {safe_format(self.data, list)}"
     
     def read_write(self, rw, version):
-        self.flags = rw.rw_uint16(self.flags)
+        self.flags = rw.rw_obj(self.flags)
         self.ID = rw.rw_uint16(self.ID)
     
         if self.ID == 0:
@@ -173,7 +192,52 @@ class MaterialAttributeBinary(Serializable):
         
         if type(self.data) is not dtype:
             raise ValueError(f"Unexpected Material Attribute type: expected '{dtype}', found '{type(self.data)}")
-        rw.rw_obj(self.data)
+        rw.rw_obj(self.data, version)
+
+
+class MaterialAttributeSubTypeFlags(BitVector):
+    MAXFLAGS = 0x20
+    
+    # Are the flags different for different versions?
+    def read_write(self, rw, version):
+        # RW different values depending on the version
+        self._value = rw.rw_uint32(self._value)
+
+
+class ToonShadingPropertyFlags(MaterialAttributeSubTypeFlags):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    flag_16 = BitVector.DEF_FLAG(0x10)
+    flag_17 = BitVector.DEF_FLAG(0x11)
+    flag_18 = BitVector.DEF_FLAG(0x12)
+    flag_19 = BitVector.DEF_FLAG(0x13)
+    flag_20 = BitVector.DEF_FLAG(0x14)
+    flag_21 = BitVector.DEF_FLAG(0x15)
+    flag_22 = BitVector.DEF_FLAG(0x16)
+    flag_23 = BitVector.DEF_FLAG(0x17)
+    flag_24 = BitVector.DEF_FLAG(0x18)
+    flag_25 = BitVector.DEF_FLAG(0x19)
+    flag_26 = BitVector.DEF_FLAG(0x1A)
+    flag_27 = BitVector.DEF_FLAG(0x1B)
+    flag_28 = BitVector.DEF_FLAG(0x1C)
+    flag_29 = BitVector.DEF_FLAG(0x1D)
+    flag_30 = BitVector.DEF_FLAG(0x1E)
+    flag_31 = BitVector.DEF_FLAG(0x1F)
+
 
 class ToonShadingProperty(Serializable):
     def __init__(self, endianness='>'):
@@ -185,17 +249,53 @@ class ToonShadingProperty(Serializable):
         self.light_brightness = None
         self.shadow_threshold = None
         self.shadow_factor    = None
-        self.flags = None
+        self.flags            = ToonShadingPropertyFlags(endianness)
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.colour           = rw.rw_float32s(self.colour, 4)
         self.light_threshold  = rw.rw_float32(self.light_threshold)
         self.light_factor     = rw.rw_float32(self.light_factor)
         self.light_brightness = rw.rw_float32(self.light_brightness)
         self.shadow_threshold = rw.rw_float32(self.shadow_threshold)
         self.shadow_factor    = rw.rw_float32(self.shadow_factor)
-        self.flags            = rw.rw_uint32(self.flags) # Flags are version-dependant
+        self.flags            = rw.rw_obj(self.flags, version)
         
+
+class Property1Flags(MaterialAttributeSubTypeFlags):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    flag_16 = BitVector.DEF_FLAG(0x10)
+    flag_17 = BitVector.DEF_FLAG(0x11)
+    flag_18 = BitVector.DEF_FLAG(0x12)
+    flag_19 = BitVector.DEF_FLAG(0x13)
+    flag_20 = BitVector.DEF_FLAG(0x14)
+    flag_21 = BitVector.DEF_FLAG(0x15)
+    flag_22 = BitVector.DEF_FLAG(0x16)
+    flag_23 = BitVector.DEF_FLAG(0x17)
+    flag_24 = BitVector.DEF_FLAG(0x18)
+    flag_25 = BitVector.DEF_FLAG(0x19)
+    flag_26 = BitVector.DEF_FLAG(0x1A)
+    flag_27 = BitVector.DEF_FLAG(0x1B)
+    flag_28 = BitVector.DEF_FLAG(0x1C)
+    flag_29 = BitVector.DEF_FLAG(0x1D)
+    flag_30 = BitVector.DEF_FLAG(0x1E)
+    flag_31 = BitVector.DEF_FLAG(0x1F)
+
+
 class Property1(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -212,9 +312,9 @@ class Property1(Serializable):
         self.unknown_0x24 = None
         self.unknown_0x28 = None
         self.unknown_0x2C = None
-        self.flags = None
+        self.flags        = Property1Flags(endianness)
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -227,7 +327,7 @@ class Property1(Serializable):
         self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
         self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
         self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
-        self.flags = rw.rw_uint32(self.flags)
+        self.flags        = rw.rw_obj(self.flags, version)
 
 class OutlineProperty(Serializable):
     def __init__(self, endianness='>'):
@@ -237,10 +337,46 @@ class OutlineProperty(Serializable):
         self.type   = None
         self.colour = None
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.type   = rw.rw_uint32(self.type)
         self.colour = rw.rw_uint32(self.colour)
-                
+
+
+class Property3Flags(MaterialAttributeSubTypeFlags):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    flag_16 = BitVector.DEF_FLAG(0x10)
+    flag_17 = BitVector.DEF_FLAG(0x11)
+    flag_18 = BitVector.DEF_FLAG(0x12)
+    flag_19 = BitVector.DEF_FLAG(0x13)
+    flag_20 = BitVector.DEF_FLAG(0x14)
+    flag_21 = BitVector.DEF_FLAG(0x15)
+    flag_22 = BitVector.DEF_FLAG(0x16)
+    flag_23 = BitVector.DEF_FLAG(0x17)
+    flag_24 = BitVector.DEF_FLAG(0x18)
+    flag_25 = BitVector.DEF_FLAG(0x19)
+    flag_26 = BitVector.DEF_FLAG(0x1A)
+    flag_27 = BitVector.DEF_FLAG(0x1B)
+    flag_28 = BitVector.DEF_FLAG(0x1C)
+    flag_29 = BitVector.DEF_FLAG(0x1D)
+    flag_30 = BitVector.DEF_FLAG(0x1E)
+    flag_31 = BitVector.DEF_FLAG(0x1F)
+
+
 class Property3(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -257,9 +393,9 @@ class Property3(Serializable):
         self.unknown_0x24 = None
         self.unknown_0x28 = None
         self.unknown_0x2C = None
-        self.flags = None
+        self.flags        = Property3Flags(endianness)
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -272,8 +408,44 @@ class Property3(Serializable):
         self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
         self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
         self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
-        self.flags = rw.rw_uint32(self.flags)        
-        
+        self.flags        = rw.rw_obj(self.flags, version)
+    
+
+class Property4Flags(MaterialAttributeSubTypeFlags):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    flag_16 = BitVector.DEF_FLAG(0x10)
+    flag_17 = BitVector.DEF_FLAG(0x11)
+    flag_18 = BitVector.DEF_FLAG(0x12)
+    flag_19 = BitVector.DEF_FLAG(0x13)
+    flag_20 = BitVector.DEF_FLAG(0x14)
+    flag_21 = BitVector.DEF_FLAG(0x15)
+    flag_22 = BitVector.DEF_FLAG(0x16)
+    flag_23 = BitVector.DEF_FLAG(0x17)
+    flag_24 = BitVector.DEF_FLAG(0x18)
+    flag_25 = BitVector.DEF_FLAG(0x19)
+    flag_26 = BitVector.DEF_FLAG(0x1A)
+    flag_27 = BitVector.DEF_FLAG(0x1B)
+    flag_28 = BitVector.DEF_FLAG(0x1C)
+    flag_29 = BitVector.DEF_FLAG(0x1D)
+    flag_30 = BitVector.DEF_FLAG(0x1E)
+    flag_31 = BitVector.DEF_FLAG(0x1F)
+    
+    
 class Property4(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -298,9 +470,9 @@ class Property4(Serializable):
         self.unknown_0x44 = None
         self.unknown_0x45 = None
         self.unknown_0x49 = None
-        self.flags = None
+        self.flags        = Property4Flags(endianness)
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -321,8 +493,44 @@ class Property4(Serializable):
         self.unknown_0x44 = rw.rw_uint8(self.unknown_0x44)
         self.unknown_0x45 = rw.rw_float32(self.unknown_0x45)
         self.unknown_0x49 = rw.rw_float32(self.unknown_0x49)
-        self.flags = rw.rw_uint32(self.flags)
-        
+        self.flags        = rw.rw_obj(self.flags, version)
+
+
+class Property5Flags(MaterialAttributeSubTypeFlags):
+    flag_0  = BitVector.DEF_FLAG(0x00)
+    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_2  = BitVector.DEF_FLAG(0x02)
+    flag_3  = BitVector.DEF_FLAG(0x03)
+    flag_4  = BitVector.DEF_FLAG(0x04)
+    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_6  = BitVector.DEF_FLAG(0x06)
+    flag_7  = BitVector.DEF_FLAG(0x07)
+    flag_8  = BitVector.DEF_FLAG(0x08)
+    flag_9  = BitVector.DEF_FLAG(0x09)
+    flag_10 = BitVector.DEF_FLAG(0x0A)
+    flag_11 = BitVector.DEF_FLAG(0x0B)
+    flag_12 = BitVector.DEF_FLAG(0x0C)
+    flag_13 = BitVector.DEF_FLAG(0x0D)
+    flag_14 = BitVector.DEF_FLAG(0x0E)
+    flag_15 = BitVector.DEF_FLAG(0x0F)
+    flag_16 = BitVector.DEF_FLAG(0x10)
+    flag_17 = BitVector.DEF_FLAG(0x11)
+    flag_18 = BitVector.DEF_FLAG(0x12)
+    flag_19 = BitVector.DEF_FLAG(0x13)
+    flag_20 = BitVector.DEF_FLAG(0x14)
+    flag_21 = BitVector.DEF_FLAG(0x15)
+    flag_22 = BitVector.DEF_FLAG(0x16)
+    flag_23 = BitVector.DEF_FLAG(0x17)
+    flag_24 = BitVector.DEF_FLAG(0x18)
+    flag_25 = BitVector.DEF_FLAG(0x19)
+    flag_26 = BitVector.DEF_FLAG(0x1A)
+    flag_27 = BitVector.DEF_FLAG(0x1B)
+    flag_28 = BitVector.DEF_FLAG(0x1C)
+    flag_29 = BitVector.DEF_FLAG(0x1D)
+    flag_30 = BitVector.DEF_FLAG(0x1E)
+    flag_31 = BitVector.DEF_FLAG(0x1F)
+
+
 class Property5(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -340,9 +548,9 @@ class Property5(Serializable):
         self.unknown_0x28 = None
         self.unknown_0x2C = None
         self.unknown_0x30 = None
-        self.flags = None
+        self.flags        = Property5Flags(endianness)
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -356,7 +564,7 @@ class Property5(Serializable):
         self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
         self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
         self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
-        self.flags = rw.rw_uint32(self.flags)
+        self.flags        = rw.rw_obj(self.flags, version)
         
 class Property6(Serializable):
     def __init__(self, endianness='>'):
@@ -366,7 +574,7 @@ class Property6(Serializable):
         self.unknown_0x04 = None
         self.unknown_0x08 = None
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
@@ -376,5 +584,5 @@ class Property7(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-    def read_write(self, rw):
+    def read_write(self, rw, version):
         pass
