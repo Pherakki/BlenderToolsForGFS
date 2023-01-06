@@ -25,7 +25,17 @@ if "bpy" in locals():
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
     from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialOutlineAttributePanel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType3Panel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType4Panel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType5Panel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
+    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
+    from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     
     
     class GFSImportSubmenu(bpy.types.Menu):
@@ -61,10 +71,20 @@ if "bpy" in locals():
         MessagePopup,
         GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
+        OBJECT_PT_GFSToolsMaterialPanel,
+        OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel,
+        OBJECT_PT_GFSToolsMaterialAttributeType1Panel,
+        OBJECT_PT_GFSToolsMaterialOutlineAttributePanel,
+        OBJECT_PT_GFSToolsMaterialAttributeType3Panel,
+        OBJECT_PT_GFSToolsMaterialAttributeType4Panel,
+        OBJECT_PT_GFSToolsMaterialAttributeType5Panel,
+        OBJECT_PT_GFSToolsMaterialAttributeType6Panel,
+        OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     )
     
     PROP_GROUPS = (
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
+        (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       )
     )
     
     LIST_ITEMS = (
