@@ -48,7 +48,17 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
             if file.endswith(".GMD") and file not in ignore:
                 model_files.append(os.path.join(root, file))
     
+    if namefilter is not None:
+        assert callable(namefilter), f"namefilter must be callable."
+        assert type(namefilter("teststring")) is bool, f"namefilter must return a bool." 
+        model_files = [f for f in model_files if namefilter(f)]
     model_files = sorted(model_files)
+    assert start >= 0,    "The start index must be larger than or equal to 0."
+    assert stop  >  0,    "The stop index must be larger than 0."
+    assert stop  > start, "The stop index must be larger than the start index."
+    model_files = model_files[start:]
+    if stop is not None:
+        model_files = model_files[:stop-start]
     
     anim_errors                  = []
     particle_errors              = []
