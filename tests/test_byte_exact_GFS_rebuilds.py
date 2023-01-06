@@ -21,7 +21,10 @@ def fetch_node_ids(ids, node):
     for child in node.children[::-1]:
         fetch_node_ids(ids, child)
 
-def execute(data_root, error_out):
+class InconsistentVersionsError(Exception):
+    pass
+
+def execute(data_root, error_out, start=0, stop=None, namefilter=None):
     #######################
     # VALIDATE ALL MODELS #
     #######################
@@ -47,12 +50,13 @@ def execute(data_root, error_out):
     
     model_files = sorted(model_files)
     
-    anim_errors          = []
-    particle_errors      = []
-    anim_particles_error = []
-    version_errors       = []
-    type_9_errors        = []
-    unspecified_errors   = []
+    anim_errors                  = []
+    particle_errors              = []
+    anim_particles_error         = []
+    version_errors               = []
+    type_9_errors                = []
+    inconsistent_versions_errors = []
+    unspecified_errors           = []
 
     n_files = len(model_files)
     largest = max(len(os.path.split(f)[1]) for f in model_files)
@@ -64,8 +68,12 @@ def execute(data_root, error_out):
         gb = GFSBinary()
         try:
             gb.read(file)
+            
+            if not all(ctr.version == gb.containers[0].version for ctr in gb.containers):
+                raise InconsistentVersionsError
+            
             gi = GFSInterface.from_binary(gb)
-            gb2 = gi.to_binary(0x01105100)
+            gb2 = gi.to_binary(gb.containers[0].version)
             
             
             ##################################
@@ -143,16 +151,19 @@ def execute(data_root, error_out):
             version_errors.append((file + " " + str(e)))
         except HasType9Error:
             type_9_errors.append(file)
+        except InconsistentVersionsError:
+            inconsistent_versions_errors.append(file)
         except Exception as e:
             unspecified_errors.append(str(e))
             
-    anim_error_count           = len(anim_errors)
-    particle_error_count       = len(particle_errors)
-    anim_particles_error_count = len(anim_particles_error)
-    version_error_count        = len(version_errors)
-    type_9_error_count         = len(type_9_errors)
-    unspecified_error_count    = len(unspecified_errors)
-    ignored_files_count        = len(ignore)
+    anim_error_count            = len(anim_errors)
+    particle_error_count        = len(particle_errors)
+    anim_particles_error_count  = len(anim_particles_error)
+    version_error_count         = len(version_errors)
+    type_9_error_count          = len(type_9_errors)
+    inconsistent_versions_count = len(inconsistent_versions_errors)
+    unspecified_error_count     = len(unspecified_errors)
+    ignored_files_count         = len(ignore)
     
     error_out.extend((anim_errors, particle_errors, anim_particles_error, version_errors, type_9_errors, unspecified_errors))
 
@@ -164,12 +175,13 @@ def execute(data_root, error_out):
         print("# TEST PASSED #")
     print("###############")
     print("Acceptable failures:")
-    print("-", particle_error_count, "files failed due to containing EPL data")
-    print("-", anim_error_count, "files failed due to containing animation data")
-    print("-", anim_particles_error_count, "files failed due to containing animations with EPL data")
-    print("-", version_error_count, "files failed due to containing unsupported versions")
-    print("-", type_9_error_count, "files failed due to containing type 9 node attributes")
-    print("-", ignored_files_count, "files failed due to being on the hardcoded 'ignore' list")
+    print("-", particle_error_count,        "files failed due to containing EPL data")
+    #print("-", anim_error_count,            "files failed due to containing animation data")
+    print("-", anim_particles_error_count,  "files failed due to containing animations with EPL data")
+    print("-", version_error_count,         "files failed due to containing unsupported versions")
+    print("-", type_9_error_count,          "files failed due to containing type 9 node attributes")
+    print("-", inconsistent_versions_count, "files failed due to having inconsistent versions between containers")
+    print("-", ignored_files_count,         "files failed due to being on the hardcoded 'ignore' list")
     
     if unspecified_error_count > 0:
         print("UNACCEPTABLE FAILURES:")
