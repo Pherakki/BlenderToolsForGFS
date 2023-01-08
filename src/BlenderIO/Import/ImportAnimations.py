@@ -1,6 +1,9 @@
+import io
+
 import bpy
 from mathutils import Matrix, Quaternion
 
+from ...serialization.BinaryTargets import Writer
 from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
 
 
@@ -10,7 +13,6 @@ def import_animations(gfs, model_gfs, armature, filename):
     armature.animation_data_create()
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
-    
     for anim_idx, anim in enumerate(gfs.animations):
         track_name = f"{filename}_{anim_idx}"
         action = bpy.data.actions.new(track_name)
@@ -165,6 +167,22 @@ def import_animations(gfs, model_gfs, armature, filename):
         
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
+    
+    # IMPORT ALL DATA AS A BINARY
+    if len(gfs.animations):
+        string_data = '0x'
+        for anim in gfs.animations:
+            ab = anim.to_binary()
+            
+            stream = io.BytesIO()
+            wtr = Writer(None)
+            wtr.bytestream = stream
+            wtr.rw_obj(ab, 0x01105100)
+            stream.seek(0)
+            
+            string_data += "||" + ''.join(f"{elem:0>2X}" for elem in stream.read())
+        armature["animations"] = string_data
+
 
 
 def create_rest_pose(armature, nodes, bind_matrices):
