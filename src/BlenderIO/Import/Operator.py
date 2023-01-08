@@ -9,6 +9,7 @@ from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
 from .ImportModel import import_pincushion_model
+from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
 
 
@@ -47,7 +48,10 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # - Pull out the bind pose matrix _via_ the raw armature bone matrices
         # - The animations can then be constructed from those three bits of data
         import_animations(gfs, gfs, armature, filename)
+        
+        import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
+        
         return {'FINISHED'}
     
     @handle_errors
