@@ -1,5 +1,41 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
+from ...CommonStructures import BitVector0x20
+
+
+class LightFlags(BitVector0x20):
+    flag_0      = BitVector0x20.DEF_FLAG(0x00)
+    unk_setting = BitVector0x20.DEF_FLAG(0x01)
+    flag_2      = BitVector0x20.DEF_FLAG(0x02)
+    flag_3      = BitVector0x20.DEF_FLAG(0x03)
+    flag_4      = BitVector0x20.DEF_FLAG(0x04)
+    flag_5      = BitVector0x20.DEF_FLAG(0x05)
+    flag_6      = BitVector0x20.DEF_FLAG(0x06)
+    flag_7      = BitVector0x20.DEF_FLAG(0x07)
+    flag_8      = BitVector0x20.DEF_FLAG(0x08)
+    flag_9      = BitVector0x20.DEF_FLAG(0x09)
+    flag_10     = BitVector0x20.DEF_FLAG(0x0A)
+    flag_11     = BitVector0x20.DEF_FLAG(0x0B)
+    flag_12     = BitVector0x20.DEF_FLAG(0x0C)
+    flag_13     = BitVector0x20.DEF_FLAG(0x0D)
+    flag_14     = BitVector0x20.DEF_FLAG(0x0E)
+    flag_15     = BitVector0x20.DEF_FLAG(0x0F)
+    flag_16     = BitVector0x20.DEF_FLAG(0x10)
+    flag_17     = BitVector0x20.DEF_FLAG(0x11)
+    flag_18     = BitVector0x20.DEF_FLAG(0x12)
+    flag_19     = BitVector0x20.DEF_FLAG(0x13)
+    flag_20     = BitVector0x20.DEF_FLAG(0x14)
+    flag_21     = BitVector0x20.DEF_FLAG(0x15)
+    flag_22     = BitVector0x20.DEF_FLAG(0x16)
+    flag_23     = BitVector0x20.DEF_FLAG(0x17)
+    flag_24     = BitVector0x20.DEF_FLAG(0x18)
+    flag_25     = BitVector0x20.DEF_FLAG(0x19)
+    flag_26     = BitVector0x20.DEF_FLAG(0x1A)
+    flag_27     = BitVector0x20.DEF_FLAG(0x1B)
+    flag_28     = BitVector0x20.DEF_FLAG(0x1C)
+    flag_29     = BitVector0x20.DEF_FLAG(0x1D)
+    flag_30     = BitVector0x20.DEF_FLAG(0x1E)
+    flag_31     = BitVector0x20.DEF_FLAG(0x1F)
 
 
 class LightBinary(Serializable):
@@ -7,7 +43,7 @@ class LightBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = None
+        self.flags = LightFlags(endianness)
         self.type  = None
         self.color_1 = None
         self.color_2 = None
@@ -47,7 +83,7 @@ class LightBinary(Serializable):
                    
     def __repr__(self):
         out = f"[GFD::SceneContainer::SceneNode::Attachment::Light] " \
-            f"{safe_format(self.flags, hex32_format)} {self.type}" \
+            f"{safe_format(self.flags._value, hex32_format)} {self.type}" \
             f"{safe_format(self.color_1, list)}" \
             f"{safe_format(self.color_2, list)}" \
             f"{safe_format(self.color_3, list)}"
@@ -65,8 +101,8 @@ class LightBinary(Serializable):
         return out
             
     def read_write(self, rw, version):
-        self.flags = rw.rw_uint32(self.flags)
-        self.type = rw.rw_uint32(self.type)
+        self.flags   = rw.rw_obj(self.flags)
+        self.type    = rw.rw_uint32(self.type)
         self.color_1 = rw.rw_float32s(self.color_1, 4)
         self.color_2 = rw.rw_float32s(self.color_2, 4)
         self.color_3 = rw.rw_float32s(self.color_3, 4)
@@ -80,7 +116,7 @@ class LightBinary(Serializable):
             self.unknown_0x38 = rw.rw_float32(self.unknown_0x38)
             self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
             
-            if self.flags & 0x00000002:
+            if self.flags.unk_setting:
                 self.unknown_0x40 = rw.rw_float32(self.unknown_0x40)
                 self.unknown_0x44 = rw.rw_float32(self.unknown_0x44)
             else:
@@ -98,7 +134,7 @@ class LightBinary(Serializable):
             self.unknown_0x6C = rw.rw_float32(self.unknown_0x6C)
             self.unknown_0x70 = rw.rw_float32(self.unknown_0x70)
             
-            if self.flags & 0x00000002:
+            if self.flags.unk_setting:
                 self.unknown_0x74 = rw.rw_float32(self.unknown_0x74)
                 self.unknown_0x78 = rw.rw_float32(self.unknown_0x78)
             else:

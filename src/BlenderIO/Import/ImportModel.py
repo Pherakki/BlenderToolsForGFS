@@ -100,6 +100,10 @@ def import_pincushion_model(gfs, name):
     for i, cam in enumerate(gfs.cameras):
         import_camera("camera", i, cam, main_armature, bpy_node_names)
     
+    # Import lights
+    for i, light in enumerate(gfs.lights):
+        import_light("light", i, light, main_armature, bpy_node_names)
+    
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.context.view_layer.objects.active = initial_obj
@@ -409,3 +413,73 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera.parent_type = "BONE"
     bpy_camera.parent_bone = bpy_node_names[camera.node]
 
+def import_light(name, i, light, armature, bpy_node_names):
+    bpy_light = bpy.data.lights.new(f"{name}_{i}")
+    
+    # Custom properties
+    bpy_light.GFSTOOLS_LightProperties.flag_0  = light.binary.flags.flag_0
+    bpy_light.GFSTOOLS_LightProperties.unk_setting  = light.binary.flags.unk_setting
+    bpy_light.GFSTOOLS_LightProperties.flag_2  = light.binary.flags.flag_2
+    bpy_light.GFSTOOLS_LightProperties.flag_3  = light.binary.flags.flag_3
+    bpy_light.GFSTOOLS_LightProperties.flag_4  = light.binary.flags.flag_4
+    bpy_light.GFSTOOLS_LightProperties.flag_5  = light.binary.flags.flag_5
+    bpy_light.GFSTOOLS_LightProperties.flag_6  = light.binary.flags.flag_6
+    bpy_light.GFSTOOLS_LightProperties.flag_7  = light.binary.flags.flag_7
+    bpy_light.GFSTOOLS_LightProperties.flag_8  = light.binary.flags.flag_8
+    bpy_light.GFSTOOLS_LightProperties.flag_9  = light.binary.flags.flag_9
+    bpy_light.GFSTOOLS_LightProperties.flag_10 = light.binary.flags.flag_10
+    bpy_light.GFSTOOLS_LightProperties.flag_11 = light.binary.flags.flag_11
+    bpy_light.GFSTOOLS_LightProperties.flag_12 = light.binary.flags.flag_12
+    bpy_light.GFSTOOLS_LightProperties.flag_13 = light.binary.flags.flag_13
+    bpy_light.GFSTOOLS_LightProperties.flag_14 = light.binary.flags.flag_14
+    bpy_light.GFSTOOLS_LightProperties.flag_15 = light.binary.flags.flag_15
+    bpy_light.GFSTOOLS_LightProperties.flag_16 = light.binary.flags.flag_16
+    bpy_light.GFSTOOLS_LightProperties.flag_17 = light.binary.flags.flag_17
+    bpy_light.GFSTOOLS_LightProperties.flag_18 = light.binary.flags.flag_18
+    bpy_light.GFSTOOLS_LightProperties.flag_19 = light.binary.flags.flag_19
+    bpy_light.GFSTOOLS_LightProperties.flag_20 = light.binary.flags.flag_20
+    bpy_light.GFSTOOLS_LightProperties.flag_21 = light.binary.flags.flag_21
+    bpy_light.GFSTOOLS_LightProperties.flag_22 = light.binary.flags.flag_22
+    bpy_light.GFSTOOLS_LightProperties.flag_23 = light.binary.flags.flag_23
+    bpy_light.GFSTOOLS_LightProperties.flag_24 = light.binary.flags.flag_24
+    bpy_light.GFSTOOLS_LightProperties.flag_25 = light.binary.flags.flag_25
+    bpy_light.GFSTOOLS_LightProperties.flag_26 = light.binary.flags.flag_26
+    bpy_light.GFSTOOLS_LightProperties.flag_27 = light.binary.flags.flag_27
+    bpy_light.GFSTOOLS_LightProperties.flag_28 = light.binary.flags.flag_28
+    bpy_light.GFSTOOLS_LightProperties.flag_29 = light.binary.flags.flag_29
+    bpy_light.GFSTOOLS_LightProperties.flag_30 = light.binary.flags.flag_30
+    bpy_light.GFSTOOLS_LightProperties.flag_31 = light.binary.flags.flag_31
+    
+    bpy_light.GFSTOOLS_LightProperties.color_1 = light.binary.color_1
+    bpy_light.GFSTOOLS_LightProperties.color_2 = light.binary.color_2
+    bpy_light.GFSTOOLS_LightProperties.color_3 = light.binary.color_3
+    
+    if light.binary.unknown_0x28 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x28 = light.binary.unknown_0x28
+    if light.binary.unknown_0x2C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x2C = light.binary.unknown_0x2C
+    if light.binary.unknown_0x30 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x30 = light.binary.unknown_0x30
+    if light.binary.unknown_0x34 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x34 = light.binary.unknown_0x34
+    if light.binary.unknown_0x38 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x38 = light.binary.unknown_0x38
+    if light.binary.unknown_0x3C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x3C = light.binary.unknown_0x3C
+    if light.binary.unknown_0x40 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x40 = light.binary.unknown_0x40
+    if light.binary.unknown_0x44 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x44 = light.binary.unknown_0x44
+    if light.binary.unknown_0x48 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x48 = light.binary.unknown_0x48
+    if light.binary.unknown_0x4C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x4C = light.binary.unknown_0x4C
+    if light.binary.unknown_0x50 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x50 = light.binary.unknown_0x50
+    if light.binary.unknown_0x54 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x54 = light.binary.unknown_0x54
+    if light.binary.unknown_0x58 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x58 = light.binary.unknown_0x58
+    if light.binary.unknown_0x5C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x5C = light.binary.unknown_0x5C
+    if light.binary.unknown_0x60 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x60 = light.binary.unknown_0x60
+    if light.binary.unknown_0x64 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x64 = light.binary.unknown_0x64
+    if light.binary.unknown_0x68 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x68 = light.binary.unknown_0x68
+    if light.binary.unknown_0x6C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x6C = light.binary.unknown_0x6C
+    if light.binary.unknown_0x70 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x70 = light.binary.unknown_0x70
+    if light.binary.unknown_0x74 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x74 = light.binary.unknown_0x74
+    if light.binary.unknown_0x78 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x78 = light.binary.unknown_0x78
+    if light.binary.unknown_0x7C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x7C = light.binary.unknown_0x7C
+    if light.binary.unknown_0x80 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x80 = light.binary.unknown_0x80
+    if light.binary.unknown_0x84 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x84 = light.binary.unknown_0x84
+    
+    # Link to the armature
+    bpy_light.parent = armature
+    bpy_light.parent_type = "BONE"
+    bpy_light.parent_bone = bpy_node_names[light.node]
