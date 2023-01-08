@@ -123,7 +123,11 @@ if "bpy" in locals():
     
     def register():
         blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
-       
+       # Note for later: multi-language support can be implemented by checking
+       #     - bpy.context.preferences.view.language
+       #     - bpy.context.preferences.view.use_translate_interface
+       #     - bpy.context.preferences.view.use_translate_new_dataname
+       #     - bpy.context.preferences.view.use_translate_tooltips
         for classtype in CLASSES:
             bpy.utils.register_class(classtype)
         
