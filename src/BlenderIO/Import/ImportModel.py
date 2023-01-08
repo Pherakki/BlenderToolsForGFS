@@ -19,6 +19,12 @@ def import_pincushion_model(gfs, name):
     bpy_nodes       = [None]*len(gfs.bones)
     bone_transforms = [None]*len(gfs.bones)
     for i, node in enumerate(gfs.bones):
+        # This spits out an... incorrect matrix?
+        # When constructing the armature from node transforms...
+        # ...all looks good.
+        # However, some models do not start in the bind pose...
+        # ...so the bind pose must be created somehow.
+        # Hopefully it's just a bug and not unrecoverable from the files.
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
 
