@@ -1,4 +1,5 @@
 from ......serialization.Serializable import Serializable
+from ......serialization.utils import safe_format
 from ...CommonStructures import ObjectName
 
 
@@ -14,14 +15,12 @@ class PhysicsBoneBinary(Serializable):
         self.has_name = False
         self.name = ObjectName()
         self.unknown_0x14 = None
-        self.unknown_0x18 = None
-        self.unknown_0x1C = None
         
     def __repr__(self):
         if self.has_name:
             return f"[GFS::Physics::Bone] {self.name.string} {self.unknown_0x00} {self.unknown_0x04} {self.unknown_0x08} {self.unknown_0x0C}"
         else:
-            return f"[GFS::Physics::Bone] <Nameless> {self.unknown_0x00} {self.unknown_0x04} {self.unknown_0x08} {self.unknown_0x0C} [{self.unknown_0x14} {self.unknown_0x18} {self.unknown_0x1C}]"
+            return f"[GFS::Physics::Bone] <Nameless> {self.unknown_0x00} {self.unknown_0x04} {self.unknown_0x08} {self.unknown_0x0C} {safe_format(self.unknown_0x14, list)}"
     
     def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
@@ -31,10 +30,8 @@ class PhysicsBoneBinary(Serializable):
         if self.has_name:
             rw.rw_obj(self.name, version)
         else:
-            # Position?
-            self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
-            self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
-            self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+            # Appears to require a scale
+            self.unknown_0x14 = rw.rw_float16s(self.unknown_0x14, 6)
     
     def rw_unknowns(self, rw, version):
         if version > 0x1104130:
