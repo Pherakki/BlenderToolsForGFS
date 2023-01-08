@@ -460,14 +460,15 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light.GFSTOOLS_LightProperties.color_2 = light.binary.color_2
     bpy_light.GFSTOOLS_LightProperties.color_3 = light.binary.color_3
     
+    if light.binary.blur_radius is not None: bpy_light.GFSTOOLS_LightProperties.blur_radius = light.binary.blur_radius
+    if light.binary.lum_radius  is not None: bpy_light.GFSTOOLS_LightProperties.lum_radius  = light.binary.lum_radius
+    
     if light.binary.unknown_0x28 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x28 = light.binary.unknown_0x28
     if light.binary.unknown_0x2C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x2C = light.binary.unknown_0x2C
     if light.binary.unknown_0x30 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x30 = light.binary.unknown_0x30
     if light.binary.unknown_0x34 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x34 = light.binary.unknown_0x34
     if light.binary.unknown_0x38 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x38 = light.binary.unknown_0x38
     if light.binary.unknown_0x3C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x3C = light.binary.unknown_0x3C
-    if light.binary.unknown_0x40 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x40 = light.binary.unknown_0x40
-    if light.binary.unknown_0x44 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x44 = light.binary.unknown_0x44
     if light.binary.unknown_0x48 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x48 = light.binary.unknown_0x48
     if light.binary.unknown_0x4C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x4C = light.binary.unknown_0x4C
     if light.binary.unknown_0x50 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x50 = light.binary.unknown_0x50
@@ -479,8 +480,6 @@ def import_light(name, i, light, armature, bpy_node_names):
     if light.binary.unknown_0x68 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x68 = light.binary.unknown_0x68
     if light.binary.unknown_0x6C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x6C = light.binary.unknown_0x6C
     if light.binary.unknown_0x70 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x70 = light.binary.unknown_0x70
-    if light.binary.unknown_0x74 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x74 = light.binary.unknown_0x74
-    if light.binary.unknown_0x78 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x78 = light.binary.unknown_0x78
     if light.binary.unknown_0x7C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x7C = light.binary.unknown_0x7C
     if light.binary.unknown_0x80 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x80 = light.binary.unknown_0x80
     if light.binary.unknown_0x84 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x84 = light.binary.unknown_0x84
