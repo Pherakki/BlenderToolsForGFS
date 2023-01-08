@@ -22,10 +22,19 @@ bl_info = {
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
+    from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
+    from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
     from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
+    from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
+    from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
+    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd
+    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelDel
+    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp
+    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown
+    from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
@@ -72,6 +81,7 @@ if "bpy" in locals():
         #ExportGFS,
         #GFSExportSubmenu
         MessagePopup,
+        GFSToolsGenericProperty,
         GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
@@ -83,14 +93,23 @@ if "bpy" in locals():
         OBJECT_PT_GFSToolsMaterialAttributeType5Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType6Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel
+        OBJECT_PT_GFSToolsMaterialAttributeType7Panel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
+        OBJECT_PT_GFSToolsBonePropertiesPanel,
+        OBJECT_PT_GFSToolsBoneGenericPropertyPanel,
+        OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd,
+        OBJECT_OT_GFSToolsBoneGenericPropertyPanelDel,
+        OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp,
+        OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown,
+        OBJECT_UL_GFSToolsGenericPropertyUIList
     )
     
     PROP_GROUPS = (
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
+        (bpy.types.Bone,     "GFSTOOLS_BoneProperties",            GFSToolsBoneProperties           ),
     )
     
     LIST_ITEMS = (

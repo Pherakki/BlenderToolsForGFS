@@ -33,6 +33,47 @@ def import_pincushion_model(gfs, name):
     bpy.context.view_layer.objects.active = main_armature
     bpy.ops.object.mode_set(mode="OBJECT")
     
+    ###################
+    # PUSH EXTRA DATA #
+    ###################
+    for node in gfs.bones:
+        bpy_bone = main_armature.data.bones[node.name]
+        bpy_bone.GFSTOOLS_BoneProperties.unknown_float = node.unknown_float
+        
+        for prop in node.properties:
+            item = bpy_bone.GFSTOOLS_BoneProperties.properties.add()
+            item.dname = prop.name.string
+            if prop.type == 1:
+                item.dtype = "UINT32"
+                item.uint32_data = prop.data
+            elif prop.type == 2:
+                item.dtype = "FLOAT32"
+                item.float32_data = prop.data
+            elif prop.type == 3:
+                item.dtype = "UINT8"
+                item.uint8_data = prop.data
+            elif prop.type == 4:
+                item.dtype = "STRING"
+                item.string_data = prop.data   
+            elif prop.type == 5:
+                item.dtype = "UINT8VEC3"
+                item.uint8vec3_data = prop.data  
+            elif prop.type == 6:
+                item.dtype = "UINT8VEC4"
+                item.uint8vec4_data = prop.data
+            elif prop.type == 7:
+                item.dtype = "FLOAT32VEC3"
+                item.float32vec3_data = prop.data
+            elif prop.type == 8:
+                item.dtype = "FLOAT32VEC4"
+                item.float32vec4_data = prop.data
+            elif prop.type == 9:
+                item.dtype = "BYTES"
+                item.bytes_data = '0x' + ''.join(rf"{e:0>2X}" for e in prop.data)
+    
+    ######################################
+    # CREATE PINNED ARMATURES FOR MESHES #
+    ######################################
     armature_indices = {}
     for mesh in gfs.meshes:
         if mesh.node not in armature_indices:
