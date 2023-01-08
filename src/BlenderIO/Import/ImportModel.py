@@ -399,14 +399,14 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera.angle      = camera.fov
     
     # Custom properties
-    bpy.camera["unknown_0x50"] = camera.unknown_0x50
-    bpy.camera["aspect_ratio"] = camera.aspect_ratio
-    bpy.camera["unknown_0x50"] = camera.unknown_0x50
+    bpy_camera["unknown_0x50"] = camera.unknown_0x50
+    bpy_camera["aspect_ratio"] = camera.aspect_ratio
+    bpy_camera["unknown_0x50"] = camera.unknown_0x50
     
-    bpy.camera["view_matrix_0"] = camera.view_matrix[ 0: 4]
-    bpy.camera["view_matrix_1"] = camera.view_matrix[ 4: 8]
-    bpy.camera["view_matrix_2"] = camera.view_matrix[ 8:12]
-    bpy.camera["view_matrix_3"] = camera.view_matrix[12:16]
+    bpy_camera["view_matrix_0"] = camera.view_matrix[ 0: 4]
+    bpy_camera["view_matrix_1"] = camera.view_matrix[ 4: 8]
+    bpy_camera["view_matrix_2"] = camera.view_matrix[ 8:12]
+    bpy_camera["view_matrix_3"] = camera.view_matrix[12:16]
 
     # Link to the armature
     bpy_camera.parent = armature
