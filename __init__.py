@@ -24,6 +24,7 @@ if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
+    from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
@@ -35,6 +36,7 @@ if "bpy" in locals():
     from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp
     from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
+    from .src.BlenderIO.UI.Lights import OBJECT_PT_GFSToolsLightAttributesPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
@@ -92,7 +94,6 @@ if "bpy" in locals():
         OBJECT_PT_GFSToolsMaterialAttributeType4Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType5Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType6Panel,
-        OBJECT_PT_GFSToolsMaterialAttributeType7Panel
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
@@ -102,6 +103,7 @@ if "bpy" in locals():
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelDel,
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp,
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown,
+        OBJECT_PT_GFSToolsLightAttributesPanel,
         OBJECT_UL_GFSToolsGenericPropertyUIList
     )
     
@@ -110,7 +112,9 @@ if "bpy" in locals():
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
         (bpy.types.Bone,     "GFSTOOLS_BoneProperties",            GFSToolsBoneProperties           ),
+        (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          )
     )
+    
     
     LIST_ITEMS = (
         (bpy.types.TOPBAR_MT_file_import, menu_func_import),
