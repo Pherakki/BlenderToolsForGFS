@@ -23,5 +23,5 @@ class PhysicsBoneLinkBinary(Serializable):
         self.child_physics_bone = rw.rw_uint16(self.child_physics_bone)
         
     def rw_radius(self, rw, version):
-        if version > 0x1104130:
+        if version > 0x01104130:
             self.radius = rw.rw_float32(self.radius)
