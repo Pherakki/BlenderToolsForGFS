@@ -22,9 +22,10 @@ bl_info = {
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS
-    from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
+    from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
+    from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
+    from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
     from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
-    from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
@@ -34,8 +35,10 @@ if "bpy" in locals():
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType5Panel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
-    from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
-    from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
+    from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshAttributesPanel
+    from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshUnknownFloatsPanel
+    from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
+    from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
     
     
     class GFSImportSubmenu(bpy.types.Menu):
@@ -80,11 +83,14 @@ if "bpy" in locals():
         OBJECT_PT_GFSToolsMaterialAttributeType5Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType6Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel
+        OBJECT_PT_GFSToolsMeshAttributesPanel,
+        OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
     )
     
     PROP_GROUPS = (
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
-        (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       )
+        (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
+        (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
     )
     
     LIST_ITEMS = (

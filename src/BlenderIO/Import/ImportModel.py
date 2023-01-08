@@ -1,7 +1,7 @@
 import array
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Vector, Quaternion
 
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 
@@ -222,6 +222,43 @@ def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, main_armature
     bpy_mesh_object.parent = armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
+    
+    ########################
+    # DO THE LEFTOVER DATA #
+    ########################
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_5   = mesh.flag_5
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_7   = mesh.flag_7
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_8   = mesh.flag_8
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_9   = mesh.flag_9
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_10  = mesh.flag_10
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_11  = mesh.flag_11
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_13  = mesh.flag_13
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_14  = mesh.flag_14
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_15  = mesh.flag_15
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_16  = mesh.flag_16
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_17  = mesh.flag_17
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_18  = mesh.flag_18
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_19  = mesh.flag_19
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_20  = mesh.flag_20
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_21  = mesh.flag_21
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_22  = mesh.flag_22
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_23  = mesh.flag_23
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_24  = mesh.flag_24
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_25  = mesh.flag_25
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_26  = mesh.flag_26
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_27  = mesh.flag_27
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_28  = mesh.flag_28
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_29  = mesh.flag_29
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_30  = mesh.flag_30
+    bpy_mesh.GFSTOOLS_MeshProperties.flag_31  = mesh.flag_31
+
+    
+    bpy_mesh.GFSTOOLS_MeshProperties.unknown_0x12  = mesh.unknown_0x12
+    if mesh.unknown_float_1 is not None and mesh.unknown_float_2 is not None:
+        bpy_mesh.GFSTOOLS_MeshProperties.has_unknown_floats = True
+        bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_1  = mesh.unknown_float_1
+        bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_2  = mesh.unknown_float_2
+
     
     bpy.context.view_layer.objects.active = prev_obj
 
