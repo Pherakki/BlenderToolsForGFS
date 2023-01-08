@@ -49,37 +49,39 @@ class LightBinary(Serializable):
         self.color_2 = None
         self.color_3 = None
         
+        self.blur_radius = None
+        self.lum_radius  = None
+        
         # Hacky for now, fix if any correspondences between light types is found
         
         # Type 1 data
-        self.unknown_0x28 = None
-        self.unknown_0x2C = None
-        self.unknown_0x30 = None
+        self.unknown_0x28 = None # unk 1
+        self.unknown_0x2C = None # unk 2
+        self.unknown_0x30 = None # unk 3
         
         # Type 2 data
-        self.unknown_0x34 = None
-        self.unknown_0x38 = None
-        self.unknown_0x3C = None
-        self.unknown_0x40 = None
-        self.unknown_0x44 = None
-        self.unknown_0x48 = None
-        self.unknown_0x4C = None
-        self.unknown_0x50 = None
+        self.unknown_0x34 = None # unk 1
+        self.unknown_0x38 = None # unk 2
+        self.unknown_0x3C = None # unk 3
+        
+        self.unknown_0x48 = None # unk 4
+        self.unknown_0x4C = None # unk 5
+        self.unknown_0x50 = None # unk 6
         
         # Type 3 data
-        self.unknown_0x54 = None
-        self.unknown_0x58 = None
-        self.unknown_0x5C = None
+        self.unknown_0x54 = None # unk 1
+        self.unknown_0x58 = None # unk 2
+        self.unknown_0x5C = None # unk 3
+        
         self.unknown_0x60 = None
         self.unknown_0x64 = None
         self.unknown_0x68 = None
         self.unknown_0x6C = None
         self.unknown_0x70 = None
-        self.unknown_0x74 = None
-        self.unknown_0x78 = None
-        self.unknown_0x7C = None
-        self.unknown_0x80 = None
-        self.unknown_0x84 = None
+        
+        self.unknown_0x7C = None # unk 4
+        self.unknown_0x80 = None # unk 5
+        self.unknown_0x84 = None # unk 6
                    
     def __repr__(self):
         out = f"[GFD::SceneContainer::SceneNode::Attachment::Light] " \
@@ -92,11 +94,11 @@ class LightBinary(Serializable):
             out += f"\n{self.unknown_0x28} {self.unknown_0x2C} {self.unknown_0x30}"
         elif self.type == 2:
             out += f"\n{self.unknown_0x34} {self.unknown_0x38} {self.unknown_0x3C}"
-            out += f"\n{self.unknown_0x40} {self.unknown_0x44} {self.unknown_0x48} {self.unknown_0x4C} {self.unknown_0x50}"
+            out += f"\n{self.blur_radius} {self.lum_radius} {self.unknown_0x48} {self.unknown_0x4C} {self.unknown_0x50}"
         elif self.type == 3:
             out += f"\n{self.unknown_0x54} {self.unknown_0x58} {self.unknown_0x5C} {self.unknown_0x60} "
             out += f"{self.unknown_0x64} {self.unknown_0x68} {self.unknown_0x6C} {self.unknown_0x70} "
-            out += f"\n{self.unknown_0x74} {self.unknown_0x78} {self.unknown_0x7C} {self.unknown_0x80} {self.unknown_0x84}"
+            out += f"\n{self.blur_radius} {self.lum_radius} {self.unknown_0x7C} {self.unknown_0x80} {self.unknown_0x84}"
             
         return out
             
@@ -107,36 +109,36 @@ class LightBinary(Serializable):
         self.color_2 = rw.rw_float32s(self.color_2, 4)
         self.color_3 = rw.rw_float32s(self.color_3, 4)
         
-        if self.type == 1:
+        if self.type == 1: # Unknown
             self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
             self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
             self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
-        elif self.type == 2:
+        elif self.type == 2: # Sphere
             self.unknown_0x34 = rw.rw_float32(self.unknown_0x34)
             self.unknown_0x38 = rw.rw_float32(self.unknown_0x38)
             self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
             
             if self.flags.unk_setting:
-                self.unknown_0x40 = rw.rw_float32(self.unknown_0x40)
-                self.unknown_0x44 = rw.rw_float32(self.unknown_0x44)
+                self.blur_radius = rw.rw_float32(self.blur_radius)
+                self.lum_radius  = rw.rw_float32(self.lum_radius)
             else:
                 self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
                 self.unknown_0x4C = rw.rw_float32(self.unknown_0x4C)
                 self.unknown_0x50 = rw.rw_float32(self.unknown_0x50)
-        elif self.type == 3:
+        elif self.type == 3: # Hemisphere
             self.unknown_0x54 = rw.rw_float32(self.unknown_0x54)
             self.unknown_0x58 = rw.rw_float32(self.unknown_0x58)
             self.unknown_0x5C = rw.rw_float32(self.unknown_0x5C)
-            self.unknown_0x60 = rw.rw_float32(self.unknown_0x60)
             
+            self.unknown_0x60 = rw.rw_float32(self.unknown_0x60)
             self.unknown_0x64 = rw.rw_float32(self.unknown_0x64)
             self.unknown_0x68 = rw.rw_float32(self.unknown_0x68)
             self.unknown_0x6C = rw.rw_float32(self.unknown_0x6C)
             self.unknown_0x70 = rw.rw_float32(self.unknown_0x70)
             
             if self.flags.unk_setting:
-                self.unknown_0x74 = rw.rw_float32(self.unknown_0x74)
-                self.unknown_0x78 = rw.rw_float32(self.unknown_0x78)
+                self.blur_radius = rw.rw_float32(self.blur_radius)
+                self.lum_radius  = rw.rw_float32(self.lum_radius)
             else:
                 self.unknown_0x7C = rw.rw_float32(self.unknown_0x7C)
                 self.unknown_0x80 = rw.rw_float32(self.unknown_0x80)

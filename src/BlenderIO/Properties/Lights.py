@@ -3,17 +3,20 @@ import bpy
 
 class GFSToolsLightProperties(bpy.types.PropertyGroup):
     dtype:  bpy.props.EnumProperty(items=(
-            ("TYPE1", "Type 1", ""),
-            ("TYPE2", "Type 2", ""),
-            ("TYPE3", "Type 3", "")
+            ("TYPE1",      "Type 1",     ""),
+            ("SPHERE",     "Sphere",     ""),
+            ("HEMISPHERE", "Hemisphere", "")
         ),
         name="Type"
     )
     unk_setting:  bpy.props.BoolProperty(name="Unknown Setting")
     
-    color_1: bpy.props.FloatVectorProperty(name="Color 1")
-    color_2: bpy.props.FloatVectorProperty(name="Color 2")
-    color_3: bpy.props.FloatVectorProperty(name="Color 3")
+    color_1: bpy.props.FloatVectorProperty(name="Color 1", size=4)
+    color_2: bpy.props.FloatVectorProperty(name="Color 2", size=4)
+    color_3: bpy.props.FloatVectorProperty(name="Color 3", size=4)
+    
+    blur_radius:   bpy.props.FloatProperty(name="Blur Radius")
+    lum_radius:    bpy.props.FloatProperty(name="Lum Radius")
     
     # Type 1
     unknown_0x28 : bpy.props.FloatProperty(name="Unknown 0x28")
@@ -23,8 +26,7 @@ class GFSToolsLightProperties(bpy.types.PropertyGroup):
     unknown_0x34 : bpy.props.FloatProperty(name="Unknown 0x34")
     unknown_0x38 : bpy.props.FloatProperty(name="Unknown 0x38")
     unknown_0x3C : bpy.props.FloatProperty(name="Unknown 0x3C")
-    unknown_0x40 : bpy.props.FloatProperty(name="Unknown 0x40")
-    unknown_0x44 : bpy.props.FloatProperty(name="Unknown 0x44")
+    
     unknown_0x48 : bpy.props.FloatProperty(name="Unknown 0x48")
     unknown_0x4C : bpy.props.FloatProperty(name="Unknown 0x4C")
     unknown_0x50 : bpy.props.FloatProperty(name="Unknown 0x50")
@@ -32,13 +34,13 @@ class GFSToolsLightProperties(bpy.types.PropertyGroup):
     unknown_0x54 : bpy.props.FloatProperty(name="Unknown 0x54")
     unknown_0x58 : bpy.props.FloatProperty(name="Unknown 0x58")
     unknown_0x5C : bpy.props.FloatProperty(name="Unknown 0x5C")
+    
     unknown_0x60 : bpy.props.FloatProperty(name="Unknown 0x60")
     unknown_0x64 : bpy.props.FloatProperty(name="Unknown 0x64")
     unknown_0x68 : bpy.props.FloatProperty(name="Unknown 0x68")
     unknown_0x6C : bpy.props.FloatProperty(name="Unknown 0x6C")
     unknown_0x70 : bpy.props.FloatProperty(name="Unknown 0x70")
-    unknown_0x74 : bpy.props.FloatProperty(name="Unknown 0x74")
-    unknown_0x78 : bpy.props.FloatProperty(name="Unknown 0x78")
+    
     unknown_0x7C : bpy.props.FloatProperty(name="Unknown 0x7C")
     unknown_0x80 : bpy.props.FloatProperty(name="Unknown 0x80")
     unknown_0x84 : bpy.props.FloatProperty(name="Unknown 0x84")

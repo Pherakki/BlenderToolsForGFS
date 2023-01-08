@@ -29,19 +29,19 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x28")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x2C")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x30")
-        elif light.GFSTOOLS_LightProperties.dtype == "TYPE2":
+        elif light.GFSTOOLS_LightProperties.dtype == "SPHERE":
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x34")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x38")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x3C")
             ctr.prop(light.GFSTOOLS_LightProperties, "unk_setting")
             if light.GFSTOOLS_LightProperties.unk_setting:
-                ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x40")
-                ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x44")
+                ctr.prop(light.GFSTOOLS_LightProperties, "blur_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "lum_radius")
             else:
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x48")
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x4C")
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x50")
-        elif light.GFSTOOLS_LightProperties.dtype == "TYPE3":
+        elif light.GFSTOOLS_LightProperties.dtype == "HEMISPHERE":
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x54")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x58")
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x5C")
@@ -52,8 +52,8 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x70")
             ctr.prop(light.GFSTOOLS_LightProperties, "unk_setting")
             if light.GFSTOOLS_LightProperties.unk_setting:
-                ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x74")
-                ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x78")
+                ctr.prop(light.GFSTOOLS_LightProperties, "blur_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "lum_radius")
             else:
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x7C")
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x80")
