@@ -108,7 +108,7 @@ def import_pincushion_model(gfs, name):
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.context.view_layer.objects.active = initial_obj
 
-    return main_armature, bone_transforms
+    return main_armature
 
 
 def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bpy_node_names, bone_transforms):

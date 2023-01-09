@@ -30,9 +30,9 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         gfs = GFSInterface.from_file(filepath)
         
-        textures                = import_textures(gfs)
-        materials               = import_materials(gfs, textures)
-        armature, bind_matrices = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        textures  = import_textures(gfs)
+        materials = import_materials(gfs, textures)
+        armature  = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
         
         create_rest_pose(gfs, armature)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
