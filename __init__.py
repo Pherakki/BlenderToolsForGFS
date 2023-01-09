@@ -7,7 +7,7 @@ except:
 from .src.FileFormats.GFS import GFSBinary
     
 bl_info = {
-        "name": "GFS Import/Export (.GMD)",
+        "name": "GFS Import/Export (.GMD/.GAP/.GFS)",
         "description": "Imports GFS files.",
         "author": "Pherakki",
         "version": (0, 0, 1),
@@ -59,6 +59,7 @@ if "bpy" in locals():
         def draw(self, context):
             layout = self.layout
             layout.operator(ImportGFS.bl_idname, text="GFS Model (.GMD, .GFS)")
+            layout.operator(ImportGAP.bl_idname, text="GAP Animations (.GAP)")
     
     
     # class GFSExportSubmenu(bpy.types.Menu):

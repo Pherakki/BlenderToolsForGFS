@@ -4,11 +4,11 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface
-from ..Utils.ErrorPopup import handle_errors
+from ..Utils.ErrorPopup import handle_errors, ReportableException
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
-from .ImportModel import import_pincushion_model
+from .ImportModel import import_pincushion_model, is_pinned_armature
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
 
@@ -56,7 +56,15 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     bl_options = {'REGISTER', 'UNDO'}
     filename_ext = "*.GAP"
 
-    armature: bpy.props.StringProperty()
+    def fetch_armatures(self, context):
+        armature_list = []
+        for obj in bpy.data.objects:
+            if obj.type == "ARMATURE" and not is_pinned_armature(obj):
+                armature_list.append((obj.name, obj.name, obj.name, "OUTLINER_OB_ARMATURE", len(armature_list)))
+        return tuple(armature_list)
+    
+    armature_name: bpy.props.EnumProperty(items=fetch_armatures,
+                                     name="Armature")
     
     filter_glob: bpy.props.StringProperty(
                                               default="*.GAP",
@@ -74,6 +82,11 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     
     @handle_errors
     def execute(self, context):
-        self.import_file(context, bpy.data.objects[self.armature], self.filepath)
+        if self.armature_name is None:
+            raise ReportableException("No armatures exist in the scene. Animations cannot be imported")
+        try:
+            self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
+        except Exception as e:
+            raise ReportableException(str(e))
 
         return {'FINISHED'}

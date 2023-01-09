@@ -6,6 +6,11 @@ from mathutils import Matrix, Vector, Quaternion
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 
 
+def is_pinned_armature(bpy_obj):
+    # Needs an actual check in here...
+    return False
+
+
 def import_pincushion_model(gfs, name):
     initial_obj = bpy.context.view_layer.objects.active
 
