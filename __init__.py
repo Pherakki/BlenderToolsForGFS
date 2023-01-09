@@ -21,7 +21,7 @@ bl_info = {
     
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
-    from .src.BlenderIO.Import import ImportGFS
+    from .src.BlenderIO.Import import ImportGFS, ImportGAP
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
@@ -79,6 +79,7 @@ if "bpy" in locals():
     
     CLASSES = (
         ImportGFS,
+        ImportGAP,
         GFSImportSubmenu,
         #ExportGFS,
         #GFSExportSubmenu

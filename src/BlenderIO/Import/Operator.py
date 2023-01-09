@@ -48,3 +48,32 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         self.import_file(context, self.filepath)
 
         return {'FINISHED'}
+
+
+class ImportGAP(bpy.types.Operator, ImportHelper):
+    bl_idname = 'import_file.import_gap'
+    bl_label = 'Persona 5 Royal - PC (.GAP)'
+    bl_options = {'REGISTER', 'UNDO'}
+    filename_ext = "*.GAP"
+
+    armature: bpy.props.StringProperty()
+    
+    filter_glob: bpy.props.StringProperty(
+                                              default="*.GAP",
+                                              options={'HIDDEN'},
+                                          )
+    
+    def import_file(self, context, armature, filepath):
+        bpy.ops.object.select_all(action='DESELECT')
+
+        gfs = GFSInterface.from_file(filepath)
+        filename = os.path.splitext(os.path.split(filepath)[1])[0]
+        import_animations(gfs, armature, filename)
+
+        return {'FINISHED'}
+    
+    @handle_errors
+    def execute(self, context):
+        self.import_file(context, bpy.data.objects[self.armature], self.filepath)
+
+        return {'FINISHED'}
