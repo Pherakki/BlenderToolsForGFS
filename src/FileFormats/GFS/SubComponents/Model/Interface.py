@@ -180,7 +180,7 @@ class ModelInterface:
                             
                         matching_matrix_found = False
                         for palette_idx, palette_ibpm in matrix_cache[idx].items():
-                            if are_matrices_close(ibpm, palette_ibpm, atol=0.01, rtol=0.05):
+                            if all(are_matrices_close(ibpm, palette_ibpm, atol=0.01, rtol=0.001)):
                                 index_lookup[(mesh_node_id, idx)] = palette_idx
                                 matching_matrix_found = True
                                 break
