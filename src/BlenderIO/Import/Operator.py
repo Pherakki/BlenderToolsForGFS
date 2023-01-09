@@ -34,7 +34,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         materials               = import_materials(gfs, textures)
         armature, bind_matrices = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
         
-        create_rest_pose(armature, gfs.bones, bind_matrices)
+        create_rest_pose(gfs, armature)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
         # To adapt this to pure animation import: need to extract the info in the "model GFS"
         # from Blender somehow

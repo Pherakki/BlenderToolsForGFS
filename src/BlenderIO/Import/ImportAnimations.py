@@ -185,7 +185,7 @@ def import_animations(gfs, model_gfs, armature, filename):
 
 
 
-def create_rest_pose(armature, nodes, bind_matrices):
+def create_rest_pose(gfs, armature):
     prev_obj = bpy.context.view_layer.objects.active
     
     armature.animation_data_create()
@@ -195,15 +195,20 @@ def create_rest_pose(armature, nodes, bind_matrices):
     track_name = "rest_pose"
     action = bpy.data.actions.new(track_name)
 
+    #rest_transforms = [None]*len()
+    bind_matrices = [Matrix([b.bind_pose_matrix[0:4],
+                             b.bind_pose_matrix[4:8],
+                             b.bind_pose_matrix[8:12],
+                             [0., 0., 0., 1.]]) for b in gfs.bones]
     # Base action
-    for (node, bind_matrix) in zip(nodes, bind_matrices):
+    for node_idx, node in enumerate(gfs.bones):
         bone_name = node.name
         
         actiongroup = action.groups.new(bone_name)
 
 
         parent_bind_matrix = bind_matrices[node.parent] if node.parent > -1 else Matrix.Identity(4)
-        local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrix
+        local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrices[node_idx]
                 
         rest_position = Matrix.Translation(node.position)
         rest_rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
