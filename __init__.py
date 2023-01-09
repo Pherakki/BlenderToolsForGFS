@@ -58,7 +58,7 @@ if "bpy" in locals():
     
         def draw(self, context):
             layout = self.layout
-            layout.operator(ImportGFS.bl_idname, text="GFS Model (.GMD)")
+            layout.operator(ImportGFS.bl_idname, text="GFS Model (.GMD, .GFS)")
     
     
     # class GFSExportSubmenu(bpy.types.Menu):

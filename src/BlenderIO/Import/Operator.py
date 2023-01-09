@@ -15,15 +15,15 @@ from .ImportTextures import import_textures
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
-    bl_label = 'Persona 5 Royal - PC (.GMD)'
+    bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
     bl_options = {'REGISTER', 'UNDO'}
-    filename_ext = "*.GMD"
+    filename_ext = "*.GMD, *.GFS"
 
 
-    # filter_glob: bpy.props.StringProperty(
-    #                                          default="*.GMD",
-    #                                          options={'HIDDEN'},
-    #                                      )
+    filter_glob: bpy.props.StringProperty(
+                                              default='*.GMD;*.GFS',
+                                              options={'HIDDEN'},
+                                          )
     
     def import_file(self, context, filepath):
         bpy.ops.object.select_all(action='DESELECT')
