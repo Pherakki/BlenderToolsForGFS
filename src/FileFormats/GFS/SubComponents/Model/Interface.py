@@ -162,7 +162,7 @@ class ModelInterface:
             matrix_palette = []
             matrix_cache = {}
             index_lookup = {}
-            for mesh_binary, mesh_node_id in mesh_binaries:
+            for mesh_binary, mesh_node_id in mesh_binaries[::-1]:
                 node_matrix = world_matrices[mesh_node_id]
                 if mesh_binary.flags.has_weights:
                     indices = set()
