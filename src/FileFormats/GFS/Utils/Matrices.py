@@ -69,7 +69,7 @@ def are_matrices_close(a, b, atol, rtol):
         results[i] = (diff < atol)
         if bi > 0:
             results[i] |= (diff/bi < rtol)
-
+    return results
 
 """
 Borrowed from https://github.com/ThomIves/MatrixInverse,
