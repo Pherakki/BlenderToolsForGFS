@@ -36,22 +36,11 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         create_rest_pose(gfs, armature)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        # To adapt this to pure animation import: need to extract the info in the "model GFS"
-        # from Blender somehow
-        # "model gfs" is used to find the name and rest pose of each node
-        # HOWEVER this appears to be a bug and should *also* get the bind pose
-        # So it should be sufficient to:
-        # - Only pass in an armature
-        # - Check for an animation called "rest_pose" on the armature
-        # - Pull out the rest pose data from the "rest_pose" action if it exists,
-        #   else just use default identity element values
-        # - Pull out the bind pose matrix _via_ the raw armature bone matrices
-        # - The animations can then be constructed from those three bits of data
-        import_animations(gfs, gfs, armature, filename)
+        import_animations(gfs, armature, filename)
         
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
-        
+
         return {'FINISHED'}
     
     @handle_errors

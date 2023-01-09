@@ -7,7 +7,7 @@ from ...serialization.BinaryTargets import Writer
 from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
 
 
-def import_animations(gfs, model_gfs, armature, filename):
+def import_animations(gfs, armature, filename):
     prev_obj = bpy.context.view_layer.objects.active
 
     armature.animation_data_create()
@@ -17,22 +17,28 @@ def import_animations(gfs, model_gfs, armature, filename):
         track_name = f"{filename}_{anim_idx}"
         action = bpy.data.actions.new(track_name)
 
-        track_database = {track.name: track for track in anim.tracks}
         # Base action
-        for node in model_gfs.bones:
-            bone_name = node.name
+        for data_track in anim.tracks:
+            bone_name = data_track.name
             
             actiongroup = action.groups.new(bone_name)
 
 
-            position = Matrix.Translation(node.position)
-            rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
-            scale = Matrix.Diagonal([*node.scale, 1])
-            base_matrix = position @ rotation @ scale
+            # position = Matrix.Translation(node.position)
+            # rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
+            # scale = Matrix.Diagonal([*node.scale, 1])
+            # base_matrix = position @ rotation @ scale
             
-            if node.name not in track_database:
+            if bone_name not in armature.data.bones:
+                # Throw an error here?
+                # Just import with reference to a unit matrix?
                 continue
-            data_track = track_database[node.name]
+            bpy_bone = armature.data.bones[bone_name]
+            if bpy_bone.parent is not None:
+                base_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+            else:
+                base_matrix = bpy_bone.matrix_local
+
             
             fps = 30
             
@@ -43,33 +49,25 @@ def import_animations(gfs, model_gfs, armature, filename):
             ]))
             
             # Get rotations
-            if node.name in track_database:
-                rotations = {k: v for k, v in track_database[node.name].rotations.items()}
-                rotation_frames = list(track_database[node.name].rotations.keys())
-                
-                base_pos  = track_database[node.name].base_position
-                positions = {k: [bv*bp for bv, bp in zip(v, base_pos)] for k, v in track_database[node.name].positions.items()}
-                position_frames = list(track_database[node.name].positions.keys())
-                
-                base_scale = track_database[node.name].base_scale
-                scales = {k: [bv*bp for bv, bp in zip(v, base_scale)] for k, v in track_database[node.name].scales.items()}
-                scale_frames = list(track_database[node.name].scales.keys())
-                
-                if len(rotations) == 0:
-                    rotations = {0: [0., 0., 0., 1.]}
-                    rotation_frames = []
-                if len(positions) == 0:
-                    positions = {0: [0., 0., 0.]}
-                    position_frames = []
-                if len(scales) == 0:
-                    scales = {0: [1., 1., 1.]}
-                    scale_frames = []
-            else:
+            rotations = {k: v for k, v in data_track.rotations.items()}
+            rotation_frames = list(data_track.rotations.keys())
+            
+            base_pos  = data_track.base_position
+            positions = {k: [bv*bp for bv, bp in zip(v, base_pos)] for k, v in data_track.positions.items()}
+            position_frames = list(data_track.positions.keys())
+            
+            base_scale = data_track.base_scale
+            scales = {k: [bv*bp for bv, bp in zip(v, base_scale)] for k, v in data_track.scales.items()}
+            scale_frames = list(data_track.scales.keys())
+            
+            if len(rotations) == 0:
                 rotations = {0: [0., 0., 0., 1.]}
-                positions = {0: [0., 0., 0.]}
-                scales    = {0: [1., 1., 1.]}
                 rotation_frames = []
+            if len(positions) == 0:
+                positions = {0: [0., 0., 0.]}
                 position_frames = []
+            if len(scales) == 0:
+                scales = {0: [1., 1., 1.]}
                 scale_frames = []
             
             # Now interpolate...
