@@ -63,7 +63,7 @@ def multiply_transform_matrices(a, b):
 	return out
 
 def are_matrices_close(a, b, atol, rtol):
-    results = [False]*12
+    results = [False]*len(a)
     for i, (ai, bi) in enumerate(zip(a, b)):
         diff = (ai-bi)
         results[i] = (diff < atol)
