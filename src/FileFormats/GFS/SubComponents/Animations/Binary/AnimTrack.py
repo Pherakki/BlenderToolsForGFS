@@ -350,15 +350,15 @@ class KeyframeType18(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown_1 = None
+        self.rotation  = None
         self.unknown_2 = None
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType18] {self.unknown_1} {self.unknown_2}"
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType18] {self.rotation} {self.unknown_2}"
         
     def read_write(self, rw):
-        self.unknown_1 = rw.rw_float32s(self.unknown_1, 4)
-        self.unknown_2  = rw.rw_uint8(self.unknown_2)
+        self.rotation  = rw.rw_float32s(self.rotation, 4)
+        self.unknown_2 = rw.rw_uint8(self.unknown_2)
 
 class KeyframeType19(Serializable):
     def __init__(self, endianness='>'):
