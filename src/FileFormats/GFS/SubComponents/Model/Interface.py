@@ -90,7 +90,7 @@ class ModelInterface:
         if keep_bounding_box or keep_bounding_sphere:
             verts = []
             for mesh_binary, mesh_node_id in mesh_binaries:
-                if mesh_binary.flags & 0x00000008 != 0:  # Check if you need to do the others here too
+                if mesh_binary.flags.has_bounding_box != 0:  # Check if you need to do the others here too
                     mx = mesh_binary.bounding_box_max_dims
                     mn = mesh_binary.bounding_box_min_dims
                     verts.extend([
@@ -130,7 +130,7 @@ class ModelInterface:
                 centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
                 radius = 0.
                 for mesh_binary, mesh_node_id in mesh_binaries:
-                    if mesh_binary.vertex_format & 0x00000002 == 0:
+                    if mesh_binary.vertex_format.has_positions == 0:
                         continue
                     for v in mesh_binary.vertices:
                         pos = v.position
@@ -144,7 +144,7 @@ class ModelInterface:
         #########################
         binary.flags.has_skin_data = False
         for mesh_binary, mesh_node_id in mesh_binaries:
-            if mesh_binary.flags & 0x00000001:
+            if mesh_binary.flags.has_weights:
                 binary.flags.has_skin_data = True
                 break
             
@@ -164,7 +164,7 @@ class ModelInterface:
             index_lookup = {}
             for mesh_binary, mesh_node_id in mesh_binaries:
                 node_matrix = world_matrices[mesh_node_id]
-                if mesh_binary.flags & 0x00000001:
+                if mesh_binary.flags.has_weights:
                     indices = set()
                     for vertex in mesh_binary.vertices:
                         for idx, wgt in zip(vertex.indices[::-1], vertex.weights):
