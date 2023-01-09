@@ -1,6 +1,9 @@
 import copy
 
-from ...Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, are_matrices_close, invert_transform_matrix, ibpm_to_transform_matrix, bake_scale_into_position, invert_pos_rot_matrix
+from ...Utils.Matrices import multiply_transform_matrices, normalise_transform_matrix_scale, invert_pos_rot_matrix
+from ...Utils.Matrices import transforms_to_matrix, transposed_mat4x4_to_mat4x3, mat4x3_to_transposed_mat4x4
+from ...Utils.Matrices import are_matrices_close
+
 from ..CommonStructures.SceneNode import NodeInterface
 from .Binary import ModelPayload
 
@@ -37,7 +40,7 @@ class ModelInterface:
                     for palette_idx in palette_indices:
                         weighted_node_idx = binary.skinning_data.matrix_palette[palette_idx]
                         weighted_ibpm     = binary.skinning_data.ibpms[palette_idx]
-                        bpm               = invert_pos_rot_matrix(ibpm_to_transform_matrix(weighted_ibpm))
+                        bpm               = invert_pos_rot_matrix(transposed_mat4x4_to_mat4x3(weighted_ibpm))
                         
                         if weighted_node_idx not in nodes_with_ibpms:
                             nodes_with_ibpms[weighted_node_idx] = []
@@ -62,11 +65,11 @@ class ModelInterface:
                 contributing_matrices = []
                 for node_idx, bpm in nodes_with_ibpms[i]:
                     world_matrix = multiply_transform_matrices(world_pose_matrices[node_idx], bpm)
-                    contributing_matrices.append(bake_scale_into_position(world_matrix))
+                    contributing_matrices.append(normalise_transform_matrix_scale(world_matrix))
                 n = len(contributing_matrices)
                 bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
             else:
-                bone.bind_pose_matrix = bake_scale_into_position(world_pose_matrices[i])
+                bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
 
                     
         return bones, meshes, cameras, lights, keep_bounding_box, keep_bounding_sphere
@@ -169,7 +172,8 @@ class ModelInterface:
                                 indices.add(idx)
                                 
                     for idx in sorted(indices):
-                        inv_index_matrix = invert_transform_matrix(world_matrices[idx])
+                        inv_index_matrix = invert_pos_rot_matrix(bones[idx].bind_pose_matrix)
+                        #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
                         ibpm = multiply_transform_matrices(inv_index_matrix, node_matrix)
                         if idx not in matrix_cache:
                             matrix_cache[idx] = {}
@@ -189,7 +193,7 @@ class ModelInterface:
                             index_lookup[(mesh_node_id, idx)] = palette_idx
             
             binary.skinning_data.matrix_palette = matrix_palette
-            binary.skinning_data.ibpms = ibpms
+            binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(ibpm) for ibpm in ibpms]
             binary.skinning_data.bone_count = len(matrix_palette)
             
             # REMAP VERTEX INDICES
@@ -205,5 +209,6 @@ class ModelInterface:
                             if wgt == 0:
                                 indices[wgt_idx] = 0
                         v.indices = indices[::-1]
+        
         return binary
         
