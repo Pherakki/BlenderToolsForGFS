@@ -96,7 +96,6 @@ def ibpm_to_transform_matrix(ibpm):
         0., 0., 0., 0.,
         0., 0., 0., 0.
     ]
-    
     out[0]  = ibpm[0]
     out[1]  = ibpm[4]
     out[2]  = ibpm[8]
@@ -112,6 +111,31 @@ def ibpm_to_transform_matrix(ibpm):
     
     return out
 
+def mat4x3_to_transposed_mat4x4(bpm):
+    out = [
+        0., 0., 0., 0.,
+        0., 0., 0., 0.,
+        0., 0., 0., 0.,
+        0., 0., 0., 0.
+    ]
+    
+    # Rotation part
+    out[0]  = bpm[0]
+    out[1]  = bpm[4]
+    out[2]  = bpm[8]
+    out[4]  = bpm[1]
+    out[5]  = bpm[5]
+    out[6]  = bpm[9]
+    out[8]  = bpm[2]
+    out[9]  = bpm[6]
+    out[10] = bpm[10]
+    
+    # Translation part
+    out[12] = bpm[3]
+    out[13] = bpm[7]
+    out[14] = bpm[11]
+    
+    return out
 
 def invert_pos_rot_matrix(matrix):
     out = [
