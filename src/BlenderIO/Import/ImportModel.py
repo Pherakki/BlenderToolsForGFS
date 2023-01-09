@@ -419,11 +419,11 @@ def import_camera(name, i, camera, armature, bpy_node_names):
 
 
 def import_light(name, i, light, armature, bpy_node_names):
-    bpy_light = bpy.data.lights.new(f"{name}_{i}")
+    bpy_light = bpy.data.lights.new(f"{name}_{i}", "POINT")
     
     # Custom properties
     bpy_light.GFSTOOLS_LightProperties.flag_0  = light.binary.flags.flag_0
-    bpy_light.GFSTOOLS_LightProperties.unk_setting  = light.binary.flags.unk_setting
+    bpy_light.GFSTOOLS_LightProperties.unk_setting = light.binary.flags.unk_setting
     bpy_light.GFSTOOLS_LightProperties.flag_2  = light.binary.flags.flag_2
     bpy_light.GFSTOOLS_LightProperties.flag_3  = light.binary.flags.flag_3
     bpy_light.GFSTOOLS_LightProperties.flag_4  = light.binary.flags.flag_4
@@ -483,7 +483,11 @@ def import_light(name, i, light, armature, bpy_node_names):
     if light.binary.unknown_0x80 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x80 = light.binary.unknown_0x80
     if light.binary.unknown_0x84 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x84 = light.binary.unknown_0x84
     
+    # Create the object
+    bpy_light_object = bpy.data.objects.new(bpy_light.name, bpy_light)
+    bpy.context.collection.objects.link(bpy_light_object)
+
     # Link to the armature
-    bpy_light.parent = armature
-    bpy_light.parent_type = "BONE"
-    bpy_light.parent_bone = bpy_node_names[light.node]
+    bpy_light_object.parent = armature
+    bpy_light_object.parent_type = "BONE"
+    bpy_light_object.parent_bone = bpy_node_names[light.node]
