@@ -65,10 +65,11 @@ class AnimationBinary(Serializable):
         
         
     def __repr__(self):
-        return f"[GFDBinary::Animation {safe_format(self.flags, hex32_format)}] {self.duration}"
+        return f"[GFDBinary::Animation {safe_format(self.flags._value, hex32_format)}] {self.duration}"
 
     def read_write(self, rw, version):
-        self.flags       = rw.rw_obj(self.flags)
+        if version > 0x01104110:
+            self.flags   = rw.rw_obj(self.flags)
         self.duration    = rw.rw_float32(self.duration)
         self.controllers = rw.rw_obj(self.controllers, version)
         
