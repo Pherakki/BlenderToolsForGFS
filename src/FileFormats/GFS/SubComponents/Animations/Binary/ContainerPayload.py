@@ -70,10 +70,11 @@ class AnimationPayload(Serializable):
         self.unknown_anim_chunk = None
         
     def __repr__(self):
-        return f"[GFDBinary::AnimationData {safe_format(self.flags._value, hex32_format)}] Anims: {self.anim_count} Blend Anims: {self.blend_anim_count} Extra: {safe_format(self.flags, lambda x: bool(x.has_unknown_chunk))}"
+        return f"[GFDBinary::AnimationData {safe_format(self.flags._value, hex32_format)}] Anims: {self.animations.count} Blend Anims: {self.blend_animations.count} Extra: {safe_format(self.flags, lambda x: bool(x.has_unknown_chunk))}"
 
     def read_write(self, rw, version):
-        self.flags = rw.rw_obj(self.flags)
+        if version > 0x01104950:
+            self.flags = rw.rw_obj(self.flags)
         rw.rw_obj(self.animations, version)
         rw.rw_obj(self.blend_animations, version)
         
