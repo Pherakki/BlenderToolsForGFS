@@ -18,7 +18,7 @@ def import_animations(gfs, armature, filename):
         action = bpy.data.actions.new(track_name)
 
         # Base action
-        for data_track in anim.tracks:
+        for data_track in anim.node_animations:
             bone_name = data_track.name
             
             actiongroup = action.groups.new(bone_name)
@@ -52,12 +52,10 @@ def import_animations(gfs, armature, filename):
             rotations = {k: v for k, v in data_track.rotations.items()}
             rotation_frames = list(data_track.rotations.keys())
             
-            base_pos  = data_track.base_position
-            positions = {k: [bv*bp for bv, bp in zip(v, base_pos)] for k, v in data_track.positions.items()}
+            positions = {k: v for k, v in data_track.positions.items()}
             position_frames = list(data_track.positions.keys())
             
-            base_scale = data_track.base_scale
-            scales = {k: [bv*bp for bv, bp in zip(v, base_scale)] for k, v in data_track.scales.items()}
+            scales = {k: v for k, v in data_track.scales.items()}
             scale_frames = list(data_track.scales.keys())
             
             if len(rotations) == 0:
