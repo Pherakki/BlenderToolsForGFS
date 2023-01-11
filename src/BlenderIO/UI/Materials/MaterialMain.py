@@ -39,3 +39,6 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_29")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_30")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_31")
+        
+        # Forgot to import the main material data here...
+        # oops

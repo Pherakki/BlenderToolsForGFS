@@ -1,7 +1,23 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20
+from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20, BitChunkVector
 from .TextureReference import TextureRefBinary
+
+class TextureMapIndices(BitChunkVector):
+    MAXCHUNKS = 10
+    CHUNKSIZE = 3
+    MASK      = BitChunkVector.CALC_MASK(3)
+    DEFAULT   = 0xFFFFFFFF
+    
+    diffuse    = BitChunkVector.DEF_CHUNK(0)
+    normal     = BitChunkVector.DEF_CHUNK(1)
+    specular   = BitChunkVector.DEF_CHUNK(2)
+    reflection = BitChunkVector.DEF_CHUNK(3)
+    highlight  = BitChunkVector.DEF_CHUNK(4)
+    glow       = BitChunkVector.DEF_CHUNK(5)
+    night      = BitChunkVector.DEF_CHUNK(6)
+    detail     = BitChunkVector.DEF_CHUNK(7)
+    shadow     = BitChunkVector.DEF_CHUNK(8)
 
 
 class MaterialFlags(BitVector0x20):
@@ -50,8 +66,8 @@ class MaterialBinary(Serializable):
         self.diffuse      = None
         self.specular     = None
         self.emissive     = None
-        self.unknown_0x48 = None
-        self.unknown_0x4C = None
+        self.reflectivity = None
+        self.outline_idx  = None
         self.draw_method  = None
         self.unknown_0x51 = None
         self.unknown_0x52 = None
@@ -60,11 +76,12 @@ class MaterialBinary(Serializable):
         self.unknown_0x55 = None
         self.unknown_0x56 = None
         self.unknown_0x58 = None
-        self.unknown_0x5A = None
+        self.unknown_0x5A = 1
         self.unknown_0x5C = None
         self.unknown_0x5E = None
-        self.unknown_0x60 = None
-        self.unknown_0x64 = None
+        self.texture_indices_1 = TextureMapIndices()
+        self.texture_indices_2 = TextureMapIndices()
+        self.unknown_0x68 = None
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
@@ -85,7 +102,7 @@ class MaterialBinary(Serializable):
                f"{safe_format(self.flags._value, hex32_format)} "                                                       \
                f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "                           \
                f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "                         \
-               f"{self.unknown_0x48} {self.unknown_0x4C} "                                                       \
+               f"{self.reflectivity} {self.unknown_0x4C} "                                                       \
                f"{safe_format(self.unknown_0x50, list)} {self.unknown_0x56} "                                    \
                f"{self.unknown_0x58} {self.unknown_0x5A} {self.unknown_0x5C} {self.unknown_0x5E} "               \
                f"{safe_format(self.unknown_0x60, hex32_format)} {safe_format(self.unknown_0x64, hex32_format)} " \
@@ -99,23 +116,40 @@ class MaterialBinary(Serializable):
         self.diffuse      = rw.rw_float32s(self.diffuse, 4)
         self.specular     = rw.rw_float32s(self.specular, 4)
         self.emissive     = rw.rw_float32s(self.emissive, 4)
-        self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
-        self.unknown_0x4C = rw.rw_float32(self.unknown_0x4C)
-        self.draw_method  = rw.rw_uint8(self.draw_method)
-        self.unknown_0x51 = rw.rw_uint8(self.unknown_0x51)
-        self.unknown_0x52 = rw.rw_uint8(self.unknown_0x52)
-        self.unknown_0x53 = rw.rw_uint8(self.unknown_0x53)
-        self.unknown_0x54 = rw.rw_uint8(self.unknown_0x54)
-        self.unknown_0x55 = rw.rw_uint8(self.unknown_0x55)
+        self.reflectivity = rw.rw_float32(self.reflectivity)
+        self.outline_idx  = rw.rw_float32(self.outline_idx)
+        
+        if version < 0x01103040:
+            self.draw_method  = rw.rw_uint16(self.draw_method)
+            self.unknown_0x51 = rw.rw_uint16(self.unknown_0x51)
+            self.unknown_0x52 = rw.rw_uint16(self.unknown_0x52)
+            self.unknown_0x53 = rw.rw_uint16(self.unknown_0x53)
+            self.unknown_0x54 = rw.rw_uint16(self.unknown_0x54)
+            if version > 0x0108011B:
+                self.unknown_0x55 = rw.rw_uint16(self.unknown_0x55)
+        else:
+            self.draw_method  = rw.rw_uint8(self.draw_method)
+            self.unknown_0x51 = rw.rw_uint8(self.unknown_0x51)
+            self.unknown_0x52 = rw.rw_uint8(self.unknown_0x52)
+            self.unknown_0x53 = rw.rw_uint8(self.unknown_0x53)
+            self.unknown_0x54 = rw.rw_uint8(self.unknown_0x54)
+            self.unknown_0x55 = rw.rw_uint8(self.unknown_0x55)
+            
         self.unknown_0x56 = rw.rw_uint16(self.unknown_0x56)
         self.unknown_0x58 = rw.rw_uint16(self.unknown_0x58)
         self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A)
-        self.unknown_0x5C = rw.rw_int16(self.unknown_0x5C)
+        if version > 0x01104800:
+            self.unknown_0x5C = rw.rw_int16(self.unknown_0x5C)
+            
         self.unknown_0x5E = rw.rw_int16(self.unknown_0x5E)
-        self.unknown_0x60 = rw.rw_uint32(self.unknown_0x60)
-        self.unknown_0x64 = rw.rw_uint32(self.unknown_0x64)
+        self.texture_indices_1 = rw.rw_obj(self.texture_indices_1)
+        self.texture_indices_2 = rw.rw_obj(self.texture_indices_2)
+        
+        if version <= 0x01104800:
+            self.unknown_0x68 = rw.rw_uint16(self.unknown_0x68)
+        
         self.disable_backface_culling = rw.rw_int16(self.disable_backface_culling)
-        self.unknown_0x6A = rw.rw_uint32(self.unknown_0x6A) # NOT present for 0x01105080
+        self.unknown_0x6A = rw.rw_uint32(self.unknown_0x6A)
         
         # Handle textures
         if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureRefBinary, version)

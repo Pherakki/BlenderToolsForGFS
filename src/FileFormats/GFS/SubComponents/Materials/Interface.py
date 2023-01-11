@@ -33,8 +33,8 @@ class MaterialInterface:
         self.diffuse = None
         self.specular = None
         self.emissive = None
-        self.unknown_0x48 = None
-        self.unknown_0x4C = None
+        self.reflectivity = None
+        self.outline_idx = None
         self.draw_method  = None
         self.unknown_0x51 = None
         self.unknown_0x52 = None
@@ -43,11 +43,12 @@ class MaterialInterface:
         self.unknown_0x55 = None
         self.unknown_0x56 = None
         self.unknown_0x58 = None
-        self.unknown_0x5A = None
+        self.unknown_0x5A = 1
         self.unknown_0x5C = None
         self.unknown_0x5E = None
-        self.unknown_0x60 = None
-        self.unknown_0x64 = None
+        self.texture_indices_1 = None
+        self.texture_indices_2 = None
+        self.unknown_0x68 = None
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
@@ -75,8 +76,8 @@ class MaterialInterface:
         instance.diffuse = binary.diffuse
         instance.specular = binary.specular
         instance.emissive = binary.emissive
-        instance.unknown_0x48 = binary.unknown_0x48
-        instance.unknown_0x4C = binary.unknown_0x4C
+        instance.reflectivity = binary.reflectivity
+        instance.outline_idx = binary.outline_idx
         instance.draw_method  = binary.draw_method
         instance.unknown_0x51 = binary.unknown_0x51
         instance.unknown_0x52 = binary.unknown_0x52
@@ -88,8 +89,9 @@ class MaterialInterface:
         instance.unknown_0x5A = binary.unknown_0x5A
         instance.unknown_0x5C = binary.unknown_0x5C
         instance.unknown_0x5E = binary.unknown_0x5E
-        instance.unknown_0x60 = binary.unknown_0x60
-        instance.unknown_0x64 = binary.unknown_0x64
+        instance.texture_indices_1 = binary.texture_indices_1
+        instance.texture_indices_2 = binary.texture_indices_2
+        instance.unknown_0x68 = binary.unknown_0x68
         instance.disable_backface_culling = binary.disable_backface_culling
         instance.unknown_0x6A = binary.unknown_0x6A
         
