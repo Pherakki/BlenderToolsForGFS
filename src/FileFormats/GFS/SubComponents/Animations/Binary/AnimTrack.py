@@ -220,7 +220,7 @@ class KeyframeType6(Serializable):
         self.unknown = rw.rw_float32s(self.unknown, 3)
         
 class KeyframeType7(Serializable):
-    """Material Keyframe"""
+    """Material Keyframe - Ambient RGB"""
     
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 7
@@ -323,7 +323,7 @@ class KeyframeType12(Serializable):
         return f"[GFDBinary::Animation::Controller::Track::KeyframeType12] {self.unknown}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 1) # OK
+        self.unknown = rw.rw_float32(self.unknown)
                 
 class KeyframeType13(Serializable):
     """Material Keyframe"""
