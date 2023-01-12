@@ -149,7 +149,7 @@ class MaterialBinary(Serializable):
             self.unknown_0x68 = rw.rw_uint16(self.unknown_0x68)
         
         self.disable_backface_culling = rw.rw_int16(self.disable_backface_culling)
-        self.unknown_0x6A = rw.rw_uint32(self.unknown_0x6A)
+        self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
         
         # Handle textures
         if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureRefBinary, version)
@@ -196,7 +196,7 @@ class MaterialAttributeBinary(Serializable):
         self.data  = []
         
     def __repr__(self):
-        return f"[GFD::Material::AttributeBinary] {safe_format(self.flags, hex32_format)} {self.ID} {safe_format(self.data, list)}"
+        return f"[GFD::Material::AttributeBinary] {safe_format(self.flags._value, hex32_format)} {self.ID}"
     
     def read_write(self, rw, version):
         self.flags = rw.rw_obj(self.flags)
