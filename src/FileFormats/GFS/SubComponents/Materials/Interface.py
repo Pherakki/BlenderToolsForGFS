@@ -70,7 +70,7 @@ class MaterialInterface:
         instance = cls()
         
         instance.name = binary.name.string
-        instance.flags = binary.flags
+        
         # Can at least remove the flags for now
         instance.ambient = binary.ambient
         instance.diffuse = binary.diffuse
@@ -177,9 +177,9 @@ class MaterialInterface:
         binary.diffuse                  = self.diffuse
         binary.specular                 = self.specular
         binary.emissive                 = self.emissive
-        binary.unknown_0x48             = self.unknown_0x48
-        binary.unknown_0x4C             = self.unknown_0x4C
-        binary.draw_method              = self.draw_method # 0 - opaque, 1 - translucent
+        binary.reflectivity             = self.reflectivity
+        binary.outline_idx              = self.outline_idx
+        binary.draw_method              = self.draw_method # 0 - opaque, 1 - translucent, 2 - ?
         binary.unknown_0x51             = self.unknown_0x51
         binary.unknown_0x52             = self.unknown_0x52
         binary.unknown_0x53             = self.unknown_0x53
@@ -190,8 +190,9 @@ class MaterialInterface:
         binary.unknown_0x5A             = self.unknown_0x5A
         binary.unknown_0x5C             = self.unknown_0x5C
         binary.unknown_0x5E             = self.unknown_0x5E
-        binary.unknown_0x60             = self.unknown_0x60
-        binary.unknown_0x64             = self.unknown_0x64
+        binary.texture_indices_1        = self.texture_indices_1
+        binary.texture_indices_2        = self.texture_indices_2
+        binary.unknown_0x68             = self.unknown_0x68
         binary.disable_backface_culling = self.disable_backface_culling
         binary.unknown_0x6A             = self.unknown_0x6A
         
