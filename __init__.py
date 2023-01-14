@@ -28,6 +28,7 @@ if "bpy" in locals():
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
+    from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
     from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd
@@ -87,6 +88,7 @@ if "bpy" in locals():
         MessagePopup,
         GFSToolsGenericProperty,
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
+        OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
         OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel,
