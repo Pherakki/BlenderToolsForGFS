@@ -1,5 +1,6 @@
 from ......serialization.Serializable import Serializable
 from .MeshBinary import MeshBinary
+from .MorphBinary import MorphBinary
 from .CameraBinary import CameraBinary
 from .LightBinary import LightBinary
 
@@ -34,6 +35,7 @@ class NodeAttachmentBinary(Serializable):
                 raise HasParticleDataError
             elif self.type == 9:
                 raise HasType9Error
+                dtype = MorphBinary
             else:
                 raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")
             self.data = dtype()
