@@ -28,7 +28,6 @@ if "bpy" in locals():
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
-    from .src.BlenderIO.Tools import GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
     from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd
@@ -48,6 +47,7 @@ if "bpy" in locals():
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshUnknownFloatsPanel
+    from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
     
@@ -86,7 +86,7 @@ if "bpy" in locals():
         #GFSExportSubmenu
         MessagePopup,
         GFSToolsGenericProperty,
-        GFSToolsPinnedArmatureToolsPanel,
+        OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
         OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel,

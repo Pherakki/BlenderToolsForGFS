@@ -1,7 +1,7 @@
 import bpy
 
 
-class GFSToolsPinnedArmatureToolsPanel(bpy.types.Panel):
+class OBJECT_PT_GFSToolsPinnedArmatureToolsPanel(bpy.types.Panel):
     bl_label = "GFSTools Armature"
     bl_idname = "OBJECT_PT_GFSToolsPinnedArmatureTools"
     bl_space_type = 'PROPERTIES'
