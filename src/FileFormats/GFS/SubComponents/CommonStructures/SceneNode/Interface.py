@@ -41,7 +41,7 @@ class NodeInterface:
             else:
                 raise NotImplementedError("No Interface exists for attachment type '{attachment.type}'")
         for child in node.children[::-1]:
-            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list)
+            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list, morph_list)
     
     @classmethod
     def list_to_binary_node_tree(cls, node_list, mesh_list, camera_list, light_list, morph_list):
