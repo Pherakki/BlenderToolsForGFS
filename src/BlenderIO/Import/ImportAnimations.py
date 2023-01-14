@@ -7,6 +7,154 @@ from ...serialization.BinaryTargets import Writer
 from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
 
 
+def add_animation(track_name, anim, armature):
+    action = bpy.data.actions.new(track_name)
+
+    # Base action
+    for data_track in anim.node_animations:
+        bone_name = data_track.name
+        
+        actiongroup = action.groups.new(bone_name)
+
+
+        # position = Matrix.Translation(node.position)
+        # rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
+        # scale = Matrix.Diagonal([*node.scale, 1])
+        # base_matrix = position @ rotation @ scale
+        
+        if bone_name not in armature.data.bones:
+            # Throw an error here?
+            # Just import with reference to a unit matrix?
+            continue
+        bpy_bone = armature.data.bones[bone_name]
+        if bpy_bone.parent is not None:
+            base_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+        else:
+            base_matrix = bpy_bone.matrix_local
+
+        
+        fps = 30
+        
+        frames = sorted(set([
+            *list(data_track.rotations.keys()),
+            *list(data_track.positions.keys()),
+            *list(data_track.scales.keys())
+        ]))
+        
+        # Get rotations
+        rotations = {k: v for k, v in data_track.rotations.items()}
+        rotation_frames = list(data_track.rotations.keys())
+        
+        positions = {k: v for k, v in data_track.positions.items()}
+        position_frames = list(data_track.positions.keys())
+        
+        scales = {k: v for k, v in data_track.scales.items()}
+        scale_frames = list(data_track.scales.keys())
+        
+        if len(rotations) == 0:
+            rotations = {0: [0., 0., 0., 1.]}
+            rotation_frames = []
+        if len(positions) == 0:
+            positions = {0: [0., 0., 0.]}
+            position_frames = []
+        if len(scales) == 0:
+            scales = {0: [1., 1., 1.]}
+            scale_frames = []
+        
+        # Now interpolate...
+        for frame in frames:
+            if frame not in rotations:
+                rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
+            if frame not in positions:
+                positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
+            if frame not in scales:
+                scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
+        
+        # Now create transform matrices...
+        o_rotations = {}
+        o_positions = {}
+        o_scales    = {}
+        for i in frames:
+            pos_mat = Matrix.Translation(positions[i])
+            rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
+            scl_mat = Matrix.Diagonal([*scales[i], 1])
+            transform = base_matrix.inverted() @ (pos_mat @ rot_mat @ scl_mat)
+            pos, rot, scl = transform.decompose()
+            
+            o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]
+            o_positions[i] = [pos.x, pos.y, pos.z]
+            o_scales[i]    = [scl.x, scl.y, scl.z]
+          
+        rotations = o_rotations
+        positions = o_positions
+        scales = o_scales
+          
+        # Create animations
+        if len(rotation_frames) != 0:
+            fcs = []
+            for i, quat_idx in enumerate([3, 0, 1, 2]):
+                fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
+                fc.keyframe_points.add(count=len(rotation_frames))
+                fc.keyframe_points.foreach_set("co",
+                                               [x for co in zip([float(fps*frame + 1) for frame in rotation_frames],
+                                                                [rotations[frame][quat_idx] for frame in rotation_frames]) for x in
+                                                co])
+                fc.group = actiongroup
+                fc.lock = True
+                fcs.append(fc)
+            for fc in fcs:
+                fc.update()
+            for fc in fcs:
+                fc.lock = False
+                
+
+        if len(position_frames) != 0:
+            fcs = []
+            for i in range(3):
+                fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
+                fc.keyframe_points.add(count=len(position_frames))
+                fc.keyframe_points.foreach_set("co",
+                                                [x for co in zip([float(fps*frame + 1) for frame in position_frames],
+                                                                [positions[frame][i] for frame in position_frames]) for x in
+                                                co])
+                fc.group = actiongroup
+                for k in fc.keyframe_points:
+                    k.interpolation = "LINEAR"
+                fc.lock = True
+                fcs.append(fc)
+            for fc in fcs:
+                fc.update()
+            for fc in fcs:
+                fc.lock = False
+                
+
+        if len(scale_frames) != 0:
+            fcs = []
+            for i in range(3):
+                fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
+                fc.keyframe_points.add(count=len(scale_frames))
+                fc.keyframe_points.foreach_set("co",
+                                               [x for co in zip([float(fps*frame + 1) for frame in scale_frames],
+                                                                [scales[frame][i] for frame in scale_frames]) for x in
+                                                co])
+                fc.group = actiongroup
+                for k in fc.keyframe_points:
+                    k.interpolation = "LINEAR"
+                fc.lock = True
+                fcs.append(fc)
+            for fc in fcs:
+                fc.update()
+            for fc in fcs:
+                fc.lock = False
+
+    armature.animation_data.action = action
+    track = armature.animation_data.nla_tracks.new()
+    track.name = track_name
+    track.mute = True
+    track.strips.new(action.name, 1, action)
+    armature.animation_data.action = None
+    
+
 def import_animations(gfs, armature, filename):
     prev_obj = bpy.context.view_layer.objects.active
 
@@ -14,153 +162,7 @@ def import_animations(gfs, armature, filename):
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
-        track_name = f"{filename}_{anim_idx}"
-        action = bpy.data.actions.new(track_name)
-
-        # Base action
-        for data_track in anim.node_animations:
-            bone_name = data_track.name
-            
-            actiongroup = action.groups.new(bone_name)
-
-
-            # position = Matrix.Translation(node.position)
-            # rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
-            # scale = Matrix.Diagonal([*node.scale, 1])
-            # base_matrix = position @ rotation @ scale
-            
-            if bone_name not in armature.data.bones:
-                # Throw an error here?
-                # Just import with reference to a unit matrix?
-                continue
-            bpy_bone = armature.data.bones[bone_name]
-            if bpy_bone.parent is not None:
-                base_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
-            else:
-                base_matrix = bpy_bone.matrix_local
-
-            
-            fps = 30
-            
-            frames = sorted(set([
-                *list(data_track.rotations.keys()),
-                *list(data_track.positions.keys()),
-                *list(data_track.scales.keys())
-            ]))
-            
-            # Get rotations
-            rotations = {k: v for k, v in data_track.rotations.items()}
-            rotation_frames = list(data_track.rotations.keys())
-            
-            positions = {k: v for k, v in data_track.positions.items()}
-            position_frames = list(data_track.positions.keys())
-            
-            scales = {k: v for k, v in data_track.scales.items()}
-            scale_frames = list(data_track.scales.keys())
-            
-            if len(rotations) == 0:
-                rotations = {0: [0., 0., 0., 1.]}
-                rotation_frames = []
-            if len(positions) == 0:
-                positions = {0: [0., 0., 0.]}
-                position_frames = []
-            if len(scales) == 0:
-                scales = {0: [1., 1., 1.]}
-                scale_frames = []
-            
-            # Now interpolate...
-            for frame in frames:
-                if frame not in rotations:
-                    rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
-                if frame not in positions:
-                    positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
-                if frame not in scales:
-                    scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
-            
-            # Now create transform matrices...
-            o_rotations = {}
-            o_positions = {}
-            o_scales    = {}
-            for i in frames:
-                pos_mat = Matrix.Translation(positions[i])
-                rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
-                scl_mat = Matrix.Diagonal([*scales[i], 1])
-                transform = base_matrix.inverted() @ (pos_mat @ rot_mat @ scl_mat)
-                pos, rot, scl = transform.decompose()
-                
-                o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]
-                o_positions[i] = [pos.x, pos.y, pos.z]
-                o_scales[i]    = [scl.x, scl.y, scl.z]
-              
-            rotations = o_rotations
-            positions = o_positions
-            scales = o_scales
-              
-            # Create animations
-            if len(rotation_frames) != 0:
-                fcs = []
-                for i, quat_idx in enumerate([3, 0, 1, 2]):
-                    fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
-                    fc.keyframe_points.add(count=len(rotation_frames))
-                    fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(fps*frame + 1) for frame in rotation_frames],
-                                                                    [rotations[frame][quat_idx] for frame in rotation_frames]) for x in
-                                                    co])
-                    fc.group = actiongroup
-                    fc.lock = True
-                    fcs.append(fc)
-                for fc in fcs:
-                    fc.update()
-                for fc in fcs:
-                    fc.lock = False
-                    
-
-            if len(position_frames) != 0:
-                fcs = []
-                for i in range(3):
-                    fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
-                    fc.keyframe_points.add(count=len(position_frames))
-                    fc.keyframe_points.foreach_set("co",
-                                                    [x for co in zip([float(fps*frame + 1) for frame in position_frames],
-                                                                    [positions[frame][i] for frame in position_frames]) for x in
-                                                    co])
-                    fc.group = actiongroup
-                    for k in fc.keyframe_points:
-                        k.interpolation = "LINEAR"
-                    fc.lock = True
-                    fcs.append(fc)
-                for fc in fcs:
-                    fc.update()
-                for fc in fcs:
-                    fc.lock = False
-                    
-
-            if len(scale_frames) != 0:
-                fcs = []
-                for i in range(3):
-                    fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
-                    fc.keyframe_points.add(count=len(scale_frames))
-                    fc.keyframe_points.foreach_set("co",
-                                                   [x for co in zip([float(fps*frame + 1) for frame in scale_frames],
-                                                                    [scales[frame][i] for frame in scale_frames]) for x in
-                                                    co])
-                    fc.group = actiongroup
-                    for k in fc.keyframe_points:
-                        k.interpolation = "LINEAR"
-                    fc.lock = True
-                    fcs.append(fc)
-                for fc in fcs:
-                    fc.update()
-                for fc in fcs:
-                    fc.lock = False
-
-        armature.animation_data.action = action
-        track = armature.animation_data.nla_tracks.new()
-        track.name = track_name
-        track.mute = True
-        track.strips.new(action.name, 1, action)
-        armature.animation_data.action = None
-        
+        add_animation(f"{filename}_{anim_idx}", anim, armature)
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
     
