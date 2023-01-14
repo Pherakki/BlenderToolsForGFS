@@ -71,6 +71,16 @@ def interpolate_keyframe_dict(frames, idx, interpolation_function, debug_output=
 
     return interpolation_function(np.array(min_value), np.array(max_value), t)
 
+class LookAtAnims:
+    def __init__(self):
+        self.right = None
+        self.right_factor = 0.
+        self.left = None
+        self.left_factor = 0.
+        self.up = None
+        self.up_factor = 0.
+        self.down = None
+        self.down_factor = 0.
 
 class AnimationInterface:
     def __init__(self):
@@ -79,7 +89,7 @@ class AnimationInterface:
         self.camera_animations   = []
         self.morph_animations    = []
         
-        self.unknown_anim_chunk = None
+        self.lookat_anims = LookAtAnims()
         self.extra_track_data   = None
         self.bounding_box_max_dims = None
         self.bounding_box_min_dims = None
@@ -126,7 +136,17 @@ class AnimationInterface:
             else:
                 raise NotImplementedError
                 
-        instance.unknown_anim_chunk    = binary.unknown_anim_chunk
+        if binary.flags.has_unknown_chunk:
+            instance.lookat_anims.right = cls.from_binary(binary.unknown_anim_chunk.anim_1)
+            instance.lookat_anims.left  = cls.from_binary(binary.unknown_anim_chunk.anim_2)
+            instance.lookat_anims.up    = cls.from_binary(binary.unknown_anim_chunk.anim_3)
+            instance.lookat_anims.down  = cls.from_binary(binary.unknown_anim_chunk.anim_4)
+        
+            instance.lookat_anims.right_factor = cls.from_binary(binary.unknown_anim_chunk.unknown_1)
+            instance.lookat_anims.left_factor  = cls.from_binary(binary.unknown_anim_chunk.unknown_2)
+            instance.lookat_anims.up_factor    = cls.from_binary(binary.unknown_anim_chunk.unknown_3)
+            instance.lookat_anims.down_factor  = cls.from_binary(binary.unknown_anim_chunk.unknown_4)
+            
         instance.extra_track_data      = binary.extra_track_data
         instance.bounding_box_max_dims = binary.bounding_box_max_dims
         instance.bounding_box_min_dims = binary.bounding_box_min_dims

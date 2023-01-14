@@ -11,6 +11,17 @@ from .SubComponents.Model.Interface import ModelInterface
 from .SubComponents.CommonStructures import NodeInterface, MeshInterface
 
 
+class UnknownAnimations:
+    def __init__(self):
+        self.anim_1 = None
+        self.anim_1_float = None
+        self.anim_2 = None
+        self.anim_2_float = None
+        self.anim_3 = None
+        self.anim_3_float = None
+        self.anim_4 = None
+        self.anim_4_float = None
+
 class GFSInterface:
     def __init__(self):
         self.keep_bounding_box = False
@@ -22,6 +33,8 @@ class GFSInterface:
         self.materials = []
         self.textures = []
         self.animations = []
+        self.blend_animations = []
+        self.unknown_animations = UnknownAnimations()
         
         # Things that need to be removed eventually
         self.animation_data  = None
@@ -56,6 +69,16 @@ class GFSInterface:
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
                 instance.animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.animations]
+                instance.blend_animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.blend_animations]
+                if ctr.data.flags.has_unknown_chunk:
+                    instance.unknown_animations.anim_1       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_1)
+                    instance.unknown_animations.anim_1_float = ctr.data.unknown_anim_chunk.unknown_1
+                    instance.unknown_animations.anim_2       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_2)
+                    instance.unknown_animations.anim_2_float = ctr.data.unknown_anim_chunk.unknown_2
+                    instance.unknown_animations.anim_3       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_3)
+                    instance.unknown_animations.anim_3_float = ctr.data.unknown_anim_chunk.unknown_3
+                    instance.unknown_animations.anim_4       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_4)
+                    instance.unknown_animations.anim_4_float = ctr.data.unknown_anim_chunk.unknown_4
             elif ctr.type == 0x000100F8:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:
