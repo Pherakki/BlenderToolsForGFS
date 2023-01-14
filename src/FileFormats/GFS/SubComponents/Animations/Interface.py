@@ -230,6 +230,8 @@ class AnimationInterface:
             else:
                 raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Node Animation exists")
         
+        return anim
+        
     @staticmethod
     def _import_material_animation_binary(controller_binary):
         anim = MaterialAnimation()
@@ -270,6 +272,7 @@ class AnimationInterface:
             else:
                 raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
         
+        return anim
 
     @staticmethod
     def _import_camera_animation_binary(controller_binary):
@@ -285,6 +288,7 @@ class AnimationInterface:
             else:
                 raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Camera Animation exists")
 
+        return anim
 
     @staticmethod
     def _import_morph_animation_binary(controller_binary):
@@ -297,6 +301,8 @@ class AnimationInterface:
                 anim.unknown = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
                 raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
+    
+        return anim
     
     def to_binary(self, gfs):
         binary = AnimationBinary()
