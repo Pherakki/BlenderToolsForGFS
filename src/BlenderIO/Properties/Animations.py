@@ -1,0 +1,41 @@
+import bpy
+
+
+class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
+    isLookAt:  bpy.props.BoolProperty(name="IsLookAt", options={"HIDDEN"})
+    
+    flag_4:  bpy.props.BoolProperty(name="Flag 4")
+    flag_5:  bpy.props.BoolProperty(name="Flag 5")
+    flag_6:  bpy.props.BoolProperty(name="Flag 6")
+    flag_7:  bpy.props.BoolProperty(name="Flag 7")
+    flag_8:  bpy.props.BoolProperty(name="Flag 8")
+    flag_9:  bpy.props.BoolProperty(name="Flag 9")
+    flag_10: bpy.props.BoolProperty(name="Flag 10")
+    flag_11: bpy.props.BoolProperty(name="Flag 11")
+    flag_12: bpy.props.BoolProperty(name="Flag 12")
+    flag_13: bpy.props.BoolProperty(name="Flag 13")
+    flag_14: bpy.props.BoolProperty(name="Flag 14")
+    flag_15: bpy.props.BoolProperty(name="Flag 15")
+    flag_16: bpy.props.BoolProperty(name="Flag 16")
+    flag_17: bpy.props.BoolProperty(name="Flag 17")
+    flag_18: bpy.props.BoolProperty(name="Flag 18")
+    flag_19: bpy.props.BoolProperty(name="Flag 19")
+    flag_20: bpy.props.BoolProperty(name="Flag 20")
+    flag_21: bpy.props.BoolProperty(name="Flag 21")
+    flag_22: bpy.props.BoolProperty(name="Flag 22")
+    flag_24: bpy.props.BoolProperty(name="Flag 24")
+    flag_26: bpy.props.BoolProperty(name="Flag 26")
+    flag_27: bpy.props.BoolProperty(name="Flag 27")
+    
+    has_extra_track = bpy.props.BoolProperty(name="Extra Track")
+    extra_track_name = bpy.props.StringProperty(name="Extra Track Name")
+    
+    has_unknown_anims = bpy.props.BoolProperty("Unknown Anims")
+    unknown_anim_1 = bpy.props.StringProperty(name="Anim 1")
+    unknown_anim_2 = bpy.props.StringProperty(name="Anim 2")
+    unknown_anim_3 = bpy.props.StringProperty(name="Anim 3")
+    unknown_anim_4 = bpy.props.StringProperty(name="Anim 4")
+    unknown_anim_1_float = bpy.props.FloatProperty(name="Anim 1 Float")
+    unknown_anim_2_float = bpy.props.FloatProperty(name="Anim 2 Float")
+    unknown_anim_3_float = bpy.props.FloatProperty(name="Anim 3 Float")
+    unknown_anim_4_float = bpy.props.FloatProperty(name="Anim 4 Float")
