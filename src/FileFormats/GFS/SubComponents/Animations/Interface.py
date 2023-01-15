@@ -185,6 +185,7 @@ class AnimationInterface:
         anim = NodeAnimation()
         
         anim.name = controller_binary.target_name.string
+        anim.id   = controller_binary.target_id
             
         for track_binary in controller_binary.tracks:
             base_position = track_binary.base_position
@@ -239,6 +240,7 @@ class AnimationInterface:
         anim = MaterialAnimation()
         
         anim.name = controller_binary.target_name.string
+        anim.id   = controller_binary.target_id
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 6:
@@ -281,6 +283,7 @@ class AnimationInterface:
         anim = CameraAnimation()
         
         anim.name = controller_binary.target_name.string
+        anim.id   = controller_binary.target_id
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 23:
@@ -297,6 +300,7 @@ class AnimationInterface:
         anim = MorphAnimation()
         
         anim.name = controller_binary.target_name.string
+        anim.id   = controller_binary.target_id
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 3:
@@ -396,6 +400,7 @@ def construct_frames(*keyframe_sets):
 class NodeAnimation:
     def __init__(self):
         self.name = None
+        self.id   = None
         self.compress = False
         self.positions = {}
         self.rotations = {}
@@ -458,7 +463,7 @@ class NodeAnimation:
         
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 1
-        controller_binary.target_id = [b.name for b in gfs.nodes].index(self.name)
+        controller_binary.target_id = self.id #[b.name for b in gfs.nodes].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = [track_binary]
         controller_binary.tracks.count = 1
@@ -468,6 +473,7 @@ class NodeAnimation:
 class MaterialAnimation:
     def __init__(self):
         self.name = None
+        self.id   = None
         
         self.unknown_6  = {}
         self.unknown_7  = {}
@@ -521,7 +527,7 @@ class MaterialAnimation:
         
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 2
-        controller_binary.target_id = [b.name for b in gfs.materials].index(self.name)
+        controller_binary.target_id = self.id # [b.name for b in gfs.materials].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = tracks
         controller_binary.tracks.count = len(tracks)
@@ -531,6 +537,7 @@ class MaterialAnimation:
 class CameraAnimation:
     def __init__(self):
         self.name = None
+        self.id   = None
         self.fov        = {}
         self.unknown_24 = {}
 
@@ -557,7 +564,7 @@ class CameraAnimation:
                 
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 3
-        controller_binary.target_id = [b.name for b in gfs.cameras].index(self.name)
+        controller_binary.target_id = self.id # [b.name for b in gfs.cameras].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = tracks
         controller_binary.tracks.count = len(tracks)
@@ -567,6 +574,7 @@ class CameraAnimation:
 class MorphAnimation:
     def __init__(self):
         self.name = None
+        self.id
         self.unknown = {}
 
     def to_controller(self, gfs):
@@ -574,7 +582,7 @@ class MorphAnimation:
     
         tracks = []
         for dataset, keyframe_type in [
-                (self.unknown_3, KeyframeType3)
+                (self.unknown, KeyframeType3)
             ]:
             if len(dataset):
                 kf_type = keyframe_type
@@ -593,7 +601,7 @@ class MorphAnimation:
                 
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 3
-        controller_binary.target_id = [b.name for b in gfs.morphs].index(self.name)
+        controller_binary.target_id = self.id #[b.name for b in gfs.morphs].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = tracks
         controller_binary.tracks.count = len(tracks)
