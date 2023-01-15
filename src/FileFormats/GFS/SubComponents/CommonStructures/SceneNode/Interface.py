@@ -49,7 +49,7 @@ class NodeInterface:
         # First not in list required to be root
         # Should probably throw in a check here to make sure...
         for i, node in enumerate(node_list[1:]):
-            n_id = node.parent
+            n_id = node.parent_idx
             if n_id not in node_children:
                 node_children[n_id] = []
             node_children[n_id].append(i+1)

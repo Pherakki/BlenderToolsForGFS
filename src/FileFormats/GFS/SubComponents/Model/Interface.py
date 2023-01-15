@@ -154,8 +154,8 @@ class ModelInterface:
             world_matrices = [None]*len(bones)
             for i, bone in enumerate(bones):
                 local_matrix = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
-                if bone.parent > -1:
-                    world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent], local_matrix)
+                if bone.parent_idx > -1:
+                    world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent_idx], local_matrix)
                 else:
                     world_matrices[i] = local_matrix
             
