@@ -22,6 +22,7 @@ bl_info = {
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS, ImportGAP
+    from .src.BlenderIO.Export import ExportGFS
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
@@ -69,7 +70,7 @@ if "bpy" in locals():
     
     #     def draw(self, context):
     #         layout = self.layout
-    #         layout.operator(ExportDSCS.bl_idname, text="GFS Model (.GMD)")
+    #         layout.operator(ExportGFS.bl_idname, text="GFS Model (.GMD)")
     
     
     def menu_func_import(self, context):
@@ -83,8 +84,8 @@ if "bpy" in locals():
         ImportGFS,
         ImportGAP,
         GFSImportSubmenu,
-        #ExportGFS,
-        #GFSExportSubmenu
+        ExportGFS,         # Just register the operator so it can be used via script for testing
+        #GFSExportSubmenu  # Don't add a menu yet in case anybody thinks it's usable...
         MessagePopup,
         GFSToolsGenericProperty,
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
