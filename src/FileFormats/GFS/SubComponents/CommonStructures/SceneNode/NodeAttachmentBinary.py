@@ -34,7 +34,6 @@ class NodeAttachmentBinary(Serializable):
             elif self.type == 7:
                 raise HasParticleDataError
             elif self.type == 9:
-                raise HasType9Error
                 dtype = MorphBinary
             else:
                 raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")

@@ -262,7 +262,10 @@ class MeshInterface:
         binary.flags.has_bounding_box    = self.keep_bounding_box
         binary.flags.has_bounding_sphere = self.keep_bounding_sphere
         binary.flags.flag_5              = self.flag_5
-        binary.flags.has_morphs          = (self.morphs.count is not None)
+        if self.morphs is None:
+            binary.flags.has_morphs = None
+        else:
+            binary.flags.has_morphs          = (self.morphs.count is not None)
         binary.flags.flag_7              = self.flag_7
         binary.flags.flag_8              = self.flag_8
         binary.flags.flag_9              = self.flag_9
@@ -305,9 +308,10 @@ class MeshInterface:
         binary.vertex_count  = len(self.vertices)
         binary.unknown_0x12  = self.unknown_0x12
         binary.vertices      = self.vertices
-        binary.morph_data.flags = self.morphs.flags        # NEEDS UNPACKING
-        binary.morph_data.count = len(self.morphs.targets) # NEEDS UNPACKING
-        binary.morph_data.targets = self.morphs.targets    # NEEDS UNPACKING
+        if self.morphs is not None:
+            binary.morph_data.flags = self.morphs.flags        # NEEDS UNPACKING
+            binary.morph_data.count = len(self.morphs.targets) # NEEDS UNPACKING
+            binary.morph_data.targets = self.morphs.targets    # NEEDS UNPACKING
         binary.indices       = self.indices
         binary.material_name = binary.material_name.from_name(self.material_name)
         

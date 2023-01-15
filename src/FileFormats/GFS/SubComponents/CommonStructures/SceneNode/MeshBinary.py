@@ -135,8 +135,7 @@ class MeshBinary(Serializable):
         
         # Do morphs
         if self.flags.has_morphs:
-            raise NotImplementedError("Mesh morphs are not currently supported")
-            rw.rw_obj(self.morph_data) # Can allow this line to be reached once some models with morphs are found
+            rw.rw_obj(self.morph_data)
         
         # Do indices
         if self.flags.has_indices:
@@ -377,7 +376,7 @@ class MorphDataBinary(Serializable):
         self.count = rw.rw_uint32(self.count)
         self.targets = rw.rw_obj_array(self.targets, MorphTarget, self.count)
 
-def MorphTarget(Serializable):
+class MorphTarget(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
