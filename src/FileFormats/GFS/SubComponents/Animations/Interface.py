@@ -600,7 +600,7 @@ class MorphAnimation:
                 tracks.append(track_binary)
                 
         controller_binary = AnimationControllerBinary()
-        controller_binary.type = 3
+        controller_binary.type = 4
         controller_binary.target_id = self.id #[b.name for b in gfs.morphs].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = tracks
