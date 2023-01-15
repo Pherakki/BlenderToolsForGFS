@@ -24,7 +24,6 @@ class AnimationTrackBinary(Serializable):
         self.keyframe_count = rw.rw_uint32(self.keyframe_count)
         
         self.frames = rw.rw_float32s(self.frames, self.keyframe_count)
-        
         # Should use this to decide which "keyframe attributes" to r/w?
         # Need to figure out all kf attributes first since many overlap..?
         if self.keyframe_type == 1: # Node Anim: Only in extra data?
@@ -35,8 +34,8 @@ class AnimationTrackBinary(Serializable):
             kf_type = KeyframeType3
         # elif self.keyframe_type == 4:
         #     kf_type = KeyframeType4
-        # elif self.keyframe_type == 5:
-        #     kf_type = KeyframeType5
+        elif self.keyframe_type == 5:
+            kf_type = KeyframeType5
         elif self.keyframe_type == 6: # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
             kf_type = KeyframeType6
         elif self.keyframe_type == 7: # Material Anim: 0x01105060, 0x01105070, 0x01105100
@@ -186,7 +185,7 @@ class KeyframeType4(Serializable):
         self.rotation = rw.rw_float32s(self.unknown, 4)
         
 class KeyframeType5(Serializable):
-    OBJ_VARIANT_TYPE = None
+    OBJ_VARIANT_TYPE = 5
     VARIANT_TYPE = 5
     
     def __init__(self, unknown=None, endianness='>'):

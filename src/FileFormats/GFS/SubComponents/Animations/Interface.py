@@ -88,6 +88,7 @@ class AnimationInterface:
         self.material_animations = []
         self.camera_animations   = []
         self.morph_animations    = []
+        self.unknown_animations  = []
         
         self.lookat_anims = LookAtAnims()
         self.extra_track_data   = None
@@ -133,8 +134,10 @@ class AnimationInterface:
                 instance.camera_animations.append  (cls._import_camera_animation_binary  (controller_binary))
             elif controller_binary.type == 4:
                 instance.morph_animations.append   (cls._import_morph_animation_binary   (controller_binary))
+            elif controller_binary.type == 5:
+                instance.unknown_animations.append (cls._import_unknown_animation_binary (controller_binary))
             else:
-                raise NotImplementedError
+                raise NotImplementedError(f"Unknown Controller Type: {controller_binary.type}")
                 
         if binary.flags.has_unknown_chunk:
             instance.lookat_anims.right = cls.from_binary(binary.unknown_anim_chunk.anim_1)
@@ -153,7 +156,6 @@ class AnimationInterface:
         instance.speed                 = binary.speed
         instance.properties            = binary.properties.data
 
-        instance.flag_4  = binary.flags.flag_4
         instance.flag_5  = binary.flags.flag_5
         instance.flag_6  = binary.flags.flag_6
         instance.flag_7  = binary.flags.flag_7
@@ -303,6 +305,21 @@ class AnimationInterface:
                 raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
     
         return anim
+
+    @staticmethod
+    def _import_unknown_animation_binary(controller_binary):
+        anim = UnknownAnimation()
+        
+        anim.name = controller_binary.target_name.string
+        anim.id   = controller_binary.target_id
+            
+        for track_binary in controller_binary.tracks:
+            if track_binary.keyframe_type == 5:
+                anim.unknown = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+            else:
+                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
+    
+        return anim
     
     def to_binary(self, gfs):
         binary = AnimationBinary()
@@ -311,7 +328,7 @@ class AnimationInterface:
         binary.flags.has_material_anims = len(self.material_animations)
         binary.flags.has_camera_anims   = len(self.camera_animations)
         binary.flags.has_morph_anims    = len(self.morph_animations)
-        binary.flags.flag_4             = self.flag_4
+        binary.flags.has_type_5_aninms  = len(self.unknown_animations)
         binary.flags.flag_5             = self.flag_5
         binary.flags.flag_6             = self.flag_6
         binary.flags.flag_7             = self.flag_7
@@ -351,6 +368,7 @@ class AnimationInterface:
         binary.controllers.data.extend([a.to_controller(gfs) for a in self.material_animations])
         binary.controllers.data.extend([a.to_controller(gfs) for a in self.camera_animations  ])
         binary.controllers.data.extend([a.to_controller(gfs) for a in self.morph_animations   ])
+        binary.controllers.data.extend([a.to_controller(gfs) for a in self.unknown_animations ])
         binary.controllers.count     = len(binary.controllers.data)
         binary.duration = max([track.frames[-1] for ctlr in binary.controllers for track in ctlr.tracks])
         
@@ -576,6 +594,43 @@ class MorphAnimation:
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 3
         controller_binary.target_id = [b.name for b in gfs.morphs].index(self.name)
+        controller_binary.target_name = controller_binary.target_name.from_name(self.name)
+        controller_binary.tracks.data = tracks
+        controller_binary.tracks.count = len(tracks)
+        
+        return controller_binary
+    
+class UnknownAnimation:
+    def __init__(self):
+        self.name = None
+        self.id = None
+        self.unknown = {}
+
+    def to_controller(self, gfs):
+        raise NotImplementedError
+    
+        tracks = []
+        for dataset, keyframe_type in [
+                (self.unknown, KeyframeType5)
+            ]:
+            if len(dataset):
+                kf_type = keyframe_type
+                
+                frames,\
+                kf_values = construct_frames((dataset, lerp ))
+                
+                track_binary = AnimationTrackBinary()
+                    
+                track_binary.frames = frames
+                track_binary.keyframe_type = kf_type.VARIANT_TYPE
+                track_binary.keyframe_count = len(track_binary.frames)
+                track_binary.values = [kf_type(*args) for args in zip(kf_values)]
+                
+                tracks.append(track_binary)
+                
+        controller_binary = AnimationControllerBinary()
+        controller_binary.type = 5
+        controller_binary.target_id = self.id #[b.name for b in gfs.morphs].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = tracks
         controller_binary.tracks.count = len(tracks)

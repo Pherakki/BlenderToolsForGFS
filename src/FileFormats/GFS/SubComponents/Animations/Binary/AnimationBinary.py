@@ -14,7 +14,7 @@ class AnimationFlags(BitVector):
     has_material_anims = BitVector.DEF_FLAG(0x01) # USED (Normal, Blend, Unk)
     has_camera_anims   = BitVector.DEF_FLAG(0x02) # USED (Normal)
     has_morph_anims    = BitVector.DEF_FLAG(0x03) # USED (Normal, Blend)
-    flag_4             = BitVector.DEF_FLAG(0x04)
+    has_type_5_anims   = BitVector.DEF_FLAG(0x04) # USED
     flag_5             = BitVector.DEF_FLAG(0x05)
     flag_6             = BitVector.DEF_FLAG(0x06)
     flag_7             = BitVector.DEF_FLAG(0x07)
@@ -72,7 +72,6 @@ class AnimationBinary(Serializable):
             self.flags   = rw.rw_obj(self.flags)
         self.duration    = rw.rw_float32(self.duration)
         self.controllers = rw.rw_obj(self.controllers, version)
-        
         # Only certain flags used for certain chunk versions..?
         if self.flags.has_particles:
             # self.particle_count = rw.rw_uint32(self.particle_count)
