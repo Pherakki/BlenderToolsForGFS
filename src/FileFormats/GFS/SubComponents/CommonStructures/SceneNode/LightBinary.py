@@ -4,9 +4,9 @@ from ...CommonStructures import BitVector0x20
 
 
 class LightFlags(BitVector0x20):
-    flag_0      = BitVector0x20.DEF_FLAG(0x00)
-    unk_setting = BitVector0x20.DEF_FLAG(0x01)
-    flag_2      = BitVector0x20.DEF_FLAG(0x02)
+    flag_0      = BitVector0x20.DEF_FLAG(0x00) # Usually True
+    unk_setting = BitVector0x20.DEF_FLAG(0x01) # Switches mode
+    flag_2      = BitVector0x20.DEF_FLAG(0x02) # Everything onwards unused
     flag_3      = BitVector0x20.DEF_FLAG(0x03)
     flag_4      = BitVector0x20.DEF_FLAG(0x04)
     flag_5      = BitVector0x20.DEF_FLAG(0x05)
@@ -45,9 +45,9 @@ class LightBinary(Serializable):
         
         self.flags = LightFlags(endianness)
         self.type  = None
-        self.color_1 = None
+        self.color_1 = None # Always [1., 1., 1., 1.]
         self.color_2 = None
-        self.color_3 = None
+        self.color_3 = None # Always [1., 1., 1., 1.]
         
         self.blur_radius = None
         self.lum_radius  = None
@@ -60,28 +60,28 @@ class LightBinary(Serializable):
         self.unknown_0x30 = None # unk 3
         
         # Type 2 data
-        self.unknown_0x34 = None # unk 1
-        self.unknown_0x38 = None # unk 2
-        self.unknown_0x3C = None # unk 3
+        self.unknown_0x34 = None # unk 1 # 0
+        self.unknown_0x38 = None # unk 2 # 0
+        self.unknown_0x3C = None # unk 3 # 0
         
-        self.unknown_0x48 = None # unk 4
-        self.unknown_0x4C = None # unk 5
-        self.unknown_0x50 = None # unk 6
+        self.unknown_0x48 = None # unk 4 # 0
+        self.unknown_0x4C = None # unk 5 # 0
+        self.unknown_0x50 = None # unk 6 # 0
         
         # Type 3 data
-        self.unknown_0x54 = None # unk 1
-        self.unknown_0x58 = None # unk 2
-        self.unknown_0x5C = None # unk 3
+        self.unknown_0x54 = None # unk 1 # 0
+        self.unknown_0x58 = None # unk 2 # 0
+        self.unknown_0x5C = None # unk 3 # 1
         
-        self.unknown_0x60 = None
-        self.unknown_0x64 = None
-        self.unknown_0x68 = None
-        self.unknown_0x6C = None
-        self.unknown_0x70 = None
+        self.unknown_0x60 = None # 0 - 0.79
+        self.unknown_0x64 = None # 0 - 0.94
+        self.unknown_0x68 = None # 0
+        self.unknown_0x6C = None # 0
+        self.unknown_0x70 = None # 0
         
-        self.unknown_0x7C = None # unk 4
-        self.unknown_0x80 = None # unk 5
-        self.unknown_0x84 = None # unk 6
+        self.unknown_0x7C = None # unk 4 # 0
+        self.unknown_0x80 = None # unk 5 # 0
+        self.unknown_0x84 = None # unk 6 # 0
                    
     def __repr__(self):
         out = f"[GFD::SceneContainer::SceneNode::Attachment::Light] " \
