@@ -742,3 +742,58 @@ class PointerCalculator(OffsetTracker):
 
     def mode(self):
         return "PointerCalculator"
+
+
+class Comparator(Reader):
+    class ComparisonStream:
+        def __init__(self, reference_data):
+            self.bytestream = None
+            self.reference_data = reference_data
+            
+        def fopen(self, filepath):
+            self.bytestream = open(filepath, 'rb')
+            
+        def fclose(self):
+            self.bytestream.close()
+            self.bytestream = None
+            
+        def read(self, count=None):
+            if count is None:
+                data = self.bytestream.read()
+                if data != self.reference_data[self.tell():]:
+                    raise ValueError("Streams were not equal!")
+            else:
+                ref_data = self.reference_data[self.tell():self.tell() + count]
+                data = self.bytestream.read(count)
+                if data != ref_data:
+                    raise ValueError(f"Streams were not equal: {data} {ref_data}")
+            return data
+        
+        def seek(self, position, whence=0):
+            self.bytestream.seek(position, whence)
+            
+        def tell(self):
+            return self.bytestream.tell()
+    
+    def __init__(self, filename, reference_data):
+        super().__init__(filename)
+        self.reference_data = reference_data
+        
+    def init_stream(self, bytestream):
+        self.bytestream = self.ComparisonStream(self.reference_data)
+        self.bytestream.bytestream = bytestream
+        
+    def destruct_stream(self):
+        self.bytestream.fclose()
+        self.bytestream = None
+    
+    def __enter__(self):
+        self.bytestream = self.ComparisonStream(self.reference_data)
+        self.bytestream.fopen(self.filename)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, traceback):
+        self.bytestream.fclose()
+        self.bytestream = None
+
+    
