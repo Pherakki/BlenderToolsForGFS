@@ -401,17 +401,12 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera.type       = "PERSP"
     bpy_camera.clip_start = camera.binary.zNear
     bpy_camera.clip_end   = camera.binary.zFar
-    bpy_camera.angle      = camera.binary.fov
+    bpy_camera.lens_unit  = "FOV"
+    bpy_camera.lens       = camera.binary.fov # Need to compare with camera sensor
     
     # Custom properties
-    bpy_camera["unknown_0x50"] = camera.binary.unknown_0x50
-    bpy_camera["aspect_ratio"] = camera.binary.aspect_ratio
-    bpy_camera["unknown_0x50"] = camera.binary.unknown_0x50
-    
-    bpy_camera["view_matrix_0"] = camera.binary.view_matrix[ 0: 4]
-    bpy_camera["view_matrix_1"] = camera.binary.view_matrix[ 4: 8]
-    bpy_camera["view_matrix_2"] = camera.binary.view_matrix[ 8:12]
-    bpy_camera["view_matrix_3"] = camera.binary.view_matrix[12:16]
+    bpy_camera["aspect_ratio"] = camera.binary.aspect_ratio # Can hook into Blender scene callback
+    bpy_camera["unknown_0x50"] = camera.binary.unknown_0x50 # Always 0...
 
     # Create the object
     bpy_camera_object = bpy.data.objects.new(bpy_camera.name, bpy_camera)
@@ -421,6 +416,12 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera_object.parent = armature
     bpy_camera_object.parent_type = "BONE"
     bpy_camera_object.parent_bone = bpy_node_names[camera.node]
+    
+    # Set view matrix
+    bpy_camera_object.matrix_local = Matrix([camera.binary.view_matrix[ 0: 4],
+                                             camera.binary.view_matrix[ 4: 8],
+                                             camera.binary.view_matrix[ 8:12],
+                                             camera.binary.view_matrix[12:16]])
 
 
 def import_light(name, i, light, armature, bpy_node_names):
