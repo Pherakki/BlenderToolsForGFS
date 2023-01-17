@@ -1,9 +1,3 @@
-# Check if we're running a Blender instance
-try:
-    import bpy
-except:
-    pass
-
 from .src.FileFormats.GFS import GFSBinary
     
 bl_info = {
@@ -18,9 +12,10 @@ bl_info = {
         #"tracker_url": "https://github.com/Pherakki/BlenderToolsforGFS/issues",
         "category": "Import-Export",
         }
+
+def init_bpy():
+    import bpy
     
-# Disable bpy setup if we're running the tools outside of Blender
-if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS, ImportGAP
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export import ExportGFS
@@ -101,32 +96,42 @@ if "bpy" in locals():
         #(bpy.types.TOPBAR_MT_file_export, menu_func_export)
     )
     
-    def register():
-        blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
-       # Note for later: multi-language support can be implemented by checking
-       #     - bpy.context.preferences.view.language
-       #     - bpy.context.preferences.view.use_translate_interface
-       #     - bpy.context.preferences.view.use_translate_new_dataname
-       #     - bpy.context.preferences.view.use_translate_tooltips
-        for classtype in CLASSES:
-            bpy.utils.register_class(classtype)
-        
-        for obj, name, prop_type in PROP_GROUPS:
-            bpy.utils.register_class(prop_type)
-            setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
-            
-        for obj, elem in LIST_ITEMS:
-            obj.append(elem)
+    return CLASSES, PROP_GROUPS, LIST_ITEMS
     
+def register():
+    import bpy
+    
+    CLASSES, PROP_GROUPS, LIST_ITEMS = init_bpy()
+    
+    blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
+   # Note for later: multi-language support can be implemented by checking
+   #     - bpy.context.preferences.view.language
+   #     - bpy.context.preferences.view.use_translate_interface
+   #     - bpy.context.preferences.view.use_translate_new_dataname
+   #     - bpy.context.preferences.view.use_translate_tooltips
+    for classtype in CLASSES:
+        bpy.utils.register_class(classtype)
+    
+    for obj, name, prop_type in PROP_GROUPS:
+        bpy.utils.register_class(prop_type)
+        setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
+        
+    for obj, elem in LIST_ITEMS:
+        obj.append(elem)
 
-    def unregister():
-        for classtype in CLASSES[::-1]:
-            bpy.utils.unregister_class(classtype)
 
-        for obj, name, prop_type in PROP_GROUPS[::-1]:
-            delattr(obj, name)
-            bpy.utils.unregister_class(prop_type)
-            
-        for obj, elem in LIST_ITEMS:
-            obj.remove(elem)
+def unregister():
+    import bpy
+    
+    CLASSES, PROP_GROUPS, LIST_ITEMS = init_bpy()
+    
+    for classtype in CLASSES[::-1]:
+        bpy.utils.unregister_class(classtype)
+
+    for obj, name, prop_type in PROP_GROUPS[::-1]:
+        delattr(obj, name)
+        bpy.utils.unregister_class(prop_type)
+        
+    for obj, elem in LIST_ITEMS:
+        obj.remove(elem)
         
