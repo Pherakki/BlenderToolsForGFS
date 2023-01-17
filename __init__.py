@@ -22,6 +22,7 @@ bl_info = {
 # Disable bpy setup if we're running the tools outside of Blender
 if "bpy" in locals():
     from .src.BlenderIO.Import import ImportGFS, ImportGAP
+    from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export import ExportGFS
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
@@ -53,32 +54,6 @@ if "bpy" in locals():
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
     
-    
-    class GFSImportSubmenu(bpy.types.Menu):
-        bl_idname = "OBJECT_MT_GFSImportExport_import_submenu"
-        bl_label = "GFS"
-    
-        def draw(self, context):
-            layout = self.layout
-            layout.operator(ImportGFS.bl_idname, text="GFS Model (.GMD, .GFS)")
-            layout.operator(ImportGAP.bl_idname, text="GAP Animations (.GAP)")
-    
-    
-    # class GFSExportSubmenu(bpy.types.Menu):
-    #     bl_idname = "OBJECT_MT_GFSImportExport_export_submenu"
-    #     bl_label = "GFS"
-    
-    #     def draw(self, context):
-    #         layout = self.layout
-    #         layout.operator(ExportGFS.bl_idname, text="GFS Model (.GMD)")
-    
-    
-    def menu_func_import(self, context):
-        self.layout.menu(GFSImportSubmenu.bl_idname)
-    
-    
-    # def menu_func_export(self, context):
-    #     self.layout.menu(GFSExportSubmenu.bl_idname)
     
     CLASSES = (
         ImportGFS,
