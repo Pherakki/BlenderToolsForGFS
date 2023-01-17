@@ -96,7 +96,7 @@ class NodeInterface:
     def from_binary(cls, binary, parent_idx, bind_pose_matrix=None):
         instance = cls()
         
-        instance.parent = parent_idx
+        instance.parent_idx = parent_idx
         instance.name = binary.name.string
         instance.position = binary.position
         instance.rotation = binary.rotation
