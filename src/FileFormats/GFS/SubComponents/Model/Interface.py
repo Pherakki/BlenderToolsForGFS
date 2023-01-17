@@ -81,6 +81,7 @@ class ModelInterface:
 
         binary.flags.has_bounding_box    = keep_bounding_box
         binary.flags.has_bounding_sphere = keep_bounding_sphere
+        binary.flags.hash_morphs         = len(morphs) > 0
         
         # Need to return mesh binary list here too!
         binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, morphs)

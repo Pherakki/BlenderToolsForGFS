@@ -8,7 +8,7 @@ class ModelFlags(BitVector):
     has_bounding_box    = BitVector.DEF_FLAG(0x00)
     has_bounding_sphere = BitVector.DEF_FLAG(0x01)
     has_skin_data       = BitVector.DEF_FLAG(0x02)
-    flag_3              = BitVector.DEF_FLAG(0x03)
+    has_morphs          = BitVector.DEF_FLAG(0x03)
     flag_4              = BitVector.DEF_FLAG(0x04)
     flag_5              = BitVector.DEF_FLAG(0x05)
     flag_6              = BitVector.DEF_FLAG(0x06)
