@@ -574,7 +574,7 @@ class CameraAnimation:
 class MorphAnimation:
     def __init__(self):
         self.name = None
-        self.id
+        self.id   = None
         self.unknown = {}
 
     def to_controller(self, gfs):
