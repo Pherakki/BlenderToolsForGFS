@@ -77,10 +77,10 @@ class NodeInterface:
                 binaries.append((attachment.data, elem.node))
             return binaries
                 
+        add_attachments("Morph",  9, morph_list)
         mesh_binaries = add_attachments("Mesh",   4, mesh_list)
         add_attachments("Camera", 5, camera_list)
         add_attachments("Light",  6, light_list)
-        add_attachments("Morph",  9, morph_list)
         
         return node_collection[0], id_map, mesh_binaries
     
