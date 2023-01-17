@@ -2,7 +2,7 @@ from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
 from ...CommonStructures import ObjectName, BitVector0x20
 from .EPLAnimationBinary import EPLAnimationBinary
-import NodeBinary
+from . import NodeBinary
 
 
 class EPLFlags(BitVector0x20):

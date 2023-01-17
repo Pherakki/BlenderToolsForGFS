@@ -3,6 +3,8 @@ from .MeshBinary import MeshBinary
 from .MorphBinary import MorphBinary
 from .CameraBinary import CameraBinary
 from .LightBinary import LightBinary
+#from .EPLBinary import EPLBinary
+#from .EPLLeafBinary import EPLLeafBinary
 
 class HasParticleDataError(Exception):
     pass
@@ -33,6 +35,9 @@ class NodeAttachmentBinary(Serializable):
                 dtype = LightBinary
             elif self.type == 7:
                 raise HasParticleDataError
+                #dtype = EPLBinary
+            # elif self.type == 8:
+            #     dtype = EPLLeafBinary
             elif self.type == 9:
                 dtype = MorphBinary
             else:

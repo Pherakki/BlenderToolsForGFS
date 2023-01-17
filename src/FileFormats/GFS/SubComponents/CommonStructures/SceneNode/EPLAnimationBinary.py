@@ -1,8 +1,7 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
 from ...CommonStructures import ObjectName, BitVector0x20, SizedObjArray
-from ...Animations.AnimationBinary import AnimationBinary
-import NodeBinary
+from ...Animations.Binary.AnimationBinary import AnimationBinary
 
 
 class EPLAnimationFlags(BitVector0x20):
@@ -40,7 +39,6 @@ class EPLAnimationFlags(BitVector0x20):
     flag_31     = BitVector0x20.DEF_FLAG(0x1F)
 
 
-
 class EPLAnimationBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
@@ -58,4 +56,23 @@ class EPLAnimationBinary(Serializable):
         rw.rw_obj(self.flags)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         rw.rw_obj(self.animation, version)
-        rw.rw_obj(self.epl_controllers, version)
+        rw.rw_obj(self.epl_controllers)
+
+class EPLAnimationController(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.controller_idx = None
+        self.unknown_0x0C = None
+        
+    def __repr__(self):
+        return f"[GFSBinary::Scene::Node::EPL::Animation::Controller] {self.unknown_0x00} {self.unknown_0x04} {self.controller_idx} {self.unknown_0x0C}"
+    
+    def read_write(self, rw):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.controller_idx = rw.rw_uint32(self.controller_idx)
+        self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
