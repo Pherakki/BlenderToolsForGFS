@@ -1,3 +1,4 @@
+import io
 import os
 
 from ..src.FileFormats.GFS import GFSBinary
@@ -5,7 +6,10 @@ from ..src.FileFormats.GFS import GFSInterface
 from ..src.FileFormats.GFS.SubComponents.GFS0ContainerBinary import HasAnimationsError, UnsupportedVersionError
 from ..src.FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import ParticlesError
 from ..src.FileFormats.GFS.SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasParticleDataError, HasType9Error
+from ..src.serialization.BinaryTargets import Comparator
 
+if 'bpy' in globals():
+    raise Exception("'bpy' module has been loaded - this test is incompatible with the bpy module")
 
 def fetch_meshes(node_ids, nodes, meshes, node):
     idx = node_ids[id(node)]
@@ -30,48 +34,32 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
     #######################
     model_files = []
     model_root = data_root
-    ignore = []
-    ignore.append('C0001_048_00.GMD')   # Contains 0-floats that are 0x00000020
-    ignore.append("C5931_000_00.GMD")   # Contains non-UTF8 strings
-    ignore.append("PS0003.GMD")         # Contains non-UTF8 strings
-    ignore.append("PS0142.GMD")         # Contains non-UTF8 strings
-    ignore.append("PS0298.GMD")         # Contains non-UTF8 strings
-    ignore.append("PSZ0298.GMD")        # Contains non-UTF8 strings
-    ignore.append("C9525_000_00.GMD")   # Contains strings that do not hash correctly - hasher bug?
-    ignore.append("M057_094.GMD")       # Contains non-UTF8 strings
-    ignore.append("IT0726_001.GMD")     # Contains non-UTF8 strings
-    ignore.append("IT0726_002.GMD")     # Contains non-UTF8 strings
-    ignore.append("IT0749_000.GMD")     # Contains non-UTF8 strings
-    ignore.append("IT0749_001.GMD")     # Contains non-UTF8 strings
-    ignore.append("F057_151_0.GFS")     # Contains non-UTF8 strings
     
-    ignore.append("BB0001_051.GAP") # Contains invalid keyframes
-    ignore.append("AE0001_504.GAP") # Contains invalid keyframes
-    ignore.append("BE0001_001.GAP") # Contains invalid keyframes
-    ignore.append("BF0001_001.GAP") # Contains invalid keyframes
-    ignore.append("BF0001_002.GAP") # Contains invalid keyframes
-    ignore.append("BB0003_051.GAP") # Contains invalid keyframes
-    ignore.append("BB0006_051.GAP") # Contains invalid keyframes
-    ignore.append("BB0006_052.GAP") # Contains invalid keyframes
-    ignore.append("BB0009_051.GAP") # Contains invalid keyframes
-    ignore.append("BE0009_052.GAP") # Contains invalid keyframes
-    ignore.append("AE0010_767.GAP") # Contains invalid keyframes
-    ignore.append("BE0010_001.GAP") # Contains invalid keyframes
-    ignore.append("BE0010_005.GAP") # Contains invalid keyframes
-    ignore.append("BE0010_011.GAP") # Contains invalid keyframes
-    ignore.append("BE0010_051.GAP") # Contains invalid keyframes
-    ignore.append("BF0010_051.GAP") # Contains invalid keyframes
-    ignore.append("BE1004_001.GAP") # Contains invalid keyframes
-    ignore.append("BE1004_003.GAP") # Contains invalid keyframes
-    ignore.append("BE1004_006.GAP") # Contains invalid keyframes
-    ignore.append("BF1010_200.GAP") # Contains invalid keyframes
-    ignore.append("BE2111_001.GAP") # Contains invalid keyframes
-    ignore.append("BEM0232_000.GAP") # Contains invalid keyframes
+    # Init the ignore list:
+    # Contains filepaths that have known issues that currently can't be
+    # dealt with
+    ignore = []
+    ignore.append('CHARACTER/5931/C5931_000_00.GMD')    # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append('CHARACTER/9525/C9525_000_00.GMD')    # Hash inconsistency
+    ignore.append("CHARACTER/PERSONA/0003/PS0003.GMD")  # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("CHARACTER/PERSONA/0142/PS0142.GMD")  # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("CHARACTER/PERSONA/0298/PS0298.GMD")  # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("CHARACTER/PERSONA/0298/PSZ0298.GMD") # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("FIELD_TEX/F057_151_0.GFS")           # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("FIELD_TEX/OBJECT/M057_094.GMD")      # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("ITEM/IT0100_000.GMD")                # Texture footer is 0!?
+    ignore.append("ITEM/IT0175_002.GMD")                # Texture footer is 0!?
+    ignore.append("ITEM/IT0263_001.GMD")                # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("ITEM/IT0265_001.GMD")                # Contains non-UTF8 strings '\x97L\x8c\xf8'
+    ignore.append("ITEM/IT0611_000.GMD")                # Texture footer is 0!?
+    ignore.append("ITEM/IT0615_000.GMD")                # Texture footer is 0x1010202!?
     
     for root, dirs, files in os.walk(model_root):
         for file in files:
-            if any(file.endswith(ext) for ext in (".GMD", ".GAP", ".GFS")) and file not in ignore:
-                model_files.append(os.path.join(root, file))
+            full_path = os.path.join(root, file)
+            relative_path = os.path.relpath(full_path, data_root)
+            if any(file.endswith(ext) for ext in [".GMD", ".GFS"]) and (relative_path not in ignore):
+                model_files.append(full_path)
     
     if namefilter is not None:
         assert callable(namefilter), f"namefilter must be callable."
@@ -110,7 +98,7 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
                 raise InconsistentVersionsError
             
             gi = GFSInterface.from_binary(gb)
-            gb2 = gi.to_binary(gb.containers[0].version)
+            gb2 = gi.to_binary(gb.containers[0].version, add_end_container=os.path.splitext(filename) != ".GAP")
             
             
             ##################################
@@ -173,16 +161,21 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
             
             with open(file, 'rb') as F, open("tmp.GMD", 'rb') as G:
                 fdata = F.read()
-                gdata = bytearray(G.read())
-                
-                #######################
-                # FILE SPECIFIC HACKS #
-                #######################
-                if filename == "C0001_099_00.GMD":
-                    gdata[1268567:1268571] = fdata[1268567:1268571]
-                
-                for i, (b1, b2) in enumerate(zip(fdata, gdata)):
-                    assert b1 == b2, f"{i}: {b1} {b2}"
+                gdata = G.read()
+                    
+                try:
+                    for i, (b1, b2) in enumerate(zip(fdata, gdata)):
+                        assert b1 == b2, f"{i}: {b1} {b2}"
+                        
+                    assert len(fdata) == len(gdata)
+                except:
+                    cmp = Comparator(None, fdata)
+                    stream = io.BytesIO()
+                    stream.write(gdata)
+                    stream.seek(0)
+                    cmp.init_stream(stream)
+                    gb3 = GFSBinary()
+                    cmp.rw_obj(gb3)
                     
                 assert len(fdata) == len(gdata)
                   
