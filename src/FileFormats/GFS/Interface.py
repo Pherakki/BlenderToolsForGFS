@@ -88,7 +88,7 @@ class GFSInterface:
         
         return instance
     
-    def to_binary(self, version, duplicate_data=False):
+    def to_binary(self, version, add_end_container=True, duplicate_data=False):
         binary = GFSBinary()
         
         ot = OffsetTracker()
@@ -182,7 +182,7 @@ class GFSInterface:
             binary.containers.append(unk_ctr)
         
         # End container
-        if not (len(binary.containers) == 2 and binary.containers[-1].type == 0x000100FD):
+        if add_end_container:
             end_ctr = GFS0ContainerBinary()
             end_ctr.version = version
             end_ctr.type = 0x00000000
