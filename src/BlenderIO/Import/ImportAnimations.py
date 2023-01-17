@@ -213,7 +213,7 @@ def create_rest_pose(gfs, armature):
         actiongroup = action.groups.new(bone_name)
 
 
-        parent_bind_matrix = bind_matrices[node.parent] if node.parent > -1 else Matrix.Identity(4)
+        parent_bind_matrix = bind_matrices[node.parent_idx] if node.parent_idx > -1 else Matrix.Identity(4)
         local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrices[node_idx]
                 
         rest_position = Matrix.Translation(node.position)

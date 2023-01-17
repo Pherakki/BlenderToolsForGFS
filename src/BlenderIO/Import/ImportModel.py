@@ -28,8 +28,8 @@ def import_pincushion_model(gfs, name):
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
 
         bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
-        if node.parent != -1:
-            bpy_bone.parent  = bpy_nodes[node.parent] 
+        if node.parent_idx != -1:
+            bpy_bone.parent  = bpy_nodes[node.parent_idx] 
             
         bpy_node_names[i]  = node.name
         bpy_nodes[i]       = bpy_bone
