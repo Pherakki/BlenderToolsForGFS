@@ -19,7 +19,7 @@ class TextureRefBinary(Serializable):
         return f"[GFD::Material::TextureRef] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.unknown_0x0A} {self.unknown_0x0B} {self.unknown_0x0C}"
         
     def read_write(self, rw, version):
-        self.name                  = rw.rw_obj(self.name, version)
+        self.name                  = rw.rw_obj(self.name, version, encoding="shift-jis")
         self.unknown_0x04          = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08          = rw.rw_uint8(self.unknown_0x08)
         self.has_texture_filtering = rw.rw_uint8(self.has_texture_filtering)
