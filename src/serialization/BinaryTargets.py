@@ -763,10 +763,11 @@ class Comparator(Reader):
                 if data != self.reference_data[self.tell():]:
                     raise ValueError("Streams were not equal!")
             else:
-                ref_data = self.reference_data[self.tell():self.tell() + count]
+                pos = self.tell()
+                ref_data = self.reference_data[pos:pos + count]
                 data = self.bytestream.read(count)
                 if data != ref_data:
-                    raise ValueError(f"Streams were not equal: {data} {ref_data}")
+                    raise ValueError(f"Streams were not equal: [{pos}/{hex(pos)}] Read: {data} Reference: {ref_data}")
             return data
         
         def seek(self, position, whence=0):
