@@ -5,28 +5,28 @@ class MaterialInterface:
     def __init__(self):
         
         # Flags
-        self.flag_0            = None
-        self.flag_1            = None
-        self.flag_2            = None
-        self.flag_3            = None
-        self.use_vertex_colors = None
-        self.flag_5            = None
-        self.flag_6            = None
-        self.use_light_1       = None
-        self.flag_8            = None
-        self.flag_9            = None
-        self.flag_10           = None
-        self.use_light_2       = None
-        self.purple_wireframe  = None
-        self.flag_13           = None
-        self.receive_shadow    = None
-        self.cast_shadow       = None
-        self.flag_17           = None
-        self.flag_18           = None
-        self.disable_bloom     = None
-        self.flag_29           = None
-        self.flag_30           = None
-        self.flag_31           = None
+        self.flag_0              = None
+        self.flag_1              = None
+        self.flag_2              = None
+        self.flag_3              = None
+        self.use_vertex_colors   = None
+        self.flag_5              = None
+        self.flag_6              = None
+        self.enable_uv_animation = None
+        self.enable_emission     = None
+        self.flag_9              = None
+        self.flag_10             = None
+        self.use_light_2         = None
+        self.purple_wireframe    = None
+        self.flag_13             = None
+        self.receive_shadow      = None
+        self.cast_shadow         = None
+        self.flag_17             = None
+        self.flag_18             = None
+        self.disable_bloom       = None
+        self.flag_29             = None
+        self.flag_30             = None
+        self.flag_31             = None
         
         # Presumably some of these can be removed...
         self.ambient = None
@@ -111,28 +111,28 @@ class MaterialInterface:
         instance.attributes = binary.attributes.data
         
         # Deal with other flags
-        instance.flag_0            = binary.flags.flag_0
-        instance.flag_1            = binary.flags.flag_1
-        instance.flag_2            = binary.flags.flag_2
-        instance.flag_3            = binary.flags.flag_3
-        instance.use_vertex_colors = binary.flags.use_vertex_colors
-        instance.flag_5            = binary.flags.flag_5
-        instance.flag_6            = binary.flags.flag_6
-        instance.use_light_1       = binary.flags.use_light_1
-        instance.flag_8            = binary.flags.flag_8
-        instance.flag_9            = binary.flags.flag_9
-        instance.flag_10           = binary.flags.flag_10
-        instance.use_light_2       = binary.flags.use_light_2
-        instance.purple_wireframe  = binary.flags.purple_wireframe
-        instance.flag_13           = binary.flags.flag_13
-        instance.receive_shadow    = binary.flags.receive_shadow
-        instance.cast_shadow       = binary.flags.cast_shadow
-        instance.flag_17           = binary.flags.flag_17
-        instance.flag_18           = binary.flags.flag_18
-        instance.disable_bloom     = binary.flags.disable_bloom
-        instance.flag_29           = binary.flags.flag_29
-        instance.flag_30           = binary.flags.flag_30
-        instance.flag_31           = binary.flags.flag_31
+        instance.flag_0              = binary.flags.flag_0
+        instance.flag_1              = binary.flags.flag_1
+        instance.enable_specular     = binary.flags.enable_specular
+        instance.flag_3              = binary.flags.flag_3
+        instance.use_vertex_colors   = binary.flags.use_vertex_colors
+        instance.flag_5              = binary.flags.flag_5
+        instance.flag_6              = binary.flags.flag_6
+        instance.enable_uv_animation = binary.flags.enable_uv_animation
+        instance.enable_emission     = binary.flags.enable_emission
+        instance.flag_9              = binary.flags.flag_9
+        instance.flag_10             = binary.flags.flag_10
+        instance.use_light_2         = binary.flags.use_light_2
+        instance.purple_wireframe    = binary.flags.purple_wireframe
+        instance.flag_13             = binary.flags.flag_13
+        instance.receive_shadow      = binary.flags.receive_shadow
+        instance.cast_shadow         = binary.flags.cast_shadow
+        instance.flag_17             = binary.flags.flag_17
+        instance.flag_18             = binary.flags.flag_18
+        instance.disable_bloom       = binary.flags.disable_bloom
+        instance.flag_29             = binary.flags.flag_29
+        instance.flag_30             = binary.flags.flag_30
+        instance.flag_31             = binary.flags.flag_31
         
         return instance
     
@@ -141,13 +141,13 @@ class MaterialInterface:
         
         binary.flags.flag_0                 = self.flag_0
         binary.flags.flag_1                 = self.flag_1
-        binary.flags.flag_2                 = self.flag_2
+        binary.flags.enable_specular        = self.enable_specular
         binary.flags.flag_3                 = self.flag_3
         binary.flags.use_vertex_colors      = self.use_vertex_colors
         binary.flags.flag_5                 = self.flag_5
         binary.flags.flag_6                 = self.flag_6
-        binary.flags.use_light_1            = self.use_light_1
-        binary.flags.flag_8                 = self.flag_8
+        binary.flags.enable_uv_animation    = self.enable_uv_animation
+        binary.flags.enable_emission        = self.enable_emission
         binary.flags.flag_9                 = self.flag_9
         binary.flags.flag_10                = self.flag_10
         binary.flags.use_light_2            = self.use_light_2
