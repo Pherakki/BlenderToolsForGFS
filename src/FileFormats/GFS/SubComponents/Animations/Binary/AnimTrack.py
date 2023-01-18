@@ -2,6 +2,17 @@ from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
 
 
+class MaterialAnimationType:
+    NODE_TR               = 1
+    NODE_TRS              = 2
+    MATERIAL_AMBIENT_RGB  = 6
+    MATERIAL_DIFFUSE_RGB  = 7
+    MATERIAL_SPECULAR_RGB = 8
+    MATERIAL_OPACITY      = 12
+    MATERIAL_TEX0_UVS     = 13
+    MATERIAL_EMISSION_RGB = 14
+
+
 class AnimationTrackBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -37,11 +48,11 @@ class AnimationTrackBinary(Serializable):
         elif self.keyframe_type == 5:
             kf_type = KeyframeType5
         elif self.keyframe_type == 6: # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = KeyframeType6
+            kf_type = AmbientRGB
         elif self.keyframe_type == 7: # Material Anim: 0x01105060, 0x01105070, 0x01105100
-            kf_type = KeyframeType7
+            kf_type = DiffuseRGB
         elif self.keyframe_type == 8: # Material Anim: 0x01105060, 0x01105070, 0x01105100
-            kf_type = KeyframeType8
+            kf_type = SpecularRGB
         elif self.keyframe_type == 9: # Material Anim: 0x01105060, 0x01105020, 0x01105100
             kf_type = KeyframeType9
         # elif self.keyframe_type == 10:
@@ -49,11 +60,11 @@ class AnimationTrackBinary(Serializable):
         elif self.keyframe_type == 11: # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
             kf_type = KeyframeType11
         elif self.keyframe_type == 12: # Material Anim: 0x01105000, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x1105070, 0x01105080, 0x1105090, 0x1105100
-            kf_type = KeyframeType12
+            kf_type = Opacity
         elif self.keyframe_type == 13: # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = KeyframeType13
+            kf_type = Tex0UV
         elif self.keyframe_type == 14: # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = KeyframeType14
+            kf_type = EmissionRGB
         elif self.keyframe_type == 15: # Material Anim: 0x01105060, 0x01105070, 0x01105100
             kf_type = KeyframeType15
         elif self.keyframe_type == 16: # Node Anim: 0x01105060, 0x01105070
@@ -106,7 +117,6 @@ class AnimationTrackBinary(Serializable):
         # Flag instead?!
         if self.keyframe_type in [26, 27, 28, 31, 32, 33, 34, 35]: # If has float16 pos...
             self.base_position = rw.rw_float32s(self.base_position, 3)
-            #if self.keyframe_type != 31: # If has float16 scale...
             self.base_scale = rw.rw_float32s(self.base_scale, 3)
 
 
@@ -200,59 +210,65 @@ class KeyframeType5(Serializable):
     def read_write(self, rw):
         self.unknown = rw.rw_float32(self.unknown)
         
-class KeyframeType6(Serializable):
-    """Material Keyframe"""
-    
+class AmbientRGB(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 6
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, r=0, g=0, b=0, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.r = r
+        self.g = g
+        self.b = b
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType6] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::AmbientRGB] {self.r} {self.g} {self.b}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 3)
+        self.r = rw.rw_float32(self.r)
+        self.g = rw.rw_float32(self.g)
+        self.b = rw.rw_float32(self.b)
         
-class KeyframeType7(Serializable):
-    """Material Keyframe - Ambient RGB"""
-    
+class DiffuseRGB(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 7
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, r=0, g=0, b=0, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.r = r
+        self.g = g
+        self.b = b
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType7] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::DiffuseRGB] {self.r} {self.g} {self.b}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 3)
+        self.r = rw.rw_float32(self.r)
+        self.g = rw.rw_float32(self.g)
+        self.b = rw.rw_float32(self.b)
         
-class KeyframeType8(Serializable):
-    """Material Keyframe"""
-    
+class SpecularRGB(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 8
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, r=0, g=0, b=0, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.r = r
+        self.g = g
+        self.b = b
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType8] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::SpecularRGB] {self.r} {self.g} {self.b}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 3)
+        self.r = rw.rw_float32(self.r)
+        self.g = rw.rw_float32(self.g)
+        self.b = rw.rw_float32(self.b)
                 
 class KeyframeType9(Serializable):
     """Material Keyframe"""
@@ -306,59 +322,65 @@ class KeyframeType11(Serializable):
     def read_write(self, rw):
         self.unknown = rw.rw_float32(self.unknown)
         
-class KeyframeType12(Serializable):
-    """Material Keyframe"""
-    
+class Opacity(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 12
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, opacity=1, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.opacity = opacity
         
     def __repr__(self):
         return f"[GFDBinary::Animation::Controller::Track::KeyframeType12] {self.unknown}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32(self.unknown)
+        self.opacity = rw.rw_float32(self.opacity)
                 
-class KeyframeType13(Serializable):
-    """Material Keyframe"""
-    
+class Tex0UV(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 13
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, translate_u=0, translate_v=0, scale_u=1, scale_v=1, rotation=0, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.translate_u = translate_u
+        self.translate_v = translate_v
+        self.scale_u = scale_u
+        self.scale_v = scale_v
+        self.rotation = rotation
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType13] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::Tex0UV] {self.translate_u} {self.translate_v} {self.scale_x} {self.scale_y} {self.rotation}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 5)
+        self.translate_u = rw.rw_float32(self.translate_u)
+        self.translate_v = rw.rw_float32(self.translate_v)
+        self.scale_u     = rw.rw_float32(self.scale_u)
+        self.scale_v     = rw.rw_float32(self.scale_v)
+        self.rotation    = rw.rw_float32(self.rotation)
 
-class KeyframeType14(Serializable):
-    """Material Keyframe"""
-    
+class EmissionRGB(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 14
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, r=0, g=0, b=0, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown = unknown
+        self.r = r
+        self.g = g
+        self.b = b
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType14] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::EmissionRGB] {self.r} {self.g} {self.b}"
         
     def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 3) # Unconfirmed, looks like a scale
+        self.r = rw.rw_float32(self.r)
+        self.g = rw.rw_float32(self.g)
+        self.b = rw.rw_float32(self.b)
                 
 class KeyframeType15(Serializable):
     """Material Keyframe"""

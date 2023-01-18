@@ -6,15 +6,15 @@ from .Binary.AnimTrack import KeyframeType2
 from .Binary.AnimTrack import KeyframeType3
 from .Binary.AnimTrack import KeyframeType4
 from .Binary.AnimTrack import KeyframeType5
-from .Binary.AnimTrack import KeyframeType6
-from .Binary.AnimTrack import KeyframeType7
-from .Binary.AnimTrack import KeyframeType8
+from .Binary.AnimTrack import AmbientRGB
+from .Binary.AnimTrack import DiffuseRGB
+from .Binary.AnimTrack import SpecularRGB
 from .Binary.AnimTrack import KeyframeType9
 from .Binary.AnimTrack import KeyframeType10
 from .Binary.AnimTrack import KeyframeType11
-from .Binary.AnimTrack import KeyframeType12
-from .Binary.AnimTrack import KeyframeType13
-from .Binary.AnimTrack import KeyframeType14
+from .Binary.AnimTrack import Opacity
+from .Binary.AnimTrack import Tex0UV
+from .Binary.AnimTrack import EmissionRGB
 from .Binary.AnimTrack import KeyframeType15
 from .Binary.AnimTrack import KeyframeType16
 from .Binary.AnimTrack import KeyframeType17
@@ -204,6 +204,11 @@ class AnimationInterface:
                 anim.scales    = {f: kf.scale    for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 16:
                 anim.unknown_floats = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 26:
+                # How does this differ from 28?
+                anim.compress = True
+                anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 27:
                 anim.compress = True
                 anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
@@ -231,7 +236,7 @@ class AnimationInterface:
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
                 anim.scales    = {f: scale_scl(kf.scale)    for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
-                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Node Animation exists")
+                raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Node Animation exists")
         
         return anim
         
@@ -244,21 +249,21 @@ class AnimationInterface:
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 6:
-                anim.unknown_6 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.ambient_rgb  = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 7:
-                anim.unknown_7 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.diffuse_rgb  = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 8:
-                anim.unknown_8 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.specular_rgb = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 9:
                 anim.unknown_9 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 11:
                 anim.unknown_11 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 12:
-                anim.unknown_12 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.opacity = {f: kf.opacity for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 13:
-                anim.unknown_13 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.tex0_uv = {f: [kf.translate_u, kf.translate_v, kf.scale_x, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 14:
-                anim.unknown_14 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.emission_rgb = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 15:
                 anim.unknown_15 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 20:
@@ -274,7 +279,7 @@ class AnimationInterface:
             elif track_binary.keyframe_type == 36:
                 anim.unknown_36 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
-                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
+                raise NotImplementedError("fNo instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
         
         return anim
 
@@ -291,7 +296,7 @@ class AnimationInterface:
             elif track_binary.keyframe_type == 24:
                 anim.unknown_24 = {f: kf.unknown_float for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
-                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Camera Animation exists")
+                raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Camera Animation exists")
 
         return anim
 
@@ -306,7 +311,7 @@ class AnimationInterface:
             if track_binary.keyframe_type == 3:
                 anim.unknown = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
-                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
+                raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
     
         return anim
 
@@ -321,7 +326,7 @@ class AnimationInterface:
             if track_binary.keyframe_type == 5:
                 anim.unknown = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
-                raise NotImplementedError("No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
+                raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Morph Animation exists")
     
         return anim
     
@@ -475,40 +480,43 @@ class MaterialAnimation:
         self.name = None
         self.id   = None
         
-        self.unknown_6  = {}
-        self.unknown_7  = {}
-        self.unknown_8  = {}
-        self.unknown_9  = {}
-        self.unknown_11 = {}
-        self.unknown_12 = {}
-        self.unknown_13 = {}
-        self.unknown_14 = {}
-        self.unknown_15 = {}
-        self.unknown_20 = {}
-        self.unknown_21 = {}
-        self.unknown_25 = {}
-        self.unknown_29 = {}
-        self.unknown_30 = {}
-        self.unknown_36 = {}
+        self.snap_tex0_uvs = False
+        self.snap_tex1_uvs = False
+        
+        self.ambient_rgb  = {}
+        self.diffuse_rgb  = {}
+        self.specular_rgb = {}
+        self.unknown_9    = {}
+        self.unknown_11   = {}
+        self.opacity      = {}
+        self.tex0_uv      = {}
+        self.emission_rgb = {}
+        self.unknown_15   = {}
+        self.unknown_20   = {}
+        self.unknown_21   = {}
+        self.unknown_25   = {}
+        self.unknown_29   = {}
+        self.unknown_30   = {}
+        self.unknown_36   = {}
 
     def to_controller(self, gfs):
         tracks = []
         for dataset, keyframe_type in [
-                (self.unknown_6,  KeyframeType6 ),
-                (self.unknown_7,  KeyframeType7 ),
-                (self.unknown_8,  KeyframeType8 ),
-                (self.unknown_9,  KeyframeType9 ),
-                (self.unknown_11, KeyframeType11),
-                (self.unknown_12, KeyframeType12),
-                (self.unknown_13, KeyframeType13),
-                (self.unknown_14, KeyframeType14),
-                (self.unknown_15, KeyframeType15),
-                (self.unknown_20, KeyframeType20),
-                (self.unknown_21, KeyframeType21),
-                (self.unknown_25, KeyframeType25),
-                (self.unknown_29, KeyframeType29),
-                (self.unknown_30, KeyframeType30),
-                (self.unknown_36, KeyframeType36)
+                (self.ambient_rgb,   AmbientRGB    ),
+                (self.diffuse_rgb,   DiffuseRGB    ),
+                (self.specular_rgb,  SpecularRGB   ),
+                (self.unknown_9,     KeyframeType9 ),
+                (self.unknown_11,    KeyframeType11),
+                (self.opacity,       Opacity       ),
+                (self.tex0_uv,       Tex0UV        ),
+                (self.emission_rgb,  EmissionRGB),
+                (self.unknown_15,    KeyframeType15),
+                (self.unknown_20,    KeyframeType20),
+                (self.unknown_21,    KeyframeType21),
+                (self.unknown_25,    KeyframeType25),
+                (self.unknown_29,    KeyframeType29),
+                (self.unknown_30,    KeyframeType30),
+                (self.unknown_36,    KeyframeType36)
             ]:
             if len(dataset):
                 kf_type = keyframe_type
