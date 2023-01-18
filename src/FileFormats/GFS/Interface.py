@@ -26,6 +26,7 @@ class GFSInterface:
     def __init__(self):
         self.keep_bounding_box = False
         self.keep_bounding_sphere = False
+        self.flag_3 = False
         self.meshes = []
         self.cameras = []
         self.lights = []
@@ -67,7 +68,8 @@ class GFSInterface:
                 instance.lights,            \
                 instance.morphs,            \
                 instance.keep_bounding_box, \
-                instance.keep_bounding_sphere = ModelInterface.from_binary(ctr.data, duplicate_data)
+                instance.keep_bounding_sphere,\
+                instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
                 instance.animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.animations]
@@ -138,7 +140,7 @@ class GFSInterface:
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.keep_bounding_box, self.keep_bounding_sphere, copy_verts=duplicate_data)
+            model_binary = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
