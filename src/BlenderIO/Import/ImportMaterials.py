@@ -34,12 +34,12 @@ def import_materials(gfs, textures):
         # shader node tree can be built...
         bpy_material.GFSTOOLS_MaterialProperties.flag_0 = mat.flag_0
         bpy_material.GFSTOOLS_MaterialProperties.flag_1 = mat.flag_1
-        bpy_material.GFSTOOLS_MaterialProperties.flag_2 = mat.flag_2
+        bpy_material.GFSTOOLS_MaterialProperties.enable_specular = mat.enable_specular
         bpy_material.GFSTOOLS_MaterialProperties.vertex_colors = mat.use_vertex_colors
         bpy_material.GFSTOOLS_MaterialProperties.flag_5 = mat.flag_5
         bpy_material.GFSTOOLS_MaterialProperties.flag_6 = mat.flag_6
-        bpy_material.GFSTOOLS_MaterialProperties.light_1 = mat.use_light_1
-        bpy_material.GFSTOOLS_MaterialProperties.flag_8 = mat.flag_8
+        bpy_material.GFSTOOLS_MaterialProperties.enable_uv_anims = mat.enable_uv_animation
+        bpy_material.GFSTOOLS_MaterialProperties.enable_emissive = mat.enable_emissive
         bpy_material.GFSTOOLS_MaterialProperties.flag_9 = mat.flag_9
         bpy_material.GFSTOOLS_MaterialProperties.flag_10 = mat.flag_10
         bpy_material.GFSTOOLS_MaterialProperties.light_2 = mat.use_light_2
