@@ -13,7 +13,7 @@ class MaterialInterface:
         self.flag_5              = None
         self.flag_6              = None
         self.enable_uv_animation = None
-        self.enable_emission     = None
+        self.enable_emissive     = None
         self.flag_9              = None
         self.flag_10             = None
         self.use_light_2         = None
@@ -119,7 +119,7 @@ class MaterialInterface:
         instance.flag_5              = binary.flags.flag_5
         instance.flag_6              = binary.flags.flag_6
         instance.enable_uv_animation = binary.flags.enable_uv_animation
-        instance.enable_emission     = binary.flags.enable_emission
+        instance.enable_emissive     = binary.flags.enable_emissive
         instance.flag_9              = binary.flags.flag_9
         instance.flag_10             = binary.flags.flag_10
         instance.use_light_2         = binary.flags.use_light_2
@@ -147,7 +147,7 @@ class MaterialInterface:
         binary.flags.flag_5                 = self.flag_5
         binary.flags.flag_6                 = self.flag_6
         binary.flags.enable_uv_animation    = self.enable_uv_animation
-        binary.flags.enable_emission        = self.enable_emission
+        binary.flags.enable_emissive        = self.enable_emissive
         binary.flags.flag_9                 = self.flag_9
         binary.flags.flag_10                = self.flag_10
         binary.flags.use_light_2            = self.use_light_2

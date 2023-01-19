@@ -30,7 +30,7 @@ class MaterialFlags(BitVector0x20):
     flag_5                 = BitVector.DEF_FLAG(0x05)
     flag_6                 = BitVector.DEF_FLAG(0x06)
     enable_uv_animation    = BitVector.DEF_FLAG(0x07)
-    enable_emission        = BitVector.DEF_FLAG(0x08)
+    enable_emissive        = BitVector.DEF_FLAG(0x08)
     flag_9                 = BitVector.DEF_FLAG(0x09)
     flag_10                = BitVector.DEF_FLAG(0x0A)
     use_light_2            = BitVector.DEF_FLAG(0x0B)
