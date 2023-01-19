@@ -18,7 +18,7 @@ class OBJECT_PT_GFSToolsTextureRefPanel(bpy.types.Panel):
         node = context.active_node
         layout = self.layout
         
-        layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x04")
+        layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "enable_anims")
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x08")
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "has_texture_filtering")
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x0A")

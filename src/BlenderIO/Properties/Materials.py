@@ -5,17 +5,17 @@ class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
     # def update_unknown_0x04(self, context):
     #     print("UPDATING")
     
-    unknown_0x04: bpy.props.IntProperty(default=0)#update=update_unknown_0x04)
+    enable_anims: bpy.props.BoolProperty(name="Animatable", default=False)#update=update_unknown_0x04)
     unknown_0x08: bpy.props.IntProperty(default=1)
     has_texture_filtering: bpy.props.BoolProperty(name="Filter Texture", default=True)
-    unknown_0x0A: bpy.props.IntProperty(default=0)
-    unknown_0x0B: bpy.props.IntProperty(default=0)
-    unknown_0x0C: bpy.props.FloatProperty(default=1.)
-    unknown_0x10: bpy.props.FloatProperty(default=0.)
-    unknown_0x14: bpy.props.FloatProperty(default=1.)
+    unknown_0x0A: bpy.props.IntProperty(default=0) # 0, 1, 2
+    unknown_0x0B: bpy.props.IntProperty(default=0) # 0, 1, 2
+    unknown_0x0C: bpy.props.FloatProperty(default=1.) # -1, 0, 1, 1.3, 2, 5
+    unknown_0x10: bpy.props.FloatProperty(default=-0.) # -1, 0
+    unknown_0x14: bpy.props.FloatProperty(default=0.)
     unknown_0x18: bpy.props.FloatProperty(default=0.)
-    unknown_0x1C: bpy.props.FloatProperty(default=0.)
-    unknown_0x20: bpy.props.FloatProperty(default=0.)
+    unknown_0x1C: bpy.props.FloatProperty(default=0.) # 0, 1
+    unknown_0x20: bpy.props.FloatProperty(default=0.) # -1, 0, 1, 2, 4, 5
     unknown_0x24: bpy.props.FloatProperty(default=0.)
     unknown_0x28: bpy.props.FloatProperty(default=0.)
     unknown_0x2C: bpy.props.FloatProperty(default=0.)
@@ -38,7 +38,7 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     flag_5:          bpy.props.BoolProperty(name="Flag 5")
     flag_6:          bpy.props.BoolProperty(name="Flag 6")
     enable_uv_anims: bpy.props.BoolProperty(name="Enable UV Anims")
-    enable_emission: bpy.props.BoolProperty(name="Enable Emission")
+    enable_emissive: bpy.props.BoolProperty(name="Enable Emissive")
     flag_9:          bpy.props.BoolProperty(name="Flag 9")
     flag_10:         bpy.props.BoolProperty(name="Flag 10")
     light_2:         bpy.props.BoolProperty(name="Use Light 2")
