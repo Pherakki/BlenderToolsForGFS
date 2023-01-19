@@ -1,7 +1,8 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
 from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20, BitChunkVector
-from .TextureReference import TextureRefBinary
+from .TextureSampler import TextureSamplerBinary
+
 
 class TextureMapIndices(BitChunkVector):
     MAXCHUNKS = 10
@@ -152,15 +153,15 @@ class MaterialBinary(Serializable):
         self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
         
         # Handle textures
-        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureRefBinary, version)
-        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     TextureRefBinary, version)
-        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_new_obj(self.specular_texture,   TextureRefBinary, version)
-        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_new_obj(self.reflection_texture, TextureRefBinary, version)
-        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_new_obj(self.highlight_texture,  TextureRefBinary, version)
-        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_new_obj(self.glow_texture,       TextureRefBinary, version)
-        if self.flags.has_night_texture:      self.night_texture      = rw.rw_new_obj(self.night_texture,      TextureRefBinary, version)
-        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_new_obj(self.detail_texture,     TextureRefBinary, version)
-        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_new_obj(self.shadow_texture,     TextureRefBinary, version)
+        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureSamplerBinary, version)
+        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     TextureSamplerBinary, version)
+        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_new_obj(self.specular_texture,   TextureSamplerBinary, version)
+        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_new_obj(self.reflection_texture, TextureSamplerBinary, version)
+        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_new_obj(self.highlight_texture,  TextureSamplerBinary, version)
+        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_new_obj(self.glow_texture,       TextureSamplerBinary, version)
+        if self.flags.has_night_texture:      self.night_texture      = rw.rw_new_obj(self.night_texture,      TextureSamplerBinary, version)
+        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_new_obj(self.detail_texture,     TextureSamplerBinary, version)
+        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_new_obj(self.shadow_texture,     TextureSamplerBinary, version)
             
         # Attributes
         if self.flags.has_attributes:

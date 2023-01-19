@@ -2,7 +2,7 @@ from ......serialization.Serializable import Serializable
 from ...CommonStructures import ObjectName
 
 
-class TextureRefBinary(Serializable):
+class TextureSamplerBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
