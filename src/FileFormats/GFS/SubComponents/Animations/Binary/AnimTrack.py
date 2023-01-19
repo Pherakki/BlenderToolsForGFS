@@ -37,80 +37,43 @@ class AnimationTrackBinary(Serializable):
         self.frames = rw.rw_float32s(self.frames, self.keyframe_count)
         # Should use this to decide which "keyframe attributes" to r/w?
         # Need to figure out all kf attributes first since many overlap..?
-        if self.keyframe_type == 1: # Node Anim: Only in extra data?
-            kf_type = KeyframeType1
-        elif self.keyframe_type == 2: # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x1105100
-            kf_type = KeyframeType2
-        elif self.keyframe_type == 3: # Morph Anim: 0x01105060
-            kf_type = KeyframeType3
-        # elif self.keyframe_type == 4:
-        #     kf_type = KeyframeType4
-        elif self.keyframe_type == 5:
-            kf_type = KeyframeType5
-        elif self.keyframe_type == 6: # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = AmbientRGB
-        elif self.keyframe_type == 7: # Material Anim: 0x01105060, 0x01105070, 0x01105100
-            kf_type = DiffuseRGB
-        elif self.keyframe_type == 8: # Material Anim: 0x01105060, 0x01105070, 0x01105100
-            kf_type = SpecularRGB
-        elif self.keyframe_type == 9: # Material Anim: 0x01105060, 0x01105020, 0x01105100
-            kf_type = KeyframeType9
-        # elif self.keyframe_type == 10:
-        #     kf_type = KeyframeType10
-        elif self.keyframe_type == 11: # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
-            kf_type = KeyframeType11
-        elif self.keyframe_type == 12: # Material Anim: 0x01105000, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x1105070, 0x01105080, 0x1105090, 0x1105100
-            kf_type = Opacity
-        elif self.keyframe_type == 13: # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = Tex0UV
-        elif self.keyframe_type == 14: # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = EmissionRGB
-        elif self.keyframe_type == 15: # Material Anim: 0x01105060, 0x01105070, 0x01105100
-            kf_type = KeyframeType15
-        elif self.keyframe_type == 16: # Node Anim: 0x01105060, 0x01105070
-            kf_type = KeyframeType16
-        # elif self.keyframe_type == 17:
-        #     kf_type = KeyframeType17
-        # elif self.keyframe_type == 18:
-        #     kf_type = KeyframeType18
-        # elif self.keyframe_type == 19:
-        #     kf_type = KeyframeType19
-        elif self.keyframe_type == 20: # Material Anim: 0x01105100
-            kf_type = KeyframeType20
-        elif self.keyframe_type == 21: # Material Anim: 0x01105020, 0x1105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-            kf_type = KeyframeType21
-        # elif self.keyframe_type == 22:
-        #     kf_type = KeyframeType22
-        elif self.keyframe_type == 23: # Camera Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
-            kf_type = KeyframeType23
-        elif self.keyframe_type == 24: # Camera Anim: 0x01105060, 0x01105070
-            kf_type = KeyframeType24
-        elif self.keyframe_type == 25: # Material Anim: 0x01105070, 0x1105090, 0x01105100
-            kf_type = KeyframeType25
-        elif self.keyframe_type == 26:
-            kf_type = KeyframeType26
-        elif self.keyframe_type == 27: # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105070, 0x01105080, 0x1105090, 0x01105100
-            kf_type = KeyframeType27
-        elif self.keyframe_type == 28: # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x01105100
-            kf_type = KeyframeType28
-        elif self.keyframe_type == 29: # Material Anim: 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x01105100
-            kf_type = KeyframeType29
-        elif self.keyframe_type == 30: # Material Anim: 0x01105060, 0x1105070
-            kf_type = KeyframeType30
-        elif self.keyframe_type == 31:
-            kf_type = KeyframeType31
-        elif self.keyframe_type == 32:
-            kf_type = KeyframeType32
-        elif self.keyframe_type == 33:
-            kf_type = KeyframeType33
-        elif self.keyframe_type == 34:
-            kf_type = KeyframeType34
-        elif self.keyframe_type == 35:
-            kf_type = KeyframeType35
-        elif self.keyframe_type == 36: # Material Anim: 0x1105100
-            kf_type = KeyframeType36
-        else:
-            raise NotImplementedError(f"Unknown Keyframe type: '{self.keyframe_type}'")
+        if   self.keyframe_type == 1:  kf_type = NodeTR         # Node Anim: Only in extra data?
+        elif self.keyframe_type == 2:  kf_type = NodeTRS        # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x1105100
+        elif self.keyframe_type == 3:  kf_type = KeyframeType3  # Morph Anim: 0x01105060
+        # elif self.keyframe_type == 4: kf_type = KeyframeType4
+        elif self.keyframe_type == 5:  kf_type = KeyframeType5
+        elif self.keyframe_type == 6:  kf_type = AmbientRGB     # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
+        elif self.keyframe_type == 7:  kf_type = DiffuseRGB     # Material Anim: 0x01105060, 0x01105070, 0x01105100
+        elif self.keyframe_type == 8:  kf_type = SpecularRGB    # Material Anim: 0x01105060, 0x01105070, 0x01105100
+        elif self.keyframe_type == 9:  kf_type = SpecularPower  # Material Anim: 0x01105060, 0x01105020, 0x01105100
+        # elif self.keyframe_type == 10: kf_type = KeyframeType10
+        elif self.keyframe_type == 11: kf_type = KeyframeType11 # Material Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
+        elif self.keyframe_type == 12: kf_type = Opacity        # Material Anim: 0x01105000, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x1105070, 0x01105080, 0x1105090, 0x1105100
+        elif self.keyframe_type == 13: kf_type = Tex0UV         # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
+        elif self.keyframe_type == 14: kf_type = EmissiveRGB    # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
+        elif self.keyframe_type == 15: kf_type = KeyframeType15 # Material Anim: 0x01105060, 0x01105070, 0x01105100
+        elif self.keyframe_type == 16: kf_type = KeyframeType16 # Node Anim: 0x01105060, 0x01105070
+        # elif self.keyframe_type == 17: kf_type = KeyframeType17
+        # elif self.keyframe_type == 18: kf_type = KeyframeType18
+        # elif self.keyframe_type == 19: kf_type = KeyframeType19   
+        elif self.keyframe_type == 20: kf_type = Tex1UV # Material Anim: 0x01105100
+        elif self.keyframe_type == 21: kf_type = Tex0UVSnap # Material Anim: 0x01105020, 0x1105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
+        # elif self.keyframe_type == 22: kf_type = KeyframeType22
+        elif self.keyframe_type == 23: kf_type = KeyframeType23 # Camera Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
+        elif self.keyframe_type == 24: kf_type = KeyframeType24 # Camera Anim: 0x01105060, 0x01105070
+        elif self.keyframe_type == 25: kf_type = OpacitySnap    # Material Anim: 0x01105070, 0x1105090, 0x01105100
+        elif self.keyframe_type == 26: kf_type = KeyframeType26
+        elif self.keyframe_type == 27: kf_type = NodeTRSHalf    # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105070, 0x01105080, 0x1105090, 0x01105100
+        elif self.keyframe_type == 28: kf_type = KeyframeType28 # Node Anim: 0x01104970, 0x01105000, 0x01105010, 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x01105100
+        elif self.keyframe_type == 29: kf_type = KeyframeType29 # Material Anim: 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x01105080, 0x1105090, 0x01105100
+        elif self.keyframe_type == 30: kf_type = KeyframeType30 # Material Anim: 0x01105060, 0x1105070
+        elif self.keyframe_type == 31: kf_type = NodeTHalf
+        elif self.keyframe_type == 32: kf_type = NodeRHalf
+        elif self.keyframe_type == 33: kf_type = NodeSHalf
+        elif self.keyframe_type == 34: kf_type = NodeTSHalf
+        elif self.keyframe_type == 35: kf_type = NodeRSHalf
+        elif self.keyframe_type == 36: kf_type = Tex1UVSnap     # Material Anim: 0x1105100         
+        else: raise NotImplementedError(f"Unknown Keyframe type: '{self.keyframe_type}'")
             
         self.values = rw.rw_obj_array(self.values, kf_type, self.keyframe_count)
         
@@ -120,7 +83,31 @@ class AnimationTrackBinary(Serializable):
             self.base_scale = rw.rw_float32s(self.base_scale, 3)
 
 
-class KeyframeType1(Serializable):
+################
+# BASE CLASSES #
+################          
+class TexUVKeyframe(Serializable):
+    def __init__(self, translate_u=0, translate_v=0, scale_u=1, scale_v=1, rotation=0, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.translate_u = translate_u
+        self.translate_v = translate_v
+        self.scale_u = scale_u
+        self.scale_v = scale_v
+        self.rotation = rotation
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::{self.CLASSNAME}] {self.translate_u} {self.translate_v} {self.scale_x} {self.scale_y} {self.rotation}"
+        
+    def read_write(self, rw):
+        self.translate_u = rw.rw_float32(self.translate_u)
+        self.translate_v = rw.rw_float32(self.translate_v)
+        self.scale_u     = rw.rw_float32(self.scale_u)
+        self.scale_v     = rw.rw_float32(self.scale_v)
+        self.rotation    = rw.rw_float32(self.rotation)
+
+class NodeTR(Serializable):
     """Node Keyframe"""
     OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 1
@@ -139,7 +126,7 @@ class KeyframeType1(Serializable):
         self.position = rw.rw_float32s(self.position, 3)
         self.rotation = rw.rw_float32s(self.rotation, 4)
 
-class KeyframeType2(Serializable):
+class NodeTRS(Serializable):
     """Node Keyframe"""
     OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 2
@@ -270,7 +257,7 @@ class SpecularRGB(Serializable):
         self.g = rw.rw_float32(self.g)
         self.b = rw.rw_float32(self.b)
                 
-class KeyframeType9(Serializable):
+class SpecularPower(Serializable):
     """Material Keyframe"""
     
     OBJ_VARIANT_TYPE = 2
@@ -333,36 +320,17 @@ class Opacity(Serializable):
         self.opacity = opacity
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType12] {self.unknown}"
+        return f"[GFDBinary::Animation::Controller::Track::MaterialOpacity] {self.opacity}"
         
     def read_write(self, rw):
         self.opacity = rw.rw_float32(self.opacity)
                 
-class Tex0UV(Serializable):
+class Tex0UV(TexUVKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 13
-    
-    def __init__(self, translate_u=0, translate_v=0, scale_u=1, scale_v=1, rotation=0, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.translate_u = translate_u
-        self.translate_v = translate_v
-        self.scale_u = scale_u
-        self.scale_v = scale_v
-        self.rotation = rotation
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::Tex0UV] {self.translate_u} {self.translate_v} {self.scale_x} {self.scale_y} {self.rotation}"
-        
-    def read_write(self, rw):
-        self.translate_u = rw.rw_float32(self.translate_u)
-        self.translate_v = rw.rw_float32(self.translate_v)
-        self.scale_u     = rw.rw_float32(self.scale_u)
-        self.scale_v     = rw.rw_float32(self.scale_v)
-        self.rotation    = rw.rw_float32(self.rotation)
+    CLASSNAME = "Tex0UV"
 
-class EmissionRGB(Serializable):
+class EmissiveRGB(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 14
     
@@ -476,41 +444,15 @@ class KeyframeType19(Serializable):
         self.unknown_1 = rw.rw_float32(self.unknown_1)
         self.unknown_2  = rw.rw_uint8(self.unknown_2)
                 
-class KeyframeType20(Serializable):
-    """Material Keyframe"""
-    
+class Tex1UV(TexUVKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 20
+    CLASSNAME = "Tex1UV"
     
-    def __init__(self, unknown=None, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown = unknown
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType20] {self.unknown}"
-        
-    def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 5)
-                
-class KeyframeType21(Serializable):
-    """Material Keyframe"""
-    
+class Tex0UVSnap(TexUVKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 21
-    
-    def __init__(self, unknown=None, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown = unknown
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType21] {self.unknown}"
-        
-    def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 5)
+    CLASSNAME = "Tex0UVSnap"
                 
 class KeyframeType22(Serializable):
     OBJ_VARIANT_TYPE = None
@@ -587,19 +529,18 @@ class KeyframeType24(Serializable):
     def read_write(self, rw):
         self.unknown_float = rw.rw_float32(self.unknown_float)
         
-class KeyframeType25(Serializable):
-    """Material Keyframe"""
+class OpacitySnap(Serializable):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 25
     
-    def __init__(self, unknown=None, endianness='>'):
+    def __init__(self, opacity=None, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.unknown_float = unknown
+        self.opacity = opacity
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType25] {self.unknown_float}"
+        return f"[GFDBinary::Animation::Controller::Track::OpacitySnap] {self.unknown_float}"
     
     def read_write(self, rw):
         self.unknown_float = rw.rw_float32(self.unknown_float)
@@ -622,8 +563,7 @@ class KeyframeType26(Serializable): # What is different about this one and 28?!
         self.position = rw.rw_float16s(self.position, 3)
         self.rotation = rw.rw_float16s(self.rotation, 4)
         
-class KeyframeType27(Serializable):
-    """Node Keyframe"""
+class NodeTRSHalf(Serializable):
     OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 27
     
@@ -636,7 +576,7 @@ class KeyframeType27(Serializable):
         self.scale = scale
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType27] {self.position} {self.rotation} {self.scale}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeTRSHalf] {self.position} {self.rotation} {self.scale}"
         
     def read_write(self, rw):
         self.position = rw.rw_float16s(self.position, 3)
@@ -696,7 +636,7 @@ class KeyframeType30(Serializable):
     def read_write(self, rw):
         self.unknown_float = rw.rw_float32(self.unknown_float)
         
-class KeyframeType31(Serializable):
+class NodeTHalf(Serializable):
     OBJ_VARIANT_TYPE = None
     VARIANT_TYPE = 31
     
@@ -707,13 +647,13 @@ class KeyframeType31(Serializable):
         self.position = position
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType31] {self.position}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeTHalf] {self.position}"
         
     def read_write(self, rw):
         self.position = rw.rw_float16s(self.position, 3)
 
            
-class KeyframeType32(Serializable):
+class NodeRHalf(Serializable):
     OBJ_VARIANT_TYPE = None
     VARIANT_TYPE = 32
     
@@ -724,13 +664,13 @@ class KeyframeType32(Serializable):
         self.rotation = rotation
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType32] {self.rotation}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeRHalf] {self.rotation}"
         
     def read_write(self, rw):
         self.rotation = rw.rw_float16s(self.rotation, 4)
 
          
-class KeyframeType33(Serializable):
+class NodeSHalf(Serializable):
     OBJ_VARIANT_TYPE = None
     VARIANT_TYPE = 33
     
@@ -741,13 +681,13 @@ class KeyframeType33(Serializable):
         self.scale = scale
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType33] {self.scale}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeSHalf] {self.scale}"
         
     def read_write(self, rw):
         self.scale = rw.rw_float16s(self.scale, 3)
 
              
-class KeyframeType34(Serializable):
+class NodeTSHalf(Serializable):
     OBJ_VARIANT_TYPE = None
     VARIANT_TYPE = 34
     
@@ -759,13 +699,13 @@ class KeyframeType34(Serializable):
         self.scale = scale
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType34] {self.position} {self.scale}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeTSHalf] {self.position} {self.scale}"
         
     def read_write(self, rw):
         self.position = rw.rw_float16s(self.position, 3)
         self.scale = rw.rw_float16s(self.scale, 3)
         
-class KeyframeType35(Serializable):
+class NodeRSHalf(Serializable):
     OBJ_VARIANT_TYPE = None
     VARIANT_TYPE = 35
     
@@ -777,25 +717,13 @@ class KeyframeType35(Serializable):
         self.scale = scale
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType35] {self.rotation} {self.scale}"
+        return f"[GFDBinary::Animation::Controller::Track::NodeRSHalf] {self.rotation} {self.scale}"
         
     def read_write(self, rw):
         self.rotation = rw.rw_float16s(self.rotation, 4)
         self.scale = rw.rw_float16s(self.scale, 3)
         
-class KeyframeType36(Serializable):
+class Tex1UVSnap(TexUVKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 36
-    
-    def __init__(self, unknown=None, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown = unknown
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType36] {self.unknown}"
-        
-    def read_write(self, rw):
-        self.unknown = rw.rw_float32s(self.unknown, 5)
-    
+    CLASSNAME = "Tex1UVSnap"

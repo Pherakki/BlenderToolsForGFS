@@ -1,42 +1,42 @@
 from .Binary import AnimationBinary
 from .Binary.AnimController import AnimationControllerBinary
 from .Binary.AnimTrack import AnimationTrackBinary
-from .Binary.AnimTrack import KeyframeType1
-from .Binary.AnimTrack import KeyframeType2
+from .Binary.AnimTrack import NodeTR
+from .Binary.AnimTrack import NodeTRS
 from .Binary.AnimTrack import KeyframeType3
 from .Binary.AnimTrack import KeyframeType4
 from .Binary.AnimTrack import KeyframeType5
 from .Binary.AnimTrack import AmbientRGB
 from .Binary.AnimTrack import DiffuseRGB
 from .Binary.AnimTrack import SpecularRGB
-from .Binary.AnimTrack import KeyframeType9
+from .Binary.AnimTrack import SpecularPower
 from .Binary.AnimTrack import KeyframeType10
 from .Binary.AnimTrack import KeyframeType11
 from .Binary.AnimTrack import Opacity
 from .Binary.AnimTrack import Tex0UV
-from .Binary.AnimTrack import EmissionRGB
+from .Binary.AnimTrack import EmissiveRGB
 from .Binary.AnimTrack import KeyframeType15
 from .Binary.AnimTrack import KeyframeType16
 from .Binary.AnimTrack import KeyframeType17
 from .Binary.AnimTrack import KeyframeType18
 from .Binary.AnimTrack import KeyframeType19
-from .Binary.AnimTrack import KeyframeType20
-from .Binary.AnimTrack import KeyframeType21
+from .Binary.AnimTrack import Tex1UV
+from .Binary.AnimTrack import Tex0UVSnap
 from .Binary.AnimTrack import KeyframeType22
 from .Binary.AnimTrack import KeyframeType23
 from .Binary.AnimTrack import KeyframeType24
-from .Binary.AnimTrack import KeyframeType25
+from .Binary.AnimTrack import OpacitySnap
 from .Binary.AnimTrack import KeyframeType26
-from .Binary.AnimTrack import KeyframeType27
+from .Binary.AnimTrack import NodeTRSHalf
 from .Binary.AnimTrack import KeyframeType28
 from .Binary.AnimTrack import KeyframeType29
 from .Binary.AnimTrack import KeyframeType30
-from .Binary.AnimTrack import KeyframeType31
-from .Binary.AnimTrack import KeyframeType32
-from .Binary.AnimTrack import KeyframeType33
-from .Binary.AnimTrack import KeyframeType34
-from .Binary.AnimTrack import KeyframeType35
-from .Binary.AnimTrack import KeyframeType36
+from .Binary.AnimTrack import NodeTHalf
+from .Binary.AnimTrack import NodeRHalf
+from .Binary.AnimTrack import NodeSHalf
+from .Binary.AnimTrack import NodeTSHalf
+from .Binary.AnimTrack import NodeRSHalf
+from .Binary.AnimTrack import Tex1UVSnap
 
 import numpy as np
 
@@ -248,38 +248,22 @@ class AnimationInterface:
         anim.id   = controller_binary.target_id
             
         for track_binary in controller_binary.tracks:
-            if track_binary.keyframe_type == 6:
-                anim.ambient_rgb  = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 7:
-                anim.diffuse_rgb  = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 8:
-                anim.specular_rgb = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 9:
-                anim.unknown_9 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 11:
-                anim.unknown_11 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 12:
-                anim.opacity = {f: kf.opacity for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 13:
-                anim.tex0_uv = {f: [kf.translate_u, kf.translate_v, kf.scale_x, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 14:
-                anim.emission_rgb = {f: [kf.r, kf.g, kf.b] for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 15:
-                anim.unknown_15 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 20:
-                anim.unknown_20 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 21:
-                anim.unknown_21 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 25:
-                anim.unknown_25 = {f: kf.unknown_float for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 29:
-                anim.unknown_29 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 30:
-                anim.unknown_30 = {f: kf.unknown_float for f, kf in zip(track_binary.frames, track_binary.values)}
-            elif track_binary.keyframe_type == 36:
-                anim.unknown_36 = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
-            else:
-                raise NotImplementedError("fNo instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
+            if   track_binary.keyframe_type == 6:  anim.ambient_rgb  = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 7:  anim.diffuse_rgb  = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 8:  anim.specular_rgb = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 9:  anim.specular_power = {f: kf.unknown                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 11: anim.unknown_11   = {f: kf.unknown                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 12: anim.opacity      = {f: kf.opacity                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 13: anim.tex0_uv      = {f: [kf.translate_u, kf.translate_v, kf.scale_u, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 14: anim.emissive_rgb = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 15: anim.unknown_15   = {f: kf.unknown                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 20: anim.tex1_uv      = {f: [kf.translate_u, kf.translate_v, kf.scale_u, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 21: anim.tex0_uv_snap = {f: [kf.translate_u, kf.translate_v, kf.scale_u, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 25: anim.opacity_snap = {f: kf.opacity                                                      for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 29: anim.unknown_29   = {f: kf.unknown                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 30: anim.unknown_30   = {f: kf.unknown_float                                                      for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 36: anim.tex1_uv_snap = {f: [kf.translate_u, kf.translate_v, kf.scale_u, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
+            else: raise NotImplementedError("fNo instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
         
         return anim
 
@@ -413,14 +397,24 @@ class NodeAnimation:
         self.byte_data = {}
         self.unknown_floats = {}
         
-    def to_controller(self, gfs):
-        if not len(self.positions) and not len(self.rotations) and not len(self.scales) and not len(self.byte_data) and not len(self.unknown_floats):
+    def to_controller(self, gfs):        
+        track_binary = AnimationTrackBinary()
+        has_trans    = len(self.positions)
+        has_rot      = len(self.rotations)
+        has_scale    = len(self.scale)
+        has_byte     = len(self.byte_data)
+        has_floats   = len(self.unknown_floats)
+        
+        if not (has_trans or has_rot or has_scale or has_byte or has_floats):
             return []
         
-        track_binary = AnimationTrackBinary()
+        if has_byte:
+            raise NotImplementedError("Cannot export Node Byte data yet")
+        
+        # This is obviously incomplete
         if self.compress:
-            if len(self.positions) and len(self.rotations) and len(self.scales) and not len(self.byte_data) and not len(self.unknown_floats):
-                kf_type = KeyframeType27
+            if has_trans and has_rot and has_scale:
+                kf_type = NodeTRSHalf
                 
                 position_scale = [max([e[i] for e in self.positions] for i in range(3))]
                 scale_scale    = [max([e[i] for e in self.scale    ] for i in range(3))]
@@ -429,31 +423,74 @@ class NodeAnimation:
                 kf_values = construct_frames(([[p/ps for p, ps in zip(pos, position_scale)] for pos in self.positions], lerp ),
                                              (self.rotations, slerp),
                                              ([[s/ss for s, ss in zip(scl, scale_scale   )] for scl in self.scale    ], lerp ))
-            elif len(self.positions) and len(self.rotations) and not len(self.scales) and not len(self.byte_data) and not len(self.unknown_floats):
+            elif has_trans and has_rot:
                 kf_type = KeyframeType28
                 
                 position_scale = [max([e[i] for e in self.positions] for i in range(3))]
+                scale_scale    = [0., 0., 0.]
                 
                 frames,\
                 kf_values = construct_frames(([[p/ps for p, ps in zip(pos, position_scale)] for pos in self.positions], lerp ),
                                              (self.rotations, slerp))
+            elif has_trans and has_scale:
+                kf_type = NodeTSHalf
+                
+                position_scale = [max([e[i] for e in self.positions] for i in range(3))]
+                scale_scale    = [max([e[i] for e in self.scale    ] for i in range(3))]
+                
+                frames,\
+                kf_values = construct_frames(([[p/ps for p, ps in zip(pos, position_scale)] for pos in self.positions], lerp ),
+                                             ([[s/ss for s, ss in zip(scl, scale_scale   )] for scl in self.scale    ], lerp ))
+            elif has_rot and has_scale:
+                kf_type = NodeRSHalf
+                
+                position_scale = [0., 0., 0.]
+                scale_scale    = [max([e[i] for e in self.scale    ] for i in range(3))]
+                
+                frames,\
+                kf_values = construct_frames((self.rotations, slerp),
+                                             ([[s/ss for s, ss in zip(scl, scale_scale   )] for scl in self.scale    ], lerp ))
+            elif has_trans:
+                kf_type = NodeTHalf
+                
+                position_scale = [max([e[i] for e in self.positions] for i in range(3))]
+                scale_scale    = [0., 0., 0.]
+                
+                frames,\
+                kf_values = construct_frames(([[p/ps for p, ps in zip(pos, position_scale)] for pos in self.positions], lerp ))
+            elif has_rot:
+                kf_type = NodeRHalf
+                
+                position_scale = [0., 0., 0.]
+                scale_scale    = [0., 0., 0.]
+                
+                frames,\
+                kf_values = construct_frames((self.rotations, slerp))
+            elif has_scale:
+                kf_type = NodeSHalf
+                
+                position_scale = [0., 0., 0]
+                scale_scale    = [max([e[i] for e in self.scale    ] for i in range(3))]
+                
+                frames,\
+                kf_values = construct_frames(([[s/ss for s, ss in zip(scl, scale_scale   )] for scl in self.scale    ], lerp ))
             else:
                 raise NotImplementedError
         else:
-            if len(self.positions) and len(self.rotations) and len(self.scales) and not len(self.byte_data) and not len(self.unknown_floats):
-                kf_type = KeyframeType2
+            if has_trans and has_rot and has_scale:
+                kf_type = NodeTRS
                 
                 frames,\
                 kf_values = construct_frames((self.positions, lerp ),
                                              (self.rotations, slerp),
                                              (self.scale,     lerp ))
-            elif len(self.positions) and len(self.rotations) and not len(self.scales) and not len(self.byte_data) and not len(self.unknown_floats):
-                kf_type = KeyframeType1
+            elif has_trans and has_rot:
+                kf_type = NodeTR
                 
                 frames,\
                 kf_values = construct_frames((self.positions, lerp),
                                              (self.rotations, slerp))
-            elif len(self.unknown_floats):
+            elif has_floats:
                 kf_type = KeyframeType16
                 
                 frames,\
@@ -486,18 +523,18 @@ class MaterialAnimation:
         self.ambient_rgb  = {}
         self.diffuse_rgb  = {}
         self.specular_rgb = {}
-        self.unknown_9    = {}
+        self.specualr_power    = {}
         self.unknown_11   = {}
         self.opacity      = {}
         self.tex0_uv      = {}
-        self.emission_rgb = {}
+        self.emissive_rgb = {}
         self.unknown_15   = {}
-        self.unknown_20   = {}
-        self.unknown_21   = {}
-        self.unknown_25   = {}
+        self.tex1_uv      = {}
+        self.tex0_uv_snap = {}
+        self.opacity_snap = {}
         self.unknown_29   = {}
         self.unknown_30   = {}
-        self.unknown_36   = {}
+        self.tex1_uv_snap = {}
 
     def to_controller(self, gfs):
         tracks = []
@@ -505,18 +542,18 @@ class MaterialAnimation:
                 (self.ambient_rgb,   AmbientRGB    ),
                 (self.diffuse_rgb,   DiffuseRGB    ),
                 (self.specular_rgb,  SpecularRGB   ),
-                (self.unknown_9,     KeyframeType9 ),
+                (self.specular_power,     SpecularPower ),
                 (self.unknown_11,    KeyframeType11),
                 (self.opacity,       Opacity       ),
                 (self.tex0_uv,       Tex0UV        ),
-                (self.emission_rgb,  EmissionRGB),
+                (self.emissive_rgb,  EmissiveRGB   ),
                 (self.unknown_15,    KeyframeType15),
-                (self.unknown_20,    KeyframeType20),
-                (self.unknown_21,    KeyframeType21),
-                (self.unknown_25,    KeyframeType25),
+                (self.tex1_uv,       Tex1UV        ),
+                (self.tex0_uv_snap,  Tex0UVSnap    ), # This should be merged with tex0_uv
+                (self.opacity_snap,    OpacitySnap),  # This should be merged with opacity
                 (self.unknown_29,    KeyframeType29),
                 (self.unknown_30,    KeyframeType30),
-                (self.unknown_36,    KeyframeType36)
+                (self.tex1_uv_snap,  Tex1UVSnap    )  # This should be merged with tex1_uv
             ]:
             if len(dataset):
                 kf_type = keyframe_type
