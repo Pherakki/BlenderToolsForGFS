@@ -543,7 +543,7 @@ class OpacitySnap(Serializable):
         return f"[GFDBinary::Animation::Controller::Track::OpacitySnap] {self.unknown_float}"
     
     def read_write(self, rw):
-        self.unknown_float = rw.rw_float32(self.unknown_float)
+        self.opacity = rw.rw_float32(self.opacity)
         
 class KeyframeType26(Serializable): # What is different about this one and 28?!
     OBJ_VARIANT_TYPE = None
