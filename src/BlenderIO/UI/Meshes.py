@@ -19,6 +19,8 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         
         ctr = layout.column()
         
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "reference_node")
+        
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_5")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_7")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_8")
