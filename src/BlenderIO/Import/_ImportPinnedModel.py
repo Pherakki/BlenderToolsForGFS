@@ -1,5 +1,4 @@
 import array
-import math
 
 import bpy
 from mathutils import Matrix, Vector, Quaternion
@@ -7,7 +6,12 @@ from mathutils import Matrix, Vector, Quaternion
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 
 
-def import_model(gfs, name):
+def is_pinned_armature(bpy_obj):
+    # Needs an actual check in here...
+    return False
+
+
+def import_pincushion_model(gfs, name):
     initial_obj = bpy.context.view_layer.objects.active
 
     armature_name = f"{name}_armature"
@@ -19,10 +23,6 @@ def import_model(gfs, name):
     bpy_node_names  = [None]*len(gfs.bones)
     bpy_nodes       = [None]*len(gfs.bones)
     bone_transforms = [None]*len(gfs.bones)
-    # upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
-    #                             [ 0.,  0., -1.,  0.],
-    #                             [ 0.,  1.,  0.,  0.],
-    #                             [ 0.,  0.,  0.,  1.]])
     for i, node in enumerate(gfs.bones):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
@@ -34,20 +34,10 @@ def import_model(gfs, name):
         bpy_node_names[i]  = node.name
         bpy_nodes[i]       = bpy_bone
         bone_transforms[i] = matrix
-
+   
+    bpy.context.view_layer.objects.active = main_armature
     bpy.ops.object.mode_set(mode="OBJECT")
-        
-    for bpy_bone in main_armature.data.bones:
-        bpy_bone.layers[0] = True
-        bpy_bone.layers[1] = True
-        bpy_bone.layers[2] = False
-
     
-    for i in sorted(filter_used_bones(gfs)):
-        main_armature.data.bones[i].layers[0] = True
-        main_armature.data.bones[i].layers[1] = False
-        main_armature.data.bones[i].layers[2] = True
-        
     ###################
     # PUSH EXTRA DATA #
     ###################
@@ -86,10 +76,30 @@ def import_model(gfs, name):
                 item.dtype = "BYTES"
                 item.bytes_data = '0x' + ''.join(rf"{e:0>2X}" for e in prop.data)
     
+    ######################################
+    # CREATE PINNED ARMATURES FOR MESHES #
+    ######################################
+    armature_indices = {}
+    for mesh in gfs.meshes:
+        if mesh.node not in armature_indices:
+            armature_indices[mesh.node] = set()
+        armature_index_set = armature_indices[mesh.node]
 
+        if mesh.vertices[0].indices is not None:
+            for vert_idx, v in enumerate(mesh.vertices):
+                for bone_idx, weight in zip(v.indices, v.weights):
+                    if weight == 0.:
+                        continue
+                    armature_index_set.add(bone_idx)
+             
+    # Create all necessary pinned armatures
+    pinned_armatures = {}       
+    for node_idx, armature_index_set in armature_indices.items():
+        pinned_armatures[node_idx] = import_pinned_armature(node_idx, armature_index_set, name, main_armature, bpy_node_names, bone_transforms)
+        
     # Import meshes and armature-parent them to the relevant pinned armature
     for i, mesh in enumerate(gfs.meshes):
-        import_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, main_armature, bpy_node_names[mesh.node], bone_transforms[mesh.node])
+        import_pinned_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, main_armature, pinned_armatures[mesh.node], bpy_node_names[mesh.node], bone_transforms[mesh.node])
     
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
@@ -101,32 +111,74 @@ def import_model(gfs, name):
     
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
-    main_armature.rotation_euler = [math.pi/2, 0, 0]
-    main_armature.rotation_quaternion = [.5**0.5, .5**.5, 0, 0]
     bpy.context.view_layer.objects.active = initial_obj
 
     return main_armature
 
 
-def filter_used_bones(gfs):
-    used_indices = set()
-    for mesh in gfs.meshes:
-        if mesh.vertices[0].indices is not None:
-            for v in mesh.vertices:
-                used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
-    bones_to_check = sorted(used_indices)
-    for bone_idx in bones_to_check:
-        node = gfs.bones[bone_idx]
-        while node.parent_idx != -1:
-            used_indices.add(node.parent_idx)
-            node = gfs.bones[node.parent_idx]
+def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bpy_node_names, bone_transforms):
+    # TODO: Enable this when implementing mesh->bone parenting
+    # Enable this when ready, double-check that it causes no issues
+    if len(armature_index_set) == 0:
+        return None
     
-    unused_indices = set([i for i in range(len(gfs.bones))]).difference(used_indices)
+    # Order the bone indices we intend to import
+    armature_index_set = sorted(armature_index_set)
+    
+    # Create armature
+    armature_name = f"{name}_{bpy_node_names[node_idx]}_armature"
+    armature = bpy.data.objects.new(armature_name, bpy.data.armatures.new(armature_name))
+    bpy.context.collection.objects.link(armature)
+    
+    # Parent the pinned armature to the main armature
+    # Probably works, but let's get the export working before messing about
+    # with this
+    # armature.parent = main_armature
+    # armature.parent_type = "BONE"
+    # armature.parent_bone = bpy_node_names[node_idx]
+    constraint = armature.constraints.new("CHILD_OF")
+    constraint.target = main_armature
+    constraint.subtarget = bpy_node_names[node_idx]
+    constraint.inverse_matrix = Matrix.Identity(4)
+    
+    # Cache the Blender states we are going to change
+    before_armature_obj = bpy.context.view_layer.objects.active
+    
+    # Set up the armature for editing
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode='EDIT')
 
-    return unused_indices
+    # Construct all bones required by the pinned armature
+    bone_names = []
+    for idx in armature_index_set:
+        matrix = bone_transforms[node_idx].inverted() @ bone_transforms[idx]
+        # Since the bone transforms are currently all pos-rot matrices, this
+        # step should be unnecessary
+        # Keep it for now until the import is set in stone
+        # This just bakes the scale of the matrix into the matrix positions
+        pos, rot, scl = matrix.decompose()
+        pos = Matrix.Diagonal([*scl, 1.]) @ Matrix.Translation(pos)
+        matrix = pos @ rot.to_matrix().to_4x4()
+        
+        construct_bone(bpy_node_names[idx], armature, matrix, 10)
+        bone_names.append(bpy_node_names[idx])
+        
+    # Set up the armature for adding constraints
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # "Pin" all bones to their counterparts in the main armature
+    for pose_bone, ref_name in zip(armature.pose.bones, bone_names):
+        constraint = pose_bone.constraints.new("COPY_TRANSFORMS")
+        constraint.target = main_armature
+        constraint.subtarget = ref_name
+    
+    # Restore Blender to the state it was in before the function call
+    bpy.context.view_layer.objects.active = before_armature_obj
+    
+    return armature
+    
 
-
-def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_node_name, transform):
+def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, main_armature, armature, parent_node_name, transform):
     # Cache the Blender states we are going to change
     prev_obj = bpy.context.view_layer.objects.active
     
@@ -167,10 +219,7 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
             vertex_group = bpy_mesh_object.vertex_groups.new(name=bpy_node_names[bone_idx])
             for vert_idx, vert_weight in vg:
                 vertex_group.add([vert_idx], vert_weight, 'REPLACE')
-    else:
-        vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
-        vertex_group.add([i for i in range(len(mesh.vertices))], 1., 'REPLACE')
-
+                
     # Assign normals
     # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
     # which a few of these comments below are also taken from
@@ -201,7 +250,6 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
 
     bpy_mesh.use_auto_smooth = True
 
-    bpy_mesh.transform(transform)
     
     # Set materials
     if mesh.material_name != "":
@@ -218,6 +266,14 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     bpy_mesh.update()
     
     # Activate rigging
+    # TODO: Enable this when implementing mesh->bone parenting
+    # Enable this when ready, double-check that it causes no issues
+    # if armature is None:
+    #     bpy_mesh_object.parent = main_armature
+    #     bpy_mesh_object.parent_type = "BONE"
+    #     bpy_mesh_object.parent_bone = parent_node_name
+    #     bpy_mesh_object.matrix_parent_inverse = Matrix.Identity(4)
+    #else:
     bpy_mesh_object.parent = armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
@@ -225,7 +281,6 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     ########################
     # DO THE LEFTOVER DATA #
     ########################
-    bpy_mesh.GFSTOOLS_MeshProperties.reference_node = parent_node_name
     bpy_mesh.GFSTOOLS_MeshProperties.flag_5   = mesh.flag_5
     bpy_mesh.GFSTOOLS_MeshProperties.flag_7   = mesh.flag_7
     bpy_mesh.GFSTOOLS_MeshProperties.flag_8   = mesh.flag_8

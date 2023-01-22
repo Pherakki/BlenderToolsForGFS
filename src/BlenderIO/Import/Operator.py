@@ -8,7 +8,7 @@ from ..Utils.ErrorPopup import handle_errors, ReportableException
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
-from .ImportModel import import_pincushion_model, is_pinned_armature
+from .ImportModel import import_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
 
@@ -32,7 +32,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures)
-        armature  = import_pincushion_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        armature  = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
         
         create_rest_pose(gfs, armature)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
@@ -59,7 +59,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     def fetch_armatures(self, context):
         armature_list = []
         for obj in bpy.data.objects:
-            if obj.type == "ARMATURE" and not is_pinned_armature(obj):
+            if obj.type == "ARMATURE":
                 armature_list.append((obj.name, obj.name, obj.name, "OUTLINER_OB_ARMATURE", len(armature_list)))
         return tuple(armature_list)
     
