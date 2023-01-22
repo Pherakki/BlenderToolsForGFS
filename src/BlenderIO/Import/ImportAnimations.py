@@ -198,7 +198,7 @@ def create_rest_pose(gfs, armature):
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
 
-    track_name = "rest_pose"
+    track_name = "Rest Pose"
     action = bpy.data.actions.new(track_name)
 
     #rest_transforms = [None]*len()
