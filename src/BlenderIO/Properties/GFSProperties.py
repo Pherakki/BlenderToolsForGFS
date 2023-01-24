@@ -24,3 +24,36 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
     float32vec3_data: bpy.props.FloatVectorProperty(name="", size=3)
     float32vec4_data: bpy.props.FloatVectorProperty(name="", size=4)
     bytes_data:       bpy.props.StringProperty(name="", default="0x00")
+    
+    @staticmethod
+    def extract_data(prop):
+        if   prop.dtype == "UINT32":
+            dtype = 1; prop_data = prop.uint32_data
+        elif prop.dtype == "FLOAT32":
+            dtype = 2; prop_data = prop.float32_data
+        elif prop.dtype == "UINT8":
+            dtype = 3; prop_data = prop.uint8_data
+        elif prop.dtype == "STRING":
+            dtype = 4; prop_data = prop.string_data
+        elif prop.dtype == "UINT8VEC3":
+            dtype = 5; prop_data = prop.uint8vec3_data
+        elif prop.dtype == "UINT8VEC4":
+            dtype = 6; prop_data = prop.uint8vec4_data
+        elif prop.dtype == "FLOAT32VEC3":
+            dtype = 7; prop_data = prop.float32vec3_data
+        elif prop.dtype == "FLOAT32VEC4":
+            dtype = 8; prop_data = prop.float32vec4_data
+        elif prop.dtype == "BYTES":
+            bytes_data = prop.bytes_data
+            if bytes_data.startswith('0x'):
+                bytes_data = bytes_data[2:]
+            
+            # Catch an error here
+            bytes_data = bytes.fromhex(bytes_data)
+            
+            dtype = 9
+            prop_data = prop.bytes_data
+            
+        return prop.dname, dtype, prop_data
+            
+

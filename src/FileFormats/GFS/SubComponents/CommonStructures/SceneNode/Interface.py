@@ -1,3 +1,4 @@
+from ..CustomProperty import PropertyInterface
 from .NodeAttachmentBinary import NodeAttachmentBinary
 from .NodeBinary import SceneNodeBinary
 from .MeshBinary import MeshBinary
@@ -103,7 +104,7 @@ class NodeInterface:
         instance.scale = binary.scale
         instance.bind_pose_matrix = bind_pose_matrix
         instance.unknown_float = binary.float
-        instance.properties = binary.properties.data # Interface?!?
+        instance.properties = [PropertyInterface.from_binary(prop) for prop in binary.properties.data]
         
         return instance
     
@@ -116,10 +117,18 @@ class NodeInterface:
         binary.scale = self.scale
         binary.float = self.unknown_float
         binary.has_properties = len(self.properties) > 0
-        binary.properties.data = self.properties  # Interface?!?
+        binary.properties.data = [prop.to_binary() for prop in self.properties]
         binary.properties.count = len(self.properties)
         
         return binary
+    
+    def add_property(self, name, dtype, data):
+        prop = PropertyInterface()
+        prop.name = name
+        prop.type = dtype
+        prop.data = data
+        self.properties.append(prop)
+        return prop
     
 class MeshInterface:
     def __init__(self):
