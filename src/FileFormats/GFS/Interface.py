@@ -194,7 +194,7 @@ class GFSInterface:
             
         return binary
     
-    def add_node(self, parent_idx, name, position, rotation, scale, unknown_float, bind_pose_matrix, properties):
+    def add_node(self, parent_idx, name, position, rotation, scale, unknown_float, bind_pose_matrix):
         node = NodeInterface()
         node.parent_idx = parent_idx
         node.name = name
@@ -203,8 +203,9 @@ class GFSInterface:
         node.scale = scale
         node.unknown_float = unknown_float
         node.bind_pose_matrix = bind_pose_matrix
-        node.properties = properties
+        node.properties = []
         self.bones.append(node)
+        return node
         
     def add_mesh(self, node_id, vertices, material_name, indices, morphs, unknown_0x12, unknown_float_1, unknown_float_2, keep_bounding_box, keep_bounding_sphere):
         mesh = MeshInterface()
