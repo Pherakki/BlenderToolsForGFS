@@ -36,7 +36,8 @@ def import_model(gfs, name):
         bone_transforms[i] = matrix
 
     bpy.ops.object.mode_set(mode="OBJECT")
-        
+    
+            
     for bpy_bone in main_armature.data.bones:
         bpy_bone.layers[0] = True
         bpy_bone.layers[1] = True
@@ -47,6 +48,8 @@ def import_model(gfs, name):
         main_armature.data.bones[i].layers[0] = True
         main_armature.data.bones[i].layers[1] = False
         main_armature.data.bones[i].layers[2] = True
+    
+    bpy.context.view_layer.objects.active = main_armature
         
     ###################
     # PUSH EXTRA DATA #
@@ -167,6 +170,7 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
             vertex_group = bpy_mesh_object.vertex_groups.new(name=bpy_node_names[bone_idx])
             for vert_idx, vert_weight in vg:
                 vertex_group.add([vert_idx], vert_weight, 'REPLACE')
+    # Remove this if you can get bone parenting to work.
     else:
         vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
         vertex_group.add([i for i in range(len(mesh.vertices))], 1., 'REPLACE')
