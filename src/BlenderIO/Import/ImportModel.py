@@ -200,8 +200,6 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     bpy_mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
 
     bpy_mesh.use_auto_smooth = True
-
-    bpy_mesh.transform(transform)
     
     # Set materials
     if mesh.material_name != "":
@@ -216,6 +214,15 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     
     bpy_mesh.update()
     bpy_mesh.update()
+    
+    # Set origin - mesh is going to be clamped here by the constraint
+    # anyway, but it's probably useful for people exporting to formats where
+    # the constraint can't be carried over
+    pos, quat, scale = transform.decompose()
+    bpy_mesh_object.rotation_mode = "QUATERNION"
+    bpy_mesh_object.location = pos
+    bpy_mesh_object.rotation_quaternion = quat
+    bpy_mesh_object.scale = scale
     
     # Activate rigging
     bpy_mesh_object.parent = armature
