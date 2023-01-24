@@ -57,7 +57,7 @@ def import_model(gfs, name):
         
         for prop in node.properties:
             item = bpy_bone.GFSTOOLS_BoneProperties.properties.add()
-            item.dname = prop.name.string
+            item.dname = prop.name
             if prop.type == 1:
                 item.dtype = "UINT32"
                 item.uint32_data = prop.data
