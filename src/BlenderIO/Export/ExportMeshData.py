@@ -7,24 +7,62 @@ from ..Utils.ErrorPopup import ReportableException
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
-def export_mesh_data(gfs, armature, pinned_armatures):
-    for pinned_armature in pinned_armatures:
-        childof_constraints = [constr for constr in pinned_armature.constraints if constr.type == "CHILD_OF"]
-        if len(childof_constraints) > 1:
-            raise ReportableException(f"Mesh \'{pinned_armature.name}\' must have ONE \'CHILD OF\' constraint.")
-        elif len(childof_constraints) == 0:
+def export_mesh_data(gfs, armature):
+    meshes = [obj for obj in armature.children if obj.type == "MESH"]
+    for bpy_mesh_object in meshes:
+        transform_constraints = [constr for constr in bpy_mesh_object.constraints if constr.type == "COPY_TRANSFORMS"]
+        if len(transform_constraints) > 1:
+            raise ReportableException(f"Mesh \'{bpy_mesh_object.name}\' must have ONE \'COPY_TRANSFORMS\' constraint.")
+        elif len(transform_constraints) == 0:
             return
         
         bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
-        constr = childof_constraints[0]
+        constr = transform_constraints[0]
         bone = armature.data.bones[constr.subtarget]
         node_id = bone_names[bone.name]
         
-        for mesh_obj in [c for c in pinned_armature.children if c.type == "MESH"]:
-            vertices, indices = extract_vertex_data(mesh_obj, bone_names)
-            gfs.add_mesh(node_id, vertices, "", [fidx for face in indices for fidx in face], [], 0, 0, 0, False, False)
-    
+        mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
+        vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
+        mesh = gfs.add_mesh(node_id, vertices, 
+                            bpy_mesh_object.active_material.name, 
+                            [fidx for face in indices for fidx in face], 
+                            [], # Morphs! 
+                            mesh_props.unknown_0x12, 
+                            mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
+                            mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
+                            mesh_props.export_bounding_box, 
+                            mesh_props.export_bounding_sphere)
+        
+        mesh.flag_5 = mesh_props.flag_5
+        mesh.flag_7 = mesh_props.flag_7
+        mesh.flag_8 = mesh_props.flag_8
+        mesh.flag_9 = mesh_props.flag_9
+        mesh.flag_10 = mesh_props.flag_10
+        mesh.flag_11 = mesh_props.flag_11
+        mesh.flag_13 = mesh_props.flag_13
+        mesh.flag_14 = mesh_props.flag_14
+        mesh.flag_15 = mesh_props.flag_15
+        mesh.flag_16 = mesh_props.flag_16
+        mesh.flag_17 = mesh_props.flag_17
+        mesh.flag_18 = mesh_props.flag_18
+        mesh.flag_19 = mesh_props.flag_19
+        mesh.flag_20 = mesh_props.flag_20
+        mesh.flag_21 = mesh_props.flag_21
+        mesh.flag_22 = mesh_props.flag_22
+        mesh.flag_23 = mesh_props.flag_23
+        mesh.flag_24 = mesh_props.flag_24
+        mesh.flag_25 = mesh_props.flag_25
+        mesh.flag_26 = mesh_props.flag_26
+        mesh.flag_27 = mesh_props.flag_27
+        mesh.flag_28 = mesh_props.flag_28
+        mesh.flag_29 = mesh_props.flag_29
+        mesh.flag_30 = mesh_props.flag_30
+        mesh.flag_31 = mesh_props.flag_31
 
+
+#####################
+# PRIVATE FUNCTIONS #
+#####################
 def extract_vertex_data(mesh_obj, bone_names):
     # Switch to input variables
     vweight_floor = 0

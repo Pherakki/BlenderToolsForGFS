@@ -28,9 +28,8 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         gfs = GFSInterface()
         selected_model = find_selected_model()
-        pinned = find_pinned_armatures(selected_model)
         export_node_tree(gfs, selected_model)
-        export_mesh_data(gfs, selected_model, pinned)
+        export_mesh_data(gfs, selected_model)
         
         #bpy.ops.object.mode_set(current_mode)
         
@@ -61,16 +60,16 @@ def find_selected_model():
         raise ReportableException(f"An object is selected, but the top-level object \'{parent_obj.name}\' is not an Armature object - has type {parent_obj.type}.")
     return parent_obj
 
-def find_pinned_armatures(parent_obj):
-    out = []
-    for obj in bpy.data.objects:
-        if not obj.type == "ARMATURE":
-            continue
-        for constr in obj.constraints:
-            if constr.type != "CHILD_OF":
-                continue
-            if constr.target == obj:
-                continue
-            out.append(obj)
-    return out
+# def find_pinned_armatures(parent_obj):
+#     out = []
+#     for obj in bpy.data.objects:
+#         if not obj.type == "ARMATURE":
+#             continue
+#         for constr in obj.constraints:
+#             if constr.type != "CHILD_OF":
+#                 continue
+#             if constr.target == obj:
+#                 continue
+#             out.append(obj)
+#     return out
                     
