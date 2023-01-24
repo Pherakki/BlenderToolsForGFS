@@ -2,25 +2,15 @@ import bpy
 
 
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):
-    def get_available_bones(self, context):
-        armature = context.object.parent
-        if armature is None:
-            return []
-        elif armature.type != "ARMATURE":
-            return []
-        else:
-            bone_list = []
-            for bpy_bone in armature.data.bones:
-                bone_list.append((bpy_bone.name, bpy_bone.name, bpy_bone.name, "BONE_DATA", len(bone_list)))
-            return bone_list
-
-    reference_node: bpy.props.EnumProperty(items=get_available_bones, name="Reference Node")
-    
     has_unknown_floats:  bpy.props.BoolProperty(name="Active")
     
     unknown_0x12:    bpy.props.FloatProperty(name="unknown 0x12")
     unknown_float_1: bpy.props.FloatProperty(name="unknown 1")
     unknown_float_2: bpy.props.FloatProperty(name="unknown 2")
+    
+    export_bounding_box:    bpy.props.BoolProperty(name="Export Bounding Box")
+    export_bounding_sphere: bpy.props.BoolProperty(name="Export Bounding Sphere")
+    
     
     flag_5:  bpy.props.BoolProperty(name="Flag 5")
     flag_7:  bpy.props.BoolProperty(name="Flag 7")

@@ -223,3 +223,4 @@ class GFSInterface:
         mesh.keep_bounding_sphere = keep_bounding_sphere
         
         self.meshes.append(mesh)
+        return mesh

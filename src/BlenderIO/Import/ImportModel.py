@@ -221,11 +221,11 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     bpy_mesh_object.parent = armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
+
     
     ########################
     # DO THE LEFTOVER DATA #
     ########################
-    bpy_mesh.GFSTOOLS_MeshProperties.reference_node = parent_node_name
     bpy_mesh.GFSTOOLS_MeshProperties.flag_5   = mesh.flag_5
     bpy_mesh.GFSTOOLS_MeshProperties.flag_7   = mesh.flag_7
     bpy_mesh.GFSTOOLS_MeshProperties.flag_8   = mesh.flag_8
@@ -258,7 +258,9 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
         bpy_mesh.GFSTOOLS_MeshProperties.has_unknown_floats = True
         bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_1  = mesh.unknown_float_1
         bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_2  = mesh.unknown_float_2
-
+    
+    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_box    = mesh.keep_bounding_box
+    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere 
     
     bpy.context.view_layer.objects.active = prev_obj
 
