@@ -3,7 +3,7 @@ import math
 import bpy
 from mathutils import Matrix, Quaternion
 
-from ..Utils.maths import convert_rotation_to_quaternion
+from ..Utils.Maths import convert_rotation_to_quaternion
 
 
 def export_node_tree(gfs, armature):
