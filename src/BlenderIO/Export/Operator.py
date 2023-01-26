@@ -8,6 +8,7 @@ from ...FileFormats.GFS import GFSInterface
 from ..Utils.ErrorPopup import handle_errors, ReportableException
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
+from .ExportMaterials import export_materials_and_textures
 
 class ExportGFS(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gfs'
@@ -29,8 +30,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         gfs = GFSInterface()
         selected_model = find_selected_model()
         export_node_tree(gfs, selected_model)
-        export_mesh_data(gfs, selected_model)
         
+        bpy_meshes = export_mesh_data(gfs, selected_model)
+        export_materials_and_textures(gfs, bpy_meshes)
         #bpy.ops.object.mode_set(current_mode)
         
         gb = gfs.to_binary(0x01105100)
