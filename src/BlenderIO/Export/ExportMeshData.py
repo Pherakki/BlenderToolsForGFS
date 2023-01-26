@@ -1,26 +1,25 @@
 import array
 
 import bpy
+from mathutils import Matrix
 import numpy as np
 
 from ..Utils.ErrorPopup import ReportableException
+from ..Utils.maths import convert_rotation_to_quaternion
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
 def export_mesh_data(gfs, armature):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     for bpy_mesh_object in meshes:
-        transform_constraints = [constr for constr in bpy_mesh_object.constraints if constr.type == "COPY_TRANSFORMS"]
-        if len(transform_constraints) > 1:
-            raise ReportableException(f"Mesh \'{bpy_mesh_object.name}\' must have ONE \'COPY_TRANSFORMS\' constraint.")
-        elif len(transform_constraints) == 0:
-            return
+        node_id = len(gfs.bones)
+        pos = bpy_mesh_object.location
+        rot = convert_rotation_to_quaternion(bpy_mesh_object.rotation)
+        scl = bpy_mesh_object.scale
+        bpm = Matrix.Translation(pos) @ rot.to_matrix().to_4x4() @ Matrix.Diagonal([*scl, 1.])
+        gfs.add_node(1, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., bpm) # Change to 0 later...
         
         bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
-        constr = transform_constraints[0]
-        bone = armature.data.bones[constr.subtarget]
-        node_id = bone_names[bone.name]
-        
         mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
         vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
         mesh = gfs.add_mesh(node_id, vertices, 
