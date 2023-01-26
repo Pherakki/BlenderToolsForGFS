@@ -1,5 +1,7 @@
 import bpy
 
+from ..Utils.UVMapManagement import make_uv_map_name
+
 
 def import_materials(gfs, textures):
     materials = {}
@@ -15,19 +17,18 @@ def import_materials(gfs, textures):
         connect = bpy_material.node_tree.links.new
         bsdf_node = nodes.get('Principled BSDF')
         
-        node = add_texture_to_material_node(bpy_material, "Diffuse Texture", mat.diffuse_texture)
+        node = add_texture_to_material_node(bpy_material, "Diffuse Texture", mat.diffuse_texture, mat.texture_indices_1.diffuse)
         if node is not None:
             connect(node.outputs["Color"], bsdf_node.inputs["Base Color"])
         
-        add_texture_to_material_node(bpy_material, "Normal Texture", mat.normal_texture)
-        add_texture_to_material_node(bpy_material, "Specular Texture", mat.specular_texture)
-        add_texture_to_material_node(bpy_material, "Reflection Texture", mat.reflection_texture)
-        add_texture_to_material_node(bpy_material, "Highlight Texture", mat.highlight_texture)
-        add_texture_to_material_node(bpy_material, "Glow Texture", mat.glow_texture)
-        add_texture_to_material_node(bpy_material, "Night Texture", mat.night_texture)
-        add_texture_to_material_node(bpy_material, "Detail Texture", mat.detail_texture)
-        add_texture_to_material_node(bpy_material, "Shadow Texture", mat.shadow_texture)     
-
+        add_texture_to_material_node(bpy_material, "Normal Texture",     mat.normal_texture,     mat.texture_indices_1.normal    )
+        add_texture_to_material_node(bpy_material, "Specular Texture",   mat.specular_texture,   mat.texture_indices_1.specular  )
+        add_texture_to_material_node(bpy_material, "Reflection Texture", mat.reflection_texture, mat.texture_indices_1.reflection)
+        add_texture_to_material_node(bpy_material, "Highlight Texture",  mat.highlight_texture,  mat.texture_indices_1.highlight )
+        add_texture_to_material_node(bpy_material, "Glow Texture",       mat.glow_texture,       mat.texture_indices_1.glow      )
+        add_texture_to_material_node(bpy_material, "Night Texture",      mat.night_texture,      mat.texture_indices_1.night     )
+        add_texture_to_material_node(bpy_material, "Detail Texture",     mat.detail_texture,     mat.texture_indices_1.detail    )
+        add_texture_to_material_node(bpy_material, "Shadow Texture",     mat.shadow_texture,     mat.texture_indices_1.shadow    )
 
         # Register currently-unrepresentable data
         # Can hopefully remove a few of these when a standardised material
@@ -495,20 +496,13 @@ def import_materials(gfs, textures):
                 
     return materials
 
-def add_texture_to_material_node(bpy_material, name, texture):
+def add_texture_to_material_node(bpy_material, name, texture, texcoord_id):
     nodes = bpy_material.node_tree.nodes
     if texture is not None:
         node = nodes.new('ShaderNodeTexImage')
         node.name = name
         node.label = name
         node.image = bpy.data.images[texture.name.string]
-        
-        # node["GFSTOOLS_unknown_0x04"] = texture.unknown_0x04
-        # node["GFSTOOLS_unknown_0x08"] = texture.unknown_0x08
-        # node["GFSTOOLS_has_texture_filtering"] = texture.has_texture_filtering
-        # node["GFSTOOLS_unknown_0x0A"] = texture.unknown_0x0A
-        # node["GFSTOOLS_unknown_0x0B"] = texture.unknown_0x0B
-        # node["GFSTOOLS_unknown_0x0C"] = texture.unknown_0x0C
         
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
@@ -531,6 +525,11 @@ def add_texture_to_material_node(bpy_material, name, texture):
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40 = texture.unknown_0x0C[13]
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44 = texture.unknown_0x0C[14]
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48 = texture.unknown_0x0C[15]
+        
+        connect = bpy_material.node_tree.links.new
+        uv_map_node = nodes.new("ShaderNodeUVMap")
+        uv_map_node.uv_map = make_uv_map_name(texcoord_id)
+        connect(uv_map_node.outputs["UV"], node.inputs["Vector"])
         
         return node
     return None
