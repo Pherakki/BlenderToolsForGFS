@@ -82,7 +82,7 @@ class MaterialBinary(Serializable):
         self.unknown_0x5E = None
         self.texture_indices_1 = TextureMapIndices()
         self.texture_indices_2 = TextureMapIndices()
-        self.unknown_0x68 = None
+        self.unknown_0x68 = 0
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
