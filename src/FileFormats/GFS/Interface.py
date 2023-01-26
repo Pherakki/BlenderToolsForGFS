@@ -8,7 +8,7 @@ from .SubComponents.Textures.Interface import TextureInterface
 from .SubComponents.Textures.Binary import TexturePayload
 from .SubComponents.Animations.Interface import AnimationInterface
 from .SubComponents.Model.Interface import ModelInterface
-from .SubComponents.CommonStructures import NodeInterface, MeshInterface
+from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightInterface, CameraInterface
 
 
 class UnknownAnimations:
@@ -224,3 +224,35 @@ class GFSInterface:
         
         self.meshes.append(mesh)
         return mesh
+    
+    def add_material(self):
+        material = MaterialInterface()
+        return material
+
+    def add_texture(self, name, data):
+        texture = TextureInterface()
+        texture.name = name
+        texture.image_data = data
+        return texture
+    
+    def add_light(self, node_id, type, color_1, color_2, color_3):
+        li = LightInterface()
+        
+        li.node_id = node_id
+        li.binary.type = type
+        li.binary.color_1 = color_1
+        li.binary.color_2 = color_2
+        li.binary.color_3 = color_3
+        
+        return li.binary
+
+    def add_cam(self, node_id, view_matrix, zNear, zFar, fov, aspect_ratio, unknown_0x50):
+        cam = CameraInterface()
+        
+        cam.node_id             = node_id
+        cam.binary.view_matrix  = view_matrix
+        cam.binary.zNear        = zNear
+        cam.binary.zFar         = zFar
+        cam.binary.fov          = fov
+        cam.binary.aspect_ratio = aspect_ratio
+        cam.binary.unknown_0x50 = cam.binary.unknown_0x50
