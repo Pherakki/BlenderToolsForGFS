@@ -21,7 +21,6 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
         ctr = layout.column()
         
         ctr.prop(light.GFSTOOLS_LightProperties, "color_1")
-        ctr.prop(light.GFSTOOLS_LightProperties, "color_2")
         ctr.prop(light.GFSTOOLS_LightProperties, "color_3")
         
         ctr.prop(light.GFSTOOLS_LightProperties, "dtype")
@@ -35,8 +34,8 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x3C")
             ctr.prop(light.GFSTOOLS_LightProperties, "unk_setting")
             if light.GFSTOOLS_LightProperties.unk_setting:
-                ctr.prop(light.GFSTOOLS_LightProperties, "blur_radius")
-                ctr.prop(light.GFSTOOLS_LightProperties, "lum_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "inner_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "outer_radius")
             else:
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x48")
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x4C")
@@ -52,8 +51,8 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
             ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x70")
             ctr.prop(light.GFSTOOLS_LightProperties, "unk_setting")
             if light.GFSTOOLS_LightProperties.unk_setting:
-                ctr.prop(light.GFSTOOLS_LightProperties, "blur_radius")
-                ctr.prop(light.GFSTOOLS_LightProperties, "lum_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "inner_radius")
+                ctr.prop(light.GFSTOOLS_LightProperties, "outer_radius")
             else:
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x7C")
                 ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x80")

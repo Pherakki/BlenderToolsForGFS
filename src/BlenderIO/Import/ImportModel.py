@@ -426,11 +426,11 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light.GFSTOOLS_LightProperties.flag_31 = light.binary.flags.flag_31
     
     bpy_light.GFSTOOLS_LightProperties.color_1 = light.binary.color_1
-    bpy_light.GFSTOOLS_LightProperties.color_2 = light.binary.color_2
+    bpy_light.color = light.binary.color_2
     bpy_light.GFSTOOLS_LightProperties.color_3 = light.binary.color_3
     
-    if light.binary.blur_radius is not None: bpy_light.GFSTOOLS_LightProperties.blur_radius = light.binary.blur_radius
-    if light.binary.lum_radius  is not None: bpy_light.GFSTOOLS_LightProperties.lum_radius  = light.binary.lum_radius
+    if light.binary.inner_radius is not None: bpy_light.GFSTOOLS_LightProperties.inner_radius = light.binary.inner_radius
+    if light.binary.outer_radius is not None: bpy_light.GFSTOOLS_LightProperties.outer_radius = light.binary.outer_radius
     
     if light.binary.unknown_0x28 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x28 = light.binary.unknown_0x28
     if light.binary.unknown_0x2C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x2C = light.binary.unknown_0x2C
@@ -461,3 +461,4 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light_object.parent = armature
     bpy_light_object.parent_type = "BONE"
     bpy_light_object.parent_bone = bpy_node_names[light.node]
+    bpy_light_object.matrix_parent_inverse = Matrix.Translation([0., -10., 0])

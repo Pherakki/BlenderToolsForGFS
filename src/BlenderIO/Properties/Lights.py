@@ -12,11 +12,10 @@ class GFSToolsLightProperties(bpy.types.PropertyGroup):
     unk_setting:  bpy.props.BoolProperty(name="Unknown Setting")
     
     color_1: bpy.props.FloatVectorProperty(name="Color 1", size=4)
-    color_2: bpy.props.FloatVectorProperty(name="Color 2", size=4)
     color_3: bpy.props.FloatVectorProperty(name="Color 3", size=4)
     
-    blur_radius:   bpy.props.FloatProperty(name="Blur Radius")
-    lum_radius:    bpy.props.FloatProperty(name="Lum Radius")
+    inner_radius:   bpy.props.FloatProperty(name="Inner Radius")
+    outer_radius:   bpy.props.FloatProperty(name="Outer Radius")
     
     # Type 1
     unknown_0x28 : bpy.props.FloatProperty(name="Unknown 0x28")
