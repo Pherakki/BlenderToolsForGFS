@@ -5,7 +5,7 @@ from mathutils import Matrix
 import numpy as np
 
 from ..Utils.ErrorPopup import ReportableException
-from ..Utils.maths import convert_rotation_to_quaternion
+from ..Utils.Maths import convert_rotation_to_quaternion
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
@@ -14,10 +14,9 @@ def export_mesh_data(gfs, armature):
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
         pos = bpy_mesh_object.location
-        rot = convert_rotation_to_quaternion(bpy_mesh_object.rotation)
+        rot = convert_rotation_to_quaternion(bpy_mesh_object.rotation_quaternion, bpy_mesh_object.rotation_euler, bpy_mesh_object.rotation_mode)
         scl = bpy_mesh_object.scale
-        bpm = Matrix.Translation(pos) @ rot.to_matrix().to_4x4() @ Matrix.Diagonal([*scl, 1.])
-        gfs.add_node(1, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., bpm) # Change to 0 later...
+        gfs.add_node(1, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., None) # Change parent to 0 when you import root node as armature        
         
         bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
         mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
@@ -57,6 +56,7 @@ def export_mesh_data(gfs, armature):
         mesh.flag_29 = mesh_props.flag_29
         mesh.flag_30 = mesh_props.flag_30
         mesh.flag_31 = mesh_props.flag_31
+    return meshes
 
 
 #####################
