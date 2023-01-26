@@ -16,7 +16,7 @@ class TextureSamplerBinary(Serializable):
         self.unknown_0x0C          = None
         
     def __repr__(self):
-        return f"[GFD::Material::TextureRef] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.unknown_0x0A} {self.unknown_0x0B} {self.unknown_0x0C}"
+        return f"[GFD::Material::TextureSampler] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.unknown_0x0A} {self.unknown_0x0B} {self.unknown_0x0C}"
         
     def read_write(self, rw, version):
         self.name                  = rw.rw_obj(self.name, version, encoding="shift-jis")
