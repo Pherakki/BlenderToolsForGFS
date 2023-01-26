@@ -69,13 +69,15 @@ class NodeInterface:
             for i, elem in enumerate(element_list):
                 if elem.node < 0:
                     raise ValueError(f"{typename} {i} has an invalid node parent: {elem.node} must be >= 0")
-                node = node_collection[elem.node]
+
+                remapped_node = id_map[elem.node]
+                node = node_collection[remapped_node]
                 attachment = NodeAttachmentBinary()
                 attachment.type = typevalue
                 attachment.data = elem.to_binary()
                 node.attachments.append(attachment)
                 node.attachment_count += 1
-                binaries.append((attachment.data, elem.node))
+                binaries.append((attachment.data, remapped_node))
             return binaries
                 
         add_attachments("Morph",  9, morph_list)
