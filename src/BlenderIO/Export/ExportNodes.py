@@ -19,10 +19,10 @@ def export_node_tree(gfs, armature):
     rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
     
     # Export each bone as a node
-    for bone in armature.pose.bones:
+    for bone, editbone in zip(armature.pose.bones, armature.data.edit_bones):
         # Reconstruct the rest pose transform
         bone_parent = bone.parent
-        bind_matrix = bone.matrix_local
+        bind_matrix = editbone.matrix_local
         if bone_parent is None:
             parent_id = -1
             local_bind_matrix = bind_matrix
