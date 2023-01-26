@@ -6,6 +6,7 @@ import numpy as np
 
 from ..Utils.ErrorPopup import ReportableException
 from ..Utils.Maths import convert_rotation_to_quaternion
+from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
@@ -126,7 +127,6 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
 
     map_ids = list(mesh.uv_layers.keys())[:8]
     colour_map = list(mesh.vertex_colors.keys())[:2]
-    n_uvs = len(map_ids)
     n_colours = len(colour_map)
 
     use_normals   = True
@@ -148,9 +148,12 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
         normals = [tuple()]*nloops
 
     # Extract UVs
-    UV_data = [None]*n_uvs
-    for i, map_id in enumerate(map_ids):
-        UV_data[i] = fetch_data(mesh.uv_layers[map_id].data, "uv", sigfigs+2)
+    UV_data = [[None for _ in range(nloops)]]*8
+    for map_id in map_ids:
+        if is_valid_uv_map(map_id): # Need to throw a warning here
+            idx = get_uv_idx_from_name(map_id)
+            if idx < 8:
+                UV_data[idx] = fetch_data(mesh.uv_layers[map_id].data, "uv", sigfigs+2)
     if len(UV_data):
         UV_data = [tuple(elems) for elems in zip(*UV_data)]
     else:
