@@ -81,7 +81,7 @@ def group_fcurves_by_bone_and_type(action):
             array_index = fcurve.array_index
 
             # Get value of first keyframe point
-            res[bone_name][curve_type][array_index] = fcurve.keyframe_points[0][1]
+            res[bone_name][curve_type][array_index] = fcurve.keyframe_points[0].co[1]
     return res
 
 
