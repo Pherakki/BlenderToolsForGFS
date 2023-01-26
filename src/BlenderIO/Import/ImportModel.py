@@ -4,6 +4,7 @@ import math
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 
+from ..Utils.UVMapManagement import make_uv_map_name
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 
 
@@ -147,14 +148,14 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     bpy.context.view_layer.objects.active = bpy_mesh_object
 
     # Create UVs
-    add_uv_map(bpy_mesh, [v.texcoord0 for v in mesh.vertices], "UV0")
-    add_uv_map(bpy_mesh, [v.texcoord1 for v in mesh.vertices], "UV1")
-    add_uv_map(bpy_mesh, [v.texcoord2 for v in mesh.vertices], "UV2")
-    add_uv_map(bpy_mesh, [v.texcoord3 for v in mesh.vertices], "UV3")
-    add_uv_map(bpy_mesh, [v.texcoord4 for v in mesh.vertices], "UV4")
-    add_uv_map(bpy_mesh, [v.texcoord5 for v in mesh.vertices], "UV5")
-    add_uv_map(bpy_mesh, [v.texcoord6 for v in mesh.vertices], "UV6")
-    add_uv_map(bpy_mesh, [v.texcoord7 for v in mesh.vertices], "UV7")
+    add_uv_map(bpy_mesh, [v.texcoord0 for v in mesh.vertices], make_uv_map_name(0))
+    add_uv_map(bpy_mesh, [v.texcoord1 for v in mesh.vertices], make_uv_map_name(1))
+    add_uv_map(bpy_mesh, [v.texcoord2 for v in mesh.vertices], make_uv_map_name(2))
+    add_uv_map(bpy_mesh, [v.texcoord3 for v in mesh.vertices], make_uv_map_name(3))
+    add_uv_map(bpy_mesh, [v.texcoord4 for v in mesh.vertices], make_uv_map_name(4))
+    add_uv_map(bpy_mesh, [v.texcoord5 for v in mesh.vertices], make_uv_map_name(5))
+    add_uv_map(bpy_mesh, [v.texcoord6 for v in mesh.vertices], make_uv_map_name(6))
+    add_uv_map(bpy_mesh, [v.texcoord7 for v in mesh.vertices], make_uv_map_name(7))
 
     # Rig
     if mesh.vertices[0].indices is not None:
