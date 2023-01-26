@@ -37,6 +37,17 @@ def import_pincushion_model(gfs, name):
    
     bpy.context.view_layer.objects.active = main_armature
     bpy.ops.object.mode_set(mode="OBJECT")
+                
+    for bpy_bone in main_armature.data.bones:
+        bpy_bone.layers[0] = True
+        bpy_bone.layers[1] = True
+        bpy_bone.layers[2] = False
+
+    
+    for i in sorted(filter_used_bones(gfs)):
+        main_armature.data.bones[i].layers[0] = True
+        main_armature.data.bones[i].layers[1] = False
+        main_armature.data.bones[i].layers[2] = True
     
     ###################
     # PUSH EXTRA DATA #
@@ -47,7 +58,7 @@ def import_pincushion_model(gfs, name):
         
         for prop in node.properties:
             item = bpy_bone.GFSTOOLS_BoneProperties.properties.add()
-            item.dname = prop.name.string
+            item.dname = prop.name
             if prop.type == 1:
                 item.dtype = "UINT32"
                 item.uint32_data = prop.data
@@ -119,8 +130,8 @@ def import_pincushion_model(gfs, name):
 def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bpy_node_names, bone_transforms):
     # TODO: Enable this when implementing mesh->bone parenting
     # Enable this when ready, double-check that it causes no issues
-    if len(armature_index_set) == 0:
-        return None
+    #if len(armature_index_set) == 0:
+    #    return None
     
     # Order the bone indices we intend to import
     armature_index_set = sorted(armature_index_set)
@@ -133,13 +144,14 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
     # Parent the pinned armature to the main armature
     # Probably works, but let's get the export working before messing about
     # with this
-    # armature.parent = main_armature
-    # armature.parent_type = "BONE"
-    # armature.parent_bone = bpy_node_names[node_idx]
-    constraint = armature.constraints.new("CHILD_OF")
-    constraint.target = main_armature
-    constraint.subtarget = bpy_node_names[node_idx]
-    constraint.inverse_matrix = Matrix.Identity(4)
+    armature.parent = main_armature
+    armature.parent_type = "BONE"
+    armature.parent_bone = bpy_node_names[node_idx]
+    armature.matrix_parent_inverse = Matrix.Translation([0., -10., 0.])
+    #constraint = armature.constraints.new("CHILD_OF")
+    #constraint.target = main_armature
+    #constraint.subtarget = bpy_node_names[node_idx]
+    #constraint.inverse_matrix = Matrix.Identity(4)
     
     # Cache the Blender states we are going to change
     before_armature_obj = bpy.context.view_layer.objects.active
@@ -156,9 +168,9 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
         # step should be unnecessary
         # Keep it for now until the import is set in stone
         # This just bakes the scale of the matrix into the matrix positions
-        pos, rot, scl = matrix.decompose()
-        pos = Matrix.Diagonal([*scl, 1.]) @ Matrix.Translation(pos)
-        matrix = pos @ rot.to_matrix().to_4x4()
+        #pos, rot, scl = matrix.decompose()
+        #pos = Matrix.Diagonal([*scl, 1.]) @ Matrix.Translation(pos)
+        #matrix = pos @ rot.to_matrix().to_4x4()
         
         construct_bone(bpy_node_names[idx], armature, matrix, 10)
         bone_names.append(bpy_node_names[idx])
@@ -177,6 +189,22 @@ def import_pinned_armature(node_idx, armature_index_set, name, main_armature, bp
     
     return armature
     
+def filter_used_bones(gfs):
+    used_indices = set()
+    for mesh in gfs.meshes:
+        if mesh.vertices[0].indices is not None:
+            for v in mesh.vertices:
+                used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
+    bones_to_check = sorted(used_indices)
+    for bone_idx in bones_to_check:
+        node = gfs.bones[bone_idx]
+        while node.parent_idx != -1:
+            used_indices.add(node.parent_idx)
+            node = gfs.bones[node.parent_idx]
+    
+    unused_indices = set([i for i in range(len(gfs.bones))]).difference(used_indices)
+
+    return unused_indices
 
 def import_pinned_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, main_armature, armature, parent_node_name, transform):
     # Cache the Blender states we are going to change
