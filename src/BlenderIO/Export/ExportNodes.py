@@ -3,6 +3,8 @@ import math
 import bpy
 from mathutils import Matrix, Quaternion
 
+from ..Utils.maths import convert_rotation_to_quaternion
+
 
 def export_node_tree(gfs, armature):
     bone_list = {bone.name: i for i, bone in enumerate(armature.data.bones)}
@@ -91,38 +93,10 @@ def extract_first_frame(action, pose_bones):
         if pose_curves is None:
             out[pose_bone.name] = Matrix.Identity(4)
             continue
-        
-        if pose_bone.rotation_mode == "QUATERNION":
-            # pull out quaternion data, normalise
-            q = pose_curves['rotation_quaternion']
-            mag = sum(e**2 for e in q)
-            rotation = Quaternion([e/mag for e in q])
-        else:
-            x = pose_curves['rotation_euler'][0]/2
-            y = pose_curves['rotation_euler'][1]/2
-            z = pose_curves['rotation_euler'][2]/2
-            
-            x_rotation = Quaternion([math.cos(x), math.sin(x),          0.,          0.])
-            y_rotation = Quaternion([math.cos(y),          0., math.sin(y),          0.])
-            z_rotation = Quaternion([math.cos(z),          0.,          0., math.sin(z)])
-            
-            # Check which Euler convention to use
-            if   pose_bone.rotation_mode == 'XYZ':
-                q = x_rotation @ y_rotation @ z_rotation
-            elif pose_bone.rotation_mode == 'XZY':
-                q = x_rotation @ z_rotation @ y_rotation
-            elif pose_bone.rotation_mode == 'YXZ':
-                q = y_rotation @ x_rotation @ z_rotation
-            elif pose_bone.rotation_mode == 'YZX':
-                q = y_rotation @ z_rotation @ x_rotation
-            elif pose_bone.rotation_mode == 'ZXY':
-                q = z_rotation @ x_rotation @ y_rotation
-            elif pose_bone.rotation_mode == 'ZYX':
-                q = z_rotation @ y_rotation @ x_rotation
-            else:
-                assert 0
-                
-            rotation = q
+
+        rotation = convert_rotation_to_quaternion(pose_curves["rotation_quaternion"],
+                                                  pose_curves["rotation_euler"],
+                                                  pose_bone.rotation_mode)
         
         t_matrix = Matrix.Translation(pose_curves['location'])
         r_matrix = rotation.to_matrix().to_4x4()
@@ -130,4 +104,3 @@ def extract_first_frame(action, pose_bones):
         
         out[pose_bone.name] = t_matrix @ r_matrix @ s_matrix
     return out
-
