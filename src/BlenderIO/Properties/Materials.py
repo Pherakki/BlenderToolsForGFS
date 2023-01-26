@@ -30,29 +30,49 @@ class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
 
 
 class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
-    flag_0:          bpy.props.BoolProperty(name="Flag 0")
-    flag_1:          bpy.props.BoolProperty(name="Flag 1")
-    enable_specular: bpy.props.BoolProperty(name="Enable Specular")
-    flag_3:          bpy.props.BoolProperty(name="Flag 3")
-    vertex_colors:   bpy.props.BoolProperty(name="Enable Vertex Colors")
-    flag_5:          bpy.props.BoolProperty(name="Flag 5")
-    flag_6:          bpy.props.BoolProperty(name="Flag 6")
-    enable_uv_anims: bpy.props.BoolProperty(name="Enable UV Anims")
-    enable_emissive: bpy.props.BoolProperty(name="Enable Emissive")
-    flag_9:          bpy.props.BoolProperty(name="Flag 9")
-    flag_10:         bpy.props.BoolProperty(name="Flag 10")
-    light_2:         bpy.props.BoolProperty(name="Use Light 2")
-    pwire:           bpy.props.BoolProperty(name="Purple Wireframe")
-    flag_13:         bpy.props.BoolProperty(name="Flag 13")
-    receive_shadow:  bpy.props.BoolProperty(name="Receive Shadow")
-    cast_shadow:     bpy.props.BoolProperty(name="Cast Shadow")
-    flag_17:         bpy.props.BoolProperty(name="Flag 17")
-    flag_18:         bpy.props.BoolProperty(name="Flag 18")
-    disable_bloom:   bpy.props.BoolProperty(name="Disable Bloom")
-    flag_29:         bpy.props.BoolProperty(name="Flag 29")
-    flag_30:         bpy.props.BoolProperty(name="Flag 30")
-    flag_31:         bpy.props.BoolProperty(name="Flag 31")
+    flag_0:          bpy.props.BoolProperty(name="Flag 0",               default=True )
+    flag_1:          bpy.props.BoolProperty(name="Flag 1",               default=True )
+    enable_specular: bpy.props.BoolProperty(name="Enable Specular",      default=False)
+    flag_3:          bpy.props.BoolProperty(name="Flag 3",               default=False)
+    vertex_colors:   bpy.props.BoolProperty(name="Enable Vertex Colors", default=False)
+    flag_5:          bpy.props.BoolProperty(name="Flag 5",               default=True )
+    flag_6:          bpy.props.BoolProperty(name="Flag 6",               default=False)
+    enable_uv_anims: bpy.props.BoolProperty(name="Enable UV Anims",      default=False)
+    enable_emissive: bpy.props.BoolProperty(name="Enable Emissive",      default=False)
+    flag_9:          bpy.props.BoolProperty(name="Flag 9",               default=False)
+    flag_10:         bpy.props.BoolProperty(name="Flag 10",              default=False)
+    light_2:         bpy.props.BoolProperty(name="Use Light 2",          default=True )
+    pwire:           bpy.props.BoolProperty(name="Purple Wireframe",     default=False)
+    flag_13:         bpy.props.BoolProperty(name="Flag 13",              default=False)
+    receive_shadow:  bpy.props.BoolProperty(name="Receive Shadow",       default=False)
+    cast_shadow:     bpy.props.BoolProperty(name="Cast Shadow",          default=False)
+    flag_17:         bpy.props.BoolProperty(name="Flag 17",              default=False)
+    flag_18:         bpy.props.BoolProperty(name="Flag 18",              default=False)
+    disable_bloom:   bpy.props.BoolProperty(name="Disable Bloom",        default=False)
+    flag_29:         bpy.props.BoolProperty(name="Flag 29",              default=False)
+    flag_30:         bpy.props.BoolProperty(name="Flag 30",              default=False)
+    flag_31:         bpy.props.BoolProperty(name="Flag 31",              default=False)
     
+    ambient:         bpy.props.FloatVectorProperty(name="Ambient Color",  size=4, default=(1., 1., 1., 1.))
+    diffuse:         bpy.props.FloatVectorProperty(name="Diffuse Color",  size=4, default=(1., 1., 1., 1.))
+    specular:        bpy.props.FloatVectorProperty(name="Specular Color", size=4, default=(1., 1., 1., 1.))
+    emissive:        bpy.props.FloatVectorProperty(name="Emissive Color", size=4, default=(1., 1., 1., 1.))
+    reflectivity:    bpy.props.FloatProperty(name="Reflectivity", default=0.)
+    outline_idx:     bpy.props.FloatProperty(name="Outline Idx.", default=0.)
+    draw_method:     bpy.props.IntProperty("Draw Method", default=0, min=0, max=6) # Change to enum later
+    unknown_0x51:    bpy.props.BoolProperty("Unknown 0x51", default=True)
+    unknown_0x52:    bpy.props.IntProperty("Unknown 0x52", default=0, min=0, max=255)
+    unknown_0x53:    bpy.props.BoolProperty("Unknown 0x53", default=True)
+    unknown_0x54:    bpy.props.IntProperty("Unknown 0x54", default=0, min=0, max=255)
+    unknown_0x55:    bpy.props.IntProperty("Unknown 0x55", default=1, min=1, max=3) # Change to enum later
+    unknown_0x56:    bpy.props.IntProperty("Unknown 0x56", default=0, min=0, max=65535) # Some kind of 8-bit flag?!
+    unknown_0x58:    bpy.props.IntProperty("Unknown 0x58", default=0, min=0, max=7) # Change to enum later?
+    unknown_0x5A:    bpy.props.IntProperty("Unknown 0x5A", default=1, min=-32768, max=32767) # Flags?
+    unknown_0x5C:    bpy.props.IntProperty("Unknown 0x5C", default=0, min=-32768, max=32767) # Flags?
+    unknown_0x5E:    bpy.props.IntProperty("Unknown 0x5E", default=0, min=-32768, max=32767) # Flags?
+    unknown_0x68:    bpy.props.IntProperty("Unknown 0x68", default=0, min=-32768, max=32767) # Never used
+    unknown_0x6A:    bpy.props.IntProperty("Unknown 0x6A", default=-1, min=-2147483648, max=2147483647) # Always -1
+
     ##################
     # TOON ATTRIBUTE #
     ##################

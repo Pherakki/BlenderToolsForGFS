@@ -54,6 +54,28 @@ def import_materials(gfs, textures):
         bpy_material.GFSTOOLS_MaterialProperties.flag_30 = mat.flag_30
         bpy_material.GFSTOOLS_MaterialProperties.flag_31 = mat.flag_31
         
+        bpy_material.GFSTOOLS_MaterialProperties.ambient  = mat.ambient
+        bpy_material.GFSTOOLS_MaterialProperties.diffuse  = mat.diffuse
+        bpy_material.GFSTOOLS_MaterialProperties.specular = mat.specular
+        bpy_material.GFSTOOLS_MaterialProperties.emissive = mat.emissive
+        bpy_material.GFSTOOLS_MaterialProperties.reflectivity = mat.reflectivity
+        bpy_material.GFSTOOLS_MaterialProperties.outline_idx  = mat.outline_idx
+        bpy_material.GFSTOOLS_MaterialProperties.draw_method  = mat.draw_method
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x51 = mat.unknown_0x51
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x52 = mat.unknown_0x52
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x53 = mat.unknown_0x53
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x54 = mat.unknown_0x54
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x55 = mat.unknown_0x55
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x56 = mat.unknown_0x56
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x58 = mat.unknown_0x58
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5A = mat.unknown_0x5A
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5C = mat.unknown_0x5C
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5E = mat.unknown_0x5E
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x68 = mat.unknown_0x68
+        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x6A = mat.unknown_0x6A
+        
+        bpy_material.use_backface_culling = not bool(mat.disable_backface_culling)
+        
         for attr in mat.attributes:
             if attr.ID == 0:
                 ctr = attr.data
