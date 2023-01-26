@@ -10,6 +10,7 @@ from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
 from .ExportLights import export_lights
+from .ExportCameras import export_cameras
 
 class ExportGFS(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gfs'
@@ -34,6 +35,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         bpy_meshes = export_mesh_data(gfs, selected_model)
         export_materials_and_textures(gfs, bpy_meshes)
         export_lights(gfs, selected_model)
+        export_cameras(gfs, selected_model)
         #bpy.ops.object.mode_set(current_mode)
         
         gb = gfs.to_binary(0x01105100)
