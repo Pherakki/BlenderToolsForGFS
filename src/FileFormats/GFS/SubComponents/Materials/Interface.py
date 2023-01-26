@@ -1,4 +1,14 @@
 from .Binary import MaterialBinary
+from .Binary.TextureSampler import TextureSamplerBinary
+from .Binary.MaterialBinary import MaterialAttributeBinary, TextureMapIndices
+from .Binary.MaterialBinary import ToonShadingProperty
+from .Binary.MaterialBinary import Property1
+from .Binary.MaterialBinary import OutlineProperty
+from .Binary.MaterialBinary import Property3
+from .Binary.MaterialBinary import Property4
+from .Binary.MaterialBinary import Property5
+from .Binary.MaterialBinary import Property6
+from .Binary.MaterialBinary import Property7
 
 
 class MaterialInterface:
@@ -46,9 +56,9 @@ class MaterialInterface:
         self.unknown_0x5A = 1
         self.unknown_0x5C = None
         self.unknown_0x5E = None
-        self.texture_indices_1 = None
-        self.texture_indices_2 = None
-        self.unknown_0x68 = None
+        self.texture_indices_1 = TextureMapIndices()
+        self.texture_indices_2 = TextureMapIndices() # Change later...
+        self.unknown_0x68 = 0
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
@@ -210,3 +220,204 @@ class MaterialInterface:
         binary.attributes.count = len(self.attributes)
         
         return binary
+    
+    def _make_texture_sampler(self, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        ts = TextureSamplerBinary()
+        
+        ts.name = ts.name.from_name(name, encoding="shift-jis")
+        ts.unknown_0x04          = unknown_0x04
+        ts.unknown_0x08          = unknown_0x08
+        ts.has_texture_filtering = has_texture_filtering
+        ts.unknown_0x0A          = unknown_0x0A
+        ts.unknown_0x0B          = unknown_0x0B
+        ts.unknown_0x0C          = unknown_0x0C
+        
+        return ts
+    
+    def set_diffuse_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.diffuse = tex_idx_1
+        self.texture_indices_2.diffuse = tex_idx_2
+        self.diffuse_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_normal_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.normal = tex_idx_1
+        self.texture_indices_2.normal = tex_idx_2
+        self.normal_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_specular_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.specular = tex_idx_1
+        self.texture_indices_2.specular = tex_idx_2
+        self.specular_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_reflection_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.reflection = tex_idx_1
+        self.texture_indices_2.reflection = tex_idx_2
+        self.reflection_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_highlight_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.highlight = tex_idx_1
+        self.texture_indices_2.highlight = tex_idx_2
+        self.highlight_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_glow_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.glow = tex_idx_1
+        self.texture_indices_2.glow = tex_idx_2
+        self.glow_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_night_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.night = tex_idx_1
+        self.texture_indices_2.night = tex_idx_2
+        self.night_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_detail_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.detail = tex_idx_1
+        self.texture_indices_2.detail = tex_idx_2
+        self.detail_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+    
+    def set_shadow_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C):
+        self.texture_indices_1.shadow = tex_idx_1
+        self.texture_indices_2.shadow = tex_idx_2
+        self.shadow_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, unknown_0x0A, unknown_0x0B, unknown_0x0C)
+
+    def add_toon_shading_attribute(self, colour, light_threshold, light_factor, light_brightness, shadow_threshold, shadow_factor):
+        attr = MaterialAttributeBinary()
+        attr.ID = 0
+        attr.data = ToonShadingProperty()
+        
+        attr.data.colour           = colour
+        attr.data.light_threshold  = light_threshold
+        attr.data.light_factor     = light_factor
+        attr.data.light_brightness = light_brightness
+        attr.data.shadow_threshold = shadow_threshold
+        attr.data.shadow_factor    = shadow_factor
+        
+        return attr
+
+    def add_attribute_1(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
+                              unknown_0x10, unknown_0x14, unknown_0x18, unknown_0x1C,
+                              unknown_0x20, unknown_0x24, unknown_0x28, unknown_0x2C):
+        attr = MaterialAttributeBinary()
+        attr.ID = 1
+        attr.data = Property1()
+        
+        attr.data.unknown_0x00 = unknown_0x00
+        attr.data.unknown_0x04 = unknown_0x04
+        attr.data.unknown_0x08 = unknown_0x08
+        attr.data.unknown_0x0C = unknown_0x0C
+        attr.data.unknown_0x10 = unknown_0x10
+        attr.data.unknown_0x14 = unknown_0x14
+        attr.data.unknown_0x18 = unknown_0x18
+        attr.data.unknown_0x1C = unknown_0x1C
+        attr.data.unknown_0x20 = unknown_0x20
+        attr.data.unknown_0x24 = unknown_0x24
+        attr.data.unknown_0x28 = unknown_0x28
+        attr.data.unknown_0x2C = unknown_0x2C
+        
+        return attr
+    
+    def add_outline_attribute(self, type, colour):
+        attr = MaterialAttributeBinary()
+        attr.ID = 2
+        attr.data = OutlineProperty()
+        
+        attr.data.type   = type
+        attr.data.colour = colour
+        
+        return attr
+    
+    def add_attribute_3(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
+                              unknown_0x10, unknown_0x14, unknown_0x18, unknown_0x1C,
+                              unknown_0x20, unknown_0x24, unknown_0x28, unknown_0x2C):
+        attr = MaterialAttributeBinary()
+        attr.ID = 3
+        attr.data = Property3()
+        
+        attr.data.unknown_0x00 = unknown_0x00
+        attr.data.unknown_0x04 = unknown_0x04
+        attr.data.unknown_0x08 = unknown_0x08
+        attr.data.unknown_0x0C = unknown_0x0C
+        attr.data.unknown_0x10 = unknown_0x10
+        attr.data.unknown_0x14 = unknown_0x14
+        attr.data.unknown_0x18 = unknown_0x18
+        attr.data.unknown_0x1C = unknown_0x1C
+        attr.data.unknown_0x20 = unknown_0x20
+        attr.data.unknown_0x24 = unknown_0x24
+        attr.data.unknown_0x28 = unknown_0x28
+        attr.data.unknown_0x2C = unknown_0x2C
+        
+        return attr    
+
+    def add_attribute_4(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
+                              unknown_0x10, unknown_0x14, unknown_0x18, unknown_0x1C,
+                              unknown_0x20, unknown_0x24, unknown_0x28, unknown_0x2C,
+                              unknown_0x30, unknown_0x34, unknown_0x38, unknown_0x3C,
+                              unknown_0x40, unknown_0x44, unknown_0x45, unknown_0x49):
+        attr = MaterialAttributeBinary()
+        attr.ID = 4
+        attr.data = Property4()
+        
+        attr.data.unknown_0x00 = unknown_0x00
+        attr.data.unknown_0x04 = unknown_0x04
+        attr.data.unknown_0x08 = unknown_0x08
+        attr.data.unknown_0x0C = unknown_0x0C
+        attr.data.unknown_0x10 = unknown_0x10
+        attr.data.unknown_0x14 = unknown_0x14
+        attr.data.unknown_0x18 = unknown_0x18
+        attr.data.unknown_0x1C = unknown_0x1C
+        attr.data.unknown_0x20 = unknown_0x20
+        attr.data.unknown_0x24 = unknown_0x24
+        attr.data.unknown_0x28 = unknown_0x28
+        attr.data.unknown_0x2C = unknown_0x2C
+        attr.data.unknown_0x30 = unknown_0x30
+        attr.data.unknown_0x34 = unknown_0x34
+        attr.data.unknown_0x38 = unknown_0x38
+        attr.data.unknown_0x3C = unknown_0x3C
+        attr.data.unknown_0x40 = unknown_0x40
+        attr.data.unknown_0x44 = unknown_0x44
+        attr.data.unknown_0x45 = unknown_0x45
+        attr.data.unknown_0x49 = unknown_0x49
+        
+        return attr
+    
+
+    def add_attribute_5(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
+                              unknown_0x10, unknown_0x14, unknown_0x18, unknown_0x1C,
+                              unknown_0x20, unknown_0x24, unknown_0x28, unknown_0x2C,
+                              unknown_0x30                                           ):
+        attr = MaterialAttributeBinary()
+        attr.ID = 5
+        attr.data = Property5()
+        
+        attr.data.unknown_0x00 = unknown_0x00
+        attr.data.unknown_0x04 = unknown_0x04
+        attr.data.unknown_0x08 = unknown_0x08
+        attr.data.unknown_0x0C = unknown_0x0C
+        attr.data.unknown_0x10 = unknown_0x10
+        attr.data.unknown_0x14 = unknown_0x14
+        attr.data.unknown_0x18 = unknown_0x18
+        attr.data.unknown_0x1C = unknown_0x1C
+        attr.data.unknown_0x20 = unknown_0x20
+        attr.data.unknown_0x24 = unknown_0x24
+        attr.data.unknown_0x28 = unknown_0x28
+        attr.data.unknown_0x2C = unknown_0x2C
+        attr.data.unknown_0x30 = unknown_0x30
+        
+        return attr
+    
+    def add_attribute_6(self, unknown_0x00, unknown_0x04, unknown_0x08):
+        attr = MaterialAttributeBinary()
+        attr.ID = 6
+        attr.data = Property6()
+        
+        attr.data.unknown_0x00 = unknown_0x00
+        attr.data.unknown_0x04 = unknown_0x04
+        attr.data.unknown_0x08 = unknown_0x08
+        
+        return attr
+    
+    def add_attribute_7(self):
+        attr = MaterialAttributeBinary()
+        attr.ID = 7
+        attr.data = Property7()
+        
+        return attr
