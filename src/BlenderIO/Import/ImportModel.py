@@ -380,6 +380,7 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera_object.parent = armature
     bpy_camera_object.parent_type = "BONE"
     bpy_camera_object.parent_bone = bpy_node_names[camera.node]
+    bpy_camera_object.matrix_parent_inverse = Matrix.Translation([0., -10., 0.])
     
     # Set view matrix
     bpy_camera_object.matrix_local = Matrix([camera.binary.view_matrix[ 0: 4],
