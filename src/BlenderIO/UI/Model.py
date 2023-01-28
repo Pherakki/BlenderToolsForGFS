@@ -19,4 +19,5 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         ctr = layout.column()
         
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "root_node_name")
         ctr.prop(armature.GFSTOOLS_ModelProperties, "has_external_emt")

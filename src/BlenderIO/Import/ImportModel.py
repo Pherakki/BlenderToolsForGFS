@@ -16,6 +16,7 @@ def import_model(gfs, name):
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
     
+    main_armature.data.GFSTOOLS_ModelProperties.root_node_name = gfs.bones[0].name
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
     
     bpy.ops.object.mode_set(mode='EDIT')
