@@ -89,3 +89,4 @@ class PropertyInterface:
             
         else:
             raise NotImplementedError(f"Unknown property type '{self.type}'")
+        return binary
