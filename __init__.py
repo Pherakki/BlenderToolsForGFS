@@ -25,6 +25,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
+    from .src.BlenderIO.Properties.Model import GFSToolsModelProperties
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
@@ -45,6 +46,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshUnknownFloatsPanel
+    from .src.BlenderIO.UI.Model import OBJECT_PT_GFSToolsModelDataPanel
     from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
@@ -72,6 +74,7 @@ def init_bpy():
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
+        OBJECT_PT_GFSToolsModelDataPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,
         OBJECT_PT_GFSToolsBoneGenericPropertyPanel,
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd,
@@ -87,7 +90,8 @@ def init_bpy():
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
         (bpy.types.Bone,     "GFSTOOLS_BoneProperties",            GFSToolsBoneProperties           ),
-        (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          )
+        (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
+        (bpy.types.Armature, "GFSTOOLS_ModelProperties",           GFSToolsModelProperties          )
     )
     
     
