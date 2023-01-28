@@ -5,7 +5,7 @@ from .Operator import ExportGFS
 
 class GFSExportSubmenu(bpy.types.Menu):
     bl_idname = "OBJECT_MT_GFSImportExport_export_submenu"
-    bl_label = "GFS"
+    bl_label = "GFS (.GMD, .GFS, .GAP)"
 
     def draw(self, context):
         layout = self.layout
