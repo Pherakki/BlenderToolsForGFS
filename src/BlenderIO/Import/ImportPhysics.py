@@ -11,5 +11,5 @@ def import_physics(gfs, bpy_obj):
         wtr.rw_obj(gfs.physics_data, 0x01105100)
         stream.seek(0)
         
-        string_data = '0x' + ''.join(f"{elem:0>2X}" for elem in stream.read())
-        bpy_obj["physics"] = string_data
+        string_data = ''.join(f"{elem:0>2X}" for elem in stream.read())
+        bpy_obj.data.GFSTOOLS_ModelProperties.physics_blob = string_data
