@@ -26,6 +26,25 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
                                               options={'HIDDEN'},
                                           )
     
+    version: bpy.props.EnumProperty(items=(
+            ("0x01104920", "0x01104920", ""),
+            ("0x01104950", "0x01104950", ""),
+            ("0x01105000", "0x01105000", ""),
+            ("0x01105010", "0x01105010", ""),
+            ("0x01105020", "0x01105020", ""),
+            ("0x01105030", "0x01105030", ""),
+            ("0x01105040", "0x01105040", ""),
+            ("0x01105050", "0x01105050", ""),
+            ("0x01105060", "0x01105060", ""),
+            ("0x01105070", "0x01105070", ""),
+            ("0x01105080", "0x01105080", ""),
+            ("0x01105090", "0x01105090", ""),
+            ("0x01105100", "0x01105100", "")
+        ),
+        name="Version",
+        default="0x01105100"
+    )
+    
     def export_file(self, context, filepath):
         # Figure out the mode sanitising later
         # current_mode = bpy.context.active_object.mode
@@ -42,7 +61,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_0x000100F8(gfs, selected_model)
         #bpy.ops.object.mode_set(current_mode)
         
-        gb = gfs.to_binary(0x01105100)
+        gb = gfs.to_binary(int(self.version, 0x10))
         gb.write(filepath)
         
         return {'FINISHED'}
