@@ -72,6 +72,16 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
                                               options={'HIDDEN'},
                                           )
     
+    def find_selected_model(self, context):
+        sel_obj = context.active_object
+        if sel_obj is None:
+            return None
+        while sel_obj.parent is not None:
+            sel_obj = sel_obj.parent
+        if sel_obj.type == "ARMATURE":
+            return sel_obj
+        return None
+
     def import_file(self, context, armature, filepath):
         bpy.ops.object.select_all(action='DESELECT')
 
