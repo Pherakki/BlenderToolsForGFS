@@ -4,7 +4,7 @@ import bpy
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     has_unknown_floats:  bpy.props.BoolProperty(name="Active")
     
-    unknown_0x12:    bpy.props.FloatProperty(name="unknown 0x12")
+    unknown_0x12:    bpy.props.IntProperty(name="unknown 0x12")
     unknown_float_1: bpy.props.FloatProperty(name="unknown 1")
     unknown_float_2: bpy.props.FloatProperty(name="unknown 2")
     
