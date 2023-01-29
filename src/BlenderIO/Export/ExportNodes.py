@@ -7,8 +7,6 @@ from ..Utils.Maths import convert_rotation_to_quaternion
 
 
 def export_node_tree(gfs, armature):
-    bone_list = {bone.name: i for i, bone in enumerate(armature.data.bones)}
-
     # Get the rest pose if it exists
     rest_pose_action = None
     if armature.animation_data is not None:
@@ -18,13 +16,22 @@ def export_node_tree(gfs, armature):
                 rest_pose_action = rest_pose_nla.strips[0].action
     rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
     
+    # Add root node
+    root_node = gfs.add_node(-1, armature.data.GFSTOOLS_ModelProperties.root_node_name,
+                              [0., 0., 0.], [0., 0., 0., 1.],  [1., 1., 1.], 
+                              1.0, 
+                              [1., 0., 0., 0.,
+                               0., 1., 0., 0.,
+                               0., 0., 1., 0.])
+    bone_list = {bone.name: i for i, bone in enumerate([root_node, *armature.data.bones])}
+    #bone_list = {bone.name: i for i, bone in enumerate(armature.data.bones)}
     # Export each bone as a node
     for bone in armature.data.bones:
         # Reconstruct the rest pose transform
         bone_parent = bone.parent
         bind_matrix = bone.matrix_local
         if bone_parent is None:
-            parent_id = -1
+            parent_id = 0
             local_bind_matrix = bind_matrix
         else:
             parent_id = bone_list[bone_parent.name]
@@ -36,7 +43,7 @@ def export_node_tree(gfs, armature):
         position = [p.x, p.y, p.z]
         rotation = [r.x, r.y, r.z, r.w]
         scale    = [s.x, s.y, s.z]
-
+        
         bpm = [
             bind_matrix[0][0], bind_matrix[0][1], bind_matrix[0][2], bind_matrix[0][3],
             bind_matrix[1][0], bind_matrix[1][1], bind_matrix[1][2], bind_matrix[1][3],
@@ -50,8 +57,6 @@ def export_node_tree(gfs, armature):
         # Export the custom properties
         for prop in bone.GFSTOOLS_BoneProperties.properties:
             node.add_property(*prop.extract_data(prop))
-
-    return bone_list
 
 
 #####################

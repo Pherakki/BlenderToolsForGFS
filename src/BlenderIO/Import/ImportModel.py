@@ -29,10 +29,14 @@ def import_model(gfs, name):
         nodes_with_meshes.add(mesh.node)
     
     rigged_bones, unrigged_bones = filter_rigging_bones_and_ancestors(gfs)
-    
+
     meshes_to_rename         = set.intersection(rigged_bones,   nodes_with_meshes)
     bones_to_ignore          = set.intersection(unrigged_bones, nodes_with_meshes)
     unrigged_bones_to_import = set.difference(unrigged_bones, bones_to_ignore)
+        
+    # Get rid of root node
+    bones_to_ignore.add(0)
+
     gfs_to_bpy_bone_map = {}
     bpy_bone_counter = 0
     # upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
@@ -45,11 +49,11 @@ def import_model(gfs, name):
 
         if i not in bones_to_ignore:            
             bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
-            if node.parent_idx != -1:
-                bpy_bone.parent  = bpy_nodes[node.parent_idx] 
-            bpy_nodes[i]       = bpy_bone
+            if node.parent_idx > -1:
+                bpy_bone.parent = bpy_nodes[node.parent_idx] 
+            bpy_nodes[i]           = bpy_bone
             gfs_to_bpy_bone_map[i] = bpy_bone_counter
-            bpy_bone_counter += 1
+            bpy_bone_counter      += 1
             
         bpy_node_names[i]  = node.name
         bone_transforms[i] = matrix

@@ -37,7 +37,7 @@ def export_mesh_data(gfs, armature):
 
 
 def create_mesh(gfs, bpy_mesh_object, armature, node_id):
-    bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
+    bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
     mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
     
