@@ -17,11 +17,14 @@ def export_mesh_data(gfs, armature):
         node_id = len(gfs.bones)
         
         bind_pose_matrix = armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world
-        pos, rot, scl = bind_pose_matrix.decompose()
+        
         # Keep this code around in case you ever allow meshes to be 
         # parented to anything other that RootNode
         parent_idx = 0
-        #bind_pose_matrix = armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
+        parent_relative_bind_pose_matrix = bind_pose_matrix
+        #parent_relative_bind_pose_matrix = armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
+        pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
+        
         bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
         gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., bpm)        
         
