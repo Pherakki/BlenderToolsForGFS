@@ -149,13 +149,14 @@ class ModelInterface:
             
         if binary.flags.has_skin_data:
             # GENERATE SKINNING DATA STRUCTURE
-            world_matrices = [None]*len(bones)
-            for i, bone in enumerate(bones):
-                local_matrix = transforms_to_matrix(bone.position, bone.rotation, [1., 1., 1.])
-                if bone.parent_idx > -1:
-                    world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent_idx], local_matrix)
-                else:
-                    world_matrices[i] = local_matrix
+            # world_matrices = [None]*len(bones)
+            # for i, bone in enumerate(bones):
+            #     local_matrix = transforms_to_matrix(bone.position, bone.rotation, [1., 1., 1.])
+            #     if bone.parent_idx > -1:
+            #         world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent_idx], local_matrix)
+            #     else:
+            #         world_matrices[i] = local_matrix
+            world_matrices = [bone.bind_pose_matrix for bone in bones]
             
             ibpms = []
             matrix_palette = []
@@ -169,8 +170,9 @@ class ModelInterface:
                         for idx, wgt in zip(vertex.indices[::-1], vertex.weights[::-1]):
                             if wgt > 0:
                                 indices.add(idx)
-                                
-                    for idx in sorted(indices):
+                    
+                    index_lookup[(mesh_node_id, 0)] = 0         
+                    for idx in sorted(indices):                           
                         inv_index_matrix = invert_pos_rot_matrix(bones[idx].bind_pose_matrix)
                         #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
                         ibpm = multiply_transform_matrices(inv_index_matrix, node_matrix)
@@ -201,9 +203,7 @@ class ModelInterface:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
                     for v in mesh.vertices:
-                        # Need to factor in remapped nodes
-                        #v.indices = [idx for idx in v.indices[::-1]]
-                        indices = [index_lookup.get((mesh_node_id, idx), 0) for idx in v.indices]
+                        indices = [old_node_id_to_new_node_id_map[index_lookup[(mesh_node_id, idx)]] for idx in v.indices]
                         for wgt_idx, wgt in enumerate(v.weights):
                             if wgt == 0:
                                 indices[wgt_idx] = 0
