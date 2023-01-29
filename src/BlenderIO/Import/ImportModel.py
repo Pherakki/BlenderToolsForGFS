@@ -23,6 +23,18 @@ def import_model(gfs, name):
     bpy_node_names  = [None]*len(gfs.bones)
     bpy_nodes       = [None]*len(gfs.bones)
     bone_transforms = [None]*len(gfs.bones)
+    
+    nodes_with_meshes = set()
+    for mesh in gfs.meshes:
+        nodes_with_meshes.add(mesh.node)
+    
+    rigged_bones, unrigged_bones = filter_rigging_bones_and_ancestors(gfs)
+    
+    meshes_to_rename         = set.intersection(rigged_bones,   nodes_with_meshes)
+    bones_to_ignore          = set.intersection(unrigged_bones, nodes_with_meshes)
+    unrigged_bones_to_import = set.difference(unrigged_bones, bones_to_ignore)
+    gfs_to_bpy_bone_map = {}
+    bpy_bone_counter = 0
     # upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
     #                             [ 0.,  0., -1.,  0.],
     #                             [ 0.,  1.,  0.,  0.],
@@ -31,34 +43,39 @@ def import_model(gfs, name):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
 
-        bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
-        if node.parent_idx != -1:
-            bpy_bone.parent  = bpy_nodes[node.parent_idx] 
+        if i not in bones_to_ignore:            
+            bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
+            if node.parent_idx != -1:
+                bpy_bone.parent  = bpy_nodes[node.parent_idx] 
+            bpy_nodes[i]       = bpy_bone
+            gfs_to_bpy_bone_map[i] = bpy_bone_counter
+            bpy_bone_counter += 1
             
         bpy_node_names[i]  = node.name
-        bpy_nodes[i]       = bpy_bone
         bone_transforms[i] = matrix
 
     bpy.ops.object.mode_set(mode="OBJECT")
     
-            
     for bpy_bone in main_armature.data.bones:
         bpy_bone.layers[0] = True
         bpy_bone.layers[1] = True
         bpy_bone.layers[2] = False
 
-    
-    for i in sorted(filter_used_bones(gfs)):
-        main_armature.data.bones[i].layers[0] = True
-        main_armature.data.bones[i].layers[1] = False
-        main_armature.data.bones[i].layers[2] = True
+    for i in sorted(unrigged_bones_to_import):
+        remapped_index = gfs_to_bpy_bone_map[i]
+        main_armature.data.bones[remapped_index].layers[0] = True
+        main_armature.data.bones[remapped_index].layers[1] = False
+        main_armature.data.bones[remapped_index].layers[2] = True
     
     bpy.context.view_layer.objects.active = main_armature
         
     ###################
     # PUSH EXTRA DATA #
     ###################
-    for node in gfs.bones:
+    for i, node in enumerate(gfs.bones):
+        if i in bones_to_ignore:
+            continue
+        
         bpy_bone = main_armature.data.bones[node.name]
         bpy_bone.GFSTOOLS_BoneProperties.unknown_float = node.unknown_float
         
@@ -94,9 +111,15 @@ def import_model(gfs, name):
                 item.bytes_data = '0x' + ''.join(rf"{e:0>2X}" for e in prop.data)
     
 
-    # Import meshes and armature-parent them to the relevant pinned armature
-    for i, mesh in enumerate(gfs.meshes):
-        import_mesh("mesh", i, mesh, bpy_nodes, bpy_node_names, main_armature, bpy_node_names[mesh.node], bone_transforms[mesh.node])
+    # Import meshes and parent them to the armature
+    mesh_groups = {idx: [] for idx in sorted(set((mesh.node for mesh in gfs.meshes)))}
+    for mesh in gfs.meshes:
+        mesh_groups[mesh.node].append(mesh)
+    for node_idx, meshes in mesh_groups.items():
+        mesh_name = bpy_node_names[node_idx]
+        if node_idx in meshes_to_rename:
+            mesh_name += "_mesh"
+        import_mesh_group(mesh_name, bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
     
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
@@ -115,10 +138,14 @@ def import_model(gfs, name):
     return main_armature
 
 
-def filter_used_bones(gfs):
+def filter_rigging_bones_and_ancestors(gfs):
     used_indices = set()
     for mesh in gfs.meshes:
-        if mesh.vertices[0].indices is not None:
+        if mesh.vertices[0].indices is None:
+            # Because we're going to rig the mesh to the bone later
+            # Can get rid of this if we replace that with bone parenting
+            used_indices.add(mesh.node)
+        else:
             for v in mesh.vertices:
                 used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
     bones_to_check = sorted(used_indices)
@@ -130,15 +157,38 @@ def filter_used_bones(gfs):
     
     unused_indices = set([i for i in range(len(gfs.bones))]).difference(used_indices)
 
-    return unused_indices
+    return used_indices, unused_indices
 
 
-def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_node_name, transform):
+def import_mesh_group(mesh_name, parent_node_name, idx, meshes, bpy_node_names, armature, transform):
+    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature)
+
+    bpy_mesh_object.parent = armature
+    pos, quat, scale = transform.decompose()
+    bpy_mesh_object.rotation_mode = "QUATERNION"
+    bpy_mesh_object.location = pos
+    bpy_mesh_object.rotation_quaternion = quat
+    bpy_mesh_object.scale = scale
+
+    for i, mesh in enumerate(meshes[1:]):
+        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature)
+    
+        child_bpy_mesh_object.parent = bpy_mesh_object
+        child_bpy_mesh_object.rotation_mode = "QUATERNION"
+        child_bpy_mesh_object.location = [0., 0., 0.]
+        child_bpy_mesh_object.rotation_quaternion = [1., 0., 0., 0.]
+        child_bpy_mesh_object.scale = [1, 1., 1.]
+    
+    
+def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature):
     # Cache the Blender states we are going to change
     prev_obj = bpy.context.view_layer.objects.active
     
     # What about vertex merging?
-    meshobj_name = f"{name}_{idx}"
+    if idx is None:
+        meshobj_name = mesh_name
+    else:
+        meshobj_name = f"{mesh_name}_{idx}"
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
     bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
     
@@ -222,20 +272,12 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
     
     bpy_mesh.update()
     bpy_mesh.update()
-    
-    # Set origin - mesh is going to be clamped here by the constraint
-    # anyway, but it's probably useful for people exporting to formats where
-    # the constraint can't be carried over
-    pos, quat, scale = transform.decompose()
-    bpy_mesh_object.rotation_mode = "QUATERNION"
-    bpy_mesh_object.location = pos
-    bpy_mesh_object.rotation_quaternion = quat
-    bpy_mesh_object.scale = scale
-    
+
     # Activate rigging
-    bpy_mesh_object.parent = armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
+    
+    return bpy_mesh_object
 
     
     ########################
@@ -275,7 +317,11 @@ def import_mesh(name, idx, mesh, bpy_nodes, bpy_node_names, armature, parent_nod
         bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_2  = mesh.unknown_float_2
     
     bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_box    = mesh.keep_bounding_box
-    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere 
+    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere
+    if len(mesh.vertices):
+        bpy_mesh.GFSTOOLS_MeshProperties.export_normals   = mesh.vertices[0].normal   is not None
+        bpy_mesh.GFSTOOLS_MeshProperties.export_tangents  = mesh.vertices[0].tangent  is not None
+        bpy_mesh.GFSTOOLS_MeshProperties.export_binormals = mesh.vertices[0].binormal is not None
     
     bpy.context.view_layer.objects.active = prev_obj
 
@@ -430,7 +476,8 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light.GFSTOOLS_LightProperties.flag_31 = light.binary.flags.flag_31
     
     bpy_light.GFSTOOLS_LightProperties.color_1 = light.binary.color_1
-    bpy_light.color = light.binary.color_2
+    bpy_light.color = light.binary.color_2[:3]
+    bpy_light.GFSTOOLS_LightProperties.alpha = light.binary.color_2[3]
     bpy_light.GFSTOOLS_LightProperties.color_3 = light.binary.color_3
     
     if light.binary.inner_radius is not None: bpy_light.GFSTOOLS_LightProperties.inner_radius = light.binary.inner_radius
