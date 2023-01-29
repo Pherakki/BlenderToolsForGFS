@@ -100,19 +100,7 @@ def extract_vertex_data(mesh_obj, bone_names):
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces, vgroup_verts = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor)
-
-    # Remap any groups that were culled in the split...
-    old_groups = get_all_nonempty_vertex_groups(mesh_obj)
-    for i, group in enumerate(old_groups):
-        bone_name = group.name
-        bone_id = bone_names[bone_name]
-        old_groups[i] = bone_id
-
-    group_map = {old_groups.index(bone_id) : new_idx for new_idx, bone_id in enumerate(vgroup_verts.keys())}
-    if export_verts[0].indices is not None:
-        for vert in export_verts:
-            vert.indices = [group_map[idx] for idx in vert.indices]
+    export_verts, export_faces = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor)
     
     return export_verts, export_faces
 
@@ -139,15 +127,17 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     exported_vertices = []
     vgroup_verts = {}
     faces = [{l: mesh.loops[l].vertex_index for l in f.loop_indices} for f in mesh.polygons]
-    group_map = {g.index: i for i, g in enumerate(get_all_nonempty_vertex_groups(mesh_obj))}
+    nonempty_groups = get_all_nonempty_vertex_groups(mesh_obj)
 
+    group_map = {g.index: bone_names[g.name] for g in nonempty_groups}
+    
     map_ids = list(mesh.uv_layers.keys())[:8]
     colour_map = list(mesh.vertex_colors.keys())[:2]
     n_colours = len(colour_map)
 
-    use_normals   = True
-    use_tangents  = False
-    use_binormals = False
+    use_normals   = mesh.GFSTOOLS_MeshProperties.export_normals
+    use_tangents  = mesh.GFSTOOLS_MeshProperties.export_tangents
+    use_binormals = mesh.GFSTOOLS_MeshProperties.export_binormals
     map_name = map_ids[0] if len(map_ids) else 'dummy'
     can_export_tangents = has_uvs and mesh.uv_layers.get(map_name) is not None and (use_normals and (use_tangents or use_binormals))
 
@@ -213,12 +203,10 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
             group_bone_ids = [get_bone_id(mesh_obj, bone_names, grp) for grp in group_indices]
             group_weights = [grp.weight for grp in group_indices]
 
-
             # Normalise the group weights
             total_weight = sum(group_weights)
             if total_weight > 0.:
                 group_weights = [wght / total_weight for wght in group_weights]
-
 
             vb = VertexBinary()
             vb.position = vertex.co
@@ -237,7 +225,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
             if len(unique_value[4]): vb.binormal = unique_value[4][0]
             if len(group_indices):
                 n_extra = 4 - len(group_indices)
-                vb.indices = [*(group_map[grp.group] for grp in group_indices), *([0]*n_extra)]
+                vb.indices = [*group_bone_ids, *([0]*n_extra)]
                 vb.weights = [*group_weights, *([0]*n_extra)]
 
             n_verts = len(exported_vertices)
@@ -247,12 +235,8 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
                 face_idx = lidx_to_fidx[l]
                 faces[face_idx][l] = n_verts
 
-            for group_bone_id, weight in zip(group_bone_ids, group_weights):
-                if group_bone_id not in vgroup_verts:
-                    vgroup_verts[group_bone_id] = []
-                vgroup_verts[group_bone_id].append(n_verts)
     faces = [list(face_verts.values()) for face_verts in faces]
-    return exported_vertices, faces, vgroup_verts
+    return exported_vertices, faces
 
 def get_all_nonempty_vertex_groups(mesh_obj):
     nonempty_vgs = set()
