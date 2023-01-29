@@ -5,10 +5,10 @@ import bpy
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 
 
-def export_materials_and_textures(gfs, bpy_meshes):
+def export_materials_and_textures(gfs, bpy_material_names):
     texture_names = set()
-    for bpy_mesh_object in bpy_meshes:
-        bpy_material = bpy_mesh_object.active_material
+    for bpy_material_name in bpy_material_names:
+        bpy_material = bpy.data.materials[bpy_material_name]
         
         mat = gfs.add_material(bpy_material.name)
         mat.flag_0              = bpy_material.GFSTOOLS_MaterialProperties.flag_0

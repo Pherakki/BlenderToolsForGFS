@@ -12,53 +12,69 @@ from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary impo
 
 def export_mesh_data(gfs, armature):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
+    material_names = set()
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
-        pos = bpy_mesh_object.location
-        rot = convert_rotation_to_quaternion(bpy_mesh_object.rotation_quaternion, bpy_mesh_object.rotation_euler, bpy_mesh_object.rotation_mode)
-        scl = bpy_mesh_object.scale
-        gfs.add_node(1, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., None) # Change parent to 0 when you import root node as armature        
         
-        bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
-        mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
-        vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
-        mesh = gfs.add_mesh(node_id, vertices, 
-                            bpy_mesh_object.active_material.name, 
-                            [fidx for face in indices for fidx in face], 
-                            [], # Morphs! 
-                            mesh_props.unknown_0x12, 
-                            mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
-                            mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
-                            mesh_props.export_bounding_box, 
-                            mesh_props.export_bounding_sphere)
+        bind_pose_matrix = armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world
+        pos, rot, scl = bind_pose_matrix.decompose()
+        # Keep this code around in case you ever allow meshes to be 
+        # parented to anything other that RootNode
+        parent_idx = 0
+        #bind_pose_matrix = armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
+        bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
+        gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., bpm)        
         
-        mesh.flag_5 = mesh_props.flag_5
-        mesh.flag_7 = mesh_props.flag_7
-        mesh.flag_8 = mesh_props.flag_8
-        mesh.flag_9 = mesh_props.flag_9
-        mesh.flag_10 = mesh_props.flag_10
-        mesh.flag_11 = mesh_props.flag_11
-        mesh.flag_13 = mesh_props.flag_13
-        mesh.flag_14 = mesh_props.flag_14
-        mesh.flag_15 = mesh_props.flag_15
-        mesh.flag_16 = mesh_props.flag_16
-        mesh.flag_17 = mesh_props.flag_17
-        mesh.flag_18 = mesh_props.flag_18
-        mesh.flag_19 = mesh_props.flag_19
-        mesh.flag_20 = mesh_props.flag_20
-        mesh.flag_21 = mesh_props.flag_21
-        mesh.flag_22 = mesh_props.flag_22
-        mesh.flag_23 = mesh_props.flag_23
-        mesh.flag_24 = mesh_props.flag_24
-        mesh.flag_25 = mesh_props.flag_25
-        mesh.flag_26 = mesh_props.flag_26
-        mesh.flag_27 = mesh_props.flag_27
-        mesh.flag_28 = mesh_props.flag_28
-        mesh.flag_29 = mesh_props.flag_29
-        mesh.flag_30 = mesh_props.flag_30
-        mesh.flag_31 = mesh_props.flag_31
-    return meshes
+        material_names.add(create_mesh(gfs, bpy_mesh_object, armature, node_id))
+        attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
+        for bpy_submesh_object in attached_meshes:
+            material_names.add(create_mesh(gfs, bpy_submesh_object, armature, node_id))
+        
+    return sorted(material_names)
 
+
+def create_mesh(gfs, bpy_mesh_object, armature, node_id):
+    bone_names = {bn.name: i for i, bn in enumerate(armature.data.bones)}
+    mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
+    vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
+    
+    mesh = gfs.add_mesh(node_id, vertices, 
+                        bpy_mesh_object.active_material.name, 
+                        [fidx for face in indices for fidx in face], 
+                        [], # Morphs! 
+                        mesh_props.unknown_0x12, 
+                        mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
+                        mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
+                        mesh_props.export_bounding_box, 
+                        mesh_props.export_bounding_sphere)
+    
+    mesh.flag_5 = mesh_props.flag_5
+    mesh.flag_7 = mesh_props.flag_7
+    mesh.flag_8 = mesh_props.flag_8
+    mesh.flag_9 = mesh_props.flag_9
+    mesh.flag_10 = mesh_props.flag_10
+    mesh.flag_11 = mesh_props.flag_11
+    mesh.flag_13 = mesh_props.flag_13
+    mesh.flag_14 = mesh_props.flag_14
+    mesh.flag_15 = mesh_props.flag_15
+    mesh.flag_16 = mesh_props.flag_16
+    mesh.flag_17 = mesh_props.flag_17
+    mesh.flag_18 = mesh_props.flag_18
+    mesh.flag_19 = mesh_props.flag_19
+    mesh.flag_20 = mesh_props.flag_20
+    mesh.flag_21 = mesh_props.flag_21
+    mesh.flag_22 = mesh_props.flag_22
+    mesh.flag_23 = mesh_props.flag_23
+    mesh.flag_24 = mesh_props.flag_24
+    mesh.flag_25 = mesh_props.flag_25
+    mesh.flag_26 = mesh_props.flag_26
+    mesh.flag_27 = mesh_props.flag_27
+    mesh.flag_28 = mesh_props.flag_28
+    mesh.flag_29 = mesh_props.flag_29
+    mesh.flag_30 = mesh_props.flag_30
+    mesh.flag_31 = mesh_props.flag_31
+    
+    return bpy_mesh_object.active_material.name
 
 #####################
 # PRIVATE FUNCTIONS #
