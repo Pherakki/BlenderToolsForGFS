@@ -17,7 +17,7 @@ class MaterialInterface:
         # Flags
         self.flag_0              = None
         self.flag_1              = None
-        self.flag_2              = None
+        self.enable_specular     = None
         self.flag_3              = None
         self.use_vertex_colors   = None
         self.flag_5              = None
@@ -39,12 +39,13 @@ class MaterialInterface:
         self.flag_31             = None
         
         # Presumably some of these can be removed...
-        self.ambient = None
-        self.diffuse = None
-        self.specular = None
-        self.emissive = None
+        self.name         = None
+        self.ambient      = None
+        self.diffuse      = None
+        self.specular     = None
+        self.emissive     = None
         self.reflectivity = None
-        self.outline_idx = None
+        self.outline_idx  = None
         self.draw_method  = None
         self.unknown_0x51 = None
         self.unknown_0x52 = None
