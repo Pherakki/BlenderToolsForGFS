@@ -24,7 +24,7 @@ def export_lights(gfs, armature):
             type_id = 3
         else:
             raise NotImplementedError("Internal error: did not recognise light type '{props.type}'")
-        light = gfs.add_light(node_idx, type_id, props.color_1, list(bpy_light.color), props.color_3)
+        light = gfs.add_light(node_idx, type_id, props.color_1, [*list(bpy_light.color), props.alpha], props.color_3)
         
         light.unknown_0x28 = props.unknown_0x28
         light.unknown_0x2C = props.unknown_0x2C

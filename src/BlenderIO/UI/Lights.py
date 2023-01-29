@@ -20,6 +20,7 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
         
         ctr = layout.column()
         
+        ctr.prop(light.GFSTOOLS_LightProperties, "alpha")
         ctr.prop(light.GFSTOOLS_LightProperties, "color_1")
         ctr.prop(light.GFSTOOLS_LightProperties, "color_3")
         
