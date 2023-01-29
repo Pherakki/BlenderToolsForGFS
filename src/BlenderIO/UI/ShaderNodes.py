@@ -10,6 +10,8 @@ class OBJECT_PT_GFSToolsTextureRefPanel(bpy.types.Panel):
     
     @classmethod
     def poll(self, context):
+        if context.active_node is None:
+            return False
         is_required_area      = context.area.ui_type     == "ShaderNodeTree"
         is_required_node_type = context.active_node.type == "TEX_IMAGE"
         return is_required_area and is_required_node_type
