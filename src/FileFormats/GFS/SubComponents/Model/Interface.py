@@ -166,7 +166,7 @@ class ModelInterface:
                 if mesh_binary.flags.has_weights:
                     indices = set()
                     for vertex in mesh_binary.vertices:
-                        for idx, wgt in zip(vertex.indices[::-1], vertex.weights):
+                        for idx, wgt in zip(vertex.indices[::-1], vertex.weights[::-1]):
                             if wgt > 0:
                                 indices.add(idx)
                                 
