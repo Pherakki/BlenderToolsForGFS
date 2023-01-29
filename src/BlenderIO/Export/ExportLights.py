@@ -13,7 +13,7 @@ def export_lights(gfs, armature):
         if bpy_light.parent_type != "BONE":
             continue
         
-        node_idx = armature.data.bones.index(bpy_light.parent_bone.name)
+        node_idx = gfs.bones.index(bpy_light.parent_bone)
         props = bpy_light.GFSTOOLS_LightProperties
         
         if props.dtype == "TYPE1":
