@@ -68,7 +68,6 @@ class ModelInterface:
                 bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
-
                     
         return bones, meshes, cameras, lights, morphs, keep_bounding_box, keep_bounding_sphere, flag_3
         

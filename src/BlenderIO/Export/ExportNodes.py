@@ -50,7 +50,7 @@ def export_node_tree(gfs, armature):
         # Export the custom properties
         for prop in bone.GFSTOOLS_BoneProperties.properties:
             node.add_property(*prop.extract_data(prop))
-        
+
     return bone_list
 
 
