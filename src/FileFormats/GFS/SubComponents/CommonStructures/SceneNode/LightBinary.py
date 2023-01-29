@@ -49,8 +49,8 @@ class LightBinary(Serializable):
         self.color_2 = None
         self.color_3 = None # Always [1., 1., 1., 1.]
         
-        self.blur_radius = None
-        self.lum_radius  = None
+        self.inner_radius = None
+        self.outer_radius = None
         
         # Hacky for now, fix if any correspondences between light types is found
         
@@ -94,11 +94,11 @@ class LightBinary(Serializable):
             out += f"\n{self.unknown_0x28} {self.unknown_0x2C} {self.unknown_0x30}"
         elif self.type == 2:
             out += f"\n{self.unknown_0x34} {self.unknown_0x38} {self.unknown_0x3C}"
-            out += f"\n{self.blur_radius} {self.lum_radius} {self.unknown_0x48} {self.unknown_0x4C} {self.unknown_0x50}"
+            out += f"\n{self.inner_radius} {self.outer_radius} {self.unknown_0x48} {self.unknown_0x4C} {self.unknown_0x50}"
         elif self.type == 3:
             out += f"\n{self.unknown_0x54} {self.unknown_0x58} {self.unknown_0x5C} {self.unknown_0x60} "
             out += f"{self.unknown_0x64} {self.unknown_0x68} {self.unknown_0x6C} {self.unknown_0x70} "
-            out += f"\n{self.blur_radius} {self.lum_radius} {self.unknown_0x7C} {self.unknown_0x80} {self.unknown_0x84}"
+            out += f"\n{self.inner_radius} {self.outer_radius} {self.unknown_0x7C} {self.unknown_0x80} {self.unknown_0x84}"
             
         return out
             
@@ -119,8 +119,8 @@ class LightBinary(Serializable):
             self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
             
             if self.flags.unk_setting:
-                self.blur_radius = rw.rw_float32(self.blur_radius)
-                self.lum_radius  = rw.rw_float32(self.lum_radius)
+                self.inner_radous = rw.rw_float32(self.inner_radius)
+                self.outer_radius = rw.rw_float32(self.outer_radius)
             else:
                 self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
                 self.unknown_0x4C = rw.rw_float32(self.unknown_0x4C)
@@ -137,8 +137,8 @@ class LightBinary(Serializable):
             self.unknown_0x70 = rw.rw_float32(self.unknown_0x70)
             
             if self.flags.unk_setting:
-                self.blur_radius = rw.rw_float32(self.blur_radius)
-                self.lum_radius  = rw.rw_float32(self.lum_radius)
+                self.inner_radius = rw.rw_float32(self.inner_radius)
+                self.outer_radius = rw.rw_float32(self.outer_radius)
             else:
                 self.unknown_0x7C = rw.rw_float32(self.unknown_0x7C)
                 self.unknown_0x80 = rw.rw_float32(self.unknown_0x80)
