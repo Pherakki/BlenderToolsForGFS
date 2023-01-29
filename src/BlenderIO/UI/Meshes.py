@@ -19,34 +19,49 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         
         ctr = layout.column()
         
+        # Bounding volumes
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_box")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_sphere")
         
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_5", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_7", default=True)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_8", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_9", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_10", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_11", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_13", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_14", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_15", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_16", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_17", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_18", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_19", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_20", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_21", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_22", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_23", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_24", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_25", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_26", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_27", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_28", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_29", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_30", default=False)
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_31", default=True)
+        # Vertex properties
+        # Normals
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_normals")
+        has_uv_maps = (len(mesh.uv_layers) > 0)
+        # Tangents
+        row_tangent = ctr.row()
+        row_tangent.prop(mesh.GFSTOOLS_MeshProperties, "export_tangents")
+        row_tangent.active = has_uv_maps
+        # Binormals
+        row_binormal = ctr.row()
+        row_binormal.prop(mesh.GFSTOOLS_MeshProperties, "export_binormals")
+        row_binormal.active = has_uv_maps
+        
+        # Flags
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_5")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_7")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_8")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_9")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_10")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_11")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_13")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_14")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_15")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_16")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_17")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_18")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_19")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_20")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_21")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_22")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_23")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_24")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_25")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_26")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_27")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_28")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_29")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_30")
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_31")
 
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_0x12")
         
