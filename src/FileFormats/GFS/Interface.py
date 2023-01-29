@@ -227,12 +227,14 @@ class GFSInterface:
     
     def add_material(self):
         material = MaterialInterface()
+        self.materials.append(material)
         return material
 
     def add_texture(self, name, data):
         texture = TextureInterface()
         texture.name = name
         texture.image_data = data
+        self.textures.append(texture)
         return texture
     
     def add_light(self, node_id, type, color_1, color_2, color_3):
@@ -243,7 +245,7 @@ class GFSInterface:
         li.binary.color_1 = color_1
         li.binary.color_2 = color_2
         li.binary.color_3 = color_3
-        
+        self.lights.append(li)
         return li.binary
 
     def add_cam(self, node_id, view_matrix, zNear, zFar, fov, aspect_ratio, unknown_0x50):
@@ -256,3 +258,5 @@ class GFSInterface:
         cam.binary.fov          = fov
         cam.binary.aspect_ratio = aspect_ratio
         cam.binary.unknown_0x50 = cam.binary.unknown_0x50
+        self.cameras.append(cam)
+        return cam
