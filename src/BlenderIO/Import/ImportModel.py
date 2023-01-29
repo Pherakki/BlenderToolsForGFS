@@ -11,7 +11,7 @@ from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 def import_model(gfs, name):
     initial_obj = bpy.context.view_layer.objects.active
 
-    armature_name = f"{name}_armature"
+    armature_name = name
     main_armature = bpy.data.objects.new(armature_name, bpy.data.armatures.new(armature_name))
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
