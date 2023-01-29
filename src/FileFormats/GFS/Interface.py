@@ -225,8 +225,9 @@ class GFSInterface:
         self.meshes.append(mesh)
         return mesh
     
-    def add_material(self):
+    def add_material(self, name):
         material = MaterialInterface()
+        material.name = name
         self.materials.append(material)
         return material
 

@@ -10,7 +10,7 @@ def export_materials_and_textures(gfs, bpy_meshes):
     for bpy_mesh_object in bpy_meshes:
         bpy_material = bpy_mesh_object.active_material
         
-        mat = gfs.add_material()
+        mat = gfs.add_material(bpy_material.name)
         mat.flag_0              = bpy_material.GFSTOOLS_MaterialProperties.flag_0
         mat.flag_1              = bpy_material.GFSTOOLS_MaterialProperties.flag_1
         mat.enable_specualar    = bpy_material.GFSTOOLS_MaterialProperties.enable_specular
