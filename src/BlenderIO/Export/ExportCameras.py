@@ -19,8 +19,10 @@ def export_cameras(gfs, armature):
         if bpy_camera_object.lens_unit != "FOV":
             raise NotImplementedError("Cameras must currently be exported with FOV units")
         
+        view_pos, view_rot, view_scl = bpy_camera_object.matrix_basis.decompose()
+        view_matrix = Matrix.Translation(view_pos) @ view_rot.to_matrix().to_4x4()
         gfs.add_camera(node_idx, 
-                       [elem for row in bpy_camera_object.matrix_local for elem in row],
+                       [elem for row in view_matrix for elem in row],
                        bpy_camera_object.clip_start,
                        bpy_camera_object.clip_end,
                        bpy_camera_object.lens,
