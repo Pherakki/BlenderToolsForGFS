@@ -2,7 +2,7 @@ import copy
 
 from ...Utils.Matrices import multiply_transform_matrices, normalise_transform_matrix_scale, invert_pos_rot_matrix
 from ...Utils.Matrices import transforms_to_matrix, transposed_mat4x4_to_mat4x3, mat4x3_to_transposed_mat4x4
-from ...Utils.Matrices import are_matrices_close
+from ...Utils.Matrices import are_transform_matrices_close
 
 from ..CommonStructures.SceneNode import NodeInterface
 from .Binary import ModelPayload
@@ -157,7 +157,7 @@ class ModelInterface:
             #         world_matrices[i] = local_matrix
             world_matrices = [bone.bind_pose_matrix for bone in bones]
             
-            ibpms = []
+            bpms = []
             matrix_palette = []
             matrix_cache = {}
             index_lookup = {}
@@ -172,28 +172,28 @@ class ModelInterface:
                     
                     index_lookup[(mesh_node_id, 0)] = 0         
                     for idx in sorted(indices):                           
-                        inv_index_matrix = invert_pos_rot_matrix(bones[idx].bind_pose_matrix)
+                        index_matrix = bones[idx].bind_pose_matrix
                         #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
-                        ibpm = multiply_transform_matrices(inv_index_matrix, node_matrix)
+                        bpm = multiply_transform_matrices(invert_pos_rot_matrix(node_matrix), index_matrix)
                         if idx not in matrix_cache:
                             matrix_cache[idx] = {}
-                            
+                        
                         matching_matrix_found = False
-                        for palette_idx, palette_ibpm in matrix_cache[idx].items():
-                            if all(are_matrices_close(ibpm, palette_ibpm, atol=0.01, rtol=0.001)):
+                        for palette_idx, palette_bpm in matrix_cache[idx].items():
+                            if all(are_transform_matrices_close(bpm, palette_bpm, rot_tol=0.001, trans_tol=0.01)):
                                 index_lookup[(mesh_node_id, idx)] = palette_idx
                                 matching_matrix_found = True
                                 break
                             
                         if not matching_matrix_found:
                             palette_idx = len(matrix_palette)
-                            matrix_cache[idx][palette_idx] = ibpm
+                            matrix_cache[idx][palette_idx] = bpm
                             matrix_palette.append(idx)
-                            ibpms.append(ibpm)
+                            bpms.append(bpm)
                             index_lookup[(mesh_node_id, idx)] = palette_idx
             
             binary.skinning_data.matrix_palette = matrix_palette
-            binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(ibpm) for ibpm in ibpms]
+            binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(invert_pos_rot_matrix(bpm)) for bpm in bpms]
             binary.skinning_data.bone_count = len(matrix_palette)
             
             # REMAP VERTEX INDICES
@@ -209,4 +209,4 @@ class ModelInterface:
                         v.indices = indices[::-1]
         
         return binary
-        
+    

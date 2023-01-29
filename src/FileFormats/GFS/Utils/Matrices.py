@@ -62,13 +62,46 @@ def multiply_transform_matrices(a, b):
 
 	return out
 
-def are_matrices_close(a, b, atol, rtol):
+def multiply_rotation_matrices(a, b):
+    out = [
+        0., 0., 0.,
+        0., 0., 0.,
+        0., 0., 0.
+    ]
+
+    row_size = 3
+    for i in range(0, 9, row_size):
+        for j in range(row_size):
+            out[i + j] = a[i + 0] * b[0*row_size + j] \
+                       + a[i + 1] * b[1*row_size + j] \
+                       + a[i + 2] * b[2*row_size + j]
+
+    return out
+
+def are_transform_matrices_close(a, b, rot_tol, trans_tol, debug=False):
     results = [False]*len(a)
-    for i, (ai, bi) in enumerate(zip(a, b)):
-        diff = (ai-bi)
-        results[i] = (diff < atol)
-        if bi > 0:
-            results[i] |= (diff/bi < rtol)
+    
+    # Check if rotations are close
+    rot_a = slice_rotation_from_transform(a)
+    rot_b = slice_rotation_from_transform(b)
+    inv_rot_b = transposed_mat3x3(rot_b)
+    
+    close_to_identity = multiply_rotation_matrices(rot_a, inv_rot_b)
+    close_to_identity[0] -= 1.
+    close_to_identity[4] -= 1.
+    close_to_identity[8] -= 1.
+    
+    for i in range(9):
+        results[i] = abs(close_to_identity[i]) < rot_tol
+    
+    # Check if translations are close
+    pos_a = slice_translation_from_transform(a)
+    pos_b = slice_translation_from_transform(b)
+    close_to_zero = [ai - bi for ai, bi in zip(pos_a, pos_b)]
+    
+    for i in range(3):
+        results[i+9] = abs(close_to_zero[i]) < trans_tol
+    
     return results
 
 """
@@ -88,6 +121,54 @@ def invert_matrix(AM, IM):
                 AM[i][j] = AM[i][j] - crScaler * AM[fd][j]
                 IM[i][j] = IM[i][j] - crScaler * IM[fd][j]
     return IM
+
+
+def slice_rotation_from_transform(matrix):
+    out = [
+        0., 0., 0.,
+        0., 0., 0.,
+        0., 0., 0.,
+    ]
+    
+    out[0]  = matrix[0]
+    out[1]  = matrix[1]
+    out[2]  = matrix[2]
+    out[3]  = matrix[4]
+    out[4]  = matrix[5]
+    out[5]  = matrix[6]
+    out[6]  = matrix[8]
+    out[7]  = matrix[9]
+    out[8]  = matrix[10]
+    
+    return out
+
+def slice_translation_from_transform(matrix):
+    out = [0., 0., 0.]
+    
+    out[0]  = matrix[3]
+    out[1]  = matrix[7]
+    out[2]  = matrix[11]
+    
+    return out
+
+
+def transposed_mat3x3(matrix):
+    out = [
+        0., 0., 0.,
+        0., 0., 0.,
+        0., 0., 0.,
+    ]
+    out[0]  = matrix[0]
+    out[1]  = matrix[3]
+    out[2]  = matrix[6]
+    out[3]  = matrix[1]
+    out[4]  = matrix[4]
+    out[5]  = matrix[7]
+    out[6]  = matrix[2]
+    out[7]  = matrix[5]
+    out[8]  = matrix[8]
+    
+    return out
 
 
 def transposed_mat4x4_to_mat4x3(ibpm):
