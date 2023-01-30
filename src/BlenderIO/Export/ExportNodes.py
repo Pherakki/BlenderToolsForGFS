@@ -7,6 +7,9 @@ from ..Utils.Maths import convert_rotation_to_quaternion
 
 
 def export_node_tree(gfs, armature):
+    gfs.keep_bounding_box    = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
+    gfs.keep_bounding_sphere = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
+    gfs.flag_3               = armature.data.GFSTOOLS_ModelProperties.flag_3
     # Get the rest pose if it exists
     rest_pose_action = None
     if armature.animation_data is not None:
