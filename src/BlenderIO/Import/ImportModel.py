@@ -18,6 +18,9 @@ def import_model(gfs, name):
     
     main_armature.data.GFSTOOLS_ModelProperties.root_node_name = gfs.bones[0].name
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box = gfs.keep_bounding_box
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.keep_bounding_sphere
+    main_armature.data.GFSTOOLS_ModelProperties.flag_3 = gfs.flag_3
     
     bpy.ops.object.mode_set(mode='EDIT')
     bpy_node_names  = [None]*len(gfs.bones)

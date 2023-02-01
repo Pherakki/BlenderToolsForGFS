@@ -21,3 +21,6 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         ctr.prop(armature.GFSTOOLS_ModelProperties, "root_node_name")
         ctr.prop(armature.GFSTOOLS_ModelProperties, "has_external_emt")
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_box")
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_sphere")
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "flag_3")
