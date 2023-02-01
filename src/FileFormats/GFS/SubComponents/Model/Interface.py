@@ -167,10 +167,8 @@ class ModelInterface:
                     indices = set()
                     for vertex in mesh_binary.vertices:
                         for idx, wgt in zip(vertex.indices[::-1], vertex.weights[::-1]):
-                            if wgt > 0:
-                                indices.add(idx)
-                    
-                    index_lookup[(mesh_node_id, 0)] = 0         
+                            indices.add(idx)
+                        
                     for idx in sorted(indices):                           
                         index_matrix = bones[idx].bind_pose_matrix
                         #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
