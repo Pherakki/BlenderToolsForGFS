@@ -19,6 +19,7 @@ def init_bpy():
     from .src.BlenderIO.Import import ImportGFS, ImportGAP
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export import ExportGFS
+    from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
@@ -56,8 +57,8 @@ def init_bpy():
         ImportGFS,
         ImportGAP,
         GFSImportSubmenu,
-        ExportGFS,         # Just register the operator so it can be used via script for testing
-        #GFSExportSubmenu  # Don't add a menu yet in case anybody thinks it's usable...
+        ExportGFS,
+        GFSExportSubmenu,
         MessagePopup,
         GFSToolsGenericProperty,
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
@@ -98,6 +99,7 @@ def init_bpy():
     LIST_ITEMS = (
         (bpy.types.TOPBAR_MT_file_import, menu_func_import),
         #(bpy.types.TOPBAR_MT_file_export, menu_func_export)
+        (bpy.types.TOPBAR_MT_file_export, menu_func_export)
     )
     
     return CLASSES, PROP_GROUPS, LIST_ITEMS
