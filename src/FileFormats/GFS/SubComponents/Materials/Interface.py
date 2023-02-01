@@ -292,6 +292,7 @@ class MaterialInterface:
         attr.data.shadow_threshold = shadow_threshold
         attr.data.shadow_factor    = shadow_factor
         
+        self.attributes.append(attr)
         return attr
 
     def add_attribute_1(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
@@ -314,6 +315,7 @@ class MaterialInterface:
         attr.data.unknown_0x28 = unknown_0x28
         attr.data.unknown_0x2C = unknown_0x2C
         
+        self.attributes.append(attr)
         return attr
     
     def add_outline_attribute(self, type, colour):
@@ -324,6 +326,7 @@ class MaterialInterface:
         attr.data.type   = type
         attr.data.colour = colour
         
+        self.attributes.append(attr)
         return attr
     
     def add_attribute_3(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
@@ -346,6 +349,7 @@ class MaterialInterface:
         attr.data.unknown_0x28 = unknown_0x28
         attr.data.unknown_0x2C = unknown_0x2C
         
+        self.attributes.append(attr)
         return attr    
 
     def add_attribute_4(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
@@ -378,6 +382,7 @@ class MaterialInterface:
         attr.data.unknown_0x45 = unknown_0x45
         attr.data.unknown_0x49 = unknown_0x49
         
+        self.attributes.append(attr)
         return attr
     
 
@@ -403,6 +408,7 @@ class MaterialInterface:
         attr.data.unknown_0x2C = unknown_0x2C
         attr.data.unknown_0x30 = unknown_0x30
         
+        self.attributes.append(attr)
         return attr
     
     def add_attribute_6(self, unknown_0x00, unknown_0x04, unknown_0x08):
@@ -414,6 +420,7 @@ class MaterialInterface:
         attr.data.unknown_0x04 = unknown_0x04
         attr.data.unknown_0x08 = unknown_0x08
         
+        self.attributes.append(attr)
         return attr
     
     def add_attribute_7(self):
@@ -421,4 +428,5 @@ class MaterialInterface:
         attr.ID = 7
         attr.data = Property7()
         
+        self.attributes.append(attr)
         return attr
