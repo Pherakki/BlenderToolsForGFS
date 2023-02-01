@@ -61,7 +61,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_0x000100F8(gfs, selected_model)
         #bpy.ops.object.mode_set(current_mode)
         
-        gb = gfs.to_binary(int(self.version, 0x10))
+        gb = gfs.to_binary(int(self.version, 0x10), add_end_container=True)
         gb.write(filepath)
         
         return {'FINISHED'}
