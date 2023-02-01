@@ -204,17 +204,21 @@ def mat4x3_to_transposed_mat4x4(bpm):
     out[0]  = bpm[0]
     out[1]  = bpm[4]
     out[2]  = bpm[8]
+    out[3]  = 0.
     out[4]  = bpm[1]
     out[5]  = bpm[5]
     out[6]  = bpm[9]
+    out[7]  = 0.
     out[8]  = bpm[2]
     out[9]  = bpm[6]
     out[10] = bpm[10]
+    out[11] = 0.
     
     # Translation part
     out[12] = bpm[3]
     out[13] = bpm[7]
     out[14] = bpm[11]
+    out[15] = 1.
     
     return out
 
