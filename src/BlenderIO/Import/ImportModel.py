@@ -264,7 +264,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     bpy_mesh.use_auto_smooth = True
     
     # Set materials
-    if mesh.material_name != "":
+    if mesh.material_name is not None:
         active_material = bpy.data.materials.get(mesh.material_name)
         if active_material is not None:
             bpy_mesh.materials.append(active_material)

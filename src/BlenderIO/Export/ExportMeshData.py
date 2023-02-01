@@ -42,7 +42,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id):
     vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
     
     mesh = gfs.add_mesh(node_id, vertices, 
-                        bpy_mesh_object.active_material.name, 
+                        bpy_mesh_object.active_material.name if bpy_mesh_object.active_material is not None else None, 
                         [fidx for face in indices for fidx in face], 
                         [], # Morphs! 
                         mesh_props.unknown_0x12, 
