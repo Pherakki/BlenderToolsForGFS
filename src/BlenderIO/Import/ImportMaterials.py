@@ -36,6 +36,7 @@ def import_materials(gfs, textures):
         bpy_material.GFSTOOLS_MaterialProperties.flag_0 = mat.flag_0
         bpy_material.GFSTOOLS_MaterialProperties.flag_1 = mat.flag_1
         bpy_material.GFSTOOLS_MaterialProperties.enable_specular = mat.enable_specular
+        bpy_material.GFSTOOLS_MaterialProperties.flag_3 = mat.flag_3
         bpy_material.GFSTOOLS_MaterialProperties.vertex_colors = mat.use_vertex_colors
         bpy_material.GFSTOOLS_MaterialProperties.flag_5 = mat.flag_5
         bpy_material.GFSTOOLS_MaterialProperties.flag_6 = mat.flag_6
