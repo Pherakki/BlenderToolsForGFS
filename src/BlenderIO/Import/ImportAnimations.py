@@ -191,7 +191,7 @@ def import_animations(gfs, armature, filename):
 
 
 
-def create_rest_pose(gfs, armature):
+def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
     prev_obj = bpy.context.view_layer.objects.active
     
     armature.animation_data_create()
@@ -206,9 +206,13 @@ def create_rest_pose(gfs, armature):
                              b.bind_pose_matrix[4:8],
                              b.bind_pose_matrix[8:12],
                              [0., 0., 0., 1.]]) for b in gfs.bones]
+    
     # Base action
     for node_idx, node in enumerate(gfs.bones):
-        bone_name = node.name
+        if node_idx not in gfs_to_bpy_bone_map:
+            continue
+        
+        bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
         
         actiongroup = action.groups.new(bone_name)
 

@@ -33,9 +33,9 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures)
-        armature  = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
         
-        create_rest_pose(gfs, armature)
+        create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
         import_animations(gfs, armature, filename)
         

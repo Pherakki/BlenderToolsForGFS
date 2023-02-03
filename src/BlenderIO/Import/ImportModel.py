@@ -142,7 +142,7 @@ def import_model(gfs, name):
     main_armature.rotation_quaternion = [.5**0.5, .5**.5, 0, 0]
     bpy.context.view_layer.objects.active = initial_obj
 
-    return main_armature
+    return main_armature, gfs_to_bpy_bone_map
 
 
 def filter_rigging_bones_and_ancestors(gfs):
