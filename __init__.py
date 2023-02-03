@@ -1,4 +1,4 @@
-from .src.FileFormats.GFS import GFSBinary
+from .src.FileFormats.GFS import GFSBinary, GFSInterface
     
 bl_info = {
         "name": "GFS Import/Export (.GMD/.GAP/.GFS)",
