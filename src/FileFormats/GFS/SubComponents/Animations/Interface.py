@@ -519,11 +519,12 @@ class MaterialAnimation:
         
         self.snap_tex0_uvs = False
         self.snap_tex1_uvs = False
+        self.snap_opacity  = False
         
         self.ambient_rgb  = {}
         self.diffuse_rgb  = {}
         self.specular_rgb = {}
-        self.specualr_power    = {}
+        self.specular_power = {}
         self.unknown_11   = {}
         self.opacity      = {}
         self.tex0_uv      = {}
