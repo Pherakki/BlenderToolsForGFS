@@ -7,8 +7,8 @@ class OBJECT_UL_GFSToolsGenericPropertyUIList(bpy.types.UIList):
         split.separator()
         split.prop(item, "dname")
         split.prop(item, "dtype")
-        if item.dtype == "UINT32":
-            split.prop(item, "uint32_data")
+        if item.dtype == "INT32":
+            split.prop(item, "int32_data")
         elif item.dtype == "FLOAT32":
             split.prop(item, "float32_data")
         elif item.dtype == "UINT8":

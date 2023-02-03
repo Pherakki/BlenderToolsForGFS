@@ -90,8 +90,8 @@ def import_model(gfs, name):
             item = bpy_bone.GFSTOOLS_BoneProperties.properties.add()
             item.dname = prop.name
             if prop.type == 1:
-                item.dtype = "UINT32"
-                item.uint32_data = prop.data
+                item.dtype = "INT32"
+                item.int32_data = prop.data
             elif prop.type == 2:
                 item.dtype = "FLOAT32"
                 item.float32_data = prop.data

@@ -4,7 +4,7 @@ import bpy
 class GFSToolsGenericProperty(bpy.types.PropertyGroup):
     dname:  bpy.props.StringProperty(name="", default="New Property")
     dtype: bpy.props.EnumProperty(items=(
-            ("UINT32",      "UInt32",    "A single 32-bit unsigned integer"      ),
+            ("INT32",       "Int32",     "A single 32-bit signed integer"        ),
             ("FLOAT32",     "Float32",   "A single 32-bit floating-point number."),
             ("UINT8",       "UInt8",     "A single 8-bit unsigned integer"       ),
             ("STRING",      "String",    "A UTF8-encoded string"                 ),
@@ -13,9 +13,9 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
             ("FLOAT32VEC3", "Float32*3", "A 3-vector of floating-point numbers"  ),
             ("FLOAT32VEC4", "Float32*4", "A 4-vector of floating-point numbers"  ),
             ("BYTES",       "Bytes",     "A blob of bytes."                      )
-        ), name="", default="UINT32")
+        ), name="", default="INT32")
 
-    uint32_data:      bpy.props.IntProperty(name="", min=0)
+    int32_data:       bpy.props.IntProperty(name="")
     float32_data:     bpy.props.FloatProperty(name="")
     uint8_data:       bpy.props.IntProperty(name="", min=0, max=255)
     string_data:      bpy.props.StringProperty(name="")
@@ -27,8 +27,8 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
     
     @staticmethod
     def extract_data(prop):
-        if   prop.dtype == "UINT32":
-            dtype = 1; prop_data = prop.uint32_data
+        if   prop.dtype == "INT32":
+            dtype = 1; prop_data = prop.int32_data
         elif prop.dtype == "FLOAT32":
             dtype = 2; prop_data = prop.float32_data
         elif prop.dtype == "UINT8":

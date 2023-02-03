@@ -24,7 +24,7 @@ class PropertyBinary(Serializable):
         self.size = rw.rw_uint32(self.size)
         
         if self.type == 1:
-            self.data = rw.rw_uint32(self.data)
+            self.data = rw.rw_int32(self.data)
         elif self.type == 2:
             self.data = rw.rw_float32(self.data)
         elif self.type == 3:
