@@ -40,7 +40,9 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id):
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
     mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
-    
+    for face in indices:
+        if len(face) != 3:
+            raise ReportableException(f"Mesh {bpy_mesh_object.name} contains non-triangular faces")
     mesh = gfs.add_mesh(node_id, vertices, 
                         bpy_mesh_object.active_material.name if bpy_mesh_object.active_material is not None else None, 
                         [fidx for face in indices for fidx in face], 
