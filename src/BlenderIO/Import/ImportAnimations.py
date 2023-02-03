@@ -7,7 +7,7 @@ from ...serialization.BinaryTargets import Writer
 from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
 
 
-def add_animation(track_name, anim, armature):
+def add_animation(track_name, anim, armature, is_parent_relative):
     action = bpy.data.actions.new(track_name)
 
     # Base action
@@ -51,43 +51,53 @@ def add_animation(track_name, anim, armature):
         scales = {k: v for k, v in data_track.scales.items()}
         scale_frames = list(data_track.scales.keys())
         
-        if len(rotations) == 0:
-            rotations = {0: [0., 0., 0., 1.]}
-            rotation_frames = []
-        if len(positions) == 0:
-            positions = {0: [0., 0., 0.]}
-            position_frames = []
-        if len(scales) == 0:
-            scales = {0: [1., 1., 1.]}
-            scale_frames = []
-        
-        # Now interpolate...
-        for frame in frames:
-            if frame not in rotations:
-                rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
-            if frame not in positions:
-                positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
-            if frame not in scales:
-                scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
-        
-        # Now create transform matrices...
-        o_rotations = {}
-        o_positions = {}
-        o_scales    = {}
-        for i in frames:
-            pos_mat = Matrix.Translation(positions[i])
-            rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
-            scl_mat = Matrix.Diagonal([*scales[i], 1])
-            transform = base_matrix.inverted() @ (pos_mat @ rot_mat @ scl_mat)
-            pos, rot, scl = transform.decompose()
+        # Transform the keyframes to rest relative if they're parent relative
+        if is_parent_relative:
+            if len(rotations) == 0:
+                rotations = {0: [0., 0., 0., 1.]}
+                rotation_frames = []
+            if len(positions) == 0:
+                positions = {0: [0., 0., 0.]}
+                position_frames = []
+            if len(scales) == 0:
+                scales = {0: [1., 1., 1.]}
+                scale_frames = []
             
-            o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]
-            o_positions[i] = [pos.x, pos.y, pos.z]
-            o_scales[i]    = [scl.x, scl.y, scl.z]
-          
-        rotations = o_rotations
-        positions = o_positions
-        scales = o_scales
+            # Now interpolate...
+            for frame in frames:
+                if frame not in rotations:
+                    rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
+                if frame not in positions:
+                    positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
+                if frame not in scales:
+                    scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
+            
+            # Now create transform matrices...
+            o_rotations = {}
+            o_positions = {}
+            o_scales    = {}
+            for i in frames:
+                pos_mat = Matrix.Translation(positions[i])
+                rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
+                scl_mat = Matrix.Diagonal([*scales[i], 1])
+                transform = base_matrix.inverted() @ (pos_mat @ rot_mat @ scl_mat)
+                pos, rot, scl = transform.decompose()
+                
+                o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]
+                o_positions[i] = [pos.x, pos.y, pos.z]
+                o_scales[i]    = [scl.x, scl.y, scl.z]
+              
+            rotations = o_rotations
+            positions = o_positions
+            scales = o_scales
+        else:
+            # WRONG but idk how else to import scales at the moment
+            # Blend scales are additive...
+            # Choices are to import blend scales relative to an animation,
+            # or import them relative to 1 and hope for the best
+            # Moreover, Blend animations only really "make sense" in the context
+            # of another animation. So bake them into an animation..?
+            scales = {k : [1 + vi for vi in v] for k, v in scales.items()}
           
         # Create animations
         if len(rotation_frames) != 0:
@@ -162,19 +172,19 @@ def import_animations(gfs, armature, filename):
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
-        add_animation(f"{filename}_{anim_idx}", anim, armature)
+        add_animation(f"{filename}_{anim_idx}", anim, armature, is_parent_relative=True)
         if anim.lookat_anims.right is not None:
-            add_animation(f"{filename}_{anim_idx}_right", anim.lookat_anims.right, armature)
-            add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_anims.left,  armature)
-            add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_anims.up,    armature)
-            add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature)
+            add_animation(f"{filename}_{anim_idx}_right", anim.lookat_anims.right, armature, is_parent_relative=False)
+            add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_anims.left,  armature, is_parent_relative=False)
+            add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_anims.up,    armature, is_parent_relative=False)
+            add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature, is_parent_relative=False)
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        add_animation(f"{filename}_blend_{anim_idx}", anim, armature)
+        add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_parent_relative=False)
     if gfs.unknown_animations.anim_1 is not None:
-        add_animation(f"{filename}_internal_0", gfs.unknown_animations.anim_1, armature)
-        add_animation(f"{filename}_internal_1", gfs.unknown_animations.anim_2, armature)
-        add_animation(f"{filename}_internal_2", gfs.unknown_animations.anim_3, armature)
-        add_animation(f"{filename}_internal_3", gfs.unknown_animations.anim_4, armature)
+        add_animation(f"{filename}_internal_0", gfs.unknown_animations.anim_1, armature, is_parent_relative=False)
+        add_animation(f"{filename}_internal_1", gfs.unknown_animations.anim_2, armature, is_parent_relative=False)
+        add_animation(f"{filename}_internal_2", gfs.unknown_animations.anim_3, armature, is_parent_relative=False)
+        add_animation(f"{filename}_internal_3", gfs.unknown_animations.anim_4, armature, is_parent_relative=False)
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
     
