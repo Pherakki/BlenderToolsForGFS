@@ -16,7 +16,7 @@ def import_model(gfs, name):
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
     
-    main_armature.data.GFSTOOLS_ModelProperties.root_node_name = gfs.bones[0].name
+    main_armature.data.GFSTOOLS_ModelProperties.root_node_name = gfs.bones[0].name if len(gfs.bones) else ""
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
     main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box = gfs.keep_bounding_box
     main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.keep_bounding_sphere
