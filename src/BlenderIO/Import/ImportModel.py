@@ -62,17 +62,19 @@ def import_model(gfs, name):
         bone_transforms[i] = matrix
 
     bpy.ops.object.mode_set(mode="OBJECT")
-    
-    for bpy_bone in main_armature.data.bones:
-        bpy_bone.layers[0] = True
-        bpy_bone.layers[1] = True
-        bpy_bone.layers[2] = False
 
-    for i in sorted(unrigged_bones_to_import):
-        remapped_index = gfs_to_bpy_bone_map[i]
-        main_armature.data.bones[remapped_index].layers[0] = True
-        main_armature.data.bones[remapped_index].layers[1] = False
-        main_armature.data.bones[remapped_index].layers[2] = True
+    # If there are meshes, create bone layers of rigged and unrigged bones
+    if len(gfs.meshes):
+        for bpy_bone in main_armature.data.bones:
+            bpy_bone.layers[0] = True
+            bpy_bone.layers[1] = True
+            bpy_bone.layers[2] = False
+    
+        for i in sorted(unrigged_bones_to_import):
+            remapped_index = gfs_to_bpy_bone_map[i]
+            main_armature.data.bones[remapped_index].layers[0] = True
+            main_armature.data.bones[remapped_index].layers[1] = False
+            main_armature.data.bones[remapped_index].layers[2] = True
     
     bpy.context.view_layer.objects.active = main_armature
         
