@@ -18,7 +18,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
     bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
     bl_options = {'REGISTER', 'UNDO'}
-    filename_ext = "*.GMD, *.GFS"
+    filename_ext = ".GMD"
 
 
     filter_glob: bpy.props.StringProperty(

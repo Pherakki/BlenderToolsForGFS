@@ -18,7 +18,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gfs'
     bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
     bl_options = {'REGISTER', 'UNDO'}
-    filename_ext = "*.GMD, *.GFS"
+    filename_ext: bpy.props.EnumProperty(
+        items=[
+            ('.GMD', '.GMD', ''),
+            ('.GFS', '.GFS', '')
+        ],
+        options={'HIDDEN'}
+    )
 
 
     filter_glob: bpy.props.StringProperty(
