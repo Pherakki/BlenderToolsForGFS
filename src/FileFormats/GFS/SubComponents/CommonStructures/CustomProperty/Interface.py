@@ -40,7 +40,7 @@ class PropertyInterface:
         elif binary.type == 4:
             if type(binary.data) != str:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected str")
-            binary.size = len(binary.data.encode(PropertyBinary.ENCODING)) - 1
+            binary.size = len(binary.data.encode(PropertyBinary.ENCODING)) + 1
             
         elif binary.type == 5:
             if not hasattr(binary.data, "__len__"):
