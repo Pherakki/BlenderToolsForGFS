@@ -75,7 +75,11 @@ class AnimationTrackBinary(Serializable):
         elif self.keyframe_type == 36: kf_type = Tex1UVSnap     # Material Anim: 0x1105100         
         else: raise NotImplementedError(f"Unknown Keyframe type: '{self.keyframe_type}'")
             
-        self.values = rw.rw_obj_array(self.values, kf_type, self.keyframe_count)
+        try:
+            self.values = rw.rw_obj_array(self.values, kf_type, self.keyframe_count)
+        except Exception as e:
+            print(self.frames)
+            raise e
         
         # Flag instead?!
         if self.keyframe_type in [26, 27, 28, 31, 32, 33, 34, 35]: # If has float16 pos...
@@ -87,15 +91,22 @@ class AnimationTrackBinary(Serializable):
 # BASE CLASSES #
 ################          
 class TexUVKeyframe(Serializable):
-    def __init__(self, translate_u=0, translate_v=0, scale_u=1, scale_v=1, rotation=0, endianness='>'):
+    def __init__(self, transforms=None, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.translate_u = translate_u
-        self.translate_v = translate_v
-        self.scale_u = scale_u
-        self.scale_v = scale_v
-        self.rotation = rotation
+        if transforms is None:
+            self.translate_u = 0.
+            self.translate_v = 0.
+            self.scale_u     = 1.
+            self.scale_v     = 1.
+            self.rotation    = 0.
+        else:
+            self.translate_u, \
+            self.translate_v, \
+            self.scale_u,     \
+            self.scale_v,     \
+            self.rotation = transforms
         
     def __repr__(self):
         return f"[GFDBinary::Animation::Controller::Track::{self.CLASSNAME}] {self.translate_u} {self.translate_v} {self.scale_x} {self.scale_y} {self.rotation}"
@@ -106,6 +117,28 @@ class TexUVKeyframe(Serializable):
         self.scale_u     = rw.rw_float32(self.scale_u)
         self.scale_v     = rw.rw_float32(self.scale_v)
         self.rotation    = rw.rw_float32(self.rotation)
+        
+class ColorKeyframe(Serializable):
+    def __init__(self, color=None, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        if color is None:
+            self.r = 1.
+            self.g = 1.
+            self.b     = 1.
+        else:
+            self.r, \
+            self.g, \
+            self.b = color
+        
+    def __repr__(self):
+        return f"[GFDBinary::Animation::Controller::Track::{self.CLASSNAME}] {self.r} {self.g} {self.b}"
+        
+    def read_write(self, rw):
+        self.r = rw.rw_float32(self.r)
+        self.g = rw.rw_float32(self.g)
+        self.b = rw.rw_float32(self.b)
 
 class NodeTR(Serializable):
     """Node Keyframe"""
@@ -197,65 +230,20 @@ class KeyframeType5(Serializable):
     def read_write(self, rw):
         self.unknown = rw.rw_float32(self.unknown)
         
-class AmbientRGB(Serializable):
+class AmbientRGB(ColorKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 6
-    
-    def __init__(self, r=0, g=0, b=0, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+    CLASSNAME = "AmbientRGB"
         
-        self.r = r
-        self.g = g
-        self.b = b
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::AmbientRGB] {self.r} {self.g} {self.b}"
-        
-    def read_write(self, rw):
-        self.r = rw.rw_float32(self.r)
-        self.g = rw.rw_float32(self.g)
-        self.b = rw.rw_float32(self.b)
-        
-class DiffuseRGB(Serializable):
+class DiffuseRGB(ColorKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 7
-    
-    def __init__(self, r=0, g=0, b=0, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+    CLASSNAME = "DiffuseRGB"
         
-        self.r = r
-        self.g = g
-        self.b = b
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::DiffuseRGB] {self.r} {self.g} {self.b}"
-        
-    def read_write(self, rw):
-        self.r = rw.rw_float32(self.r)
-        self.g = rw.rw_float32(self.g)
-        self.b = rw.rw_float32(self.b)
-        
-class SpecularRGB(Serializable):
+class SpecularRGB(ColorKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 8
-    
-    def __init__(self, r=0, g=0, b=0, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.r = r
-        self.g = g
-        self.b = b
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::SpecularRGB] {self.r} {self.g} {self.b}"
-        
-    def read_write(self, rw):
-        self.r = rw.rw_float32(self.r)
-        self.g = rw.rw_float32(self.g)
-        self.b = rw.rw_float32(self.b)
+    CLASSNAME = "SpecularRGB"
                 
 class SpecularPower(Serializable):
     """Material Keyframe"""
@@ -330,25 +318,10 @@ class Tex0UV(TexUVKeyframe):
     VARIANT_TYPE = 13
     CLASSNAME = "Tex0UV"
 
-class EmissiveRGB(Serializable):
+class EmissiveRGB(ColorKeyframe):
     OBJ_VARIANT_TYPE = 2
     VARIANT_TYPE = 14
-    
-    def __init__(self, r=0, g=0, b=0, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.r = r
-        self.g = g
-        self.b = b
-        
-    def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::EmissionRGB] {self.r} {self.g} {self.b}"
-        
-    def read_write(self, rw):
-        self.r = rw.rw_float32(self.r)
-        self.g = rw.rw_float32(self.g)
-        self.b = rw.rw_float32(self.b)
+    CLASSNAME = "EmissiveRGB"
                 
 class KeyframeType15(Serializable):
     """Material Keyframe"""
@@ -562,7 +535,7 @@ class KeyframeType26(Serializable): # What is different about this one and 28?!
     def read_write(self, rw):
         self.position = rw.rw_float16s(self.position, 3)
         self.rotation = rw.rw_float16s(self.rotation, 4)
-        
+    
 class NodeTRSHalf(Serializable):
     OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 27
