@@ -163,7 +163,7 @@ class MaterialInterface:
         binary.flags.receive_shadow         = self.receive_shadow
         binary.flags.cast_shadow            = self.cast_shadow
         binary.flags.has_attributes         = len(self.attributes) > 0
-        binary.flags.flag_17                = any([a.ID == 2 for a in self.attributes])
+        binary.flags.has_outline            = any([a.ID == 2 for a in self.attributes])
         binary.flags.flag_18                = self.flag_18
         binary.flags.disable_bloom          = self.disable_bloom
         binary.flags.has_diffuse_texture    = self.diffuse_texture    is not None
