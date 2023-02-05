@@ -16,7 +16,7 @@ class PropertyBinary(Serializable):
         self.data = None
         
     def __repr__(self):
-        return f"[GFD::SceneContainer::SceneNode::Property] {self.name} {self.type} {self.size} {self.data}"
+        return f"[GFD::SceneContainer::SceneNode::Property {self.type}] {self.name.string} {self.size} {self.data}"
     
     def read_write(self, rw, version):
         self.type = rw.rw_uint32(self.type)
