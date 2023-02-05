@@ -74,15 +74,14 @@ class MaterialBinary(Serializable):
         self.unknown_0x52 = None
         self.unknown_0x53 = None
         self.unknown_0x54 = None
-        self.unknown_0x55 = None
+        self.unknown_0x55 = None # Highlight map blend mode: 1 -> Normal, 2 -> dodge, 4 -> multiply
         self.unknown_0x56 = None
         self.unknown_0x58 = None
         self.unknown_0x5A = 1
         self.unknown_0x5C = None
-        self.unknown_0x5E = None
+        self.unknown_0x5E = None # 0, 2?
         self.texture_indices_1 = TextureMapIndices()
         self.texture_indices_2 = TextureMapIndices()
-        self.unknown_0x68 = 0
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
@@ -138,16 +137,18 @@ class MaterialBinary(Serializable):
             
         self.unknown_0x56 = rw.rw_uint16(self.unknown_0x56)
         self.unknown_0x58 = rw.rw_uint16(self.unknown_0x58)
-        self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A)
-        if version > 0x01104800:
+        
+        
+        if version <= 0x01104800:
+            self.unknown_0x5A = 1
+            self.unknown_0x5C = rw.rw_int32(self.unknown_0x5C)
+        else:
+            self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A)
             self.unknown_0x5C = rw.rw_int16(self.unknown_0x5C)
             
         self.unknown_0x5E = rw.rw_int16(self.unknown_0x5E)
         self.texture_indices_1 = rw.rw_obj(self.texture_indices_1)
         self.texture_indices_2 = rw.rw_obj(self.texture_indices_2)
-        
-        if version <= 0x01104800:
-            self.unknown_0x68 = rw.rw_uint16(self.unknown_0x68)
         
         self.disable_backface_culling = rw.rw_int16(self.disable_backface_culling)
         self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
@@ -241,11 +242,11 @@ class MaterialAttributeSubTypeFlags(BitVector):
 
 class ToonShadingPropertyFlags(MaterialAttributeSubTypeFlags):
     flag_0  = BitVector.DEF_FLAG(0x00)
-    flag_1  = BitVector.DEF_FLAG(0x01)
+    flag_1  = BitVector.DEF_FLAG(0x01) # Something to do with outline attribute
     flag_2  = BitVector.DEF_FLAG(0x02)
     flag_3  = BitVector.DEF_FLAG(0x03)
     flag_4  = BitVector.DEF_FLAG(0x04)
-    flag_5  = BitVector.DEF_FLAG(0x05)
+    flag_5  = BitVector.DEF_FLAG(0x05) # Something to do with outline attribute
     flag_6  = BitVector.DEF_FLAG(0x06)
     flag_7  = BitVector.DEF_FLAG(0x07)
     flag_8  = BitVector.DEF_FLAG(0x08)
