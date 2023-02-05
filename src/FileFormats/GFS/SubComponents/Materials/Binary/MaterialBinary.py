@@ -39,7 +39,7 @@ class MaterialFlags(BitVector0x20):
     receive_shadow         = BitVector.DEF_FLAG(0x0E)
     cast_shadow            = BitVector.DEF_FLAG(0x0F)
     has_attributes         = BitVector.DEF_FLAG(0x10)
-    flag_17                = BitVector.DEF_FLAG(0x11) # Has Outline?
+    has_outline            = BitVector.DEF_FLAG(0x11)
     flag_18                = BitVector.DEF_FLAG(0x12)
     disable_bloom          = BitVector.DEF_FLAG(0x13)
     has_diffuse_texture    = BitVector.DEF_FLAG(0x14)

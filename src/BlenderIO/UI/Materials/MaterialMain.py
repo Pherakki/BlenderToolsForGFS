@@ -31,7 +31,6 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_13")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "receive_shadow")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "cast_shadow")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_17")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_18")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "disable_bloom")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_29")
@@ -61,5 +60,4 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5A")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5C")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5E")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x68")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x6A")

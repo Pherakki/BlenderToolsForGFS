@@ -31,7 +31,6 @@ class MaterialInterface:
         self.flag_13             = None
         self.receive_shadow      = None
         self.cast_shadow         = None
-        self.flag_17             = None
         self.flag_18             = None
         self.disable_bloom       = None
         self.flag_29             = None
@@ -59,7 +58,6 @@ class MaterialInterface:
         self.unknown_0x5E = None
         self.texture_indices_1 = TextureMapIndices()
         self.texture_indices_2 = TextureMapIndices() # Change later...
-        self.unknown_0x68 = 0
         self.disable_backface_culling = None
         self.unknown_0x6A = None
         
@@ -102,7 +100,6 @@ class MaterialInterface:
         instance.unknown_0x5E = binary.unknown_0x5E
         instance.texture_indices_1 = binary.texture_indices_1
         instance.texture_indices_2 = binary.texture_indices_2
-        instance.unknown_0x68 = binary.unknown_0x68
         instance.disable_backface_culling = binary.disable_backface_culling
         instance.unknown_0x6A = binary.unknown_0x6A
         
@@ -138,7 +135,6 @@ class MaterialInterface:
         instance.flag_13             = binary.flags.flag_13
         instance.receive_shadow      = binary.flags.receive_shadow
         instance.cast_shadow         = binary.flags.cast_shadow
-        instance.flag_17             = binary.flags.flag_17
         instance.flag_18             = binary.flags.flag_18
         instance.disable_bloom       = binary.flags.disable_bloom
         instance.flag_29             = binary.flags.flag_29
@@ -167,7 +163,7 @@ class MaterialInterface:
         binary.flags.receive_shadow         = self.receive_shadow
         binary.flags.cast_shadow            = self.cast_shadow
         binary.flags.has_attributes         = len(self.attributes) > 0
-        binary.flags.flag_17                = self.flag_17
+        binary.flags.flag_17                = any([a.ID == 2 for a in self.attributes])
         binary.flags.flag_18                = self.flag_18
         binary.flags.disable_bloom          = self.disable_bloom
         binary.flags.has_diffuse_texture    = self.diffuse_texture    is not None
@@ -203,7 +199,6 @@ class MaterialInterface:
         binary.unknown_0x5E             = self.unknown_0x5E
         binary.texture_indices_1        = self.texture_indices_1
         binary.texture_indices_2        = self.texture_indices_2
-        binary.unknown_0x68             = self.unknown_0x68
         binary.disable_backface_culling = self.disable_backface_culling
         binary.unknown_0x6A             = self.unknown_0x6A
         

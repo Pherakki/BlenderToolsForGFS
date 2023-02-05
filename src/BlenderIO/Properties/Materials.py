@@ -46,7 +46,6 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     flag_13:         bpy.props.BoolProperty(name="Unknown Flag 13",      default=False)
     receive_shadow:  bpy.props.BoolProperty(name="Receive Shadow",       default=False)
     cast_shadow:     bpy.props.BoolProperty(name="Cast Shadow",          default=False)
-    flag_17:         bpy.props.BoolProperty(name="Unknown Flag 17",      default=False)
     flag_18:         bpy.props.BoolProperty(name="Unknown Flag 18",      default=False)
     disable_bloom:   bpy.props.BoolProperty(name="Disable Bloom",        default=False)
     flag_29:         bpy.props.BoolProperty(name="Unknown Flag 29",      default=False)
@@ -70,7 +69,6 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     unknown_0x5A:    bpy.props.IntProperty        (name="Unknown 0x5A",   default=1, min=-32768, max=32767) # Flags?
     unknown_0x5C:    bpy.props.IntProperty        (name="Unknown 0x5C",   default=0, min=-32768, max=32767) # Flags?
     unknown_0x5E:    bpy.props.IntProperty        (name="Unknown 0x5E",   default=0, min=-32768, max=32767) # Flags?
-    unknown_0x68:    bpy.props.IntProperty        (name="Unknown 0x68",   default=0, min=-32768, max=32767) # Never used
     unknown_0x6A:    bpy.props.IntProperty        (name="Unknown 0x6A",   default=-1, min=-2147483648, max=2147483647) # Always -1
 
     ##################
