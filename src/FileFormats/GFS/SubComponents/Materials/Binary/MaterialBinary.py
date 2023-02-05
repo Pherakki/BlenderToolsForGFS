@@ -102,7 +102,7 @@ class MaterialBinary(Serializable):
                f"{safe_format(self.flags._value, hex32_format)} "                                                       \
                f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "                           \
                f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "                         \
-               f"{self.reflectivity} {self.unknown_0x4C} "                                                       \
+               f"{self.reflectivity} {self.outline_idx} "                                                       \
                f"{safe_format(self.unknown_0x50, list)} {self.unknown_0x56} "                                    \
                f"{self.unknown_0x58} {self.unknown_0x5A} {self.unknown_0x5C} {self.unknown_0x5E} "               \
                f"{safe_format(self.unknown_0x60, hex32_format)} {safe_format(self.unknown_0x64, hex32_format)} " \
@@ -143,7 +143,7 @@ class MaterialBinary(Serializable):
             self.unknown_0x5A = 1
             self.unknown_0x5C = rw.rw_int32(self.unknown_0x5C)
         else:
-            self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A)
+            self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A) # 1 = Bloom, 0x0100 = Refl map something, 0x0002 = ???, 0x0004 = ???
             self.unknown_0x5C = rw.rw_int16(self.unknown_0x5C)
             
         self.unknown_0x5E = rw.rw_int16(self.unknown_0x5E)

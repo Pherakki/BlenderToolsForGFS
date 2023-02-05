@@ -49,7 +49,6 @@ def import_materials(gfs, textures):
         bpy_material.GFSTOOLS_MaterialProperties.flag_13 = mat.flag_13
         bpy_material.GFSTOOLS_MaterialProperties.receive_shadow = mat.receive_shadow
         bpy_material.GFSTOOLS_MaterialProperties.cast_shadow = mat.cast_shadow
-        bpy_material.GFSTOOLS_MaterialProperties.flag_17 = mat.flag_17
         bpy_material.GFSTOOLS_MaterialProperties.flag_18 = mat.flag_18
         bpy_material.GFSTOOLS_MaterialProperties.disable_bloom = mat.disable_bloom
         bpy_material.GFSTOOLS_MaterialProperties.flag_29 = mat.flag_29
@@ -73,7 +72,6 @@ def import_materials(gfs, textures):
         bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5A = mat.unknown_0x5A
         bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5C = mat.unknown_0x5C
         bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5E = mat.unknown_0x5E
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x68 = mat.unknown_0x68
         bpy_material.GFSTOOLS_MaterialProperties.unknown_0x6A = mat.unknown_0x6A
         
         bpy_material.use_backface_culling = not bool(mat.disable_backface_culling)
