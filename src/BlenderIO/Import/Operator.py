@@ -12,7 +12,8 @@ from .ImportModel import import_model
 from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
-
+from ..WarningSystem.StateMachine import handle_warning_system
+from ..WarningSystem import WarningSystem
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
@@ -44,7 +45,6 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
     
-    @handle_errors
     def execute(self, context):
         self.import_file(context, self.filepath)
 
