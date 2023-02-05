@@ -51,6 +51,7 @@ def init_bpy():
     from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
+    from .src.BlenderIO.WarningSystem.StateMachine import ErrorPopup, PreviousErrorOperator, NextErrorOperator
     
     
     CLASSES = (
@@ -83,7 +84,10 @@ def init_bpy():
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp,
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown,
         OBJECT_PT_GFSToolsLightAttributesPanel,
-        OBJECT_UL_GFSToolsGenericPropertyUIList
+        OBJECT_UL_GFSToolsGenericPropertyUIList,
+        ErrorPopup,
+        PreviousErrorOperator,
+        NextErrorOperator
     )
     
     PROP_GROUPS = (
