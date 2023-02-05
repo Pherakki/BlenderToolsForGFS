@@ -13,7 +13,7 @@ from .ExportLights import export_lights
 from .ExportCameras import export_cameras
 from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
-from ..WarningSystem import WarningSystem, handle_warning_system
+#from ..WarningSystem import WarningSystem, handle_warning_system
 
 
 class ExportGFS(bpy.types.Operator, ExportHelper):
@@ -88,11 +88,11 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
-        WarningSystem.digest_warnings()
+        #WarningSystem.digest_warnings()
         
         return {'FINISHED'}
     
-    @handle_warning_system
+    #@handle_warning_system
     def execute(self, context):
         return self.export_file(context, self.filepath)
     
@@ -103,7 +103,8 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # of the operator.
         
         # Throw any errors that are found
-        WarningSystem.digest_errors()
+        #WarningSystem.digest_errors()
+        pass
 
 def find_selected_model():
     try:

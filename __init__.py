@@ -84,10 +84,10 @@ def init_bpy():
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp,
         OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown,
         OBJECT_PT_GFSToolsLightAttributesPanel,
-        OBJECT_UL_GFSToolsGenericPropertyUIList,
-        ErrorPopup,
-        PreviousErrorOperator,
-        NextErrorOperator
+        OBJECT_UL_GFSToolsGenericPropertyUIList
+        # ErrorPopup,
+        # PreviousErrorOperator,
+        # NextErrorOperator
     )
     
     PROP_GROUPS = (
