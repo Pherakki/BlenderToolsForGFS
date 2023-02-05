@@ -6,21 +6,11 @@ from .SubComponents.Materials.Interface import MaterialInterface
 from .SubComponents.Materials.Binary import MaterialPayload
 from .SubComponents.Textures.Interface import TextureInterface
 from .SubComponents.Textures.Binary import TexturePayload
-from .SubComponents.Animations.Interface import AnimationInterface
+from .SubComponents.Animations import AnimationPayload, AnimationInterface, LookAtAnimationsInterface
 from .SubComponents.Model.Interface import ModelInterface
 from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightInterface, CameraInterface
 
 
-class UnknownAnimations:
-    def __init__(self):
-        self.anim_1 = None
-        self.anim_1_float = None
-        self.anim_2 = None
-        self.anim_2_float = None
-        self.anim_3 = None
-        self.anim_3_float = None
-        self.anim_4 = None
-        self.anim_4_float = None
 
 class GFSInterface:
     def __init__(self):
@@ -43,6 +33,7 @@ class GFSInterface:
         self.lookat_animations = None #UnknownAnimations()
         
         # Things that need to be removed eventually
+        self.has_end_container = True
         self.animation_data  = None
         self.data_0x000100F8 = None
         self.physics_data    = None
@@ -58,6 +49,7 @@ class GFSInterface:
     def from_binary(cls, binary, duplicate_data=True):
         instance = cls()
         
+        instance.has_end_container = False
         for ctr in binary.containers:
             if ctr.type == 0x000100FC:
                 instance.textures = [TextureInterface.from_binary(tx) for tx in ctr.data]
@@ -87,10 +79,12 @@ class GFSInterface:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:
                 instance.physics_data = ctr.data
+            elif ctr.type == 0x00000000:
+                instance.has_end_container = True
         
         return instance
     
-    def to_binary(self, version, add_end_container=True, duplicate_data=False):
+    def to_binary(self, version, duplicate_data=False):
         binary = GFSBinary()
         
         ot = OffsetTracker()
@@ -147,16 +141,42 @@ class GFSInterface:
             binary.containers.append(mdl_ctr)
                     
         # Animation container
-        if self.animation_data is not None:
+        # if self.animation_data is not None:
+        #     offset = ot.tell()
+        #     anm_ctr = GFS0ContainerBinary()
+        #     anm_ctr.version = version
+        #     anm_ctr.type = 0x000100FD
+            
+        #     anm_ctr.data = self.animation_data
+        #     ot.rw_obj(anm_ctr)
+        #     anm_ctr.size = ot.tell() - offset
+        #     binary.containers.append(anm_ctr)
+        if ((len(self.animations) > 0) or
+            (len(self.blend_animations) > 0) or 
+            (self.lookat_animations is not None)):
             offset = ot.tell()
             anm_ctr = GFS0ContainerBinary()
             anm_ctr.version = version
             anm_ctr.type = 0x000100FD
             
-            anm_ctr.data = self.animation_data
+            #anm_ctr.data = self.animation_data
+            anm_ctr.data = AnimationPayload()
+            anm_ctr.data.flags.flag_0 = self.anim_flag_0
+            anm_ctr.data.flags.flag_1 = self.anim_flag_1
+            anm_ctr.data.flags.has_lookat_anims = self.lookat_animations is not None
+            anm_ctr.data.flags.flag_3 = self.anim_flag_3
+            
+            anm_ctr.data.animations.count = len(self.animations)
+            anm_ctr.data.animations.data  = [a.to_binary(self) for a in self.animations]
+            anm_ctr.data.blend_animations.count = len(self.blend_animations)
+            anm_ctr.data.blend_animations.data  = [a.to_binary(self) for a in self.blend_animations]
+            if anm_ctr.data.flags.has_lookat_anims:
+                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(self)
+  
             ot.rw_obj(anm_ctr)
             anm_ctr.size = ot.tell() - offset
             binary.containers.append(anm_ctr)
+            
             
         # Physics container
         if self.physics_data is not None:
@@ -184,7 +204,7 @@ class GFSInterface:
             binary.containers.append(unk_ctr)
         
         # End container
-        if add_end_container:
+        if self.has_end_container:
             end_ctr = GFS0ContainerBinary()
             end_ctr.version = version
             end_ctr.type = 0x00000000
