@@ -34,9 +34,13 @@ class GFSInterface:
         self.bones = []
         self.materials = []
         self.textures = []
-        self.animations = []
-        self.blend_animations = []
-        self.unknown_animations = UnknownAnimations()
+        
+        self.anim_flag_0 = False
+        self.anim_flag_1 = False
+        self.anim_flag_3 = None
+        self.animations        = []
+        self.blend_animations  = []
+        self.lookat_animations = None #UnknownAnimations()
         
         # Things that need to be removed eventually
         self.animation_data  = None
@@ -72,17 +76,13 @@ class GFSInterface:
                 instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
+                instance.anim_flag_0    = ctr.data.flags.flag_0
+                instance.anim_flag_1    = ctr.data.flags.flag_1
+                instance.anim_flag_3    = ctr.data.flags.flag_3
                 instance.animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.animations]
                 instance.blend_animations = [AnimationInterface.from_binary(anim) for anim in ctr.data.blend_animations]
-                if ctr.data.flags.has_unknown_chunk:
-                    instance.unknown_animations.anim_1       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_1)
-                    instance.unknown_animations.anim_1_float = ctr.data.unknown_anim_chunk.unknown_1
-                    instance.unknown_animations.anim_2       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_2)
-                    instance.unknown_animations.anim_2_float = ctr.data.unknown_anim_chunk.unknown_2
-                    instance.unknown_animations.anim_3       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_3)
-                    instance.unknown_animations.anim_3_float = ctr.data.unknown_anim_chunk.unknown_3
-                    instance.unknown_animations.anim_4       = AnimationInterface.from_binary(ctr.data.unknown_anim_chunk.anim_4)
-                    instance.unknown_animations.anim_4_float = ctr.data.unknown_anim_chunk.unknown_4
+                if ctr.data.flags.has_lookat_anims:
+                    instance.lookat_animations = LookAtAnimationsInterface.from_binary(ctr.data.lookat_animations)
             elif ctr.type == 0x000100F8:
                 instance.data_0x000100F8 = ctr.data
             elif ctr.type == 0x000100F9:

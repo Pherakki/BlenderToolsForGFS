@@ -1,4 +1,4 @@
-from .Binary import AnimationBinary
+from .Binary import AnimationBinary, LookAtAnimationsBinary
 from .Binary.AnimController import AnimationControllerBinary
 from .Binary.AnimTrack import AnimationTrackBinary
 from .Binary.AnimTrack import NodeTR
@@ -71,7 +71,7 @@ def interpolate_keyframe_dict(frames, idx, interpolation_function, debug_output=
 
     return interpolation_function(np.array(min_value), np.array(max_value), t)
 
-class LookAtAnims:
+class LookAtAnimationsInterface:
     def __init__(self):
         self.right = None
         self.right_factor = 0.
@@ -81,6 +81,36 @@ class LookAtAnims:
         self.up_factor = 0.
         self.down = None
         self.down_factor = 0.
+        
+    @classmethod
+    def from_binary(cls, binary):
+        instance = cls()
+        instance.right = AnimationInterface.from_binary(binary.right)
+        instance.left  = AnimationInterface.from_binary(binary.left)
+        instance.up    = AnimationInterface.from_binary(binary.up)
+        instance.down  = AnimationInterface.from_binary(binary.down)
+        
+        instance.right_factor = binary.right_factor
+        instance.left_factor  = binary.left_factor
+        instance.up_factor    = binary.up_factor
+        instance.down_factor  = binary.down_factor
+        
+        return instance
+        
+    def to_binary(self, gfs):
+        binary = LookAtAnimationsBinary()
+        binary.right = self.right.to_binary(gfs)
+        binary.left  = self.left.to_binary(gfs)
+        binary.up    = self.up.to_binary(gfs)
+        binary.down  = self.down.to_binary(gfs)
+        
+        binary.right_factor = self.right_factor
+        binary.left_factor  = self.left_factor
+        binary.up_factor    = self.up_factor
+        binary.down_factor  = self.down_factor
+        
+        return binary
+             
 
 class AnimationInterface:
     def __init__(self):
@@ -90,15 +120,22 @@ class AnimationInterface:
         self.morph_animations    = []
         self.unknown_animations  = []
         
-        self.lookat_anims = LookAtAnims()
-        self.extra_track_data   = None
+        self.lookat_animations     = None
+        self.extra_track_data      = None
         self.bounding_box_max_dims = None
         self.bounding_box_min_dims = None
         self.speed = None
         self.properties = []
         
+        # These are *sometimes* set?
+        # Only set on non-blend animations?!?!?!?!
+        self.flag_0 = False
+        self.flag_1 = False
+        self.flag_2 = False
+        self.flag_3 = False
+        self.flag_4 = False
+        
         # These are all always false
-        self.flag_4  = False
         self.flag_5  = False
         self.flag_6  = False
         self.flag_7  = False
@@ -139,23 +176,22 @@ class AnimationInterface:
             else:
                 raise NotImplementedError(f"Unknown Controller Type: {controller_binary.type}")
                 
-        if binary.flags.has_unknown_chunk:
-            instance.lookat_anims.right = cls.from_binary(binary.unknown_anim_chunk.anim_1)
-            instance.lookat_anims.left  = cls.from_binary(binary.unknown_anim_chunk.anim_2)
-            instance.lookat_anims.up    = cls.from_binary(binary.unknown_anim_chunk.anim_3)
-            instance.lookat_anims.down  = cls.from_binary(binary.unknown_anim_chunk.anim_4)
-        
-            instance.lookat_anims.right_factor = cls.from_binary(binary.unknown_anim_chunk.unknown_1)
-            instance.lookat_anims.left_factor  = cls.from_binary(binary.unknown_anim_chunk.unknown_2)
-            instance.lookat_anims.up_factor    = cls.from_binary(binary.unknown_anim_chunk.unknown_3)
-            instance.lookat_anims.down_factor  = cls.from_binary(binary.unknown_anim_chunk.unknown_4)
-            
+        if binary.flags.has_lookat_anims:
+            instance.lookat_animations = LookAtAnimationsInterface.from_binary(binary.lookat_animations)
         instance.extra_track_data      = binary.extra_track_data
         instance.bounding_box_max_dims = binary.bounding_box_max_dims
         instance.bounding_box_min_dims = binary.bounding_box_min_dims
         instance.speed                 = binary.speed
         instance.properties            = binary.properties.data
 
+        # These should be removable...?
+        instance.flag_0 = binary.flags.has_node_anims
+        instance.flag_1 = binary.flags.has_material_anims
+        instance.flag_2 = binary.flags.has_camera_anims
+        instance.flag_3 = binary.flags.has_morph_anims
+        instance.flag_4 = binary.flags.has_type_5_anims
+
+        # These should all be false
         instance.flag_5  = binary.flags.flag_5
         instance.flag_6  = binary.flags.flag_6
         instance.flag_7  = binary.flags.flag_7
@@ -322,6 +358,14 @@ class AnimationInterface:
         binary.flags.has_camera_anims   = len(self.camera_animations)
         binary.flags.has_morph_anims    = len(self.morph_animations)
         binary.flags.has_type_5_aninms  = len(self.unknown_animations)
+        
+        binary.flags.has_node_anims     = self.flag_0
+        binary.flags.has_material_anims = self.flag_1
+        binary.flags.has_camera_anims   = self.flag_2
+        binary.flags.has_morph_anims    = self.flag_3
+        binary.flags.has_type_5_anims   = self.flag_4
+        
+        
         binary.flags.flag_5             = self.flag_5
         binary.flags.flag_6             = self.flag_6
         binary.flags.flag_7             = self.flag_7
@@ -346,11 +390,12 @@ class AnimationInterface:
         binary.flags.flag_26            = self.flag_26
         binary.flags.flag_27            = self.flag_27
         binary.flags.has_particles      = False
-        binary.flags.has_unknown_chunk  = self.unknown_anim_chunk is not None
+        binary.flags.has_lookat_anims   = self.lookat_animations is not None
         binary.flags.has_bounding_box   = self.bounding_box_max_dims is not None
         binary.flags.has_extra_data     = self.extra_track_data is not None
 
-        binary.unknown_anim_chunk    = self.unknown_anim_chunk
+        if binary.flags.has_lookat_anims:
+            binary.lookat_animations = self.lookat_animations.to_binary(gfs)
         binary.extra_track_data      = self.extra_track_data
         binary.bounding_box_max_dims = self.bounding_box_max_dims
         binary.bounding_box_min_dims = self.bounding_box_min_dims

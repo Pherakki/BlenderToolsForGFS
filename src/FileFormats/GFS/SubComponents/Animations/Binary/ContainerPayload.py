@@ -2,13 +2,13 @@ from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
 from ...CommonStructures import SizedObjArray, BitVector
 from .AnimationBinary import AnimationBinary
-from .AnimationBinary import UnknownAnimationChunk
+from .AnimationBinary import LookAtAnimationsBinary
 
 
 class AnimationPackFlags(BitVector):
     flag_0            = BitVector.DEF_FLAG(0x00)
     flag_1            = BitVector.DEF_FLAG(0x01)
-    has_unknown_chunk = BitVector.DEF_FLAG(0x02) # USED
+    has_lookat_anims  = BitVector.DEF_FLAG(0x02) # USED
     flag_3            = BitVector.DEF_FLAG(0x03) # USED
     flag_4            = BitVector.DEF_FLAG(0x04)
     flag_5            = BitVector.DEF_FLAG(0x05)
@@ -67,10 +67,10 @@ class AnimationPayload(Serializable):
         self.flags              = AnimationPackFlags()
         self.animations         = SizedObjArray(AnimationBinary)
         self.blend_animations   = SizedObjArray(AnimationBinary)
-        self.unknown_anim_chunk = None
+        self.lookat_animations  = None
         
     def __repr__(self):
-        return f"[GFDBinary::AnimationData {safe_format(self.flags._value, hex32_format)}] Anims: {self.animations.count} Blend Anims: {self.blend_animations.count} Extra: {safe_format(self.flags, lambda x: bool(x.has_unknown_chunk))}"
+        return f"[GFDBinary::AnimationData {safe_format(self.flags._value, hex32_format)}] Anims: {self.animations.count} Blend Anims: {self.blend_animations.count} Extra: {safe_format(self.flags, lambda x: bool(x.has_lookat_anims))}"
 
     def read_write(self, rw, version):
         if version > 0x01104950:
@@ -78,6 +78,6 @@ class AnimationPayload(Serializable):
         rw.rw_obj(self.animations, version)
         rw.rw_obj(self.blend_animations, version)
         
-        if self.flags.has_unknown_chunk:
-            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk, version)
+        if self.flags.has_lookat_anims:
+            self.lookat_animations = rw.rw_new_obj(self.lookat_animations, LookAtAnimationsBinary, version)
 

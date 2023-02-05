@@ -180,11 +180,11 @@ def import_animations(gfs, armature, filename):
             add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature, is_parent_relative=False)
     for anim_idx, anim in enumerate(gfs.blend_animations):
         add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_parent_relative=False)
-    if gfs.unknown_animations.anim_1 is not None:
-        add_animation(f"{filename}_internal_0", gfs.unknown_animations.anim_1, armature, is_parent_relative=False)
-        add_animation(f"{filename}_internal_1", gfs.unknown_animations.anim_2, armature, is_parent_relative=False)
-        add_animation(f"{filename}_internal_2", gfs.unknown_animations.anim_3, armature, is_parent_relative=False)
-        add_animation(f"{filename}_internal_3", gfs.unknown_animations.anim_4, armature, is_parent_relative=False)
+    if gfs.lookat_animations.anim_1 is not None:
+        add_animation(f"{filename}_right", gfs.lookat_animations.right, armature, is_parent_relative=False)
+        add_animation(f"{filename}_left",  gfs.lookat_animations.left,  armature, is_parent_relative=False)
+        add_animation(f"{filename}_up",    gfs.lookat_animations.up,    armature, is_parent_relative=False)
+        add_animation(f"{filename}_down",  gfs.lookat_animations.down,  armature, is_parent_relative=False)
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
     

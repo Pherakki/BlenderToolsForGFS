@@ -39,7 +39,7 @@ class AnimationFlags(BitVector):
     flag_26            = BitVector.DEF_FLAG(0x1A) # USED (Blend)
     flag_27            = BitVector.DEF_FLAG(0x1B)
     has_particles      = BitVector.DEF_FLAG(0x1C)
-    has_unknown_chunk  = BitVector.DEF_FLAG(0x1D) # USED (Normal)
+    has_lookat_anims   = BitVector.DEF_FLAG(0x1D) # USED (Normal)
     has_bounding_box   = BitVector.DEF_FLAG(0x1E) # USED (Normal, Blend, Unk)
     has_extra_data     = BitVector.DEF_FLAG(0x1F) # USED (Normal)
 
@@ -55,8 +55,8 @@ class AnimationBinary(Serializable):
         
         #self.particle_count = None
         #self.particle_data = ParticleData()
-        self.unknown_anim_chunk = None
-        self.extra_track_data   = ExtraTrackData()
+        self.lookat_animations = None
+        self.extra_track_data   = None
         # Bounding boxes should probably go into a custom datatype
         self.bounding_box_max_dims = None
         self.bounding_box_min_dims = None
@@ -78,10 +78,10 @@ class AnimationBinary(Serializable):
             # print(self.particle_count)
             # rw.rw_obj(self.particle_data)
             raise ParticlesError()
-        if self.flags.has_unknown_chunk:
-            self.unknown_anim_chunk = rw.rw_new_obj(self.unknown_anim_chunk, UnknownAnimationChunk, version)
+        if self.flags.has_lookat_anims:
+            self.lookat_animations = rw.rw_new_obj(self.lookat_animations, LookAtAnimationsBinary, version)
         if self.flags.has_extra_data:
-            rw.rw_obj(self.extra_track_data, version)
+            self.extra_track_data = rw.rw_new_obj(self.extra_track_data, ExtraTrackData, version)
         if self.flags.has_bounding_box:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
@@ -91,32 +91,32 @@ class AnimationBinary(Serializable):
             rw.rw_obj(self.properties, version)
 
 
-class UnknownAnimationChunk(Serializable):
+class LookAtAnimationsBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.anim_1 = AnimationBinary(endianness)
-        self.unknown_1 = None
-        self.anim_2 = AnimationBinary(endianness)
-        self.unknown_2 = None
-        self.anim_3 = AnimationBinary(endianness)
-        self.unknown_3 = None
-        self.anim_4 = AnimationBinary(endianness)
-        self.unknown_4 = None
+        self.right        = AnimationBinary(endianness)
+        self.right_factor = None
+        self.left         = AnimationBinary(endianness)
+        self.left_factor  = None
+        self.up           = AnimationBinary(endianness)
+        self.up_factor    = None
+        self.down         = AnimationBinary(endianness)
+        self.down_factor  = None
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::UnknownAnimationChunk] {self.unknown_1} {self.unknown_2} {self.unknown_3} {self.unknown_4}"
+        return f"[GFDBinary::Animation::LookAtAnimationsBinary] {self.right_factor} {self.left_factor} {self.up_factor} {self.down_factor}"
         
     def read_write(self, rw, version):
-        rw.rw_obj(self.anim_1, version)
-        self.unknown_1 = rw.rw_float32(self.unknown_1)
-        rw.rw_obj(self.anim_2, version)
-        self.unknown_2 = rw.rw_float32(self.unknown_2)
-        rw.rw_obj(self.anim_3, version)
-        self.unknown_3 = rw.rw_float32(self.unknown_3)
-        rw.rw_obj(self.anim_4, version)
-        self.unknown_4 = rw.rw_float32(self.unknown_4)
+        rw.rw_obj(self.right, version)
+        self.right_factor = rw.rw_float32(self.right_factor)
+        rw.rw_obj(self.left, version)
+        self.left_factor  = rw.rw_float32(self.left_factor)
+        rw.rw_obj(self.up, version)
+        self.up_factor    = rw.rw_float32(self.up_factor)
+        rw.rw_obj(self.down, version)
+        self.down_factor  = rw.rw_float32(self.down_factor)
         
         
 class ExtraTrackData(Serializable):
