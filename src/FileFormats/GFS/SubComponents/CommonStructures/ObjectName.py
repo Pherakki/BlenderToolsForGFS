@@ -38,6 +38,7 @@ class ObjectName(Serializable):
     def rw_hash(self, rw, encoding):
         if self.string_size > 0:
             self.string_hash = rw.rw_uint32(self.string_hash)
+            return
             all_strings.add(self.string)
             all_strings_and_hashes.add((self.string, self.string_hash))
             
