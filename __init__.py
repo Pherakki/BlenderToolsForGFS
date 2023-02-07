@@ -20,6 +20,7 @@ def init_bpy():
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export import ExportGFS
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
+    from .src.BlenderIO.Properties.Animations import GFSToolsAnimationProperties
     from .src.BlenderIO.Properties.Bones import GFSToolsBoneProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
@@ -91,6 +92,7 @@ def init_bpy():
     )
     
     PROP_GROUPS = (
+        (bpy.types.Action,   "GFSTOOLS_AnimationProperties",       GFSToolsAnimationProperties      )
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
