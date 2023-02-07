@@ -10,13 +10,20 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     
     @classmethod
     def poll(self, context):
-        return context.active_nla_strip is not None
+        if context.active_nla_strip is None:
+            return False
+        elif context.active_nla_strip.action is None:
+            return False
+        return True
 
     def draw(self, context):
         # node = context.active_node
         layout = self.layout
         
         layout.label("I AM A TEST")
+        
+        active_action = context.active_nla_strip.action
+        props = active_action.GFSTOOLS_AnimationProperties
         
         # layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x04")
         # layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x08")

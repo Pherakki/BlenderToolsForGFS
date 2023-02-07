@@ -164,6 +164,8 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     track.strips.new(action.name, 1, action)
     armature.animation_data.action = None
     
+    return action
+    
 
 def import_animations(gfs, armature, filename):
     prev_obj = bpy.context.view_layer.objects.active
@@ -172,19 +174,57 @@ def import_animations(gfs, armature, filename):
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
-        add_animation(f"{filename}_{anim_idx}", anim, armature, is_parent_relative=True)
+        action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_parent_relative=True)
+        
+        if anim.extra_track is not None:
+            action.has_extra_track = True
+        
         if anim.lookat_anims.right is not None:
-            add_animation(f"{filename}_{anim_idx}_right", anim.lookat_anims.right, armature, is_parent_relative=False)
-            add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_anims.left,  armature, is_parent_relative=False)
-            add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_anims.up,    armature, is_parent_relative=False)
-            add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature, is_parent_relative=False)
+            a_r = add_animation(f"{filename}_{anim_idx}_right", anim.lookat_anims.right, armature, is_parent_relative=False)
+            a_l = add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_anims.left,  armature, is_parent_relative=False)
+            a_u = add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_anims.up,    armature, is_parent_relative=False)
+            a_d = add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature, is_parent_relative=False)
+            
+            a_r.GFSTOOLS_AnimationProperties.is_lookat = True
+            a_l.GFSTOOLS_AnimationProperties.is_lookat = True
+            a_u.GFSTOOLS_AnimationProperties.is_lookat = True
+            a_d.GFSTOOLS_AnimationProperties.is_lookat = True
+            
+            action.GFSTOOLS_AnimationProperties.has_lookat_anims = True
+            action.GFSTOOLS_AnimationProperties.lookat_right = f"{filename}_{anim_idx}_right"
+            action.GFSTOOLS_AnimationProperties.lookat_left  = f"{filename}_{anim_idx}_left"
+            action.GFSTOOLS_AnimationProperties.lookat_up    = f"{filename}_{anim_idx}_up"
+            action.GFSTOOLS_AnimationProperties.lookat_down  = f"{filename}_{anim_idx}_down"
+            action.GFSTOOLS_AnimationProperties.lookat_right_factor = anim.lookat_anims.right_factor
+            action.GFSTOOLS_AnimationProperties.lookat_left_factor  = anim.lookat_anims.left_factor
+            action.GFSTOOLS_AnimationProperties.lookat_up_factor    = anim.lookat_anims.up_factor
+            action.GFSTOOLS_AnimationProperties.lookat_down_factor  = anim.lookat_anims.down_factor
+            
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_parent_relative=False)
+        action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_parent_relative=False)
+        action.is_blend = True
+        
     if gfs.lookat_animations is not None:
-        add_animation(f"{filename}_right", gfs.lookat_animations.right, armature, is_parent_relative=False)
-        add_animation(f"{filename}_left",  gfs.lookat_animations.left,  armature, is_parent_relative=False)
-        add_animation(f"{filename}_up",    gfs.lookat_animations.up,    armature, is_parent_relative=False)
-        add_animation(f"{filename}_down",  gfs.lookat_animations.down,  armature, is_parent_relative=False)
+        a_r = add_animation(f"{filename}_right", gfs.lookat_animations.right, armature, is_parent_relative=False)
+        a_l = add_animation(f"{filename}_left",  gfs.lookat_animations.left,  armature, is_parent_relative=False)
+        a_u = add_animation(f"{filename}_up",    gfs.lookat_animations.up,    armature, is_parent_relative=False)
+        a_d = add_animation(f"{filename}_down",  gfs.lookat_animations.down,  armature, is_parent_relative=False)
+        
+        a_r.GFSTOOLS_AnimationProperties.is_lookat = True
+        a_l.GFSTOOLS_AnimationProperties.is_lookat = True
+        a_u.GFSTOOLS_AnimationProperties.is_lookat = True
+        a_d.GFSTOOLS_AnimationProperties.is_lookat = True
+        
+        action.GFSTOOLS_AnimationProperties.has_lookat_anims = True
+        action.GFSTOOLS_AnimationProperties.lookat_right = f"{filename}_right"
+        action.GFSTOOLS_AnimationProperties.lookat_left  = f"{filename}_left"
+        action.GFSTOOLS_AnimationProperties.lookat_up    = f"{filename}_up"
+        action.GFSTOOLS_AnimationProperties.lookat_down  = f"{filename}_down"
+        action.GFSTOOLS_AnimationProperties.lookat_right_factor = anim.lookat_anims.right_factor
+        action.GFSTOOLS_AnimationProperties.lookat_left_factor  = anim.lookat_anims.left_factor
+        action.GFSTOOLS_AnimationProperties.lookat_up_factor    = anim.lookat_anims.up_factor
+        action.GFSTOOLS_AnimationProperties.lookat_down_factor  = anim.lookat_anims.down_factor
+        
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
     
