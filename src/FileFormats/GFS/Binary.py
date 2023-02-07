@@ -1,5 +1,10 @@
 from ...serialization.Serializable import Serializable
 from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
+from .SubComponents.Textures.Binary import TexturePayload
+from .SubComponents.Materials.Binary import MaterialPayload
+from .SubComponents.Model.Binary import ModelPayload
+from .SubComponents.Animations.Binary import AnimationPayload
+from .SubComponents.Physics.Binary import PhysicsPayload
 
 
 class GFSBinary(Serializable):
@@ -42,3 +47,17 @@ class GFSBinary(Serializable):
         else:
             for ctr in self.containers:
                 rw.rw_obj(ctr)
+
+
+    def get_container(self, ctr_type):
+        for ctr in self.containers:
+            if ctr.type == ctr_type:
+                return ctr
+        return None
+    
+    def get_texture_block(self):    return self.get_container(TexturePayload.TYPECODE)
+    def get_material_block(self):   return self.get_container(MaterialPayload.TYPECODE)
+    def get_model_block(self):      return self.get_container(ModelPayload.TYPECODE)
+    def get_animation_block(self):  return self.get_container(AnimationPayload.TYPECODE)
+    def get_physics_block(self):    return self.get_container(PhysicsPayload.TYPECODE)
+    def get_0x000100F8_block(self): return self.get_container(0x000100F8)
