@@ -97,12 +97,12 @@ class LookAtAnimationsInterface:
         
         return instance
         
-    def to_binary(self, gfs):
+    def to_binary(self):
         binary = LookAtAnimationsBinary()
-        binary.right = self.right.to_binary(gfs)
-        binary.left  = self.left.to_binary(gfs)
-        binary.up    = self.up.to_binary(gfs)
-        binary.down  = self.down.to_binary(gfs)
+        binary.right = self.right.to_binary()
+        binary.left  = self.left.to_binary()
+        binary.up    = self.up.to_binary()
+        binary.down  = self.down.to_binary()
         
         binary.right_factor = self.right_factor
         binary.left_factor  = self.left_factor
@@ -185,6 +185,7 @@ class AnimationInterface:
         instance.properties            = binary.properties.data
 
         # These should be removable...?
+        # Maybe these say which channels are activated..?!
         instance.flag_0 = binary.flags.has_node_anims
         instance.flag_1 = binary.flags.has_material_anims
         instance.flag_2 = binary.flags.has_camera_anims
@@ -363,7 +364,7 @@ class AnimationInterface:
     
         return anim
     
-    def to_binary(self, gfs):
+    def to_binary(self):
         binary = AnimationBinary()
         
         binary.flags.has_node_anims     = len(self.node_animations)
@@ -408,22 +409,22 @@ class AnimationInterface:
         binary.flags.has_extra_data     = self.extra_track_data is not None
 
         if binary.flags.has_lookat_anims:
-            binary.lookat_animations = self.lookat_animations.to_binary(gfs)
+            binary.lookat_animations = self.lookat_animations.to_binary()
         binary.extra_track_data      = self.extra_track_data
         binary.bounding_box_max_dims = self.bounding_box_max_dims
         binary.bounding_box_min_dims = self.bounding_box_min_dims
         binary.speed                 = self.speed
         binary.properties.data       = self.properties
         binary.properties.count      = len(self.properties)
-        binary.controllers.data.extend([a.to_controller(gfs) for a in self.node_animations    ])
-        binary.controllers.data.extend([a.to_controller(gfs) for a in self.material_animations])
-        binary.controllers.data.extend([a.to_controller(gfs) for a in self.camera_animations  ])
-        binary.controllers.data.extend([a.to_controller(gfs) for a in self.morph_animations   ])
-        binary.controllers.data.extend([a.to_controller(gfs) for a in self.unknown_animations ])
+        binary.controllers.data.extend([a.to_controller() for a in self.node_animations    ]) # Nodes are first
+        binary.controllers.data.extend([a.to_controller() for a in self.camera_animations  ]) # Then cameras - SOMETIMES MIXED WITH NODES?!
+        binary.controllers.data.extend([a.to_controller() for a in self.material_animations]) # Then materials
+        binary.controllers.data.extend([a.to_controller() for a in self.morph_animations   ]) # Then... ??
+        binary.controllers.data.extend([a.to_controller() for a in self.unknown_animations ])
         binary.controllers.count     = len(binary.controllers.data)
         track_frames = [track.frames[-1] for ctlr in binary.controllers for track in ctlr.tracks]
         if len(track_frames):
-            binary.duration = max(track_frames)
+            binary.duration = max(track_frames) - min(track_frames) # Might this be calculated from a subset of anims?
         else:
             binary.duration = 0
         
@@ -483,7 +484,7 @@ class NodeAnimation:
         self.unknown_floats = {}
         self.track_groups = None
         
-    def to_controller(self, gfs):        
+    def to_controller(self):        
         track_binary = AnimationTrackBinary()
         has_trans    = len(self.positions)
         has_rot      = len(self.rotations)
@@ -660,7 +661,7 @@ class MaterialAnimation:
         self.unknown_30   = {}
         self.tex1_uv_snap = {}
 
-    def to_controller(self, gfs):
+    def to_controller(self):
         tracks = []
         for dataset, keyframe_type in [
                 (self.ambient_rgb,    AmbientRGB    ),
@@ -712,7 +713,7 @@ class CameraAnimation:
         self.fov        = {}
         self.unknown_24 = {}
 
-    def to_controller(self, gfs):
+    def to_controller(self):
         tracks = []
         for dataset, keyframe_type in [
                 (self.fov,         KeyframeType23),
@@ -750,7 +751,7 @@ class MorphAnimation:
         self.id   = None
         self.unknown = {}
 
-    def to_controller(self, gfs):
+    def to_controller(self):
         raise NotImplementedError
     
         tracks = []
@@ -789,7 +790,7 @@ class UnknownAnimation:
         self.id = None
         self.unknown = {}
 
-    def to_controller(self, gfs):
+    def to_controller(self):
         raise NotImplementedError
     
         tracks = []

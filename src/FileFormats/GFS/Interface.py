@@ -167,11 +167,11 @@ class GFSInterface:
             anm_ctr.data.flags.flag_3 = self.anim_flag_3
             
             anm_ctr.data.animations.count = len(self.animations)
-            anm_ctr.data.animations.data  = [a.to_binary(self) for a in self.animations]
+            anm_ctr.data.animations.data  = [a.to_binary() for a in self.animations]
             anm_ctr.data.blend_animations.count = len(self.blend_animations)
-            anm_ctr.data.blend_animations.data  = [a.to_binary(self) for a in self.blend_animations]
+            anm_ctr.data.blend_animations.data  = [a.to_binary() for a in self.blend_animations]
             if anm_ctr.data.flags.has_lookat_anims:
-                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(self)
+                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary()
   
             ot.rw_obj(anm_ctr)
             anm_ctr.size = ot.tell() - offset
