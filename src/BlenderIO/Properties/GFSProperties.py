@@ -55,5 +55,3 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
             prop_data = prop.bytes_data
             
         return prop.dname, dtype, prop_data
-            
-
