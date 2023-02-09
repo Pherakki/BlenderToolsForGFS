@@ -4,7 +4,9 @@ import bpy
 from mathutils import Matrix, Quaternion
 
 from ...serialization.BinaryTargets import Writer
+from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
+from .ImportProperties import import_properties
 
 
 def add_animation(track_name, anim, armature, is_parent_relative):
@@ -164,6 +166,57 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     track.strips.new(action.name, 1, action)
     armature.animation_data.action = None
     
+    # Put extra common data on
+    props = action.GFSTOOLS_AnimationProperties
+    props.flag_0 = anim.flag_0
+    props.flag_1 = anim.flag_1
+    props.flag_2 = anim.flag_2
+    props.flag_3 = anim.flag_3
+    props.flag_4 = anim.flag_4
+    props.flag_5 = anim.flag_5
+    props.flag_6 = anim.flag_6
+    props.flag_7 = anim.flag_7
+    props.flag_8 = anim.flag_8
+    props.flag_9 = anim.flag_9
+    props.flag_10 = anim.flag_10
+    props.flag_11 = anim.flag_11
+    props.flag_12 = anim.flag_12
+    props.flag_13 = anim.flag_13
+    props.flag_14 = anim.flag_14
+    props.flag_15 = anim.flag_15
+    props.flag_16 = anim.flag_16
+    props.flag_17 = anim.flag_17
+    props.flag_18 = anim.flag_18
+    props.flag_19 = anim.flag_19
+    props.flag_20 = anim.flag_20
+    props.flag_21 = anim.flag_21
+    props.flag_22 = anim.flag_22
+    props.flag_24 = anim.flag_24
+    props.flag_26 = anim.flag_26
+    props.flag_27 = anim.flag_27
+    
+    props.category = "NORMAL"
+    
+    
+    # Store unimported data as a blob
+    ai = AnimationInterface()
+    ai.material_animations = anim.material_animations
+    ai.camera_animations   = anim.camera_animations
+    ai.morph_animations    = anim.morph_animations
+    ai.unknown_animations  = anim.unknown_animations
+    ai.extra_track_data    = anim.extra_track_data
+    ab = ai.to_binary()
+    
+    stream = io.BytesIO()
+    wtr = Writer(None)
+    wtr.bytestream = stream
+    wtr.rw_obj(ab, 0x01105100)
+    stream.seek(0)
+    props.unimported_tracks = ''.join(f"{elem:0>2X}" for elem in stream.read())
+    
+    # Import properties
+    import_properties(anim.properties, action.GFSTOOLS_AnimationProperties.properties)
+    
     return action
     
 
@@ -173,57 +226,92 @@ def import_animations(gfs, armature, filename):
     armature.animation_data_create()
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode="POSE")
+    actions = []
     for anim_idx, anim in enumerate(gfs.animations):
         action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_parent_relative=True)
-        
-        if anim.extra_track is not None:
-            action.has_extra_track = True
-        
-        if anim.lookat_anims.right is not None:
-            a_r = add_animation(f"{filename}_{anim_idx}_right", anim.lookat_anims.right, armature, is_parent_relative=False)
-            a_l = add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_anims.left,  armature, is_parent_relative=False)
-            a_u = add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_anims.up,    armature, is_parent_relative=False)
-            a_d = add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_anims.down,  armature, is_parent_relative=False)
+    
+        if anim.lookat_animations is not None:
+            a_r = add_animation(f"{filename}_{anim_idx}_right", anim.lookat_animations.right, armature, is_parent_relative=False)
+            a_l = add_animation(f"{filename}_{anim_idx}_left",  anim.lookat_animations.left,  armature, is_parent_relative=False)
+            a_u = add_animation(f"{filename}_{anim_idx}_up",    anim.lookat_animations.up,    armature, is_parent_relative=False)
+            a_d = add_animation(f"{filename}_{anim_idx}_down",  anim.lookat_animations.down,  armature, is_parent_relative=False)
             
-            a_r.GFSTOOLS_AnimationProperties.is_lookat = True
-            a_l.GFSTOOLS_AnimationProperties.is_lookat = True
-            a_u.GFSTOOLS_AnimationProperties.is_lookat = True
-            a_d.GFSTOOLS_AnimationProperties.is_lookat = True
+            a_r.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+            a_l.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+            a_u.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+            a_d.GFSTOOLS_AnimationProperties.category = "LOOKAT"
             
             action.GFSTOOLS_AnimationProperties.has_lookat_anims = True
             action.GFSTOOLS_AnimationProperties.lookat_right = f"{filename}_{anim_idx}_right"
             action.GFSTOOLS_AnimationProperties.lookat_left  = f"{filename}_{anim_idx}_left"
             action.GFSTOOLS_AnimationProperties.lookat_up    = f"{filename}_{anim_idx}_up"
             action.GFSTOOLS_AnimationProperties.lookat_down  = f"{filename}_{anim_idx}_down"
-            action.GFSTOOLS_AnimationProperties.lookat_right_factor = anim.lookat_anims.right_factor
-            action.GFSTOOLS_AnimationProperties.lookat_left_factor  = anim.lookat_anims.left_factor
-            action.GFSTOOLS_AnimationProperties.lookat_up_factor    = anim.lookat_anims.up_factor
-            action.GFSTOOLS_AnimationProperties.lookat_down_factor  = anim.lookat_anims.down_factor
+            action.GFSTOOLS_AnimationProperties.lookat_right_factor = anim.lookat_animations.right_factor
+            action.GFSTOOLS_AnimationProperties.lookat_left_factor  = anim.lookat_animations.left_factor
+            action.GFSTOOLS_AnimationProperties.lookat_up_factor    = anim.lookat_animations.up_factor
+            action.GFSTOOLS_AnimationProperties.lookat_down_factor  = anim.lookat_animations.down_factor
+        
+        actions.append(action)
             
     for anim_idx, anim in enumerate(gfs.blend_animations):
         action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_parent_relative=False)
-        action.is_blend = True
+        action.GFSTOOLS_AnimationProperties.category = "BLEND"
         
+    ap_props = armature.data.GFSTOOLS_AnimationPackProperties
+    ap_props.flag_0  = gfs.anim_flag_0
+    ap_props.flag_1  = gfs.anim_flag_1
+    ap_props.flag_3  = gfs.anim_flag_3
+    ap_props.flag_4  = gfs.anim_flag_4
+    ap_props.flag_5  = gfs.anim_flag_5
+    ap_props.flag_6  = gfs.anim_flag_6
+    ap_props.flag_7  = gfs.anim_flag_7
+    ap_props.flag_8  = gfs.anim_flag_8
+    ap_props.flag_9  = gfs.anim_flag_9
+    ap_props.flag_10 = gfs.anim_flag_10
+    ap_props.flag_11 = gfs.anim_flag_11
+    ap_props.flag_12 = gfs.anim_flag_12
+    ap_props.flag_13 = gfs.anim_flag_13
+    ap_props.flag_14 = gfs.anim_flag_14
+    ap_props.flag_15 = gfs.anim_flag_15
+    ap_props.flag_16 = gfs.anim_flag_16
+    ap_props.flag_17 = gfs.anim_flag_17
+    ap_props.flag_18 = gfs.anim_flag_18
+    ap_props.flag_19 = gfs.anim_flag_19
+    ap_props.flag_20 = gfs.anim_flag_20
+    ap_props.flag_21 = gfs.anim_flag_21
+    ap_props.flag_22 = gfs.anim_flag_22
+    ap_props.flag_23 = gfs.anim_flag_23
+    ap_props.flag_24 = gfs.anim_flag_24
+    ap_props.flag_25 = gfs.anim_flag_25
+    ap_props.flag_26 = gfs.anim_flag_26
+    ap_props.flag_27 = gfs.anim_flag_27
+    ap_props.flag_28 = gfs.anim_flag_28
+    ap_props.flag_29 = gfs.anim_flag_29
+    ap_props.flag_30 = gfs.anim_flag_30
+    ap_props.flag_31 = gfs.anim_flag_31
+    
+    # Lookat Animations
     if gfs.lookat_animations is not None:
+        ap_props.has_lookat_anims = True
         a_r = add_animation(f"{filename}_right", gfs.lookat_animations.right, armature, is_parent_relative=False)
         a_l = add_animation(f"{filename}_left",  gfs.lookat_animations.left,  armature, is_parent_relative=False)
         a_u = add_animation(f"{filename}_up",    gfs.lookat_animations.up,    armature, is_parent_relative=False)
         a_d = add_animation(f"{filename}_down",  gfs.lookat_animations.down,  armature, is_parent_relative=False)
         
-        a_r.GFSTOOLS_AnimationProperties.is_lookat = True
-        a_l.GFSTOOLS_AnimationProperties.is_lookat = True
-        a_u.GFSTOOLS_AnimationProperties.is_lookat = True
-        a_d.GFSTOOLS_AnimationProperties.is_lookat = True
+        a_r.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+        a_l.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+        a_u.GFSTOOLS_AnimationProperties.category = "LOOKAT"
+        a_d.GFSTOOLS_AnimationProperties.category = "LOOKAT"
         
-        action.GFSTOOLS_AnimationProperties.has_lookat_anims = True
-        action.GFSTOOLS_AnimationProperties.lookat_right = f"{filename}_right"
-        action.GFSTOOLS_AnimationProperties.lookat_left  = f"{filename}_left"
-        action.GFSTOOLS_AnimationProperties.lookat_up    = f"{filename}_up"
-        action.GFSTOOLS_AnimationProperties.lookat_down  = f"{filename}_down"
-        action.GFSTOOLS_AnimationProperties.lookat_right_factor = anim.lookat_anims.right_factor
-        action.GFSTOOLS_AnimationProperties.lookat_left_factor  = anim.lookat_anims.left_factor
-        action.GFSTOOLS_AnimationProperties.lookat_up_factor    = anim.lookat_anims.up_factor
-        action.GFSTOOLS_AnimationProperties.lookat_down_factor  = anim.lookat_anims.down_factor
+        ap_props.has_lookat_anims = True
+        ap_props.lookat_right = f"{filename}_right"
+        ap_props.lookat_left  = f"{filename}_left"
+        ap_props.lookat_up    = f"{filename}_up"
+        ap_props.lookat_down  = f"{filename}_down"
+        ap_props.lookat_right_factor = gfs.lookat_animations.right_factor
+        ap_props.lookat_left_factor  = gfs.lookat_animations.left_factor
+        ap_props.lookat_up_factor    = gfs.lookat_animations.up_factor
+        ap_props.lookat_down_factor  = gfs.lookat_animations.down_factor
         
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj

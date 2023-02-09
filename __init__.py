@@ -29,6 +29,12 @@ def init_bpy():
     from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
     from .src.BlenderIO.Properties.Model import GFSToolsModelProperties
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
+    from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
+    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd
+    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel
+    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp
+    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown
+    from .src.BlenderIO.UI.AnimationPack import OBJECT_PT_GFSToolsAnimationPackDataPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
     from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd
@@ -65,6 +71,11 @@ def init_bpy():
         GFSToolsGenericProperty,
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsAnimationPanel,
+        OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
+        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd,
+        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel,
+        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp,
+        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
         OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel,
@@ -92,7 +103,7 @@ def init_bpy():
     )
     
     PROP_GROUPS = (
-        (bpy.types.Action,   "GFSTOOLS_AnimationProperties",       GFSToolsAnimationProperties      )
+        (bpy.types.Action,   "GFSTOOLS_AnimationProperties",       GFSToolsAnimationProperties      ),
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
