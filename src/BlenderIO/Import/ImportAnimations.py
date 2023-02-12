@@ -5,7 +5,8 @@ from mathutils import Matrix, Quaternion
 
 from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
-from .Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
+from ..Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
+from ..Utils.Maths import transform_node_animations
 from .ImportProperties import import_properties
 
 
@@ -18,12 +19,6 @@ def add_animation(track_name, anim, armature, is_parent_relative):
         
         actiongroup = action.groups.new(bone_name)
 
-
-        # position = Matrix.Translation(node.position)
-        # rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
-        # scale = Matrix.Diagonal([*node.scale, 1])
-        # base_matrix = position @ rotation @ scale
-        
         if bone_name not in armature.data.bones:
             # Throw an error here?
             # Just import with reference to a unit matrix?
@@ -37,13 +32,6 @@ def add_animation(track_name, anim, armature, is_parent_relative):
         
         fps = 30
         
-        frames = sorted(set([
-            *list(data_track.rotations.keys()),
-            *list(data_track.positions.keys()),
-            *list(data_track.scales.keys())
-        ]))
-        
-        # Get rotations
         rotations = {k: v for k, v in data_track.rotations.items()}
         rotation_frames = list(data_track.rotations.keys())
         
@@ -55,50 +43,9 @@ def add_animation(track_name, anim, armature, is_parent_relative):
         
         # Transform the keyframes to rest relative if they're parent relative
         if is_parent_relative:
-            if len(rotations) == 0:
-                rotations = {0: [0., 0., 0., 1.]}
-                rotation_frames = []
-            if len(positions) == 0:
-                positions = {0: [0., 0., 0.]}
-                position_frames = []
-            if len(scales) == 0:
-                scales = {0: [1., 1., 1.]}
-                scale_frames = []
-            
-            # Now interpolate...
-            for frame in frames:
-                if frame not in rotations:
-                    rotations[frame] = interpolate_keyframe_dict(rotations, frame, slerp)
-                if frame not in positions:
-                    positions[frame] = interpolate_keyframe_dict(positions, frame, lerp)
-                if frame not in scales:
-                    scales[frame] = interpolate_keyframe_dict(scales, frame, lerp)
-            
-            # Now create transform matrices...
-            o_rotations = {}
-            o_positions = {}
-            o_scales    = {}
-            for i in frames:
-                pos_mat = Matrix.Translation(positions[i])
-                rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
-                scl_mat = Matrix.Diagonal([*scales[i], 1])
-                transform = base_matrix.inverted() @ (pos_mat @ rot_mat @ scl_mat)
-                pos, rot, scl = transform.decompose()
-                
-                o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]
-                o_positions[i] = [pos.x, pos.y, pos.z]
-                o_scales[i]    = [scl.x, scl.y, scl.z]
-              
-            rotations = o_rotations
-            positions = o_positions
-            scales = o_scales
+            positions, rotations, scales = transform_node_animations(data_track.positions, data_track.rotations, data_track.scales, base_matrix.inverted())
         else:
-            # WRONG but idk how else to import scales at the moment
-            # Blend scales are additive...
-            # Choices are to import blend scales relative to an animation,
-            # or import them relative to 1 and hope for the best
-            # Moreover, Blend animations only really "make sense" in the context
-            # of another animation. So bake them into an animation..?
+            # Import scales as a separate addition track later
             scales = {k : [1 + vi for vi in v] for k, v in scales.items()}
           
         # Create animations
