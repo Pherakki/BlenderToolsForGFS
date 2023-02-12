@@ -14,17 +14,17 @@ def construct_bone(name, armature, matrix, scale):
     bpy_bone.tail = pos_vector + tail
     bpy_bone.roll = roll
     
-    # Head/tail/roll sets correctly in Blender 2.83, but not in
-    # Blender 3.4?!
-    # So here we'll just manually set the matrix because... I have no idea
-    # why Blender sets the matrix_local incorrectly later
-    # Can't just set the matrix because that prevents the head/tail being set,
-    # so set the head/tail first and then align the roll by setting the matrix
-    # I feel *extremely* uncomfortable about the fact that two different
-    # roll values are required in two versions of Blender to get the same
-    # matrix - need to find out why.
+    # # Head/tail/roll sets correctly in Blender 2.83, but not in
+    # # Blender 3.4?!
+    # # So here we'll just manually set the matrix because... I have no idea
+    # # why Blender sets the matrix_local incorrectly later
+    # # Can't just set the matrix because that prevents the head/tail being set,
+    # # so set the head/tail first and then align the roll by setting the matrix
+    # # I feel *extremely* uncomfortable about the fact that two different
+    # # roll values are required in two versions of Blender to get the same
+    # # matrix - need to find out why.
     
-    bpy_bone.matrix = matrix
+    # bpy_bone.matrix = matrix
     
     return bpy_bone
 
