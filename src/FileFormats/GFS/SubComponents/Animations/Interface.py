@@ -1,3 +1,4 @@
+from ..CommonStructures.CustomProperty import PropertyInterface
 from .Binary import AnimationBinary, LookAtAnimationsBinary
 from .Binary.AnimController import AnimationControllerBinary
 from .Binary.AnimTrack import AnimationTrackBinary
@@ -429,6 +430,14 @@ class AnimationInterface:
             binary.duration = 0
         
         return binary
+    
+    def add_property(self, name, dtype, data):
+        prop = PropertyInterface()
+        prop.name = name
+        prop.type = dtype
+        prop.data = data
+        self.properties.append(prop)
+        return prop
 
 
 def construct_frames(*keyframe_sets):
