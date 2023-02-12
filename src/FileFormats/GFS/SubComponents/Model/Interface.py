@@ -206,5 +206,5 @@ class ModelInterface:
                                 indices[wgt_idx] = 0
                         v.indices = indices[::-1]
         
-        return binary
+        return binary, old_node_id_to_new_node_id_map
     

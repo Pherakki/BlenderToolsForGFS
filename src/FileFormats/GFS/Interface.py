@@ -184,13 +184,14 @@ class GFSInterface:
             binary.containers.append(mat_ctr)
             
         # Model container
+        old_node_id_to_new_node_id_map = None
         if len(self.bones):
             offset = ot.tell()
             mdl_ctr = GFS0ContainerBinary()
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
+            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
@@ -251,11 +252,11 @@ class GFSInterface:
             anm_ctr.data.flags.flag_31 = self.anim_flag_31
             
             anm_ctr.data.animations.count = len(self.animations)
-            anm_ctr.data.animations.data  = [a.to_binary() for a in self.animations]
+            anm_ctr.data.animations.data  = [a.to_binary(old_node_id_to_new_node_id_map) for a in self.animations]
             anm_ctr.data.blend_animations.count = len(self.blend_animations)
-            anm_ctr.data.blend_animations.data  = [a.to_binary() for a in self.blend_animations]
+            anm_ctr.data.blend_animations.data  = [a.to_binary(old_node_id_to_new_node_id_map) for a in self.blend_animations]
             if anm_ctr.data.flags.has_lookat_anims:
-                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary()
+                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(old_node_id_to_new_node_id_map)
   
             ot.rw_obj(anm_ctr)
             anm_ctr.size = ot.tell() - offset

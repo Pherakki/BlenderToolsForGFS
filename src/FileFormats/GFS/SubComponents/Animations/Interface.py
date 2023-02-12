@@ -98,12 +98,12 @@ class LookAtAnimationsInterface:
         
         return instance
         
-    def to_binary(self):
+    def to_binary(self, old_node_id_to_new_node_id_map):
         binary = LookAtAnimationsBinary()
-        binary.right = self.right.to_binary()
-        binary.left  = self.left.to_binary()
-        binary.up    = self.up.to_binary()
-        binary.down  = self.down.to_binary()
+        binary.right = self.right.to_binary(old_node_id_to_new_node_id_map)
+        binary.left  = self.left.to_binary(old_node_id_to_new_node_id_map)
+        binary.up    = self.up.to_binary(old_node_id_to_new_node_id_map)
+        binary.down  = self.down.to_binary(old_node_id_to_new_node_id_map)
         
         binary.right_factor = self.right_factor
         binary.left_factor  = self.left_factor
@@ -220,10 +220,7 @@ class AnimationInterface:
     
     @staticmethod
     def _import_node_animation_binary(controller_binary):
-        anim = NodeAnimation()
-        
-        anim.name = controller_binary.target_name.string
-        anim.id   = controller_binary.target_id
+        anim = NodeAnimation(controller_binary.target_id, controller_binary.target_name.string)
         anim.track_groups = []
             
         for track_binary in controller_binary.tracks:
@@ -293,11 +290,9 @@ class AnimationInterface:
         
     @staticmethod
     def _import_material_animation_binary(controller_binary):
-        anim = MaterialAnimation()
-        
-        anim.name = controller_binary.target_name.string
-        anim.id   = controller_binary.target_id
-            
+        anim = MaterialAnimation(controller_binary.target_id,
+                                 controller_binary.target_name.string)
+
         for track_binary in controller_binary.tracks:
             if   track_binary.keyframe_type == 6:  anim.ambient_rgb  = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 7:  anim.diffuse_rgb  = {f: [kf.r, kf.g, kf.b]                                                    for f, kf in zip(track_binary.frames, track_binary.values)}
@@ -320,10 +315,8 @@ class AnimationInterface:
 
     @staticmethod
     def _import_camera_animation_binary(controller_binary):
-        anim = CameraAnimation()
-        
-        anim.name = controller_binary.target_name.string
-        anim.id   = controller_binary.target_id
+        anim = CameraAnimation(controller_binary.target_id,
+                               controller_binary.target_name.string)
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 23:
@@ -337,10 +330,8 @@ class AnimationInterface:
 
     @staticmethod
     def _import_morph_animation_binary(controller_binary):
-        anim = MorphAnimation()
-        
-        anim.name = controller_binary.target_name.string
-        anim.id   = controller_binary.target_id
+        anim = MorphAnimation(controller_binary.target_id,
+                              controller_binary.target_name.string)
             
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 3:
@@ -352,11 +343,9 @@ class AnimationInterface:
 
     @staticmethod
     def _import_unknown_animation_binary(controller_binary):
-        anim = UnknownAnimation()
+        anim = UnknownAnimation(controller_binary.target_id,
+                                controller_binary.target_name.string)
         
-        anim.name = controller_binary.target_name.string
-        anim.id   = controller_binary.target_id
-            
         for track_binary in controller_binary.tracks:
             if track_binary.keyframe_type == 5:
                 anim.unknown = {f: kf.unknown for f, kf in zip(track_binary.frames, track_binary.values)}
@@ -365,7 +354,7 @@ class AnimationInterface:
     
         return anim
     
-    def to_binary(self):
+    def to_binary(self, old_node_id_to_new_node_id_map):
         binary = AnimationBinary()
         
         binary.flags.has_node_anims     = len(self.node_animations)
@@ -417,7 +406,7 @@ class AnimationInterface:
         binary.speed                 = self.speed
         binary.properties.data       = self.properties
         binary.properties.count      = len(self.properties)
-        binary.controllers.data.extend([a.to_controller() for a in self.node_animations    ]) # Nodes are first
+        binary.controllers.data.extend([a.to_controller(old_node_id_to_new_node_id_map) for a in self.node_animations]) # Nodes are first
         binary.controllers.data.extend([a.to_controller() for a in self.camera_animations  ]) # Then cameras - SOMETIMES MIXED WITH NODES?!
         binary.controllers.data.extend([a.to_controller() for a in self.material_animations]) # Then materials
         binary.controllers.data.extend([a.to_controller() for a in self.morph_animations   ]) # Then... ??
@@ -430,6 +419,29 @@ class AnimationInterface:
             binary.duration = 0
         
         return binary
+    
+    def add_node_animation(self, node_idx, node_name):
+        self.node_animations.append(NodeAnimation(node_idx, node_name))
+        return self.node_animations[-1]
+    
+    def add_material_animation(self, material_idx, material_name):
+        self.material_animations.append(MaterialAnimation())
+        return
+        
+    def add_lookat_animations(self, up_factor, down_factor, left_factor, right_factor):
+        self.lookat_animations = LookAtAnimationsInterface()
+        la_a = self.lookat_animations
+        la_a.up    = AnimationInterface()
+        la_a.down  = AnimationInterface()
+        la_a.left  = AnimationInterface()
+        la_a.right = AnimationInterface()
+        
+        la_a.up_factor    = up_factor
+        la_a.down_factor  = down_factor
+        la_a.left_factor  = left_factor
+        la_a.right_factor = right_factor
+        
+        return la_a.up, la_a.down, la_a.left, la_a.right
     
     def add_property(self, name, dtype, data):
         prop = PropertyInterface()
@@ -481,9 +493,9 @@ def extract_scale(keyframes, size):
 
 
 class NodeAnimation:
-    def __init__(self):
-        self.name = None
-        self.id   = None
+    def __init__(self, id, name):
+        self.name = name
+        self.id   = id
         self.compress = False
         self.is_kf26  = False
         self.positions = {}
@@ -493,7 +505,7 @@ class NodeAnimation:
         self.unknown_floats = {}
         self.track_groups = None
         
-    def to_controller(self):        
+    def to_controller(self, old_node_id_to_new_node_id_map):        
         track_binary = AnimationTrackBinary()
         has_trans    = len(self.positions)
         has_rot      = len(self.rotations)
@@ -529,6 +541,9 @@ class NodeAnimation:
         controller_binary.target_id = self.id #[b.name for b in gfs.nodes].index(self.name)
         controller_binary.target_name = controller_binary.target_name.from_name(self.name)
         controller_binary.tracks.data = []
+        
+        if old_node_id_to_new_node_id_map is not None:
+            controller_binary.target_id = old_node_id_to_new_node_id_map[controller_binary.target_id]
         
         # Create tracks
         for atg in anim_track_groups:
@@ -646,9 +661,9 @@ class NodeAnimation:
         return controller_binary
 
 class MaterialAnimation:
-    def __init__(self):
-        self.name = None
-        self.id   = None
+    def __init__(self, id, name):
+        self.name = name
+        self.id   = id
         
         self.snap_tex0_uvs = False
         self.snap_tex1_uvs = False
@@ -716,9 +731,9 @@ class MaterialAnimation:
         return controller_binary
         
 class CameraAnimation:
-    def __init__(self):
-        self.name = None
-        self.id   = None
+    def __init__(self, id, name):
+        self.name = name
+        self.id   = id
         self.fov        = {}
         self.unknown_24 = {}
 
@@ -755,9 +770,9 @@ class CameraAnimation:
         return controller_binary
 
 class MorphAnimation:
-    def __init__(self):
-        self.name = None
-        self.id   = None
+    def __init__(self, id, name):
+        self.name = name
+        self.id   = id
         self.unknown = {}
 
     def to_controller(self):
@@ -794,9 +809,9 @@ class MorphAnimation:
         return controller_binary
     
 class UnknownAnimation:
-    def __init__(self):
-        self.name = None
-        self.id = None
+    def __init__(self, id, name):
+        self.name = name
+        self.id   = id
         self.unknown = {}
 
     def to_controller(self):

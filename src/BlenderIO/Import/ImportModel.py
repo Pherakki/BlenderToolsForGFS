@@ -50,7 +50,6 @@ def import_model(gfs, name):
     for i, node in enumerate(gfs.bones):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
-
         if i not in bones_to_ignore:            
             bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
             if node.parent_idx > -1:
@@ -58,7 +57,6 @@ def import_model(gfs, name):
             bpy_nodes[i]           = bpy_bone
             gfs_to_bpy_bone_map[i] = bpy_bone_counter
             bpy_bone_counter      += 1
-            
         bpy_node_names[i]  = node.name
         bone_transforms[i] = matrix
 

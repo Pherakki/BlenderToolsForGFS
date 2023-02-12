@@ -154,7 +154,7 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     ai.morph_animations    = anim.morph_animations
     ai.unknown_animations  = anim.unknown_animations
     ai.extra_track_data    = anim.extra_track_data
-    ab = ai.to_binary()
+    ab = ai.to_binary(None)
     
     stream = io.BytesIO()
     wtr = Writer(None)
