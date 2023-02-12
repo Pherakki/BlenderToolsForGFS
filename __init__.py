@@ -18,7 +18,7 @@ def init_bpy():
     
     from .src.BlenderIO.Import import ImportGFS, ImportGAP
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
-    from .src.BlenderIO.Export import ExportGFS
+    from .src.BlenderIO.Export import ExportGFS, ExportGAP
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
     from .src.BlenderIO.Properties.Animations import GFSToolsAnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties
@@ -67,6 +67,7 @@ def init_bpy():
         ImportGAP,
         GFSImportSubmenu,
         ExportGFS,
+        ExportGAP,
         GFSExportSubmenu,
         MessagePopup,
         GFSToolsGenericProperty,
