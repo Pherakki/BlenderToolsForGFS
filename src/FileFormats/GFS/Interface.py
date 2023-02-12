@@ -365,3 +365,28 @@ class GFSInterface:
         cam.binary.unknown_0x50 = cam.binary.unknown_0x50
         self.cameras.append(cam)
         return cam
+
+    def add_animation(self):
+        anim = AnimationInterface()
+        self.animations.append(anim)
+        return anim
+    
+    def add_blend_animation(self):
+        anim = AnimationInterface()
+        self.blend_animations.append(anim)
+        return anim
+    
+    def add_lookat_animations(self, up_factor, down_factor, left_factor, right_factor):
+        self.lookat_animations = LookAtAnimationsInterface()
+        la_a = self.lookat_animations
+        la_a.up    = AnimationInterface()
+        la_a.down  = AnimationInterface()
+        la_a.left  = AnimationInterface()
+        la_a.right = AnimationInterface()
+        
+        la_a.up_factor    = up_factor
+        la_a.down_factor  = down_factor
+        la_a.left_factor  = left_factor
+        la_a.right_factor = right_factor
+        
+        return la_a.up, la_a.down, la_a.left, la_a.right
