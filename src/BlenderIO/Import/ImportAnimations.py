@@ -110,7 +110,9 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     track = armature.animation_data.nla_tracks.new()
     track.name = track_name
     track.mute = True
-    track.strips.new(action.name, 1, action)
+    strip = track.strips.new(action.name, 1, action)
+    if anim.speed is not None:
+        strip.scale = 1 / anim.speed
     armature.animation_data.action = None
     
     # Put extra common data on
