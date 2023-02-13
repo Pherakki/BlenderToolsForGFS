@@ -3,7 +3,7 @@ import math
 import bpy
 from mathutils import Matrix, Quaternion
 
-from ..Utils.Maths import convert_rotation_to_quaternion
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_YDirBone_to_XDirBone
 
 
 def export_node_tree(gfs, armature):
@@ -42,7 +42,7 @@ def export_node_tree(gfs, armature):
         
         bind_relative_pose = rest_pose_matrices[bone.name]
         parent_relative_pose = bind_relative_pose @ local_bind_matrix
-        p, r, s = parent_relative_pose.decompose()
+        p, r, s = parent_relative_pose.decompose() #convert_YDirBone_to_XDirBone(parent_relative_pose).decompose()
         position = [p.x, p.y, p.z]
         rotation = [r.x, r.y, r.z, r.w]
         scale    = [s.x, s.y, s.z]

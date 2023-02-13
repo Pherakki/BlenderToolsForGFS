@@ -4,6 +4,7 @@ import math
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 
+from ..Utils.Maths import convert_XDirBone_to_YDirBone
 from ..Utils.UVMapManagement import make_uv_map_name
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 from .ImportProperties import import_properties
@@ -43,15 +44,14 @@ def import_model(gfs, name):
 
     gfs_to_bpy_bone_map = {}
     bpy_bone_counter = 0
-    # upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
-    #                             [ 0.,  0., -1.,  0.],
-    #                             [ 0.,  1.,  0.,  0.],
-    #                             [ 0.,  0.,  0.,  1.]])
+
     for i, node in enumerate(gfs.bones):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
         if i not in bones_to_ignore:            
-            bpy_bone = construct_bone(node.name, main_armature, matrix, 10)
+            bpy_bone = construct_bone(node.name, main_armature, 
+                                      matrix,#convert_XDirBone_to_YDirBone(matrix), 
+                                      10)
             if node.parent_idx > -1:
                 bpy_bone.parent = bpy_nodes[node.parent_idx] 
             bpy_nodes[i]           = bpy_bone

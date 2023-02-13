@@ -4,6 +4,27 @@ from mathutils import Matrix, Quaternion
 
 from .Interpolation import interpolate_keyframe_dict, lerp, slerp
 
+upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
+                            [ 0.,  0., -1.,  0.],
+                            [ 0.,  1.,  0.,  0.],
+                            [ 0.,  0.,  0.,  1.]])
+
+boneY_to_boneX_matrix = Matrix([[ 0.,  1.,  0.,  0.],
+                                [-1.,  0.,  0.,  0.],
+                                [ 0.,  0.,  1.,  0.],
+                                [ 0.,  0.,  0.,  1.]])
+
+def convert_XDirBone_to_YDirBone(matrix):
+    return matrix @ boneY_to_boneX_matrix
+
+def convert_YDirBone_to_XDirBone(matrix):
+    return matrix @ boneY_to_boneX_matrix.inverted()
+
+def convert_Yup_to_Zup(matrix):
+    return matrix @ upY_to_upZ_matrix
+
+def convert_Zup_to_Yup(matrix):
+    return matrix @ upY_to_upZ_matrix.inverted()
 
 def decomposableToTRS(matrix, tol=0.001):
     shear_factor = abs(matrix.col[1].dot(matrix.col[2]))
