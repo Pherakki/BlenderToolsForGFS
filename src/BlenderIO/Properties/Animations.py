@@ -84,11 +84,11 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
     unimported_tracks: bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
     
     # Only for Normal animations
-    has_lookat_anims = bpy.props.BoolProperty("LookAt Anims")
-    lookat_right:  bpy.props.EnumProperty(name="LookAt Right", items=find_lookats)
-    lookat_left:   bpy.props.EnumProperty(name="LookAt Left",  items=find_lookats)
-    lookat_up:     bpy.props.EnumProperty(name="LookAt Up",    items=find_lookats)
-    lookat_down:   bpy.props.EnumProperty(name="LookAt Down",  items=find_lookats)
+    has_lookat_anims:    bpy.props.BoolProperty("LookAt Anims")
+    lookat_right:        bpy.props.EnumProperty(name="LookAt Right", items=find_lookats)
+    lookat_left:         bpy.props.EnumProperty(name="LookAt Left",  items=find_lookats)
+    lookat_up:           bpy.props.EnumProperty(name="LookAt Up",    items=find_lookats)
+    lookat_down:         bpy.props.EnumProperty(name="LookAt Down",  items=find_lookats)
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
