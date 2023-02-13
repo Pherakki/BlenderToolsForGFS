@@ -208,8 +208,7 @@ def get_action_data(action, armature):
                     {(k-1)/fps : v for k, v in t.items()}, 
                     {(k-1)/fps : v for k, v in r.items()}, 
                     {(k-1)/fps : v for k, v in s.items()}])
-        
-    print(out[[a[1] for a in out].index("Bip01 R Forearm")])
+    
     return out
 
 
