@@ -33,7 +33,6 @@ def init_bpy():
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
     from .src.BlenderIO.UI.AnimationPack import OBJECT_PT_GFSToolsAnimationPackDataPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
-    from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
     from .src.BlenderIO.UI.Lights import OBJECT_PT_GFSToolsLightAttributesPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
