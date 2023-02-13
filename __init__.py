@@ -31,17 +31,9 @@ def init_bpy():
     from .src.BlenderIO.Properties.Model import GFSToolsModelProperties
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
-    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd
-    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel
-    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp
-    from .src.BlenderIO.UI.Animation import OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown
     from .src.BlenderIO.UI.AnimationPack import OBJECT_PT_GFSToolsAnimationPackDataPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBoneGenericPropertyPanel
-    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd
-    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelDel
-    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp
-    from .src.BlenderIO.UI.Bones import OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
     from .src.BlenderIO.UI.Lights import OBJECT_PT_GFSToolsLightAttributesPanel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
@@ -74,10 +66,6 @@ def init_bpy():
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
-        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd,
-        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel,
-        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp,
-        OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown,
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
@@ -93,11 +81,6 @@ def init_bpy():
         OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
         OBJECT_PT_GFSToolsModelDataPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,
-        OBJECT_PT_GFSToolsBoneGenericPropertyPanel,
-        OBJECT_OT_GFSToolsBoneGenericPropertyPanelAdd,
-        OBJECT_OT_GFSToolsBoneGenericPropertyPanelDel,
-        OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveUp,
-        OBJECT_OT_GFSToolsBoneGenericPropertyPanelMoveDown,
         OBJECT_PT_GFSToolsLightAttributesPanel,
         OBJECT_UL_GFSToolsGenericPropertyUIList
         # ErrorPopup,

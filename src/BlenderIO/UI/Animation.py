@@ -1,9 +1,5 @@
 import bpy
-from .GFSProperties import OBJECT_PT_GFSToolsGenericPropertyPanel
-from .GFSProperties import OBJECT_OT_GFSToolsGenericPropertyPanelAdd
-from .GFSProperties import OBJECT_OT_GFSToolsGenericPropertyPanelDel
-from .GFSProperties import OBJECT_OT_GFSToolsGenericPropertyPanelMoveUp
-from .GFSProperties import OBJECT_OT_GFSToolsGenericPropertyPanelMoveDown
+from .GFSProperties import makeCustomPropertiesPanel
 
 
 class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
@@ -77,57 +73,14 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
             col = layout.column()
             col.prop(props, "blend_scale_action")
             col.enabled = props.has_scale_action
-    
-
-class OBJECT_PT_GFSToolsAnimationGenericPropertyPanel(OBJECT_PT_GFSToolsGenericPropertyPanel):
-    bl_parent_id   = "OBJECT_PT_GFSToolsAnimationPanel"
-    bl_space_type  = 'NLA_EDITOR'
-    bl_region_type = 'UI'
-    bl_context     = "Strip"
-    
-    @property
-    def GFSTOOLS_addoperator(self):
-        return OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd.bl_idname
-    
-    @property
-    def GFSTOOLS_deloperator(self):
-        return OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel.bl_idname
-    
-    @property
-    def GFSTOOLS_moveupoperator(self):
-        return OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp.bl_idname
-    
-    @property
-    def GFSTOOLS_movedownoperator(self):
-        return OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown.bl_idname
-    
-    def GFSTOOLS_get_obj(self, context):
-        return context.active_nla_strip.action.GFSTOOLS_AnimationProperties
-    
-
-class OBJECT_OT_GFSToolsAnimationGenericPropertyPanelAdd(OBJECT_OT_GFSToolsGenericPropertyPanelAdd):
-    bl_idname = "GFSTOOLS.OBJECT_OT_GFSToolsAnimGenericPropertyPanelAdd".lower()
-    
-    def GFSTOOLS_get_obj(self, context):
-        return context.active_nla_strip.action.GFSTOOLS_AnimationProperties
 
 
-class OBJECT_OT_GFSToolsAnimationGenericPropertyPanelDel(OBJECT_OT_GFSToolsGenericPropertyPanelDel):
-    bl_idname = "GFSTOOLS.OBJECT_OT_GFSToolsAnimGenericPropertyPanelDel".lower()
-    
-    def GFSTOOLS_get_obj(self, context):
-        return context.active_nla_strip.action.GFSTOOLS_AnimationProperties
-
-
-class OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveUp(OBJECT_OT_GFSToolsGenericPropertyPanelMoveUp):
-    bl_idname = "GFSTOOLS.OBJECT_OT_GFSToolsAnimGenericPropertyPanelMoveUp".lower()
-    
-    def GFSTOOLS_get_obj(self, context):
-        return context.active_nla_strip.action.GFSTOOLS_AnimationProperties
-
-
-class OBJECT_OT_GFSToolsAnimationGenericPropertyPanelMoveDown(OBJECT_OT_GFSToolsGenericPropertyPanelMoveDown):
-    bl_idname = "GFSTOOLS.OBJECT_OT_GFSToolsAnimGenericPropertyPanelMoveDown".lower()
-    
-    def GFSTOOLS_get_obj(self, context):
-        return context.active_nla_strip.action.GFSTOOLS_AnimationProperties
+OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(
+    "OBJECT_PT_GFSToolsAnimationPanel",
+    "Anim",
+    "NLA_EDITOR",
+    "UI",
+    "Strip",
+    lambda context: context.active_nla_strip.action.GFSTOOLS_AnimationProperties,
+    lambda cls, context: True
+    )
