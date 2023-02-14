@@ -264,18 +264,6 @@ def import_animations(gfs, armature, filename):
         
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
-    
-    # IMPORT ALL DATA AS A BINARY
-    if len(gfs.animations):
-        stream = io.BytesIO()
-        wtr = Writer(None)
-        wtr.bytestream = stream
-        ab = gfs.animation_data
-        wtr.rw_obj(ab, 0x01105100)
-        stream.seek(0)
-        
-        armature[f"{filename}_animations"] = "0x" + ''.join(f"{elem:0>2X}" for elem in stream.read())
-
 
 
 def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
