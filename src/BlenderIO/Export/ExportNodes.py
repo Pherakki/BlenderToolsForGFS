@@ -54,11 +54,11 @@ def export_node_tree(gfs, armature):
         ]
         
         # Export the node object
-        unknown_float = bone.GFSTOOLS_BoneProperties.unknown_float
+        unknown_float = bone.GFSTOOLS_NodeProperties.unknown_float
         node = gfs.add_node(parent_id, bone.name, position, rotation, scale, unknown_float, bpm)
         
         # Export the custom properties
-        for prop in bone.GFSTOOLS_BoneProperties.properties:
+        for prop in bone.GFSTOOLS_NodeProperties.properties:
             node.add_property(*prop.extract_data(prop))
 
 

@@ -37,6 +37,6 @@ OBJECT_PT_GFSToolsBonePropertiesPanel = makeNodePropertiesPanel(
     "PROPERTIES", 
     "WINDOW",
     "bone", 
-    lambda context: context.active_bone.GFSTOOLS_BoneProperties,
+    lambda context: context.active_bone.GFSTOOLS_NodeProperties,
     lambda cls, context: type(context.active_bone) is bpy.types.Bone
 )

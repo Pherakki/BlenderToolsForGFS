@@ -85,9 +85,9 @@ def import_model(gfs, name):
             continue
         
         bpy_bone = main_armature.data.bones[node.name]
-        bpy_bone.GFSTOOLS_BoneProperties.unknown_float = node.unknown_float
+        bpy_bone.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
         
-        import_properties(node.properties, bpy_bone.GFSTOOLS_BoneProperties.properties)
+        import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties)
     
 
     # Import meshes and parent them to the armature
