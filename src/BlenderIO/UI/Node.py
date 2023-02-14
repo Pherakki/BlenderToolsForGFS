@@ -1,7 +1,7 @@
 import bpy
 from .GFSProperties import makeCustomPropertiesPanel
 
-def makeNodePropertiesPanel(identifier, space_type, region_type, context, props_getter, poll_func, parent_id=None):
+def makeNodePropertiesPanel(identifier, space_type, region_type, context, props_getter, poll_func, parent_id=None, predraw=None):
     def make_idname():
         return f"OBJECT_PT_GFSTools{identifier}PropertiesPanel"
     
@@ -25,6 +25,8 @@ def makeNodePropertiesPanel(identifier, space_type, region_type, context, props_
             
             props = props_getter(context)
             
+            if predraw is not None:
+                predraw(context, layout)
             layout.prop(props, "unknown_float")
     
         @classmethod
