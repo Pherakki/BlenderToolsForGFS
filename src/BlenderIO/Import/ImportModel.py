@@ -76,10 +76,15 @@ def import_model(gfs, name):
             main_armature.data.bones[remapped_index].layers[2] = True
     
     bpy.context.view_layer.objects.active = main_armature
-        
+    
     ###################
     # PUSH EXTRA DATA #
     ###################
+    # Import root node as the armature
+    main_armature.data.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
+    import_properties(gfs.bones[0].properties, main_armature.data.GFSTOOLS_NodeProperties.properties)
+    
+    # Now import other nodes
     for i, node in enumerate(gfs.bones):
         if i in bones_to_ignore:
             continue

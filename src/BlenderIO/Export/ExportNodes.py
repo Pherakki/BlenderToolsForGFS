@@ -20,12 +20,16 @@ def export_node_tree(gfs, armature):
     rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
     
     # Add root node
+    rn_props = armature.data.GFSTOOLS_NodeProperties
     root_node = gfs.add_node(-1, armature.data.GFSTOOLS_ModelProperties.root_node_name,
                               [0., 0., 0.], [0., 0., 0., 1.],  [1., 1., 1.], 
-                              1.0, 
+                              rn_props.unknown_float,
                               [1., 0., 0., 0.,
                                0., 1., 0., 0.,
                                0., 0., 1., 0.])
+    for prop in rn_props.properties:
+        root_node.add_property(*prop.extract_data(prop))
+    
     bone_list = {bone.name: i for i, bone in enumerate([root_node, *armature.data.bones])}
     #bone_list = {bone.name: i for i, bone in enumerate(armature.data.bones)}
     # Export each bone as a node
