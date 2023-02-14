@@ -25,9 +25,12 @@ def export_mesh_data(gfs, armature):
         #parent_relative_bind_pose_matrix = armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
         pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
         
+        node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
         bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
-        gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], 1., bpm)        
-        
+        gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
+        for prop in node_props.properties:
+            gfs_node.add_property(*prop.extract_data(prop))
+            
         material_names.add(create_mesh(gfs, bpy_mesh_object, armature, node_id))
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:

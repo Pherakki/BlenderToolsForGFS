@@ -1,4 +1,8 @@
 import bpy
+from .Nodes import GFSToolsNodeProperties
+
+class GFSToolsMeshNodeProperties(GFSToolsNodeProperties):
+    pass
 
 
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):

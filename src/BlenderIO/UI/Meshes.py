@@ -1,5 +1,5 @@
 import bpy
-
+from .Node import makeNodePropertiesPanel
 
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
@@ -10,7 +10,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_options     = {'DEFAULT_CLOSED'}
     
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         return context.mesh is not None
 
     def draw(self, context):
@@ -64,33 +64,55 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_31")
 
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_0x12")
-        
 
-class OBJECT_PT_GFSToolsMeshUnknownFloatsPanel(bpy.types.Panel):
-    bl_label       = "Unknown Floats"
-    bl_parent_id   = "OBJECT_PT_GFSToolsMeshAttributesPanel"
-    bl_space_type  = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context     = "data"
-    bl_options     = {'DEFAULT_CLOSED'}
-    
     @classmethod
-    def poll(self, context):
-        return context.mesh is not None
-
-    def draw_header(self, context):
-        mesh = context.mesh
-        layout = self.layout
-        layout.prop(mesh.GFSTOOLS_MeshProperties, "has_unknown_floats", text="")
-
-    def draw(self, context):
-        mesh = context.mesh
-        layout = self.layout
+    def register(cls):
+        bpy.utils.register_class(cls.NodePropertiesPanel)
+        bpy.utils.register_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
         
-        ctr = layout.column()
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.NodePropertiesPanel)
+        bpy.utils.unregister_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
+    
+    class DummyType:
+        type = None
+    
+    NodePropertiesPanel = makeNodePropertiesPanel(
+        "MeshNode", 
+        "PROPERTIES",
+        "WINDOW",
+        "data", 
+        lambda context: context.mesh.data.GFSTOOLS_NodeProperties,
+        lambda cls, context: context.mesh is not None and getattr(context.mesh, "parent", cls.DummyType).type != "MESH",
+        parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel"
+    )        
 
-        ctr.active = mesh.GFSTOOLS_MeshProperties.has_unknown_floats
-
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_float_1")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_float_2")
+    class OBJECT_PT_GFSToolsMeshUnknownFloatsPanel(bpy.types.Panel):
+        bl_label       = "Unknown Floats"
+        bl_parent_id   = "OBJECT_PT_GFSToolsMeshAttributesPanel"
+        bl_space_type  = 'PROPERTIES'
+        bl_region_type = 'WINDOW'
+        bl_context     = "data"
+        bl_options     = {'DEFAULT_CLOSED'}
         
+        @classmethod
+        def poll(self, context):
+            return context.mesh is not None
+    
+        def draw_header(self, context):
+            mesh = context.mesh
+            layout = self.layout
+            layout.prop(mesh.GFSTOOLS_MeshProperties, "has_unknown_floats", text="")
+    
+        def draw(self, context):
+            mesh = context.mesh
+            layout = self.layout
+            
+            ctr = layout.column()
+    
+            ctr.active = mesh.GFSTOOLS_MeshProperties.has_unknown_floats
+    
+            ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_float_1")
+            ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_float_2")
+            

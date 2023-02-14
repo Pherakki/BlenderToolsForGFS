@@ -41,6 +41,7 @@ def import_model(gfs, name):
         
     # Get rid of root node
     bones_to_ignore.add(0)
+    
 
     gfs_to_bpy_bone_map = {}
     bpy_bone_counter = 0
@@ -86,7 +87,7 @@ def import_model(gfs, name):
     
     # Now import other nodes
     for i, node in enumerate(gfs.bones):
-        if i in bones_to_ignore:
+        if (i in bones_to_ignore) or (i in meshes_to_rename):
             continue
         
         bpy_bone = main_armature.data.bones[node.name]
@@ -94,7 +95,9 @@ def import_model(gfs, name):
         
         import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties)
     
-
+    ######################
+    # IMPORT ATTACHMENTS #
+    ######################
     # Import meshes and parent them to the armature
     mesh_groups = {idx: [] for idx in sorted(set((mesh.node for mesh in gfs.meshes)))}
     for mesh in gfs.meshes:
@@ -103,7 +106,7 @@ def import_model(gfs, name):
         mesh_name = bpy_node_names[node_idx]
         if node_idx in meshes_to_rename:
             mesh_name += "_mesh"
-        import_mesh_group(mesh_name, bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
+        import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
     
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
@@ -144,7 +147,7 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, parent_node_name, idx, meshes, bpy_node_names, armature, transform):
+def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform):
     bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature)
 
     bpy_mesh_object.parent = armature
@@ -153,6 +156,10 @@ def import_mesh_group(mesh_name, parent_node_name, idx, meshes, bpy_node_names, 
     bpy_mesh_object.location = pos
     bpy_mesh_object.rotation_quaternion = quat
     bpy_mesh_object.scale = scale
+    
+    # Add Node Properties
+    bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
+    import_properties(gfs_node.properties, bpy_mesh_object.data.GFSTOOLS_NodeProperties.properties)
 
     for i, mesh in enumerate(meshes[1:]):
         child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature)

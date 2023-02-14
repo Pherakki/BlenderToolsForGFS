@@ -27,7 +27,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
-    from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties
+    from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
     from .src.BlenderIO.Properties.Model import GFSToolsModelProperties, GFSToolsModelNodeProperties
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
@@ -45,7 +45,6 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
     from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshAttributesPanel
-    from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshUnknownFloatsPanel
     from .src.BlenderIO.UI.Model import OBJECT_PT_GFSToolsModelDataPanel
     from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
@@ -77,7 +76,6 @@ def init_bpy():
         OBJECT_PT_GFSToolsMaterialAttributeType6Panel,
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
-        OBJECT_PT_GFSToolsMeshUnknownFloatsPanel,
         OBJECT_PT_GFSToolsModelDataPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,
         OBJECT_PT_GFSToolsLightAttributesPanel,
@@ -92,6 +90,7 @@ def init_bpy():
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
+        (bpy.types.Mesh,     "GFSTOOLS_NodeProperties",            GFSToolsMeshNodeProperties       ),
         (bpy.types.Bone,     "GFSTOOLS_NodeProperties",            GFSToolsBoneNodeProperties       ),
         (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
         (bpy.types.Armature, "GFSTOOLS_ModelProperties",           GFSToolsModelProperties          ),
@@ -102,7 +101,6 @@ def init_bpy():
     
     LIST_ITEMS = (
         (bpy.types.TOPBAR_MT_file_import, menu_func_import),
-        #(bpy.types.TOPBAR_MT_file_export, menu_func_export)
         (bpy.types.TOPBAR_MT_file_export, menu_func_export)
     )
     
