@@ -14,6 +14,7 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     action = bpy.data.actions.new(track_name)
 
     # Base action
+    # Need to import root node animations here too
     for data_track in anim.node_animations:
         bone_name = data_track.name
         
@@ -291,20 +292,22 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
         
         actiongroup = action.groups.new(bone_name)
 
-
+        # Figure out the parent -> child matrix in the bind pose
         parent_bind_matrix = bind_matrices[node.parent_idx] if node.parent_idx > -1 else Matrix.Identity(4)
         local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrices[node_idx]
-                
+        
+        # Figure out the parent -> child matrix in the rest pose
         rest_position = Matrix.Translation(node.position)
         rest_rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
         rest_scale    = Matrix.Diagonal([*node.scale, 1])
         rest_matrix   = rest_position @ rest_rotation @ rest_scale
         
-        pos, quat, scale = (rest_matrix @ local_bind_matrix.inverted()).decompose()
+        # Calculate the bind -> rest pose transform
+        pos, quat, scale = (local_bind_matrix.inverted() @ rest_matrix).decompose()
         position = [pos.x, pos.y, pos.z]
         rotation = [quat.x, quat.y, quat.z, quat.w]
         scale    = [scale.x, scale.y, scale.z]
-          
+        
         # Create animations
         fcs = []
         for i, quat_idx in enumerate([3, 0, 1, 2]):
