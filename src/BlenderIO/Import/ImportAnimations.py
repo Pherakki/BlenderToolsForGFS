@@ -355,7 +355,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
     track.name = track_name
-    track.mute = True
+    track.mute = False
     track.strips.new(action.name, 1, action) # All actions imported to frame 1
     armature.animation_data.action = None
     
