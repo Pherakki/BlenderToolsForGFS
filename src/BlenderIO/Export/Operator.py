@@ -14,7 +14,7 @@ from .ExportCameras import export_cameras
 from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
 from .ExportAnimations import export_animations
-#from ..WarningSystem import WarningSystem, handle_warning_system
+from ..WarningSystem import ErrorLogger, handle_warning_system
 
 
 class ExportGFS(bpy.types.Operator, ExportHelper):
@@ -57,9 +57,8 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     )
     
     def export_file(self, context, filepath):
-        # Figure out the mode sanitising later
-        # current_mode = bpy.context.active_object.mode
-        # bpy.ops.object.mode_set("OBJECT")
+        # Init a logger
+        errorlog = ErrorLogger()
         
         # Locate which model to expose based on what object the user has
         # selected.
@@ -87,13 +86,14 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         if self.pack_animations:
             export_animations(gfs, selected_model)
         #bpy.ops.object.mode_set(current_mode)
+        errorlog.digest_errors()
         
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
-        #WarningSystem.digest_warnings()
+        errorlog.digest_warnings()
         
         return {'FINISHED'}
     

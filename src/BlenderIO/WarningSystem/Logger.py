@@ -1,7 +1,7 @@
 class ReportableErrorList(Exception):
     pass
 
-class ErrorsStateMachine:
+class ErrorLogger:
     def __init__(self):
         self._errors   = []
         self._warnings = []
@@ -33,6 +33,10 @@ class ErrorsStateMachine:
 
     def log_warning(self, warning):
         self._warning.append(warning)
+        
+    def clear(self):
+        self._errors.clear()
+        self._warnings.clear()
     
 import bpy
 import functools

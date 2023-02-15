@@ -12,8 +12,8 @@ from .ImportModel import import_model
 from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
-from ..WarningSystem.StateMachine import handle_warning_system
-from ..WarningSystem import WarningSystem
+from ..WarningSystem.Logger import handle_warning_system
+from ..WarningSystem import ErrorLogger
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'

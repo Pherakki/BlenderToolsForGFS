@@ -1,3 +1,1 @@
-from .StateMachine import ErrorsStateMachine, handle_warning_system
-
-WarningSystem = ErrorsStateMachine()
+from .Logger import ErrorLogger, handle_warning_system
