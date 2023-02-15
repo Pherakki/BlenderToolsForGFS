@@ -64,6 +64,11 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # selected.
         selected_model = find_selected_model()
         
+        original_obj  = bpy.context.view_layer.objects.active
+        original_mode = selected_model.mode
+        bpy.context.view_layer.objects.active = selected_model
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
         # Pre-process the model and check if there is any unexportable data
         # Throw any errors here if they exist, and take note of any warnings
         # if they shouldn't interrupt export.
@@ -85,7 +90,10 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_0x000100F8(gfs, selected_model)
         if self.pack_animations:
             export_animations(gfs, selected_model)
-        #bpy.ops.object.mode_set(current_mode)
+        
+        # Check if any errors occurred that prevented export.
+        bpy.ops.object.mode_set(mode=original_mode)
+        bpy.context.view_layer.objects.active = original_obj
         errorlog.digest_errors()
         
         gfs.has_end_container = True # Put this somewhere else
