@@ -116,6 +116,48 @@ def import_model(gfs, name):
     for i, light in enumerate(gfs.lights):
         import_light("light", i, light, main_armature, bpy_node_names)
     
+    #######################
+    # ADJUST BONE LENGTHS #
+    #######################
+    bpy.context.view_layer.objects.active = main_armature
+    bpy.ops.object.mode_set(mode="EDIT")
+    
+    for bpy_bone in main_armature.data.edit_bones:
+        position = bpy_bone.head
+        head_to_tail = bpy_bone.tail - bpy_bone.head
+        
+        if len(bpy_bone.children):
+            # Before blasting ahead with this, should really take the 
+            # dot product between the bone and all of its children
+            # to see if there is an "obvious" candidate that it points
+            # towards.
+            # If there is no such candidate, then you can do some
+            # interpolated heuristic, ideally weighted
+            # by the dot product between the bone and each child...
+            
+            # Average together child positions
+            tail_target = list(zip(*[c.head for c in bpy_bone.children]))
+            tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
+            head_to_target = tail_target - position
+            
+            alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
+            length = head_to_target.length * alignment_factor + 10. * (1 - alignment_factor)
+            
+            # Set some minimum length scale...
+            if length < 0.01:
+                length = 0.01
+        else:
+            if bpy_bone.parent is None:
+                # Should set this depending on model dimensions and where
+                # head_to_tail points...
+                length = 10.
+            else:
+                length = bpy_bone.parent.length
+        
+        bpy_bone.length = length
+        
+    bpy.ops.object.mode_set(mode="OBJECT")
+    
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
     main_armature.rotation_euler = [math.pi/2, 0, 0]
