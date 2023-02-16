@@ -49,7 +49,7 @@ def init_bpy():
     from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
-    from .src.BlenderIO.WarningSystem.StateMachine import ErrorPopup, PreviousErrorOperator, NextErrorOperator
+    from .src.BlenderIO.WarningSystem.Logger import ErrorPopup, PreviousErrorOperator, NextErrorOperator
     
     
     CLASSES = (
