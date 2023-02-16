@@ -248,12 +248,6 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
     track_name = "Rest Pose"
     action = bpy.data.actions.new(track_name)
 
-    #rest_transforms = [None]*len()
-    bind_matrices = [Matrix([b.bind_pose_matrix[0:4],
-                             b.bind_pose_matrix[4:8],
-                             b.bind_pose_matrix[8:12],
-                             [0., 0., 0., 1.]]) for b in gfs.bones]
-    
     # Base action
     for node_idx, node in enumerate(gfs.bones):
         if node_idx not in gfs_to_bpy_bone_map:
@@ -264,9 +258,12 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
         actiongroup = action.groups.new(bone_name)
 
         # Figure out the parent -> child matrix in the bind pose
-        parent_bind_matrix = bind_matrices[node.parent_idx] if node.parent_idx > -1 else Matrix.Identity(4)
-        local_bind_matrix = parent_bind_matrix.inverted() @ bind_matrices[node_idx]
-        
+        bpy_bone = armature.data.bones[bone_name]
+        if bpy_bone.parent is not None:
+            local_bind_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+        else:
+            local_bind_matrix = bpy_bone.matrix_local
+
         # Figure out the parent -> child matrix in the rest pose
         rest_position = Matrix.Translation(node.position)
         rest_rotation = Quaternion([node.rotation[3], *node.rotation[0:3]]).to_matrix().to_4x4()
