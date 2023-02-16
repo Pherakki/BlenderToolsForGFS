@@ -42,24 +42,25 @@ def export_node_tree(gfs, armature):
             local_bind_matrix = bind_matrix
         else:
             parent_id = bone_list[bone_parent.name]
-            local_bind_matrix = bone_parent.matrix_local.inverted() @ bind_matrix
+            local_bind_matrix = (convert_YDirBone_to_XDirBone(bone_parent.matrix_local)).inverted() @ bind_matrix
         
         bind_relative_pose = rest_pose_matrices[bone.name]
-        parent_relative_pose = local_bind_matrix @ bind_relative_pose
-        p, r, s = parent_relative_pose.decompose() #convert_YDirBone_to_XDirBone(parent_relative_pose).decompose()
+        parent_relative_pose = local_bind_matrix @ convert_YDirBone_to_XDirBone(bind_relative_pose)
+        p, r, s = parent_relative_pose.decompose()
         position = [p.x, p.y, p.z]
         rotation = [r.x, r.y, r.z, r.w]
         scale    = [s.x, s.y, s.z]
         
-        bpm = [
-            bind_matrix[0][0], bind_matrix[0][1], bind_matrix[0][2], bind_matrix[0][3],
-            bind_matrix[1][0], bind_matrix[1][1], bind_matrix[1][2], bind_matrix[1][3],
-            bind_matrix[2][0], bind_matrix[2][1], bind_matrix[2][2], bind_matrix[2][3],
+        bm = convert_YDirBone_to_XDirBone(bind_matrix)
+        export_bm = [
+            bm[0][0], bm[0][1], bm[0][2], bm[0][3],
+            bm[1][0], bm[1][1], bm[1][2], bm[1][3],
+            bm[2][0], bm[2][1], bm[2][2], bm[2][3],
         ]
         
         # Export the node object
         unknown_float = bone.GFSTOOLS_NodeProperties.unknown_float
-        node = gfs.add_node(parent_id, bone.name, position, rotation, scale, unknown_float, bpm)
+        node = gfs.add_node(parent_id, bone.name, position, rotation, scale, unknown_float, export_bm)
         
         # Export the custom properties
         for prop in bone.GFSTOOLS_NodeProperties.properties:

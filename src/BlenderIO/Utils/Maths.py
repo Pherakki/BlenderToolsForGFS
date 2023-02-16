@@ -65,7 +65,7 @@ def convert_rotation_to_quaternion(rotation_quat, rotation_euler, rotation_mode)
         return q
 
 
-def transform_node_animations(in_positions, in_rotations, in_scales, base_matrix, bone_transform):
+def transform_node_animations(in_positions, in_rotations, in_scales, base_matrix, axis_conversion):
     # Get Transforms
     rotations = {k: v for k, v in in_rotations.items()}
     rotation_frames = list(rotations.keys())
@@ -104,7 +104,7 @@ def transform_node_animations(in_positions, in_rotations, in_scales, base_matrix
         pos_mat = Matrix.Translation(positions[i])
         rot_mat = Quaternion([rotations[i][3], *rotations[i][0:3]]).to_matrix().to_4x4()
         scl_mat = Matrix.Diagonal([*scales[i], 1])
-        transform =  base_matrix @ bone_transform.inverted() @ (pos_mat @ rot_mat @ scl_mat) @ bone_transform
+        transform = base_matrix @ axis_conversion(pos_mat @ rot_mat @ scl_mat)
         pos, rot, scl = transform.decompose()
         
         if i in rotation_frames: o_rotations[i] = [rot.x, rot.y, rot.z, rot.w]

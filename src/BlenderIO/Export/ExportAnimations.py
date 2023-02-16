@@ -6,8 +6,8 @@ import numpy as np
 
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
-from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations
-from ..Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
+from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_YDirBone_to_XDirBone
+from ..Utils.Interpolation import lerp
 
 
 def export_animations(gfs, armature):
@@ -52,8 +52,8 @@ def export_animations(gfs, armature):
             if not len(track.strips):
                 continue
             action = track.strips[0].action
-            if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(armature, gfs.add_animation(),       track)
-            elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(armature, gfs.add_blend_animation(), track)
+            if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(armature, gfs.add_animation(),       track, is_blend=False)
+            elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(armature, gfs.add_blend_animation(), track, is_blend=True)
         export_lookat_animations(armature, ap_props, gfs)
 
 def export_lookat_animations(armature, props, gfs_obj):
@@ -65,26 +65,51 @@ def export_lookat_animations(armature, props, gfs_obj):
                 props.lookat_right_factor
             )
             
-            export_animation(armature, la_up,    armature.animation_data.nla_tracks[props.lookat_up])
-            export_animation(armature, la_down,  armature.animation_data.nla_tracks[props.lookat_down])
-            export_animation(armature, la_left,  armature.animation_data.nla_tracks[props.lookat_left])
-            export_animation(armature, la_right, armature.animation_data.nla_tracks[props.lookat_right])
+            export_animation(armature, la_up,    armature.animation_data.nla_tracks[props.lookat_up],    is_blend=True)
+            export_animation(armature, la_down,  armature.animation_data.nla_tracks[props.lookat_down],  is_blend=True)
+            export_animation(armature, la_left,  armature.animation_data.nla_tracks[props.lookat_left],  is_blend=True)
+            export_animation(armature, la_right, armature.animation_data.nla_tracks[props.lookat_right], is_blend=True)
         
 
-def export_animation(armature, gfs_anim, nla_track):
+def export_animation(armature, gfs_anim, nla_track, is_blend):
     strip = nla_track.strips[0]
     action = strip.action
     
     # EXPORT NODE ANIMS
     animated_nodes = set()
     node_transforms = get_action_data(action, armature)
-    for (bidx, bname, t, r, s) in sorted(node_transforms, key=lambda x: x[0]):
-        anim = gfs_anim.add_node_animation(bidx, bname)
-        anim.positions = t
-        anim.rotations = r
-        anim.scales    = s
-        animated_nodes.add(bname)
-    
+    if is_blend:
+        # First export the translations and rotations
+        node_anims = {}
+        for (bidx, bname, t, r, _) in sorted(node_transforms, key=lambda x: x[0]):
+            anim = gfs_anim.add_node_animation(bidx, bname)
+            anim.positions = t
+            anim.rotations = r
+            animated_nodes.add(bname)
+            node_anims[bname] = anim
+        
+        # Now get the scale track
+        # The scale track needs to be separated since it's additive, not
+        # multiplicative
+        if action.GFSTOOLS_AnimationProperties.has_scale_action:
+            scale_action_name = action.GFSTOOLS_AnimationProperties.blend_scale_action
+            scale_action = bpy.data.actions.get(scale_action_name)
+            if scale_action is not None:
+                scale_transforms = get_action_data(scale_action, armature)
+                
+                for (bidx, bname, _, _, s) in sorted(scale_transforms, key=lambda x: x[0]):
+                    node_anim = node_anims.get(bname)
+                    if node_anim is None:
+                        node_anim = gfs_anim.add_node_animation(bidx, bname)
+                    node_anim.scales = s
+    else:
+        for (bidx, bname, t, r, s) in sorted(node_transforms, key=lambda x: x[0]):
+            anim = gfs_anim.add_node_animation(bidx, bname)
+            anim.positions = t
+            anim.rotations = r
+            anim.scales    = s
+            animated_nodes.add(bname)
+        
     # Export extra data
     props = action.GFSTOOLS_AnimationProperties
     gfs_anim.flag_0  = props.flag_0
@@ -197,7 +222,7 @@ def get_action_data(action, armature):
             
         bpy_bone = armature.data.bones[bone_name]
         if bpy_bone.parent is not None:
-            base_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+            base_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() @ bpy_bone.matrix_local
         else:
             base_matrix = bpy_bone.matrix_local
 
@@ -205,7 +230,7 @@ def get_action_data(action, armature):
                                             animation_data[bone_name].get("rotation_quaternion", {}),
                                             animation_data[bone_name].get("scale", {}),
                                             base_matrix,
-                                            Matrix.Identity(4))
+                                            convert_YDirBone_to_XDirBone)
         
         
         fps = 30

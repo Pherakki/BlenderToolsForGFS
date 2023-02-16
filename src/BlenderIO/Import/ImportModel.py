@@ -51,7 +51,7 @@ def import_model(gfs, name):
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
         if i not in bones_to_ignore:            
             bpy_bone = construct_bone(node.name, main_armature, 
-                                     matrix,# @ boneY_to_boneX_matrix, 
+                                     convert_XDirBone_to_YDirBone(matrix), 
                                       10)
             if node.parent_idx > -1:
                 bpy_bone.parent = bpy_nodes[node.parent_idx] 
