@@ -10,6 +10,7 @@ def export_node_tree(gfs, armature):
     gfs.keep_bounding_box    = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
     gfs.keep_bounding_sphere = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
     gfs.flag_3               = armature.data.GFSTOOLS_ModelProperties.flag_3
+    
     # Get the rest pose if it exists
     rest_pose_action = None
     if armature.animation_data is not None:
@@ -31,7 +32,6 @@ def export_node_tree(gfs, armature):
         root_node.add_property(*prop.extract_data(prop))
     
     bone_list = {bone.name: i for i, bone in enumerate([root_node, *armature.data.bones])}
-    #bone_list = {bone.name: i for i, bone in enumerate(armature.data.bones)}
     # Export each bone as a node
     for bone in armature.data.bones:
         # Reconstruct the rest pose transform
@@ -45,7 +45,7 @@ def export_node_tree(gfs, armature):
             local_bind_matrix = bone_parent.matrix_local.inverted() @ bind_matrix
         
         bind_relative_pose = rest_pose_matrices[bone.name]
-        parent_relative_pose = bind_relative_pose @ local_bind_matrix
+        parent_relative_pose = local_bind_matrix @ bind_relative_pose
         p, r, s = parent_relative_pose.decompose() #convert_YDirBone_to_XDirBone(parent_relative_pose).decompose()
         position = [p.x, p.y, p.z]
         rotation = [r.x, r.y, r.z, r.w]
