@@ -6,7 +6,7 @@ from mathutils import Matrix, Quaternion
 from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from ..Utils.Interpolation import interpolate_keyframe_dict, lerp, slerp
-from ..Utils.Maths import transform_node_animations
+from ..Utils.Maths import transform_node_animations, boneY_to_boneX_matrix
 from .ImportProperties import import_properties
 
 
@@ -49,9 +49,10 @@ def add_animation(track_name, anim, armature, is_parent_relative):
             continue
         bpy_bone = armature.data.bones[bone_name]
         if bpy_bone.parent is not None:
-            base_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+            local_bind_matrix = bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
         else:
-            base_matrix = bpy_bone.matrix_local
+            local_bind_matrix = bpy_bone.matrix_local
+            #local_bind_matix = boneY_to_boneX_matrix.inverted() @ local_bind_matrix
 
         
         fps = 30
@@ -67,7 +68,7 @@ def add_animation(track_name, anim, armature, is_parent_relative):
         
         # Transform the keyframes to rest relative if they're parent relative
         if is_parent_relative:
-            positions, rotations, scales = transform_node_animations(data_track.positions, data_track.rotations, data_track.scales, base_matrix.inverted())
+            positions, rotations, scales = transform_node_animations(data_track.positions, data_track.rotations, data_track.scales, local_bind_matrix.inverted(), Matrix.Identity(4))#boneY_to_boneX_matrix)
         else:
             # Import scales as a separate addition track later
             scales = {k : [1 + vi for vi in v] for k, v in scales.items()}

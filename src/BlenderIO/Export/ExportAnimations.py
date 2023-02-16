@@ -204,7 +204,8 @@ def get_action_data(action, armature):
         t, r, s = transform_node_animations(animation_data[bone_name].get("location", {}),
                                             animation_data[bone_name].get("rotation_quaternion", {}),
                                             animation_data[bone_name].get("scale", {}),
-                                            base_matrix)
+                                            base_matrix,
+                                            Matrix.Identity(4))
         
         
         fps = 30
