@@ -45,7 +45,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         "PROPERTIES", 
         "WINDOW",
         "data", 
-        lambda context: context.armature.data.GFSTOOLS_NodeProperties,
+        lambda context: context.armature.GFSTOOLS_NodeProperties,
         lambda cls, context: context.armature is not None,
         parent_id="OBJECT_PT_GFSToolsModelDataPanel",
         predraw=_draw_on_node
