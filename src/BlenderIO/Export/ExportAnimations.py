@@ -76,12 +76,14 @@ def export_animation(armature, gfs_anim, nla_track):
     action = strip.action
     
     # EXPORT NODE ANIMS
+    animated_nodes = set()
     node_transforms = get_action_data(action, armature)
     for (bidx, bname, t, r, s) in sorted(node_transforms, key=lambda x: x[0]):
         anim = gfs_anim.add_node_animation(bidx, bname)
         anim.positions = t
         anim.rotations = r
         anim.scales    = s
+        animated_nodes.add(bname)
     
     # Export extra data
     props = action.GFSTOOLS_AnimationProperties
@@ -129,6 +131,8 @@ def export_animation(armature, gfs_anim, nla_track):
         export_lookat_animations(armature, props, gfs_anim)
         gfs_anim.extra_track_data = unimported_tracks.extra_track_data
         
+    gfs_anim.node_animations.extend([t for t in unimported_tracks.node_animations 
+                                     if t.name not in animated_nodes])
     gfs_anim.material_animations = unimported_tracks.material_animations
     gfs_anim.camera_animations   = unimported_tracks.camera_animations
     gfs_anim.morph_animations    = unimported_tracks.morph_animations

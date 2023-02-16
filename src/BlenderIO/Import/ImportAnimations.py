@@ -38,14 +38,14 @@ def add_animation(track_name, anim, armature, is_parent_relative):
 
     # Base action
     # Need to import root node animations here too
-    for data_track in anim.node_animations:
+    unimported_node_animations = []
+    for track_idx, data_track in enumerate(anim.node_animations):
         bone_name = data_track.name
         
         actiongroup = action.groups.new(bone_name)
 
         if bone_name not in armature.data.bones:
-            # Throw an error here?
-            # Just import with reference to a unit matrix?
+            unimported_node_animations.append(track_idx)
             continue
         bpy_bone = armature.data.bones[bone_name]
         if bpy_bone.parent is not None:
@@ -121,6 +121,7 @@ def add_animation(track_name, anim, armature, is_parent_relative):
     
     # Store unimported data as a blob
     ai = AnimationInterface()
+    ai.node_animations     = [anim.node_animations[tidx] for tidx in unimported_node_animations]
     ai.material_animations = anim.material_animations
     ai.camera_animations   = anim.camera_animations
     ai.morph_animations    = anim.morph_animations
