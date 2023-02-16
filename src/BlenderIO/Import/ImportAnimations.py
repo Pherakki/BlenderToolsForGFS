@@ -10,6 +10,29 @@ from ..Utils.Maths import transform_node_animations
 from .ImportProperties import import_properties
 
 
+def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, transforms, transform_indices):
+    frames = transforms.keys()
+    values = transforms.values()
+    if len(frames) != 0:
+        fcs = []
+        for i, t_idx in enumerate(transform_indices):
+            fc = action.fcurves.new(fcurve_name, index=i)
+            fc.keyframe_points.add(count=len(frames))
+            fc.keyframe_points.foreach_set("co",
+                                           [x for co in zip([float(fps*frame + 1) for frame in frames],
+                                                            [value[t_idx]         for value in values]) 
+                                            for x in co])
+            for k in fc.keyframe_points:
+                k.interpolation = interpolation_method
+            fc.group = actiongroup
+            fc.lock = True
+            fcs.append(fc)
+        for fc in fcs:
+            fc.update()
+        for fc in fcs:
+            fc.lock = False
+            
+
 def add_animation(track_name, anim, armature, is_parent_relative):
     action = bpy.data.actions.new(track_name)
 
@@ -50,62 +73,10 @@ def add_animation(track_name, anim, armature, is_parent_relative):
             scales = {k : [1 + vi for vi in v] for k, v in scales.items()}
           
         # Create animations
-        if len(rotation_frames) != 0:
-            fcs = []
-            for i, quat_idx in enumerate([3, 0, 1, 2]):
-                fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
-                fc.keyframe_points.add(count=len(rotation_frames))
-                fc.keyframe_points.foreach_set("co",
-                                               [x for co in zip([float(fps*frame + 1) for frame in rotation_frames],
-                                                                [rotations[frame][quat_idx] for frame in rotation_frames]) for x in
-                                                co])
-                fc.group = actiongroup
-                fc.lock = True
-                fcs.append(fc)
-            for fc in fcs:
-                fc.update()
-            for fc in fcs:
-                fc.lock = False
-                
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, rotations, [3, 0, 1, 2])
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, positions, [0, 1, 2]   )
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, scales,    [0, 1, 2]   )
 
-        if len(position_frames) != 0:
-            fcs = []
-            for i in range(3):
-                fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
-                fc.keyframe_points.add(count=len(position_frames))
-                fc.keyframe_points.foreach_set("co",
-                                                [x for co in zip([float(fps*frame + 1) for frame in position_frames],
-                                                                [positions[frame][i] for frame in position_frames]) for x in
-                                                co])
-                fc.group = actiongroup
-                for k in fc.keyframe_points:
-                    k.interpolation = "LINEAR"
-                fc.lock = True
-                fcs.append(fc)
-            for fc in fcs:
-                fc.update()
-            for fc in fcs:
-                fc.lock = False
-                
-
-        if len(scale_frames) != 0:
-            fcs = []
-            for i in range(3):
-                fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
-                fc.keyframe_points.add(count=len(scale_frames))
-                fc.keyframe_points.foreach_set("co",
-                                               [x for co in zip([float(fps*frame + 1) for frame in scale_frames],
-                                                                [scales[frame][i] for frame in scale_frames]) for x in
-                                                co])
-                fc.group = actiongroup
-                for k in fc.keyframe_points:
-                    k.interpolation = "LINEAR"
-                fc.lock = True
-                fcs.append(fc)
-            for fc in fcs:
-                fc.update()
-            for fc in fcs:
-                fc.lock = False
 
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
@@ -309,48 +280,9 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
         scale    = [scale.x, scale.y, scale.z]
         
         # Create animations
-        fcs = []
-        for i, quat_idx in enumerate([3, 0, 1, 2]):
-            fc = action.fcurves.new(f'pose.bones["{bone_name}"].rotation_quaternion', index=i)
-            fc.keyframe_points.add(count=1)
-            fc.keyframe_points.foreach_set("co", [1, rotation[quat_idx]])
-            fc.group = actiongroup
-            fc.lock = True
-            fcs.append(fc)
-        for fc in fcs:
-            fc.update()
-        for fc in fcs:
-            fc.lock = False
-            
-        fcs = []
-        for i in range(3):
-            fc = action.fcurves.new(f'pose.bones["{bone_name}"].location', index=i)
-            fc.keyframe_points.add(count=1)
-            fc.keyframe_points.foreach_set("co", [1, position[i]])
-            fc.group = actiongroup
-            for k in fc.keyframe_points:
-                k.interpolation = "LINEAR"
-            fc.lock = True
-            fcs.append(fc)
-        for fc in fcs:
-            fc.update()
-        for fc in fcs:
-            fc.lock = False
-        
-        fcs = []
-        for i in range(3):
-            fc = action.fcurves.new(f'pose.bones["{bone_name}"].scale', index=i)
-            fc.keyframe_points.add(count=1)
-            fc.keyframe_points.foreach_set("co", [1, scale[i]])
-            fc.group = actiongroup
-            for k in fc.keyframe_points:
-                k.interpolation = "LINEAR"
-            fc.lock = True
-            fcs.append(fc)
-        for fc in fcs:
-            fc.update()
-        for fc in fcs:
-            fc.lock = False
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", 30, {0: rotation}, [3, 0, 1, 2])
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", 30, {0: position}, [0, 1, 2]   )
+        create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", 30, {0: scale},    [0, 1, 2]   )
 
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
