@@ -81,8 +81,8 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # should be reported as bugs, and this should be communicated to the
         # user.
         gfs = GFSInterface()
-        export_node_tree(gfs, selected_model)
-        bpy_material_names = export_mesh_data(gfs, selected_model)
+        export_node_tree(gfs, selected_model, errorlog)
+        bpy_material_names = export_mesh_data(gfs, selected_model, errorlog)
         export_materials_and_textures(gfs, bpy_material_names)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model)

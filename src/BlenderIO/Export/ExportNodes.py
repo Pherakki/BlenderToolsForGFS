@@ -6,7 +6,7 @@ from mathutils import Matrix, Quaternion
 from ..Utils.Maths import convert_rotation_to_quaternion, convert_YDirBone_to_XDirBone
 
 
-def export_node_tree(gfs, armature):
+def export_node_tree(gfs, armature, errorlog):
     gfs.keep_bounding_box    = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
     gfs.keep_bounding_sphere = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
     gfs.flag_3               = armature.data.GFSTOOLS_ModelProperties.flag_3

@@ -4,13 +4,82 @@ import bpy
 from mathutils import Matrix
 import numpy as np
 
-from ..Utils.ErrorPopup import ReportableException
+from ..WarningSystem.Warning import ReportableError
 from ..Utils.Maths import convert_rotation_to_quaternion
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
+class NonTriangularFacesError(ReportableError):
+    __slots__ = ("mesh", "poly_indices", "prev_obj")
+    
+    def __init__(self, mesh, poly_indices):
+        msg = f"Mesh '{mesh.name}' has {len(poly_indices)} non-triangular faces. Ensure that all faces are triangular before exporting."
+        super().__init__(msg)
+        self.mesh = mesh
+        self.poly_indices = poly_indices
+        self.prev_obj = None
+        
+    def showErrorData(self):
+        self.prev_obj = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = self.mesh
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        
+        for pidx in self.poly_indices:
+            self.mesh.data.polygons[pidx].select_set(True)
+        
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_mode(type="FACE")
+        
+    def hideErrorData(self):
+        bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        if self.prev_obj is not None:
+            bpy.context.view_layer.objects.active = self.prev_obj
+        
 
-def export_mesh_data(gfs, armature):
+class TooManyIndicesError(ReportableError):
+    __slots__ = ("mesh", "vertex_indices", "prev_obj")
+    
+    def __init__(self, mesh, vertex_indices):
+        msg = f"Mesh '{mesh.name}' has {len(vertex_indices)} vertices that belong to more than 4 vertex groups. Ensure that all vertices belong to, at most, 4 groups before exporting."
+        super().__init__(msg)
+        self.mesh = mesh
+        self.vertex_indices = vertex_indices
+        self.prev_obj = None
+        
+    def showErrorData(self):
+        self.prev_obj = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = self.mesh
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        
+        for vidx in self.vertex_indices:
+            self.mesh.data.vertices[vidx].select_set(True)
+        
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_mode(type="VERTEX")
+        
+    def hideErrorData(self):
+        bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        if self.prev_obj is not None:
+            bpy.context.view_layer.objects.active = self.prev_obj
+        
+
+def export_mesh_data(gfs, armature, errorlog):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     material_names = set()
     for bpy_mesh_object in meshes:
@@ -30,22 +99,41 @@ def export_mesh_data(gfs, armature):
         gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
         for prop in node_props.properties:
             gfs_node.add_property(*prop.extract_data(prop))
-            
-        material_names.add(create_mesh(gfs, bpy_mesh_object, armature, node_id))
+        
+        create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog)
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
-            material_names.add(create_mesh(gfs, bpy_submesh_object, armature, node_id))
+            create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog)
         
     return sorted(material_names)
 
 
-def create_mesh(gfs, bpy_mesh_object, armature, node_id):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog):
+    # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
-    for face in indices:
-        if len(face) != 3:
-            raise ReportableException(f"Mesh {bpy_mesh_object.name} contains non-triangular faces")
+    
+    # Check if any of the mesh data is invalid... we'll accumulate these
+    # into an error report for the user.
+    # 1) Check for any non-triangular faces
+    bad_polys = []
+    for pidx, poly in enumerate(bpy_mesh_object.data.polygons):
+        if len(poly.vertices) != 3:
+            bad_polys.append(pidx)
+    if len(bad_polys):
+        errorlog.log_error(NonTriangularFacesError(bpy_mesh_object, bad_polys))
+    # 2) Check for vertices belonging to more than 4 vertex groups
+    bad_vertices = []
+    for vidx, vertex in enumerate(bpy_mesh_object.data.vertices):
+        if len(vertex.groups) > 4:
+            bad_vertices.append(vidx)
+    if len(bad_vertices):
+        errorlog.log_error(TooManyIndicesError(bpy_mesh_object, bad_vertices))
+    
+    # Now convert mesh to GFS structs... don't worry if it contains invalid data,
+    # we're going to throw an exception at the end of export if any of the meshes
+    # were flagged as invalid
+    mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     mesh = gfs.add_mesh(node_id, vertices, 
                         bpy_mesh_object.active_material.name if bpy_mesh_object.active_material is not None else None, 
                         [fidx for face in indices for fidx in face], 
@@ -82,7 +170,8 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id):
     mesh.flag_30 = mesh_props.flag_30
     mesh.flag_31 = mesh_props.flag_31
     
-    return bpy_mesh_object.active_material.name
+    if bpy_mesh_object.active_material is not None:
+        export_materials.add(bpy_mesh_object.active_material.name)
 
 #####################
 # PRIVATE FUNCTIONS #
