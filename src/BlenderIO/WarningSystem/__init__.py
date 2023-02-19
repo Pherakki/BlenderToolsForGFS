@@ -1,1 +1,2 @@
-from .Logger import ErrorLogger, handle_warning_system
+from .Logger import ErrorLogger
+from .Handler import handle_warning_system
