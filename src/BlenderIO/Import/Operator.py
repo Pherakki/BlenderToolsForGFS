@@ -12,6 +12,7 @@ from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
 from ..WarningSystem import handle_warning_system, ErrorLogger
+from ..UI.HelpWindows import HelpWindow
 
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
@@ -28,11 +29,20 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     def import_file(self, context, filepath):
         bpy.ops.object.select_all(action='DESELECT')
-
-        gfs = GFSInterface.from_file(filepath)
         
         # Try to load file and log any errors...
         errorlog = ErrorLogger()
+        try:
+            gfs = GFSInterface.from_file(filepath) 
+        except UnsupportedVersionError as e:
+            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
+        except ParticlesError:
+            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
+        except HasParticleDataError:
+            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
+        if len(gfs.morphs):
+            errorlog.log_error_message("The file you attempted to load contains morph data, which cannot currently be loaded.")
+       
         # Report any file-loading errors
         if len(errorlog.errors):
             errorlog.digest_errors()
@@ -96,9 +106,25 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     def import_file(self, context, armature, filepath):
         bpy.ops.object.select_all(action='DESELECT')
 
-        gfs = GFSInterface.from_file(filepath)
         # Try to load file and log any errors...
         errorlog = ErrorLogger()            
+        if self.armature_name is None:
+            errorlog.log_error_message("No armatures exist in the scene. Animations cannot be imported")
+        
+        # Report an error if there's no armature
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'ERROR'}
+        
+        try:
+            gfs = GFSInterface.from_file(filepath) 
+        except UnsupportedVersionError as e:
+            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
+        except ParticlesError:
+            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
+        except HasParticleDataError:
+            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
+
         # Report any file-loading errors
         if len(errorlog.errors):
             errorlog.digest_errors()
@@ -115,11 +141,6 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     
     @handle_warning_system("The file you are trying to import.")
     def execute(self, context):
-        if self.armature_name is None:
-            raise ReportableException("No armatures exist in the scene. Animations cannot be imported")
-        try:
-            self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
-        except Exception as e:
-            raise ReportableException(str(e))
+        self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
 
         return {'FINISHED'}

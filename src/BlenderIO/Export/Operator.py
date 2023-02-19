@@ -61,7 +61,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         # Locate which model to expose based on what object the user has
         # selected.
-        selected_model = find_selected_model()
+        selected_model = find_selected_model(errorlog)
         
         original_obj  = bpy.context.view_layer.objects.active
         original_mode = selected_model.mode
@@ -75,13 +75,14 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
         bpy_material_names = export_mesh_data(gfs, selected_model, errorlog)
-        export_materials_and_textures(gfs, bpy_material_names)
+        export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
-        export_cameras(gfs, selected_model)
+        export_cameras(gfs, selected_model, errorlog)
         export_physics(gfs, selected_model)
         export_0x000100F8(gfs, selected_model)
         if self.pack_animations:
             export_animations(gfs, selected_model)
+        
         
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
@@ -142,14 +143,13 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         
         # Locate which model to expose based on what object the user has
         # selected.
-        selected_model = find_selected_model()
+        selected_model = find_selected_model(errorlog)
         
         original_obj  = bpy.context.view_layer.objects.active
         original_mode = selected_model.mode
         bpy.context.view_layer.objects.active = selected_model
         bpy.ops.object.mode_set(mode="OBJECT")
         
-        # Now export the model data since we've passed validation
         # If there are any exceptions that get thrown in here, this is
         # probably not good.
         # Any exceptions that interrupt model export in this block should be
@@ -178,14 +178,12 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         return self.export_file(context, self.filepath)
     
 
-
-def find_selected_model():
+def find_selected_model(errorlog):
     try:
         parent_obj = bpy.context.selected_objects[0]
-    except IndexError as e:
-        raise ReportableException("You must select some part of the model you wish to export in Object Mode before attempting to export it. No model is currently selected.") from e
-    except Exception as e:
-        raise e
+    except IndexError:
+        errorlog.log_error_message("You must select some part of the model you wish to export in Object Mode before attempting to export it. No model is currently selected.")
+
 
     sel_obj = None
     while parent_obj is not None:
@@ -193,7 +191,7 @@ def find_selected_model():
         parent_obj = sel_obj.parent
     parent_obj = sel_obj
     if parent_obj.type != "ARMATURE":
-        raise ReportableException(f"An object is selected, but the top-level object \'{parent_obj.name}\' is not an Armature object - has type {parent_obj.type}.")
+        errorlog.log_error_message(f"An object is selected, but the top-level object \'{parent_obj.name}\' is not an Armature object - has type {parent_obj.type}.")
     return parent_obj
 
 # def find_pinned_armatures(parent_obj):

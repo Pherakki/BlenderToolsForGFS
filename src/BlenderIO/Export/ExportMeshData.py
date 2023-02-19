@@ -12,6 +12,8 @@ from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary impo
 class NonTriangularFacesError(ReportableError):
     __slots__ = ("mesh", "poly_indices", "prev_obj")
     
+    HAS_DISPLAYABLE_ERROR = True
+    
     def __init__(self, mesh, poly_indices):
         msg = f"Mesh '{mesh.name}' has {len(poly_indices)} non-triangular faces. Ensure that all faces are triangular before exporting."
         super().__init__(msg)
@@ -46,6 +48,8 @@ class NonTriangularFacesError(ReportableError):
 
 class TooManyIndicesError(ReportableError):
     __slots__ = ("mesh", "vertex_indices", "prev_obj")
+    
+    HAS_DISPLAYABLE_ERROR = True
     
     def __init__(self, mesh, vertex_indices):
         msg = f"Mesh '{mesh.name}' has {len(vertex_indices)} vertices that belong to more than 4 vertex groups. Ensure that all vertices belong to, at most, 4 groups before exporting."
