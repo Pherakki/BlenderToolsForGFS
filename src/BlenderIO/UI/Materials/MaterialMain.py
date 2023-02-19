@@ -1,5 +1,7 @@
 import bpy
 
+from ..HelpWindows import defineHelpWindow
+
 
 class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
     bl_label       = "GFS Material"
@@ -16,6 +18,8 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
     def draw(self, context):
         mat = context.material
         layout = self.layout
+        
+        layout.operator(self.MaterialHelpWindow.bl_idname)
         
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_0")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_1")
@@ -61,3 +65,16 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5C")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5E")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x6A")
+    
+    MaterialHelpWindow = defineHelpWindow("Material", 
+        "Materials are very complicated and are better described by the documentation rather than a tooltip."
+    )
+
+    @classmethod
+    def register(cls):
+        bpy.utils.register_class(cls.MaterialHelpWindow)
+    
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.MaterialHelpWindow)
+    
