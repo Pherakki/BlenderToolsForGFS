@@ -13,8 +13,8 @@ def export_lights(gfs, armature):
         if bpy_light.parent_type != "BONE":
             continue
         
-        node_idx = gfs.bones.index(bpy_light.parent_bone)
-        props = bpy_light.GFSTOOLS_LightProperties
+        node_idx = [b.name for b in gfs.bones].index(bpy_light.parent_bone)
+        props = bpy_light.data.GFSTOOLS_LightProperties
         
         if props.dtype == "TYPE1":
             type_id = 1
@@ -24,7 +24,8 @@ def export_lights(gfs, armature):
             type_id = 3
         else:
             raise NotImplementedError("Internal error: did not recognise light type '{props.type}'")
-        light = gfs.add_light(node_idx, type_id, props.color_1, [*list(bpy_light.color), props.alpha], props.color_3)
+        
+        light = gfs.add_light(node_idx, type_id, props.color_1, [*list(bpy_light.color)[:3], props.alpha], props.color_3)
         
         light.unknown_0x28 = props.unknown_0x28
         light.unknown_0x2C = props.unknown_0x2C
@@ -45,8 +46,6 @@ def export_lights(gfs, armature):
         light.unknown_0x68 = props.unknown_0x68
         light.unknown_0x6C = props.unknown_0x6C
         light.unknown_0x70 = props.unknown_0x70
-        light.unknown_0x74 = props.unknown_0x74
-        light.unknown_0x78 = props.unknown_0x78
         light.unknown_0x7C = props.unknown_0x7C
         light.unknown_0x80 = props.unknown_0x80
         light.unknown_0x84 = props.unknown_0x84

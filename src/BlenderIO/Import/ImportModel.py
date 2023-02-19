@@ -175,6 +175,12 @@ def filter_rigging_bones_and_ancestors(gfs):
         else:
             for v in mesh.vertices:
                 used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
+    
+    for cam in gfs.cameras:
+        used_indices.add(cam.node)
+    for light in gfs.lights:
+        used_indices.add(light.node)
+                
     bones_to_check = sorted(used_indices)
     for bone_idx in bones_to_check:
         node = gfs.bones[bone_idx]
@@ -461,13 +467,14 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera_object.parent_type = "BONE"
     cam_bone = bpy_node_names[camera.node]
     bpy_camera_object.parent_bone = cam_bone
-    bpy_camera_object.matrix_parent_inverse = Matrix.Translation([0., -armature.data.bones[cam_bone].lemgth, 0.])
+    parent_transform = Matrix.Translation([0., -armature.data.bones[cam_bone].length, 0.])
+    parent_transform @= Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
     
     # Set view matrix
     bpy_camera_object.matrix_local = Matrix([camera.binary.view_matrix[ 0: 4],
                                              camera.binary.view_matrix[ 4: 8],
                                              camera.binary.view_matrix[ 8:12],
-                                             camera.binary.view_matrix[12:16]])
+                                             camera.binary.view_matrix[12:16]]) @ parent_transform
 
 
 def import_light(name, i, light, armature, bpy_node_names):
@@ -545,4 +552,8 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light_object.parent_type = "BONE"
     light_bone = bpy_node_names[light.node]
     bpy_light_object.parent_bone = light_bone
-    bpy_light_object.matrix_parent_inverse = Matrix.Translation([0., -armature.data.bones[light_bone].length, 0])
+    
+    parent_transform = Matrix.Translation([0., -armature.data.bones[light_bone].length, 0.])
+    parent_transform @= Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
+    bpy_light_object.matrix_local = parent_transform
+    
