@@ -30,6 +30,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Materials     import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes        import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
     from .src.BlenderIO.Properties.Model         import GFSToolsModelProperties, GFSToolsModelNodeProperties
+    from .src.BlenderIO.Properties.Textures      import GFSToolsImageProperties
     from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
     from .src.BlenderIO.UI.AnimationPack         import OBJECT_PT_GFSToolsAnimationPackDataPanel
@@ -49,7 +50,6 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
-    from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
     
     
@@ -81,6 +81,7 @@ def init_bpy():
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsModelDataPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
+        OBJECT_PT_GFSToolsImagePanel,
         BasicErrorBox,
         BasicWarningBox,
         UnhandledErrorBox
@@ -93,6 +94,7 @@ def init_bpy():
         (bpy.types.Armature, "GFSTOOLS_NodeProperties",            GFSToolsModelNodeProperties      ),
         (bpy.types.Bone,     "GFSTOOLS_NodeProperties",            GFSToolsBoneNodeProperties       ),
         (bpy.types.Camera,   "GFSTOOLS_CameraProperties",          GFSToolsCameraProperties         ),
+        (bpy.types.Image,    "GFSTOOLS_ImageProperties",           GFSToolsImageProperties          ),
         (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),

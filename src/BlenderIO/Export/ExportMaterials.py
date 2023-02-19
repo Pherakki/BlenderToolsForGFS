@@ -515,7 +515,8 @@ def export_texture(gfs, texture_name, errorlog):
     if image_data[:4] != b"DDS ":
         errorlog.log_error(ReportableError(f"Attempted to export image '{bpy_image.name}', but it is not a DDS texture."))
     
-    gfs.add_texture(texture_name, image_data)
+    props = bpy_image.GFSTOOLS_ImageProperties
+    gfs.add_texture(texture_name, image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
     
         
 def export_texture_node_data(name, nodes, create_sampler, errorlog):

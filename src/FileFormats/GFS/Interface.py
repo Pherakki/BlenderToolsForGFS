@@ -339,10 +339,14 @@ class GFSInterface:
         self.materials.append(material)
         return material
 
-    def add_texture(self, name, data):
+    def add_texture(self, name, data, unknown_1, unknown_2, unknown_3, unknown_4):
         texture = TextureInterface()
         texture.name = name
         texture.image_data = data
+        texture.unknown_1 = unknown_1
+        texture.unknown_2 = unknown_2
+        texture.unknown_3 = unknown_3
+        texture.unknown_4 = unknown_4
         self.textures.append(texture)
         return texture
     

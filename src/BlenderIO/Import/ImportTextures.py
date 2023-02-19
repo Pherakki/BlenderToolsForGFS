@@ -20,6 +20,11 @@ def import_textures(gfs):
             # Should test this in-game
             if tex.name not in textures:
                 textures[tex.name] = img
+                
+            img.GFSTOOLS_ImageProperties.unknown_1 = tex.unknown_1
+            img.GFSTOOLS_ImageProperties.unknown_2 = tex.unknown_2
+            img.GFSTOOLS_ImageProperties.unknown_3 = tex.unknown_3
+            img.GFSTOOLS_ImageProperties.unknown_4 = tex.unknown_4
         finally:
             os.remove(filepath)
     return textures
