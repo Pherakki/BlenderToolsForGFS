@@ -16,38 +16,39 @@ bl_info = {
 def init_bpy():
     import bpy
     
-    from .src.BlenderIO.Import import ImportGFS, ImportGAP
+    from .src.BlenderIO.Import      import ImportGFS, ImportGAP
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
-    from .src.BlenderIO.Export import ExportGFS, ExportGAP
+    from .src.BlenderIO.Export      import ExportGFS, ExportGAP
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
-    from .src.BlenderIO.Properties.Animations import GFSToolsAnimationProperties
+    from .src.BlenderIO.Properties.Animations    import GFSToolsAnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties
-    from .src.BlenderIO.Properties.Bones import GFSToolsBoneNodeProperties
+    from .src.BlenderIO.Properties.Bones         import GFSToolsBoneNodeProperties
+    from .src.BlenderIO.Properties.Cameras       import GFSToolsCameraProperties
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
-    from .src.BlenderIO.Properties.Lights import GFSToolsLightProperties
-    from .src.BlenderIO.Properties.Materials import GFSToolsTextureRefPanelProperties
-    from .src.BlenderIO.Properties.Materials import GFSToolsMaterialProperties
-    from .src.BlenderIO.Properties.Meshes import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
-    from .src.BlenderIO.Properties.Model import GFSToolsModelProperties, GFSToolsModelNodeProperties
-    from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationPanel
-    from .src.BlenderIO.UI.Animation import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
-    from .src.BlenderIO.UI.AnimationPack import OBJECT_PT_GFSToolsAnimationPackDataPanel
-    from .src.BlenderIO.UI.Bones import OBJECT_PT_GFSToolsBonePropertiesPanel
+    from .src.BlenderIO.Properties.Lights        import GFSToolsLightProperties
+    from .src.BlenderIO.Properties.Materials     import GFSToolsTextureRefPanelProperties
+    from .src.BlenderIO.Properties.Materials     import GFSToolsMaterialProperties
+    from .src.BlenderIO.Properties.Meshes        import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
+    from .src.BlenderIO.Properties.Model         import GFSToolsModelProperties, GFSToolsModelNodeProperties
+    from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationPanel
+    from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
+    from .src.BlenderIO.UI.AnimationPack         import OBJECT_PT_GFSToolsAnimationPackDataPanel
+    from .src.BlenderIO.UI.Bones         import OBJECT_PT_GFSToolsBonePropertiesPanel
+    from .src.BlenderIO.UI.Cameras       import OBJECT_PT_GFSToolsCameraAttributesPanel
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
-    from .src.BlenderIO.UI.Lights import OBJECT_PT_GFSToolsLightAttributesPanel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialPanel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialOutlineAttributePanel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType3Panel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType4Panel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType5Panel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
-    from .src.BlenderIO.UI.Materials import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
-    from .src.BlenderIO.UI.Meshes import OBJECT_PT_GFSToolsMeshAttributesPanel
-    from .src.BlenderIO.UI.Model import OBJECT_PT_GFSToolsModelDataPanel
-    from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
-    from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
+    from .src.BlenderIO.UI.Lights        import OBJECT_PT_GFSToolsLightAttributesPanel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialPanel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType1Panel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialOutlineAttributePanel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType3Panel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType4Panel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType5Panel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
+    from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
+    from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
+    from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
+    from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel
     from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
     
     
@@ -63,7 +64,10 @@ def init_bpy():
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
-        OBJECT_PT_GFSToolsTextureRefPanel,
+        OBJECT_PT_GFSToolsBonePropertiesPanel,
+        OBJECT_PT_GFSToolsCameraAttributesPanel,
+        OBJECT_UL_GFSToolsGenericPropertyUIList,
+        OBJECT_PT_GFSToolsLightAttributesPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
         OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel,
         OBJECT_PT_GFSToolsMaterialAttributeType1Panel,
@@ -75,9 +79,7 @@ def init_bpy():
         OBJECT_PT_GFSToolsMaterialAttributeType7Panel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsModelDataPanel,
-        OBJECT_PT_GFSToolsBonePropertiesPanel,
-        OBJECT_PT_GFSToolsLightAttributesPanel,
-        OBJECT_UL_GFSToolsGenericPropertyUIList
+        OBJECT_PT_GFSToolsTextureRefPanel,
         BasicErrorBox,
         BasicWarningBox,
         UnhandledErrorBox
@@ -85,15 +87,16 @@ def init_bpy():
     
     PROP_GROUPS = (
         (bpy.types.Action,   "GFSTOOLS_AnimationProperties",       GFSToolsAnimationProperties      ),
-        (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),
+        (bpy.types.Armature, "GFSTOOLS_AnimationPackProperties",   GFSToolsAnimationPackProperties  ),
+        (bpy.types.Armature, "GFSTOOLS_ModelProperties",           GFSToolsModelProperties          ),
+        (bpy.types.Armature, "GFSTOOLS_NodeProperties",            GFSToolsModelNodeProperties      ),
+        (bpy.types.Bone,     "GFSTOOLS_NodeProperties",            GFSToolsBoneNodeProperties       ),
+        (bpy.types.Camera,   "GFSTOOLS_CameraProperties",          GFSToolsCameraProperties         ),
+        (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
         (bpy.types.Mesh,     "GFSTOOLS_NodeProperties",            GFSToolsMeshNodeProperties       ),
-        (bpy.types.Bone,     "GFSTOOLS_NodeProperties",            GFSToolsBoneNodeProperties       ),
-        (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
-        (bpy.types.Armature, "GFSTOOLS_ModelProperties",           GFSToolsModelProperties          ),
-        (bpy.types.Armature, "GFSTOOLS_NodeProperties",            GFSToolsModelNodeProperties      ),
-        (bpy.types.Armature, "GFSTOOLS_AnimationPackProperties",   GFSToolsAnimationPackProperties  )
+        (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties)
     )
     
     
@@ -103,7 +106,8 @@ def init_bpy():
     )
     
     return CLASSES, PROP_GROUPS, LIST_ITEMS
-    
+
+
 def register():
     import bpy
     

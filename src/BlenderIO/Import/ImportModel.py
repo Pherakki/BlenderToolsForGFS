@@ -449,8 +449,8 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera.lens       = camera.binary.fov # Need to compare with camera sensor
     
     # Custom properties
-    bpy_camera["aspect_ratio"] = camera.binary.aspect_ratio # Can hook into Blender scene callback
-    bpy_camera["unknown_0x50"] = camera.binary.unknown_0x50 # Always 0...
+    bpy_camera.GFSTOOLS_CameraProperties.aspect_ratio = camera.binary.aspect_ratio # Can hook into Blender scene callback
+    bpy_camera.GFSTOOLS_CameraProperties.unknown_0x50 = camera.binary.unknown_0x50 # Always 0...
 
     # Create the object
     bpy_camera_object = bpy.data.objects.new(bpy_camera.name, bpy_camera)
