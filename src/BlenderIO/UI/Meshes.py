@@ -1,4 +1,5 @@
 import bpy
+from .HelpWindows import defineHelpWindow
 from .Node import makeNodePropertiesPanel
 
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
@@ -18,6 +19,9 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         layout = self.layout
         
         ctr = layout.column()
+        
+        # Help window
+        ctr.operator(self.MeshHelpWindow.bl_idname)
         
         # Bounding volumes
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_box")
@@ -68,11 +72,13 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.NodePropertiesPanel)
+        bpy.utils.register_class(cls.MeshHelpWindow)
         bpy.utils.register_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
-        
+    
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
+        bpy.utils.unregister_class(cls.MeshHelpWindow)
         bpy.utils.unregister_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
     
     class DummyType:
@@ -87,6 +93,14 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         lambda cls, context: context.mesh is not None and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH",
         parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel"
     )        
+    
+    MeshHelpWindow = defineHelpWindow("Mesh", 
+        "- Export Bounding Mesh/Sphere will create a bounding volume on export.\n"\
+        "- Export Normals / Tangents / Binormals will export these vertex attributes.\n"\
+        "- The purpose of Unknown Flags is not known. Checking and unchecking these may cause or fix crashes.\n"\
+        "- The purpose of unknown_0x12 is not known.\n"\
+        "- The GFS Node sub-panel will appear if the Mesh is not parented under another Mesh."
+    )
 
     class OBJECT_PT_GFSToolsMeshUnknownFloatsPanel(bpy.types.Panel):
         bl_label       = "Unknown Floats"
