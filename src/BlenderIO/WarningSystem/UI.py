@@ -3,7 +3,7 @@ import bpy
 from ..Utils.TextWrapping import wrapText
 
 class BasicErrorBox(bpy.types.Operator):
-    bl_idname = "gfsblendertools.basicerrorbox"
+    bl_idname = "gfstools.basicerrorbox"
     bl_label = "GFS Blender Tools: Errors Detected"
     bl_options = {'REGISTER'}
     
@@ -33,7 +33,7 @@ class BasicErrorBox(bpy.types.Operator):
             col.label(text=line)
         
 class BasicWarningBox(bpy.types.Operator):
-    bl_idname = "gfsblendertools.basicwarningbox"
+    bl_idname = "gfstools.basicwarningbox"
     bl_label = "GFS Blender Tools: Warnings Detected"
     bl_options = {'REGISTER'}
     
@@ -63,7 +63,7 @@ class BasicWarningBox(bpy.types.Operator):
             col.label(text=line)
         
 class UnhandledErrorBox(bpy.types.Operator):
-    bl_idname = "gfsblendertools.unhandlederrorbox"
+    bl_idname = "gfstools.unhandlederrorbox"
     bl_label = "GFS Blender Tools: Unhandled Error Detected"
     bl_options = {'REGISTER'}
     
@@ -95,11 +95,11 @@ class UnhandledErrorBox(bpy.types.Operator):
         f"Since all exceptions should be handled by the internal error-reporting system, "            \
         f"this is a bug. Please report this at https://github.com/Pherakki/BlenderToolsForGFS/issues" \
         f" with the following information:\n"                                                         \
-        f"1) {self.context_msg}"                                                                      \
-        f"2) The stacktrace that has been printed to the console."                                    \
+        f"1) {self.context_msg}\n"                                                                    \
+        f"2) The stacktrace that has been printed to the console.\n"                                  \
         f"3) Any further information that you think may be relevant."
         
-        msg_lines = wrapText(self.message, 80)
+        msg_lines = wrapText(msg, 80)
         for line in msg_lines:
             col.label(text=line)
         
@@ -108,7 +108,7 @@ class UnhandledErrorBox(bpy.types.Operator):
 # on initialising variables on a class
 # It's going to run into race conditions and all sorts of terrible things
 class ErrorPopup(bpy.types.Operator):
-    bl_idname = "gfsblendertools.testerrorpopup"
+    bl_idname = "gfstools.testerrorpopup"
     bl_label = "GFS Blender Tools: Error Detected"
     bl_options = {'REGISTER'}
     active_instance = None

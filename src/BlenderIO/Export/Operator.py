@@ -55,6 +55,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default="0x01105100"
     )
     
+    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger
         errorlog = ErrorLogger()
@@ -62,6 +63,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # Locate which model to expose based on what object the user has
         # selected.
         selected_model = find_selected_model(errorlog)
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'CANCELLED'}
         
         original_obj  = bpy.context.view_layer.objects.active
         original_mode = selected_model.mode
@@ -89,7 +93,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         bpy.context.view_layer.objects.active = original_obj
         if len(errorlog.errors):
             errorlog.digest_errors()
-            return {'ERROR'}
+            return {'CANCELLED'}
         
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
@@ -100,7 +104,6 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         return {'FINISHED'}
     
-    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def execute(self, context):
         return self.export_file(context, self.filepath)
 
@@ -137,6 +140,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         default="0x01105100"
     )
     
+    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger
         errorlog = ErrorLogger()
@@ -144,6 +148,9 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # Locate which model to expose based on what object the user has
         # selected.
         selected_model = find_selected_model(errorlog)
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'CANCELLED'}
         
         original_obj  = bpy.context.view_layer.objects.active
         original_mode = selected_model.mode
@@ -162,7 +169,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         bpy.context.view_layer.objects.active = original_obj
         if len(errorlog.errors):
             errorlog.digest_errors()
-            return {'ERROR'}
+            return {'CANCELLED'}
         
         gfs.has_end_container = False # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
@@ -173,7 +180,6 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         
         return {'FINISHED'}
     
-    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def execute(self, context):
         return self.export_file(context, self.filepath)
     
@@ -183,7 +189,7 @@ def find_selected_model(errorlog):
         parent_obj = bpy.context.selected_objects[0]
     except IndexError:
         errorlog.log_error_message("You must select some part of the model you wish to export in Object Mode before attempting to export it. No model is currently selected.")
-
+        return
 
     sel_obj = None
     while parent_obj is not None:

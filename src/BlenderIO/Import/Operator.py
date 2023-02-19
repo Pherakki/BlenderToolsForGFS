@@ -27,6 +27,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
                                               options={'HIDDEN'},
                                           )
     
+    @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
         bpy.ops.object.select_all(action='DESELECT')
         
@@ -65,7 +66,6 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
     
-    @handle_warning_system("The file you are trying to import.")
     def execute(self, context):
         self.import_file(context, self.filepath)
 
@@ -103,6 +103,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
             return sel_obj
         return None
 
+    @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, armature, filepath):
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -114,7 +115,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         # Report an error if there's no armature
         if len(errorlog.errors):
             errorlog.digest_errors()
-            return {'ERROR'}
+            return {'CANCELLED'}
         
         try:
             gfs = GFSInterface.from_file(filepath) 
@@ -139,7 +140,6 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
 
         return {'FINISHED'}
     
-    @handle_warning_system("The file you are trying to import.")
     def execute(self, context):
         self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
 

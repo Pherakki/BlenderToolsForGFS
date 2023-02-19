@@ -1,7 +1,6 @@
-import textwrap
-
 import bpy
 
+from ..Utils.TextWrapping import wrapText
 from .UI import BasicErrorBox, BasicWarningBox
 from .Warning import ReportableWarning, ReportableError
 
@@ -31,7 +30,7 @@ class ErrorLogger:
                 err.showErrorData()
         
             msg = f"({len(self.errors)}) error(s) were detected when trying to export. The first error is shown below, and displayed if appropriate."
-            msg += "\n\n" + err.message
+            msg += "\n\n" + err.msg
             if err.HAS_DISPLAYABLE_ERROR:
                 msg += "\n\n" + "The relevant data has been selected for you."
             bpy.ops.gfstools.basicerrorbox("INVOKE_DEFAULT", message=msg)
@@ -50,10 +49,7 @@ class ErrorLogger:
             msg = ""
             lines = []
             for i, warning in enumerate(self.warnings):
-                current_warning = '\n'.join([
-                    '\n'.join(textwrap.wrap(line, 80, break_long_words=False, replace_whitespace=False))
-                    for line in f"{i+1}) {warning}".splitlines() if line.strip() != ''
-                ])
+                current_warning = wrapText(f"{i+1}) {warning.msg}".splitlines(), 80)
                 if len(lines) + len(current_warning) < 15:
                     lines.extend(current_warning)
                 else:

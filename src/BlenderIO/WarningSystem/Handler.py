@@ -10,12 +10,12 @@ def handle_warning_system(unhandled_context_msg):
         https://github.com/TheDuckCow/user-report-wrapper
         """
         @functools.wraps(function)
-        def handled_execute(operator, context):
+        def handled_execute(*args, **kwargs):
             try:
-                return function(operator, context)
+                return function(*args, **kwargs)
             except Exception as e:
                 print(''.join(traceback.TracebackException.from_exception(e).format()))
-                bpy.ops.gfsblendertools.unhandlederrorbox('INVOKE_DEFAULT', exception_msg=str(e), context_msg=unhandled_context_msg)
-    
+                bpy.ops.gfstools.unhandlederrorbox('INVOKE_DEFAULT', exception_msg=str(e), context_msg=unhandled_context_msg)
+                return {"CANCELLED"}
         return handled_execute
     return impl
