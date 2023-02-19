@@ -111,12 +111,38 @@
 
 \pagenumbering{arabic} 
 
-\section{Getting Started}
-\clearpage
+%\section{Getting Started}
+%\clearpage
 
 \section{Import}
-\subsection{Importing Field Models}
-Field models are typically in such large units that they exceed the default render distance of Blender. In this instance, you may find it useful to increase Blender's render distance.\\
+\subsection{Importing Model (GMD/GFS) Files}
+\begin{guide}{Accessing the Model Import Menu}
+\item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
+\guideimage{images/import/import_gmd.png}
+\item Select the GMD or GFS file to import using the file browser that pops up.
+\end{guide}
+
+
+\subsection{Importing Animation (GAP) Files}
+\begin{guide}{Accessing the Animation Import Menu}
+\item Ensure that you have first imported the model that the animation is modelled for.
+\item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GAP Animation} submenu item.
+\guideimage{images/import/import_gap.png}
+\item Select the armature for your imported model using the drop-down.
+\guideimage{images/import/import_gap_armature_select.png}
+\item Select the GAP file to import using the file browser that pops up.
+\end{guide}
+
+\subsection{Blender Settings}
+\subsubsection{Previewing Materials}
+Many beginners to Blender are confused by the fact that models do not display their materials when it is first opened. Blender by default renders models in a ``Solid" representation that is useful for modellers editing meshes. You can preview materials instead by changing this render setting.
+\begin{guide}{Previewing Materials}
+\item Locate the \textbf{Viewport Shading} widget and select \textbf{Material Preview} mode.
+\guideimage{images/import/import_preview_materials.png}
+\end{guide}
+
+\subsubsection{Importing Large Models}
+Some models, such as Field Models, are typically in such large units that they exceed the default render distance of Blender. In this instance, you may find it useful to increase Blender's render distance.\\
 \begin{guide}{Increasing Blender's Render Distance}
 \item Press the \keystroke{N} key to open the \textbf{Sidebar}.
 \guideimage{images/import/import_field_open_menu.png}
@@ -128,11 +154,45 @@ Field models are typically in such large units that they exceed the default rend
 \end{guide}
 \clearpage
 
-\section{Manipulating Data}
+\section{Editing Models and Animations}
+\subsection{GFS Models}
+
+
+\subsubsection{Bones}
+\begin{guide}{Accessing Extra Properties}
+\item placeholder
+\guideimage{images/editing_models/edits_bone_properties.png}
+\end{guide}
 \clearpage
 
+\subsubsection{Rest Pose}
+
+\subsubsection{Meshes}
+
+
+\subsubsection{Materials}
+
+\subsubsection{Textures}
+
+\subsubsection{Cameras}
+
+\subsubsection{Lights}
+
+\subsubsection{Physics}
+Model physics are not currently editable from Blender.
+
+\subsection{GFS Animations}
+
+\subsubsection{Normal Animations}
+
+\subsubsection{Blend Animations}
+
+\subsubsection{LookAt Animations}
+
+
 \section{Export}
-\subsection{Preparing Data for Export}
+\subsection{Exporting Model (GMD/GFS) Files}
+\subsection{Exporting Animation (GAP) Files}
 \clearpage
 
 \section{BlenderToolsForGFS as a Python Library}
