@@ -34,7 +34,6 @@ def import_model(gfs, name):
         nodes_with_meshes.add(mesh.node)
     
     rigged_bones, unrigged_bones = filter_rigging_bones_and_ancestors(gfs)
-
     meshes_to_rename         = set.intersection(rigged_bones,   nodes_with_meshes)
     bones_to_ignore          = set.intersection(unrigged_bones, nodes_with_meshes)
     unrigged_bones_to_import = set.difference(unrigged_bones, bones_to_ignore)
@@ -87,6 +86,7 @@ def import_model(gfs, name):
     
     # Now import other nodes
     for i, node in enumerate(gfs.bones):
+        # We'll import properties to the meshes during mesh import
         if (i in bones_to_ignore) or (i in meshes_to_rename):
             continue
         
@@ -94,6 +94,65 @@ def import_model(gfs, name):
         bpy_bone.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
         
         import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties)
+    
+    
+    #######################
+    # ADJUST BONE LENGTHS #
+    #######################
+    bpy.context.view_layer.objects.active = main_armature
+    bpy.ops.object.mode_set(mode="EDIT")
+    
+    for bpy_bone in main_armature.data.edit_bones:
+        position = bpy_bone.head
+        head_to_tail = bpy_bone.tail - bpy_bone.head
+        
+        if len(bpy_bone.children):
+            # Before blasting ahead with this, should really take the 
+            # dot product between the bone and all of its children
+            # to see if there is an "obvious" candidate that it points
+            # towards.
+            # If there is no such candidate, then you can do some
+            # interpolated heuristic, ideally weighted
+            # by the dot product between the bone and each child...
+            
+            # Find out if there's an obvious successor bone
+            possible_successors = []
+            dot_products = []
+            angular_discriminator = math.cos(1*math.pi/180) # Checking for bones aligned within 1 degree of separation
+            for child in bpy_bone.children:
+                child_target = child.head - bpy_bone.head
+                
+                projection = child_target.normalized().dot(head_to_tail.normalized())
+                dot_products.append(projection)
+                if projection > angular_discriminator:
+                    possible_successors.append(child)
+                
+            if len(possible_successors) == 1:
+                length = (possible_successors[0].head - bpy_bone.head).length
+            else:
+                # Average together child positions
+                tail_target = list(zip(*[c.head for c in bpy_bone.children]))
+                tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
+                head_to_target = tail_target - position
+                
+                alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
+                length = head_to_target.length * alignment_factor + 10. * (1 - alignment_factor)
+                
+            # Set some minimum length scale...
+            if length < 0.01:
+                length = 0.01
+        else:
+            if bpy_bone.parent is None:
+                # Should set this depending on model dimensions and where
+                # head_to_tail points...
+                length = 10.
+            else:
+                length = bpy_bone.parent.length
+        
+        bpy_bone.length = length
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.mode_set(mode="EDIT")
+        
     
     ######################
     # IMPORT ATTACHMENTS #
@@ -116,46 +175,6 @@ def import_model(gfs, name):
     for i, light in enumerate(gfs.lights):
         import_light("light", i, light, main_armature, bpy_node_names)
     
-    #######################
-    # ADJUST BONE LENGTHS #
-    #######################
-    bpy.context.view_layer.objects.active = main_armature
-    bpy.ops.object.mode_set(mode="EDIT")
-    
-    for bpy_bone in main_armature.data.edit_bones:
-        position = bpy_bone.head
-        head_to_tail = bpy_bone.tail - bpy_bone.head
-        
-        if len(bpy_bone.children):
-            # Before blasting ahead with this, should really take the 
-            # dot product between the bone and all of its children
-            # to see if there is an "obvious" candidate that it points
-            # towards.
-            # If there is no such candidate, then you can do some
-            # interpolated heuristic, ideally weighted
-            # by the dot product between the bone and each child...
-            
-            # Average together child positions
-            tail_target = list(zip(*[c.head for c in bpy_bone.children]))
-            tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
-            head_to_target = tail_target - position
-            
-            alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
-            length = head_to_target.length * alignment_factor + 10. * (1 - alignment_factor)
-            
-            # Set some minimum length scale...
-            if length < 0.01:
-                length = 0.01
-        else:
-            if bpy_bone.parent is None:
-                # Should set this depending on model dimensions and where
-                # head_to_tail points...
-                length = 10.
-            else:
-                length = bpy_bone.parent.length
-        
-        bpy_bone.length = length
-        
     bpy.ops.object.mode_set(mode="OBJECT")
     
     # Reset state
