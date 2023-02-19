@@ -2,6 +2,8 @@ from ..CustomProperty import PropertyInterface
 from .NodeAttachmentBinary import NodeAttachmentBinary
 from .NodeBinary import SceneNodeBinary
 from .MeshBinary import MeshBinary
+from .LightBinary import LightBinary
+from .CameraBinary import CameraBinary
 
 
 class NodeInterface:
@@ -361,7 +363,7 @@ class MeshInterface:
 class CameraInterface:
     def __init__(self):
         self.node   = None
-        self.binary = None
+        self.binary = CameraBinary()
         
     @classmethod
     def from_binary(cls, node_idx, binary):
@@ -378,7 +380,7 @@ class CameraInterface:
 class LightInterface:
     def __init__(self):
         self.node   = None
-        self.binary = None
+        self.binary = LightBinary()
         
     @classmethod
     def from_binary(cls, node_idx, binary):
