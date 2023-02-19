@@ -3,7 +3,7 @@ import math
 import bpy
 from mathutils import Matrix, Quaternion
 
-from ..Utils.Maths import convert_rotation_to_quaternion, convert_YDirBone_to_XDirBone
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup, BlenderBoneToMayaBone
 
 
 def export_node_tree(gfs, armature, errorlog):
@@ -39,7 +39,7 @@ def export_node_tree(gfs, armature, errorlog):
         bind_matrix = bone.matrix_local
         if bone_parent is None:
             parent_id = 0
-            local_bind_matrix = bind_matrix
+            local_bind_matrix = convert_Zup_to_Yup(bind_matrix)
         else:
             parent_id = bone_list[bone_parent.name]
             local_bind_matrix = (convert_YDirBone_to_XDirBone(bone_parent.matrix_local)).inverted() @ bind_matrix
@@ -51,7 +51,7 @@ def export_node_tree(gfs, armature, errorlog):
         rotation = [r.x, r.y, r.z, r.w]
         scale    = [s.x, s.y, s.z]
         
-        bm = convert_YDirBone_to_XDirBone(bind_matrix)
+        bm = BlenderBoneToMayaBone(bind_matrix)
         export_bm = [
             bm[0][0], bm[0][1], bm[0][2], bm[0][3],
             bm[1][0], bm[1][1], bm[1][2], bm[1][3],

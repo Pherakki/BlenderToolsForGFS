@@ -21,10 +21,16 @@ def convert_YDirBone_to_XDirBone(matrix):
     return matrix @ boneY_to_boneX_matrix.inverted()
 
 def convert_Yup_to_Zup(matrix):
-    return matrix @ upY_to_upZ_matrix
+    return upY_to_upZ_matrix @ matrix
 
 def convert_Zup_to_Yup(matrix):
-    return matrix @ upY_to_upZ_matrix.inverted()
+    return upY_to_upZ_matrix.inverted() @ matrix
+
+def MayaBoneToBlenderBone(matrix):
+    return convert_Yup_to_Zup(convert_XDirBone_to_YDirBone(matrix))
+
+def BlenderBoneToMayaBone(matrix):
+    return convert_YDirBone_to_XDirBone(convert_Zup_to_Yup(matrix))
 
 def decomposableToTRS(matrix, tol=0.001):
     shear_factor = abs(matrix.col[1].dot(matrix.col[2]))

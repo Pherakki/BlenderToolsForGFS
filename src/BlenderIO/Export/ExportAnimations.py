@@ -6,7 +6,7 @@ import numpy as np
 
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
-from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_YDirBone_to_XDirBone
+from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup
 from ..Utils.Interpolation import lerp
 
 
@@ -224,7 +224,7 @@ def get_action_data(action, armature):
         if bpy_bone.parent is not None:
             base_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() @ bpy_bone.matrix_local
         else:
-            base_matrix = bpy_bone.matrix_local
+            base_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
 
         t, r, s = transform_node_animations(animation_data[bone_name].get("location", {}),
                                             animation_data[bone_name].get("rotation_quaternion", {}),

@@ -4,7 +4,7 @@ import math
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 
-from ..Utils.Maths import convert_XDirBone_to_YDirBone
+from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup
 from ..Utils.UVMapManagement import make_uv_map_name
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 from .ImportProperties import import_properties
@@ -51,7 +51,7 @@ def import_model(gfs, name):
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
         if i not in bones_to_ignore:            
             bpy_bone = construct_bone(node.name, main_armature, 
-                                     convert_XDirBone_to_YDirBone(matrix), 
+                                     MayaBoneToBlenderBone(matrix), 
                                       10)
             if node.parent_idx > -1:
                 bpy_bone.parent = bpy_nodes[node.parent_idx] 
@@ -59,7 +59,7 @@ def import_model(gfs, name):
             gfs_to_bpy_bone_map[i] = bpy_bone_counter
             bpy_bone_counter      += 1
         bpy_node_names[i]  = node.name
-        bone_transforms[i] = matrix
+        bone_transforms[i] = convert_Yup_to_Zup(matrix)
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
@@ -160,8 +160,6 @@ def import_model(gfs, name):
     
     # Reset state
     bpy.ops.object.mode_set(mode='OBJECT')
-    main_armature.rotation_euler = [math.pi/2, 0, 0]
-    main_armature.rotation_quaternion = [.5**0.5, .5**.5, 0, 0]
     bpy.context.view_layer.objects.active = initial_obj
 
     return main_armature, gfs_to_bpy_bone_map

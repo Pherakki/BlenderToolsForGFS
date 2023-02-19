@@ -5,7 +5,7 @@ from mathutils import Matrix
 import numpy as np
 
 from ..WarningSystem.Warning import ReportableError
-from ..Utils.Maths import convert_rotation_to_quaternion
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
@@ -85,7 +85,7 @@ def export_mesh_data(gfs, armature, errorlog):
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
         
-        bind_pose_matrix = armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world
+        bind_pose_matrix = convert_Zup_to_Yup(armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world)
         
         # Keep this code around in case you ever allow meshes to be 
         # parented to anything other that RootNode
