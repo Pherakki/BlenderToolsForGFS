@@ -1,7 +1,6 @@
 import os
 import platform
 import subprocess
-import textwrap
 
 import bpy
 
@@ -42,7 +41,7 @@ class HelpWindow(bpy.types.Operator):
 def defineHelpWindow(subid, msg):
     class SubHelpWindow(HelpWindow):
         bl_idname = f"gfsblendertools.{subid}helpwindow".lower()
-        message = msg
+        message = msg + "\n\nFurther information can be found in the documentation, which can be accessed by clicking the button below."
     
     return SubHelpWindow
 
@@ -50,7 +49,6 @@ class OpenDocumentation(bpy.types.Operator):
     bl_idname = "gfsblendertools.opendocs"
     bl_label = "Open Docs"
     bl_options = {'REGISTER'}
-         
     
     def execute(self, context):
         self.open_documentation()
