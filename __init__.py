@@ -48,8 +48,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Model import OBJECT_PT_GFSToolsModelDataPanel
     from .src.BlenderIO.UI.PinnedArmature import OBJECT_PT_GFSToolsPinnedArmatureToolsPanel
     from .src.BlenderIO.UI.ShaderNodes import OBJECT_PT_GFSToolsTextureRefPanel
-    from .src.BlenderIO.Utils.ErrorPopup import MessagePopup
-    from .src.BlenderIO.WarningSystem.Logger import ErrorPopup, PreviousErrorOperator, NextErrorOperator
+    from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
     
     
     CLASSES = (
@@ -59,7 +58,6 @@ def init_bpy():
         ExportGFS,
         ExportGAP,
         GFSExportSubmenu,
-        MessagePopup,
         GFSToolsGenericProperty,
         OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
         OBJECT_PT_GFSToolsAnimationPanel,
@@ -80,9 +78,9 @@ def init_bpy():
         OBJECT_PT_GFSToolsBonePropertiesPanel,
         OBJECT_PT_GFSToolsLightAttributesPanel,
         OBJECT_UL_GFSToolsGenericPropertyUIList
-        # ErrorPopup,
-        # PreviousErrorOperator,
-        # NextErrorOperator
+        BasicErrorBox,
+        BasicWarningBox,
+        UnhandledErrorBox
     )
     
     PROP_GROUPS = (

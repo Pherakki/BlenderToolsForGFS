@@ -5,7 +5,6 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
-from ..Utils.ErrorPopup import handle_errors, ReportableException
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
@@ -69,17 +68,10 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         bpy.context.view_layer.objects.active = selected_model
         bpy.ops.object.mode_set(mode="OBJECT")
         
-        # Pre-process the model and check if there is any unexportable data
-        # Throw any errors here if they exist, and take note of any warnings
-        # if they shouldn't interrupt export.
-        self.validate_model(selected_model)
-        
-        # Now export the model data since we've passed validation
         # If there are any exceptions that get thrown in here, this is
-        # probably not good and should get thrown from the validation instead.
-        # Therefore any exceptions that interrupt model export in this block
-        # should be reported as bugs, and this should be communicated to the
-        # user.
+        # probably not good.
+        # Any exceptions that interrupt model export in this block should be
+        # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
         bpy_material_names = export_mesh_data(gfs, selected_model, errorlog)
@@ -94,7 +86,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
-        errorlog.digest_errors()
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'ERROR'}
         
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
@@ -105,19 +99,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         return {'FINISHED'}
     
-    #@handle_warning_system
+    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def execute(self, context):
         return self.export_file(context, self.filepath)
-    
-    
-    def validate_model(self, selected_model):
-        # Do model validation in here.
-        # Validation may depend on exporter settings, so make it a method
-        # of the operator.
-        
-        # Throw any errors that are found
-        #WarningSystem.digest_errors()
-        pass
 
 
 class ExportGAP(bpy.types.Operator, ExportHelper):
@@ -153,51 +137,46 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     )
     
     def export_file(self, context, filepath):
-        # Figure out the mode sanitising later
-        # current_mode = bpy.context.active_object.mode
-        # bpy.ops.object.mode_set("OBJECT")
+        # Init a logger
+        errorlog = ErrorLogger()
         
         # Locate which model to expose based on what object the user has
         # selected.
         selected_model = find_selected_model()
         
-        # Pre-process the model and check if there is any unexportable data
-        # Throw any errors here if they exist, and take note of any warnings
-        # if they shouldn't interrupt export.
-        self.validate_model(selected_model)
+        original_obj  = bpy.context.view_layer.objects.active
+        original_mode = selected_model.mode
+        bpy.context.view_layer.objects.active = selected_model
+        bpy.ops.object.mode_set(mode="OBJECT")
         
         # Now export the model data since we've passed validation
         # If there are any exceptions that get thrown in here, this is
-        # probably not good and should get thrown from the validation instead.
-        # Therefore any exceptions that interrupt model export in this block
-        # should be reported as bugs, and this should be communicated to the
-        # user.
+        # probably not good.
+        # Any exceptions that interrupt model export in this block should be
+        # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_animations(gfs, selected_model)
-        #bpy.ops.object.mode_set(current_mode)
+        
+        # Check if any errors occurred that prevented export.
+        bpy.ops.object.mode_set(mode=original_mode)
+        bpy.context.view_layer.objects.active = original_obj
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'ERROR'}
         
         gfs.has_end_container = False # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
-        #WarningSystem.digest_warnings()
+        errorlog.digest_warnings()
         
         return {'FINISHED'}
     
-    #@handle_warning_system
+    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def execute(self, context):
         return self.export_file(context, self.filepath)
     
-    
-    def validate_model(self, selected_model):
-        # Do model validation in here.
-        # Validation may depend on exporter settings, so make it a method
-        # of the operator.
-        
-        # Throw any errors that are found
-        #WarningSystem.digest_errors()
-        pass
 
 
 def find_selected_model():

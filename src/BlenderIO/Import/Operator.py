@@ -3,8 +3,7 @@ import os
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from ...FileFormats.GFS import GFSInterface
-from ..Utils.ErrorPopup import handle_errors, ReportableException
+from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, ParticlesError, HasParticleDataError
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
@@ -12,8 +11,8 @@ from .ImportModel import import_model
 from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
-from ..WarningSystem.Logger import handle_warning_system
-from ..WarningSystem import ErrorLogger
+from ..WarningSystem import handle_warning_system, ErrorLogger
+
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
@@ -32,6 +31,14 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         gfs = GFSInterface.from_file(filepath)
         
+        # Try to load file and log any errors...
+        errorlog = ErrorLogger()
+        # Report any file-loading errors
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'ERROR'}
+
+        # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures)
         armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
@@ -42,9 +49,13 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
+        
+        # Report any warnings that were logged
+        errorlog.digest_warnings()
 
         return {'FINISHED'}
     
+    @handle_warning_system("The file you are trying to import.")
     def execute(self, context):
         self.import_file(context, self.filepath)
 
@@ -86,12 +97,23 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         bpy.ops.object.select_all(action='DESELECT')
 
         gfs = GFSInterface.from_file(filepath)
+        # Try to load file and log any errors...
+        errorlog = ErrorLogger()            
+        # Report any file-loading errors
+        if len(errorlog.errors):
+            errorlog.digest_errors()
+            return {'ERROR'}
+        
+        # Now import file data to Blender
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
         import_animations(gfs, armature, filename)
+        
+        # Report any warnings that were logged
+        errorlog.digest_warnings()
 
         return {'FINISHED'}
     
-    @handle_errors
+    @handle_warning_system("The file you are trying to import.")
     def execute(self, context):
         if self.armature_name is None:
             raise ReportableException("No armatures exist in the scene. Animations cannot be imported")
