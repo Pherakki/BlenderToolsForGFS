@@ -4,22 +4,13 @@ from .GFSProperties import GFSToolsGenericProperty
 
     
 def find_anims_of_type(self, context, anim_type):
-    if context.active_object is None:
-        return []
-    if context.active_object.type != "ARMATURE":
-        return []
-    if context.active_object.animation_data is None:
-        return []
-    
+    # Do this for NLA tracks instead.
+    # Object for an NLA track can be found with track.id_data
     out = []
-    for track in context.active_object.animation_data.nla_tracks:
-        if len(track.strips) == 0:
-            continue
-        
-        strip = track.strips[0]
-        props = strip.action.GFSTOOLS_AnimationProperties
+    for action in bpy.data.actions:
+        props = action.GFSTOOLS_AnimationProperties
         if props.category == anim_type:
-            out.append((track.name, track.name, ""))
+            out.append((action.name, action.name, ""))
     return out
 
 
@@ -49,7 +40,8 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
             ("BLENDSCALE", "Blend Scale", "Scale animations to be added to a Standard Animation scale"     ),
             ("LOOKAT",     "Look At",     "Special Blend animations used for looking up/down/left/right"   )
         ],
-        update=update_category
+        update=update_category,
+        name="Category"
     )
 
     
