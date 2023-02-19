@@ -459,8 +459,9 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     # Link to the armature
     bpy_camera_object.parent = armature
     bpy_camera_object.parent_type = "BONE"
-    bpy_camera_object.parent_bone = bpy_node_names[camera.node]
-    bpy_camera_object.matrix_parent_inverse = Matrix.Translation([0., -10., 0.])
+    cam_bone = bpy_node_names[camera.node]
+    bpy_camera_object.parent_bone = cam_bone
+    bpy_camera_object.matrix_parent_inverse = Matrix.Translation([0., -armature.data.bones[cam_bone].lemgth, 0.])
     
     # Set view matrix
     bpy_camera_object.matrix_local = Matrix([camera.binary.view_matrix[ 0: 4],
@@ -542,5 +543,6 @@ def import_light(name, i, light, armature, bpy_node_names):
     # Link to the armature
     bpy_light_object.parent = armature
     bpy_light_object.parent_type = "BONE"
-    bpy_light_object.parent_bone = bpy_node_names[light.node]
-    bpy_light_object.matrix_parent_inverse = Matrix.Translation([0., -10., 0])
+    light_bone = bpy_node_names[light.node]
+    bpy_light_object.parent_bone = light_bone
+    bpy_light_object.matrix_parent_inverse = Matrix.Translation([0., -armature.data.bones[light_bone].length, 0])
