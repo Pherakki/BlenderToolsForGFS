@@ -36,6 +36,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Bones         import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Cameras       import OBJECT_PT_GFSToolsCameraAttributesPanel
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
+    from .src.BlenderIO.UI.HelpWindows   import OpenDocumentation
     from .src.BlenderIO.UI.Lights        import OBJECT_PT_GFSToolsLightAttributesPanel
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialPanel
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialToonShadingAttributePanel
@@ -60,7 +61,7 @@ def init_bpy():
         ExportGAP,
         GFSExportSubmenu,
         GFSToolsGenericProperty,
-        OBJECT_PT_GFSToolsPinnedArmatureToolsPanel,
+        OpenDocumentation,
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
