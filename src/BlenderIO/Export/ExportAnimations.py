@@ -6,7 +6,7 @@ import numpy as np
 
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
-from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup
+from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup
 from ..Utils.Interpolation import lerp
 
 
@@ -77,7 +77,7 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
     
     # EXPORT NODE ANIMS
     animated_nodes = set()
-    node_transforms = get_action_data(action, armature)
+    node_transforms = get_action_data(action, armature, is_blend)
     if is_blend:
         # First export the translations and rotations
         node_anims = {}
@@ -95,7 +95,7 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
             scale_action_name = action.GFSTOOLS_AnimationProperties.blend_scale_action
             scale_action = bpy.data.actions.get(scale_action_name)
             if scale_action is not None:
-                scale_transforms = get_action_data(scale_action, armature)
+                scale_transforms = get_action_data(scale_action, armature, is_blend)
                 
                 for (bidx, bname, _, _, s) in sorted(scale_transforms, key=lambda x: x[0]):
                     node_anim = node_anims.get(bname)
@@ -179,7 +179,7 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
 #############################
 # STUFF THAT SHOULD BE USED #
 #############################
-def get_action_data(action, armature):
+def get_action_data(action, armature, is_blend):
     curve_defaults = {'location': [0., 0., 0.],
                       'rotation_quaternion': [1., 0., 0., 0.],
                       'scale': [1., 1., 1.],
@@ -218,19 +218,32 @@ def get_action_data(action, armature):
             animation_data[bone_name]["rotation_quaternion"] = {
                 k: [v[1], v[2], v[3], v[0]] 
                 for k, v in animation_data[bone_name]["rotation_quaternion"].items()
-                }
+            }
             
-        bpy_bone = armature.data.bones[bone_name]
-        if bpy_bone.parent is not None:
-            base_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() @ bpy_bone.matrix_local
+        if is_blend:
+            
+            prematrix = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
+            postmatrix = convert_YDirBone_to_XDirBone
+            
+            t = animation_data[bone_name].get("location", {})
+            r = animation_data[bone_name].get("rotation_quaternion", {})
+            s = animation_data[bone_name].get("scale", {})
+            
+            t, _, _ = transform_node_animations(t,                 {0: [0., 0., 0., 1.]}, {0: [1., 1., 1.]}, prematrix, postmatrix)
+            _, r, _ = transform_node_animations({0: [0., 0., 0.]}, r,                     {0: [1., 1., 1.]}, prematrix, postmatrix)
+            _, _, s = transform_node_animations({0: [0., 0., 0.]}, {0: [0., 0., 0., 1.]}, s,                 prematrix, postmatrix)
         else:
-            base_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
+            bpy_bone = armature.data.bones[bone_name]
+            if bpy_bone.parent is not None:
+                base_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() @ bpy_bone.matrix_local
+            else:
+                base_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
 
-        t, r, s = transform_node_animations(animation_data[bone_name].get("location", {}),
-                                            animation_data[bone_name].get("rotation_quaternion", {}),
-                                            animation_data[bone_name].get("scale", {}),
-                                            base_matrix,
-                                            convert_YDirBone_to_XDirBone)
+            t, r, s = transform_node_animations(animation_data[bone_name].get("location", {}),
+                                                animation_data[bone_name].get("rotation_quaternion", {}),
+                                                animation_data[bone_name].get("scale", {}),
+                                                base_matrix,
+                                                convert_YDirBone_to_XDirBone)
         
         
         fps = 30

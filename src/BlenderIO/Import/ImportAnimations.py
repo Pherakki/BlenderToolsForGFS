@@ -151,6 +151,12 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, positions, ro
 
     fps = 30
     
+    prematrix = convert_YDirBone_to_XDirBone(Matrix.Identity(4))
+    postmatrix = convert_XDirBone_to_YDirBone
+    positions, _        , _      = transform_node_animations(positions,         {0: [0., 0., 0., 1.]}, {0: [1., 1., 1.]}, prematrix, postmatrix)
+    _        , rotations, _      = transform_node_animations({0: [0., 0., 0.]}, rotations,             {0: [1., 1., 1.]}, prematrix, postmatrix)
+    _        , _        , scales = transform_node_animations({0: [0., 0., 0.]}, {0: [0., 0., 0., 1.]}, scales,            prematrix, postmatrix)
+
     # Create animations
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, rotations, [3, 0, 1, 2])
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, positions, [0, 1, 2]   )
