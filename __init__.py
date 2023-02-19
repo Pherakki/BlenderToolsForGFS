@@ -50,6 +50,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
+    from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
     from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
     
     
