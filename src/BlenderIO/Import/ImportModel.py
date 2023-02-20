@@ -81,8 +81,10 @@ def import_model(gfs, name):
     # PUSH EXTRA DATA #
     ###################
     # Import root node as the armature
-    main_armature.data.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
-    import_properties(gfs.bones[0].properties, main_armature.data.GFSTOOLS_NodeProperties.properties)
+    if len(gfs.bones):
+        node = gfs.bones[0]
+        main_armature.data.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
+        import_properties(gfs.bones[0].properties, main_armature.data.GFSTOOLS_NodeProperties.properties)
     
     # Now import other nodes
     for i, node in enumerate(gfs.bones):
