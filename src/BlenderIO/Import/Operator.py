@@ -22,6 +22,11 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     filename_ext = ".GMD"
 
 
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
+
     filter_glob: bpy.props.StringProperty(
                                               default='*.GMD;*.GFS',
                                               options={'HIDDEN'},
@@ -35,19 +40,22 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         errorlog = ErrorLogger()
         try:
             gfs = GFSInterface.from_file(filepath) 
+            if len(gfs.morphs):
+                errorlog.log_error_message("The file you attempted to load contains morph data, which cannot currently be loaded.")
+           
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
         except ParticlesError:
+            return {'CANCELLED'}
             errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
         except HasParticleDataError:
+            return {'CANCELLED'}
             errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
-        if len(gfs.morphs):
-            errorlog.log_error_message("The file you attempted to load contains morph data, which cannot currently be loaded.")
-       
+
         # Report any file-loading errors
         if len(errorlog.errors):
-            errorlog.digest_errors()
-            return {'ERROR'}
+            errorlog.digest_errors(self.debug_mode)
+            return {'CANCELLED'}
 
         # Now import file data to Blender
         textures  = import_textures(gfs)
@@ -67,9 +75,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
     
     def execute(self, context):
-        self.import_file(context, self.filepath)
-
-        return {'FINISHED'}
+        return self.import_file(context, self.filepath)
 
 
 class ImportGAP(bpy.types.Operator, ImportHelper):
@@ -92,6 +98,11 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
                                               default="*.GAP",
                                               options={'HIDDEN'},
                                           )
+
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
     
     def find_selected_model(self, context):
         sel_obj = context.active_object
@@ -114,7 +125,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         # Report an error if there's no armature
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
         try:
@@ -128,7 +139,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
 
         # Report any file-loading errors
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'ERROR'}
         
         # Now import file data to Blender
@@ -141,6 +152,4 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
     
     def execute(self, context):
-        self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
-
-        return {'FINISHED'}
+        return self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)

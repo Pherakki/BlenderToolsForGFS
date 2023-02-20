@@ -36,6 +36,11 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
                                               options={'HIDDEN'},
                                           )
     
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
+    
     version: bpy.props.EnumProperty(items=(
             ("0x01104920", "0x01104920", ""),
             ("0x01104950", "0x01104950", ""),
@@ -64,7 +69,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # selected.
         selected_model = find_selected_model(errorlog)
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
         original_obj  = bpy.context.view_layer.objects.active
@@ -92,7 +97,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
         gfs.has_end_container = True # Put this somewhere else
@@ -100,8 +105,10 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
-        errorlog.digest_warnings()
-        
+        if len(errorlog.warnings):
+            errorlog.digest_warnings()
+        elif not self.debug_mode:
+            self.report({"INFO"}, "Export successful.")
         return {'FINISHED'}
     
     def execute(self, context):
@@ -120,6 +127,11 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
                                               default="*.GAP",
                                               options={'HIDDEN'},
                                           )
+    
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
     
     version: bpy.props.EnumProperty(items=(
             ("0x01104920", "0x01104920", ""),
@@ -149,7 +161,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # selected.
         selected_model = find_selected_model(errorlog)
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
         original_obj  = bpy.context.view_layer.objects.active
@@ -168,7 +180,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
         if len(errorlog.errors):
-            errorlog.digest_errors()
+            errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
         gfs.has_end_container = False # Put this somewhere else
@@ -176,8 +188,10 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
-        errorlog.digest_warnings()
-        
+        if len(errorlog.warnings):
+            errorlog.digest_warnings()
+        elif not self.debug_mode:
+            self.report({"INFO"}, "Export successful.")
         return {'FINISHED'}
     
     def execute(self, context):

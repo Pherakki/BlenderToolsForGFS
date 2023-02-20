@@ -21,10 +21,12 @@ class ErrorLogger:
     def warnings(self):
         return self._warnings
         
-    def digest_errors(self):
+    def digest_errors(self, debug_mode=False):
         # This is wrong but can't do anything better for now.
         # Ideally should load all errors into a single popup.
         if len(self.errors):
+            if debug_mode:
+                raise Exception(self.errors[0].msg)
             err = self.errors[0]
             if err.HAS_DISPLAYABLE_ERROR:
                 err.showErrorData()
