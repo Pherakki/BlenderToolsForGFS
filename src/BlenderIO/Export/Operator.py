@@ -102,6 +102,14 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary(int(self.version, 0x10))
+        model_bin = gb.get_model_block()
+        if model_bin is not None:
+            if model_bin.data.skinning_data.bone_count > 256:
+                errorlog.log_error_message("More than 256 vertex groups are used across the model. A maximum of 256 are supported. Reduce the number of vertex groups to enable export.")
+        if len(errorlog.errors):
+            errorlog.digest_errors(self.debug_mode)
+            return {'CANCELLED'}
+        
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
