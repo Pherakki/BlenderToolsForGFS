@@ -1,6 +1,7 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import SizedObjArray, BitVector
+from ...CommonStructures import BitVector
+from ...CommonStructures.SizedObjArrayModule import SizedObjArray
 from .AnimationBinary import AnimationBinary
 from .AnimationBinary import LookAtAnimationsBinary
 

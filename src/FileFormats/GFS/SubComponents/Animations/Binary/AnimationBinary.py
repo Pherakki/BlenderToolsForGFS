@@ -1,6 +1,8 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, PropertyBinary, SizedObjArray, BitVector
+from ...CommonStructures.SceneNode.EPL import EPLBinary
+from ...CommonStructures import ObjectName, PropertyBinary, BitVector
+from ...CommonStructures.SizedObjArrayModule import SizedObjArray
 from .AnimController import AnimationControllerBinary
 from .AnimTrack import AnimationTrackBinary
 
@@ -53,8 +55,7 @@ class AnimationBinary(Serializable):
         self.duration    = None
         self.controllers = SizedObjArray(AnimationControllerBinary)
         
-        #self.particle_count = None
-        #self.particle_data = ParticleData()
+        self.particle_data = SizedObjArray(EPLEntry, endianness)
         self.lookat_animations = None
         self.extra_track_data   = None
         # Bounding boxes should probably go into a custom datatype
@@ -74,10 +75,7 @@ class AnimationBinary(Serializable):
         self.controllers = rw.rw_obj(self.controllers, version)
         # Only certain flags used for certain chunk versions..?
         if self.flags.has_particles:
-            # self.particle_count = rw.rw_uint32(self.particle_count)
-            # print(self.particle_count)
-            # rw.rw_obj(self.particle_data)
-            raise ParticlesError()
+            rw.rw_obj(self.particle_data, version)
         if self.flags.has_lookat_anims:
             self.lookat_animations = rw.rw_new_obj(self.lookat_animations, LookAtAnimationsBinary, version)
         if self.flags.has_extra_data:
@@ -89,6 +87,19 @@ class AnimationBinary(Serializable):
             self.speed = rw.rw_float32(self.speed)
         if self.flags.has_properties:
             rw.rw_obj(self.properties, version)
+
+
+class EPLEntry(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.epl = EPLBinary.EPLBinary(endianness)
+        self.name = ObjectName(endianness)
+        
+    def read_write(self, rw, version):
+        rw.rw_obj(self.epl, version)
+        rw.rw_obj(self.name, version)
 
 
 class LookAtAnimationsBinary(Serializable):

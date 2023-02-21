@@ -1,5 +1,6 @@
 from ......serialization.Serializable import Serializable
-from ...CommonStructures import ObjectName, SizedObjArray
+from ...CommonStructures import ObjectName
+from ...CommonStructures.SizedObjArrayModule import SizedObjArray
 from .AnimTrack import AnimationTrackBinary
 
 
@@ -21,3 +22,4 @@ class AnimationControllerBinary(Serializable):
         self.target_id = rw.rw_uint32(self.target_id)
         self.target_name = rw.rw_obj(self.target_name, version)
         rw.rw_obj(self.tracks, version)
+        

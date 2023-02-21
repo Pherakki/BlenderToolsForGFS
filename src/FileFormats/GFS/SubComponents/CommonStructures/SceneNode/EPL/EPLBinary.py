@@ -1,10 +1,11 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, BitVector0x20, SizedObjArray
-from ...Animations.Binary.AnimationBinary import AnimationBinary
+from .......serialization.Serializable import Serializable
+from .......serialization.utils import safe_format, hex32_format
+from ....CommonStructures import ObjectName, BitVector0x20
+from .EPLAnimationBinary import EPLAnimationBinary
+from .. import NodeBinary
 
 
-class EPLAnimationFlags(BitVector0x20):
+class EPLFlags(BitVector0x20):
     flag_0      = BitVector0x20.DEF_FLAG(0x00)
     flag_1      = BitVector0x20.DEF_FLAG(0x01)
     flag_2      = BitVector0x20.DEF_FLAG(0x02)
@@ -39,40 +40,23 @@ class EPLAnimationFlags(BitVector0x20):
     flag_31     = BitVector0x20.DEF_FLAG(0x1F)
 
 
-class EPLAnimationBinary(Serializable):
+
+class EPLBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = EPLAnimationFlags()
-        self.unknown_0x04 = None
-        self.animation = AnimationBinary()
-        self.epl_controllers = SizedObjArray(EPLAnimationController)
+        self.flags = EPLFlags()
+        self.root_node = NodeBinary.SceneNodeBinary(endianness)
+        self.animation = EPLAnimationBinary(endianness)
+        self.unknown = 0
                    
     def __repr__(self):
-        return f"[GFSBinary::Scene::Node::EPL::Animation]"
+        return f"[GFSBinary::Scene::Node::EPL {safe_format(self.flags._value, hex32_format)}]"
             
     def read_write(self, rw, version):
         rw.rw_obj(self.flags)
-        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        rw.rw_obj(self.root_node, version)
         rw.rw_obj(self.animation, version)
-        rw.rw_obj(self.epl_controllers)
-
-class EPLAnimationController(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown_0x00 = None
-        self.unknown_0x04 = None
-        self.controller_idx = None
-        self.unknown_0x0C = None
-        
-    def __repr__(self):
-        return f"[GFSBinary::Scene::Node::EPL::Animation::Controller] {self.unknown_0x00} {self.unknown_0x04} {self.controller_idx} {self.unknown_0x0C}"
-    
-    def read_write(self, rw):
-        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
-        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
-        self.controller_idx = rw.rw_uint32(self.controller_idx)
-        self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
+        if version > 0x01105060:
+            self.unknown = rw.rw_uint16(self.unknown)

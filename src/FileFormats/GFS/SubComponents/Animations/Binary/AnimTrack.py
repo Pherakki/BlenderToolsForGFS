@@ -33,7 +33,6 @@ class AnimationTrackBinary(Serializable):
     def read_write(self, rw, version):
         self.keyframe_type  = rw.rw_uint32(self.keyframe_type)
         self.keyframe_count = rw.rw_uint32(self.keyframe_count)
-        
         self.frames = rw.rw_float32s(self.frames, self.keyframe_count)
         # Should use this to decide which "keyframe attributes" to r/w?
         # Need to figure out all kf attributes first since many overlap..?
@@ -53,12 +52,12 @@ class AnimationTrackBinary(Serializable):
         elif self.keyframe_type == 14: kf_type = EmissiveRGB    # Material Anim: 0x01105020, 0x01105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
         elif self.keyframe_type == 15: kf_type = KeyframeType15 # Material Anim: 0x01105060, 0x01105070, 0x01105100
         elif self.keyframe_type == 16: kf_type = KeyframeType16 # Node Anim: 0x01105060, 0x01105070
-        # elif self.keyframe_type == 17: kf_type = KeyframeType17
-        # elif self.keyframe_type == 18: kf_type = KeyframeType18
-        # elif self.keyframe_type == 19: kf_type = KeyframeType19   
+        elif self.keyframe_type == 17: kf_type = KeyframeType17 # Seems to be related to EPLs; 17, 18, 19 come as a triplet
+        elif self.keyframe_type == 18: kf_type = KeyframeType18 # Seems to be related to EPLs; 17, 18, 19 come as a triplet
+        elif self.keyframe_type == 19: kf_type = KeyframeType19 # Seems to be related to EPLs; 17, 18, 19 come as a triplet  
         elif self.keyframe_type == 20: kf_type = Tex1UV # Material Anim: 0x01105100
         elif self.keyframe_type == 21: kf_type = Tex0UVSnap # Material Anim: 0x01105020, 0x1105030, 0x01105040, 0x01105060, 0x01105070, 0x1105090, 0x01105100
-        # elif self.keyframe_type == 22: kf_type = KeyframeType22
+        elif self.keyframe_type == 22: kf_type = KeyframeType22 # Related to EPLs?
         elif self.keyframe_type == 23: kf_type = KeyframeType23 # Camera Anim: 0x01105040, 0x01105060, 0x01105070, 0x01105100
         elif self.keyframe_type == 24: kf_type = KeyframeType24 # Camera Anim: 0x01105060, 0x01105070
         elif self.keyframe_type == 25: kf_type = OpacitySnap    # Material Anim: 0x01105070, 0x1105090, 0x01105100
@@ -360,7 +359,7 @@ class KeyframeType16(Serializable):
         self.unknown = rw.rw_float32(self.unknown)
 
 class KeyframeType17(Serializable):
-    OBJ_VARIANT_TYPE = None
+    OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 17
     
     def __init__(self, position=None, rotation=None, scale=None, unknown=None, endianness='>'):
@@ -381,26 +380,32 @@ class KeyframeType17(Serializable):
         self.scale    = rw.rw_float32s(self.scale, 3)
         self.unknown  = rw.rw_uint8(self.unknown)
 
+
 class KeyframeType18(Serializable):
-    OBJ_VARIANT_TYPE = None
+    OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 18
     
-    def __init__(self, rotation=None, unknown=None, endianness='>'):
+    def __init__(self, unknown_0x00=None, unknown_0x04=None, unknown_0x08=None, unknown_0x0C=None, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
         
-        self.rotation  = rotation
-        self.unknown_2 = unknown
+        self.unknown_0x00 = unknown_0x00
+        self.unknown_0x04 = unknown_0x04
+        self.unknown_0x08 = unknown_0x08
+        self.unknown_0x0C = unknown_0x0C
         
     def __repr__(self):
         return f"[GFDBinary::Animation::Controller::Track::KeyframeType18] {self.rotation} {self.unknown_2}"
         
     def read_write(self, rw):
-        self.rotation  = rw.rw_float32s(self.rotation, 4)
-        self.unknown_2 = rw.rw_uint8(self.unknown_2)
+        self.unknown_0x00  = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04  = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08  = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C  = rw.rw_uint8(self.unknown_0x0C)
+
 
 class KeyframeType19(Serializable):
-    OBJ_VARIANT_TYPE = None
+    OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 19
     
     def __init__(self, unknown_1=None, unknown_2=None, endianness='>'):
@@ -428,7 +433,7 @@ class Tex0UVSnap(TexUVKeyframe):
     CLASSNAME = "Tex0UVSnap"
                 
 class KeyframeType22(Serializable):
-    OBJ_VARIANT_TYPE = None
+    OBJ_VARIANT_TYPE = 1
     VARIANT_TYPE = 22
     
     def __init__(self, unknown_0x00=None, unknown_0x04=None, unknown_0x08=None,

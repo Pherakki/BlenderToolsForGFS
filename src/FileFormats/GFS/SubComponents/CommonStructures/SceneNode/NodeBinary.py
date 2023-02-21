@@ -1,6 +1,6 @@
 from ......serialization.Serializable import Serializable
 from ...CommonStructures import ObjectName, PropertyBinary
-from ...CommonStructures.SizedObjArray import SizedObjArray
+from ...CommonStructures.SizedObjArrayModule import SizedObjArray
 from .NodeAttachmentBinary import NodeAttachmentBinary
 
 
