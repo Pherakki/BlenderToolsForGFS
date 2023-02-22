@@ -119,7 +119,7 @@ class LightBinary(Serializable):
             self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
             
             if self.flags.unk_setting:
-                self.inner_radous = rw.rw_float32(self.inner_radius)
+                self.inner_radius = rw.rw_float32(self.inner_radius)
                 self.outer_radius = rw.rw_float32(self.outer_radius)
             else:
                 self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
