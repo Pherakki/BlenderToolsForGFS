@@ -24,12 +24,13 @@ class NodeInterface:
         camera_list      = []
         light_list       = []
         morph_list       = []
-        cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list, morph_list)
+        epl_list         = []
+        cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list, morph_list, epl_list)
         
-        return node_list, mesh_list, camera_list, light_list, morph_list
+        return node_list, mesh_list, camera_list, light_list, morph_list, epl_list
         
     @classmethod
-    def _fetch_node_from_tree(cls, node, parent, node_list, mesh_list, camera_list, light_list, morph_list):
+    def _fetch_node_from_tree(cls, node, parent, node_list, mesh_list, camera_list, light_list, morph_list, epl_list):
         node_idx = len(node_list)
         node_list.append(cls.from_binary(node, parent))
         for attachment in node.attachments:
@@ -39,15 +40,17 @@ class NodeInterface:
                 camera_list.append(CameraInterface.from_binary(node_idx, attachment.data))
             elif attachment.type == 6:
                 light_list.append(LightInterface.from_binary(node_idx, attachment.data))
+            elif attachment.type == 7:
+                epl_list.append(EPLInterface.from_binary(node_idx, attachment.data))
             elif attachment.type == 9:
                 morph_list.append(MorphInterface.from_binary(node_idx, attachment.data))
             else:
                 raise NotImplementedError("No Interface exists for attachment type '{attachment.type}'")
         for child in node.children[::-1]:
-            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list, morph_list)
+            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list, morph_list, epl_list)
     
     @classmethod
-    def list_to_binary_node_tree(cls, node_list, mesh_list, camera_list, light_list, morph_list):
+    def list_to_binary_node_tree(cls, node_list, mesh_list, camera_list, light_list, morph_list, epl_list):
         node_children = {}
         # First not in list required to be root
         # Should probably throw in a check here to make sure...
@@ -86,6 +89,7 @@ class NodeInterface:
         mesh_binaries = add_attachments("Mesh",   4, mesh_list)
         add_attachments("Camera", 5, camera_list)
         add_attachments("Light",  6, light_list)
+        add_attachments("EPL",  7, epl_list)
         
         return node_collection[0], id_map, mesh_binaries
     
@@ -396,6 +400,24 @@ class LightInterface:
         return self.binary
 
 class MorphInterface:
+    def __init__(self):
+        self.node = None
+        self.binary = None
+        
+    @classmethod
+    def from_binary(cls, node_idx, binary):
+        instance = cls()
+        
+        instance.node = node_idx
+        instance.binary = binary
+        
+        return instance
+    
+    def to_binary(self):
+        return self.binary
+
+
+class EPLInterface:
     def __init__(self):
         self.node = None
         self.binary = None

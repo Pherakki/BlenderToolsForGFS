@@ -24,6 +24,7 @@ class GFSInterface:
         self.cameras = []
         self.lights = []
         self.morphs = []
+        self.epls   = []
         self.bones = []
         self.materials = []
         self.textures = []
@@ -94,6 +95,7 @@ class GFSInterface:
                 instance.cameras,           \
                 instance.lights,            \
                 instance.morphs,            \
+                instance.epls,              \
                 instance.keep_bounding_box, \
                 instance.keep_bounding_sphere,\
                 instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data)
@@ -194,7 +196,7 @@ class GFSInterface:
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
+            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset

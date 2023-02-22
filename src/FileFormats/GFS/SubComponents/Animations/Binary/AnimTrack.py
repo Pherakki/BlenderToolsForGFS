@@ -395,7 +395,7 @@ class KeyframeType18(Serializable):
         self.unknown_0x0C = unknown_0x0C
         
     def __repr__(self):
-        return f"[GFDBinary::Animation::Controller::Track::KeyframeType18] {self.rotation} {self.unknown_2}"
+        return f"[GFDBinary::Animation::Controller::Track::KeyframeType18] {self.unknown_0x00} {self.unknown_0x04} {self.unknown_0x08} {self.unknown_0x0C}"
         
     def read_write(self, rw):
         self.unknown_0x00  = rw.rw_float32(self.unknown_0x00)

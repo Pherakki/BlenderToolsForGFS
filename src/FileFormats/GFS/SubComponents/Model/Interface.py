@@ -20,7 +20,8 @@ class ModelInterface:
         meshes,  \
         cameras, \
         lights,  \
-        morphs = NodeInterface.binary_node_tree_to_list(binary.root_node)
+        morphs,  \
+        epls     = NodeInterface.binary_node_tree_to_list(binary.root_node)
 
         nodes_with_ibpms = {}
         if binary.flags.has_skin_data is not None:
@@ -69,10 +70,10 @@ class ModelInterface:
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
                     
-        return bones, meshes, cameras, lights, morphs, keep_bounding_box, keep_bounding_sphere, flag_3
+        return bones, meshes, cameras, lights, morphs, epls, keep_bounding_box, keep_bounding_sphere, flag_3
         
     @staticmethod
-    def to_binary(bones, meshes, cameras, lights, morphs, keep_bounding_box, keep_bounding_sphere, flag_3, copy_verts=True):
+    def to_binary(bones, meshes, cameras, lights, morphs, epls, keep_bounding_box, keep_bounding_sphere, flag_3, copy_verts=True):
         binary = ModelPayload()
 
         binary.flags.has_bounding_box    = keep_bounding_box
@@ -80,7 +81,7 @@ class ModelInterface:
         binary.flags.flag_3              = flag_3
         
         # Need to return mesh binary list here too!
-        binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, morphs)
+        binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, morphs, epls)
 
         ####################
         # BOUNDING VOLUMES #

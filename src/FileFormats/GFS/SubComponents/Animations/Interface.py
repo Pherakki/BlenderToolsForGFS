@@ -121,6 +121,7 @@ class AnimationInterface:
         self.morph_animations    = []
         self.unknown_animations  = []
         
+        self.particle_data         = None
         self.lookat_animations     = None
         self.extra_track_data      = None
         self.bounding_box_max_dims = None
@@ -179,6 +180,8 @@ class AnimationInterface:
                 
         if binary.flags.has_lookat_anims:
             instance.lookat_animations = LookAtAnimationsInterface.from_binary(binary.lookat_animations)
+        if binary.flags.has_particles:
+            instance.particle_data = binary.particle_data
         instance.extra_track_data      = binary.extra_track_data
         instance.bounding_box_max_dims = binary.bounding_box_max_dims
         instance.bounding_box_min_dims = binary.bounding_box_min_dims
@@ -283,6 +286,29 @@ class AnimationInterface:
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
                 anim.scales    = {f: scale_scl(kf.scale)    for f, kf in zip(track_binary.frames, track_binary.values)}
                 anim.track_groups.append([1, 2])
+            # Unknown EPL stuff
+            elif track_binary.keyframe_type == 17:
+                anim.track_17_data = {f: [kf.position, kf.rotation, kf.scale, kf.unknown] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 18:
+                anim.track_18_data = {f: [kf.unknown_0x00, kf.unknown_0x04, kf.unknown_0x08, kf.unknown_0x0C] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 19:
+                anim.track_19_data = {f: [kf.unknown_1, kf.unknown_2] for f, kf in zip(track_binary.frames, track_binary.values)}
+            elif track_binary.keyframe_type == 22:
+                anim.track_22_data = {f: [
+                    kf.unknown_0x00,
+                    kf.unknown_0x04,
+                    kf.unknown_0x08,
+                    kf.unknown_0x0A,
+                    kf.unknown_0x0E,
+                    kf.unknown_0x12,
+                    kf.unknown_0x16,
+                    kf.unknown_0x1A,
+                    kf.unknown_0x1C,
+                    kf.unknown_0x20,
+                    kf.unknown_0x24,
+                    kf.unknown_0x28
+                    ]
+                    for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
                 raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Node Animation exists")
         
@@ -393,11 +419,13 @@ class AnimationInterface:
         binary.flags.has_speed          = self.speed is not None
         binary.flags.flag_26            = self.flag_26
         binary.flags.flag_27            = self.flag_27
-        binary.flags.has_particles      = False
-        binary.flags.has_lookat_anims   = self.lookat_animations is not None
+        binary.flags.has_particles      = self.particle_data         is not None
+        binary.flags.has_lookat_anims   = self.lookat_animations     is not None
         binary.flags.has_bounding_box   = self.bounding_box_max_dims is not None
-        binary.flags.has_extra_data     = self.extra_track_data is not None
+        binary.flags.has_extra_data     = self.extra_track_data      is not None
 
+        if binary.flags.has_particles:
+            binary.particle_data     = self.particle_data
         if binary.flags.has_lookat_anims:
             binary.lookat_animations = self.lookat_animations.to_binary()
         binary.extra_track_data      = self.extra_track_data
@@ -503,6 +531,10 @@ class NodeAnimation:
         self.scales    = {}
         self.byte_data = {}
         self.unknown_floats = {}
+        self.track_17_data = {}
+        self.track_18_data = {}
+        self.track_19_data = {}
+        self.track_22_data = {}
         self.track_groups = None
         
     def to_controller(self, old_node_id_to_new_node_id_map):        
@@ -513,28 +545,7 @@ class NodeAnimation:
         has_byte     = len(self.byte_data)
         has_floats   = len(self.unknown_floats)
         
-        if not (has_trans or has_rot or has_scale or has_byte or has_floats):
-            return []
-        
-        if len(self.byte_data):
-            raise NotImplementedError("Cannot export Node Byte data yet")
-        
-        # Bundle the data depending on the keyframes
-        position_idx = 0
-        rotation_idx = 1
-        scale_idx    = 2
-        byte_idx     = 3
-        float_idx    = 4
-        if self.track_groups is None:
-            anim_tracks = [self.positions, self.rotations, self.scales, self.byte_data, self.unknown_floats]
-            anim_track_groups = [[]]
-            for at_idx, at in enumerate(anim_tracks):
-                if not len(at):
-                    continue
-                anim_track_groups[0].append(at_idx)
-        else:
-            anim_track_groups = self.track_groups
-        
+                
         # Create controller
         controller_binary = AnimationControllerBinary()
         controller_binary.type = 1
@@ -545,117 +556,192 @@ class NodeAnimation:
         if old_node_id_to_new_node_id_map is not None:
             controller_binary.target_id = old_node_id_to_new_node_id_map[controller_binary.target_id]
         
-        # Create tracks
-        for atg in anim_track_groups:
+        
+        # Pos, Rot, Scale
+        if (has_trans or has_rot or has_scale or has_byte or has_floats):
             
-            has_trans    = position_idx in atg
-            has_rot      = rotation_idx in atg
-            has_scale    = scale_idx    in atg
-            has_byte     = byte_idx     in atg
-            has_floats   = float_idx    in atg
+            if len(self.byte_data):
+                raise NotImplementedError("Cannot export Node Byte data yet")
             
-            position_scale = [0., 0., 0.]
-            scale_scale    = [0., 0., 0.]
-            # This is obviously incomplete
-            if self.compress:
-                if has_trans and has_rot and has_scale:
-                    kf_type = NodeTRSHalf
-                    
-                    position_scale = extract_scale(self.positions, 3)
-                    scale_scale    = extract_scale(self.scales,    3)
-    
-                    frames,\
-                    kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
-                                                 (self.rotations, slerp),
-                                                 (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
-                elif has_trans and has_rot:
-                    if self.is_kf26:
-                        kf_type = KeyframeType26
-                    else:
-                        kf_type = KeyframeType28
-                    
-                    position_scale = extract_scale(self.positions, 3)
-                    scale_scale    = [1., 1., 1.]
-                    
-                    frames,\
-                    kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
-                                                 (self.rotations, slerp))
-                    
-                    #print("SCALE:", position_scale, "FIRST:", kf_values[0][0])
-                    
-                elif has_trans and has_scale:
-                    kf_type = NodeTSHalf
-                    
-                    position_scale = extract_scale(self.positions, 3)
-                    scale_scale    = extract_scale(self.scales,    3)
-                    
-                    frames,\
-                    kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
-                                                 (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
-                elif has_rot and has_scale:
-                    kf_type = NodeRSHalf
-                    
-                    position_scale = [1., 1., 1.]
-                    scale_scale    = extract_scale(self.scales,    3)
-                    
-                    frames,\
-                    kf_values = construct_frames((self.rotations, slerp),
-                                                 (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
-                elif has_trans:
-                    kf_type = NodeTHalf
-                    
-                    position_scale = extract_scale(self.positions, 3)
-                    scale_scale    = [1., 1., 1.,]
-                    
-                    frames,\
-                    kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ))
-                elif has_rot:
-                    kf_type = NodeRHalf
-                    
-                    frames,\
-                    kf_values = construct_frames((self.rotations, slerp))
-                elif has_scale:
-                    kf_type = NodeSHalf
-                    
-                    position_scale = [1., 1., 1.]
-                    scale_scale    = extract_scale(self.scales,    3)
-                    
-                    frames,\
-                    kf_values = construct_frames((apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
-                else:
-                    raise NotImplementedError
+            # Bundle the data depending on the keyframes
+            position_idx = 0
+            rotation_idx = 1
+            scale_idx    = 2
+            byte_idx     = 3
+            float_idx    = 4
+            if self.track_groups is None:
+                anim_tracks = [self.positions, self.rotations, self.scales, self.byte_data, self.unknown_floats]
+                anim_track_groups = [[]]
+                for at_idx, at in enumerate(anim_tracks):
+                    if not len(at):
+                        continue
+                    anim_track_groups[0].append(at_idx)
             else:
-                if has_trans and has_rot and has_scale:
-                    kf_type = NodeTRS
-                    
-                    frames,\
-                    kf_values = construct_frames((self.positions, lerp ),
-                                                 (self.rotations, slerp),
-                                                 (self.scales,    lerp ))
-                elif has_trans and has_rot:
-                    kf_type = NodeTR
-                    
-                    frames,\
-                    kf_values = construct_frames((self.positions, lerp),
-                                                 (self.rotations, slerp))
-                elif has_floats:
-                    kf_type = KeyframeType16
-                    
-                    frames,\
-                    kf_values = construct_frames((self.unknown_floats, lerp))
+                anim_track_groups = self.track_groups
+    
+            # Create tracks
+            for atg in anim_track_groups:
+                
+                has_trans    = position_idx in atg
+                has_rot      = rotation_idx in atg
+                has_scale    = scale_idx    in atg
+                has_byte     = byte_idx     in atg
+                has_floats   = float_idx    in atg
+                
+                position_scale = [0., 0., 0.]
+                scale_scale    = [0., 0., 0.]
+                # This is obviously incomplete
+                if self.compress:
+                    if has_trans and has_rot and has_scale:
+                        kf_type = NodeTRSHalf
+                        
+                        position_scale = extract_scale(self.positions, 3)
+                        scale_scale    = extract_scale(self.scales,    3)
+        
+                        frames,\
+                        kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
+                                                     (self.rotations, slerp),
+                                                     (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
+                    elif has_trans and has_rot:
+                        if self.is_kf26:
+                            kf_type = KeyframeType26
+                        else:
+                            kf_type = KeyframeType28
+                        
+                        position_scale = extract_scale(self.positions, 3)
+                        scale_scale    = [1., 1., 1.]
+                        
+                        frames,\
+                        kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
+                                                     (self.rotations, slerp))
+                        
+                        #print("SCALE:", position_scale, "FIRST:", kf_values[0][0])
+                        
+                    elif has_trans and has_scale:
+                        kf_type = NodeTSHalf
+                        
+                        position_scale = extract_scale(self.positions, 3)
+                        scale_scale    = extract_scale(self.scales,    3)
+                        
+                        frames,\
+                        kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ),
+                                                     (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
+                    elif has_rot and has_scale:
+                        kf_type = NodeRSHalf
+                        
+                        position_scale = [1., 1., 1.]
+                        scale_scale    = extract_scale(self.scales,    3)
+                        
+                        frames,\
+                        kf_values = construct_frames((self.rotations, slerp),
+                                                     (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
+                    elif has_trans:
+                        kf_type = NodeTHalf
+                        
+                        position_scale = extract_scale(self.positions, 3)
+                        scale_scale    = [1., 1., 1.,]
+                        
+                        frames,\
+                        kf_values = construct_frames((apply_scale_to_keyframes(self.positions, position_scale), lerp ))
+                    elif has_rot:
+                        kf_type = NodeRHalf
+                        
+                        frames,\
+                        kf_values = construct_frames((self.rotations, slerp))
+                    elif has_scale:
+                        kf_type = NodeSHalf
+                        
+                        position_scale = [1., 1., 1.]
+                        scale_scale    = extract_scale(self.scales,    3)
+                        
+                        frames,\
+                        kf_values = construct_frames((apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
+                    else:
+                        raise NotImplementedError
                 else:
-                    raise NotImplementedError
-     
+                    if has_trans and has_rot and has_scale:
+                        kf_type = NodeTRS
+                        
+                        frames,\
+                        kf_values = construct_frames((self.positions, lerp ),
+                                                     (self.rotations, slerp),
+                                                     (self.scales,    lerp ))
+                    elif has_trans and has_rot:
+                        kf_type = NodeTR
+                        
+                        frames,\
+                        kf_values = construct_frames((self.positions, lerp),
+                                                     (self.rotations, slerp))
+                    elif has_floats:
+                        kf_type = KeyframeType16
+                        
+                        frames,\
+                        kf_values = construct_frames((self.unknown_floats, lerp))
+                    else:
+                        raise NotImplementedError
+         
+                track_binary = AnimationTrackBinary()
+                track_binary.frames = frames
+                track_binary.keyframe_type = kf_type.VARIANT_TYPE
+                track_binary.keyframe_count = len(track_binary.frames)
+                track_binary.values = [kf_type(*args) for args in zip(*kf_values)]
+                track_binary.base_position = position_scale
+                track_binary.base_scale    = scale_scale
+                
+                controller_binary.tracks.data.append(track_binary)
+        
+        elif len(self.track_17_data):
+            kf_type = KeyframeType17
+            
             track_binary = AnimationTrackBinary()
-            track_binary.frames = frames
+            track_binary.frames = self.track_17_data.keys()
             track_binary.keyframe_type = kf_type.VARIANT_TYPE
             track_binary.keyframe_count = len(track_binary.frames)
-            track_binary.values = [kf_type(*args) for args in zip(*kf_values)]
-            track_binary.base_position = position_scale
-            track_binary.base_scale    = scale_scale
+            track_binary.values = [kf_type(*args) for args in zip(*list(self.track_17_data.values()))]
+            track_binary.base_position = [0., 0., 0.]
+            track_binary.base_scale    = [0., 0., 0.]
             
             controller_binary.tracks.data.append(track_binary)
         
+        elif len(self.track_18_data):
+            kf_type = KeyframeType18
+            
+            track_binary = AnimationTrackBinary()
+            track_binary.frames = self.track_18_data.keys()
+            track_binary.keyframe_type = kf_type.VARIANT_TYPE
+            track_binary.keyframe_count = len(track_binary.frames)
+            track_binary.values = [kf_type(*args) for args in zip(*list(self.track_18_data.values()))]
+            track_binary.base_position = [0., 0., 0.]
+            track_binary.base_scale    = [0., 0., 0.]
+            
+            controller_binary.tracks.data.append(track_binary)
+        
+        elif len(self.track_19_data):
+            kf_type = KeyframeType19
+            
+            track_binary = AnimationTrackBinary()
+            track_binary.frames = self.track_19_data.keys()
+            track_binary.keyframe_type = kf_type.VARIANT_TYPE
+            track_binary.keyframe_count = len(track_binary.frames)
+            track_binary.values = [kf_type(*args) for args in zip(*list(self.track_19_data.values()))]
+            track_binary.base_position = [0., 0., 0.]
+            track_binary.base_scale    = [0., 0., 0.]
+            
+            controller_binary.tracks.data.append(track_binary)
+        
+        elif len(self.track_22_data):
+            kf_type = KeyframeType22
+            
+            track_binary = AnimationTrackBinary()
+            track_binary.frames = self.track_22_data.keys()
+            track_binary.keyframe_type = kf_type.VARIANT_TYPE
+            track_binary.keyframe_count = len(track_binary.frames)
+            track_binary.values = [kf_type(*args) for args in zip(*list(self.track_22_data.values()))]
+            track_binary.base_position = [0., 0., 0.]
+            track_binary.base_scale    = [0., 0., 0.]
+            
+            controller_binary.tracks.data.append(track_binary)
+         
         controller_binary.tracks.count = len(controller_binary.tracks.data)
         
         return controller_binary
@@ -776,8 +862,6 @@ class MorphAnimation:
         self.unknown = {}
 
     def to_controller(self):
-        raise NotImplementedError
-    
         tracks = []
         for dataset, keyframe_type in [
                 (self.unknown, KeyframeType3)
@@ -815,8 +899,6 @@ class UnknownAnimation:
         self.unknown = {}
 
     def to_controller(self):
-        raise NotImplementedError
-    
         tracks = []
         for dataset, keyframe_type in [
                 (self.unknown, KeyframeType5)
