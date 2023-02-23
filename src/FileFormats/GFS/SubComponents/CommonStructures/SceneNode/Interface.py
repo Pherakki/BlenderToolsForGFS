@@ -280,9 +280,9 @@ class MeshInterface:
         binary.flags.has_bounding_sphere = self.keep_bounding_sphere
         binary.flags.flag_5              = self.flag_5
         if self.morphs is None:
-            binary.flags.has_morphs = None
+            binary.flags.has_morphs = False
         else:
-            binary.flags.has_morphs          = (self.morphs.count is not None)
+            binary.flags.has_morphs      = not (self.morphs.count is None or self.morphs.count == 0)
         binary.flags.flag_7              = self.flag_7
         binary.flags.flag_8              = self.flag_8
         binary.flags.flag_9              = self.flag_9
