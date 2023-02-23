@@ -145,6 +145,12 @@ class GFSInterface:
         
         return instance
     
+
+    def to_file(self, filepath, version):
+        binary = self.to_binary(version, duplicate_data=True)
+        binary.write(filepath)
+
+
     def to_binary(self, version, duplicate_data=False):
         binary = GFSBinary()
         
