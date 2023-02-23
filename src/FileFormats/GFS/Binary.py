@@ -5,7 +5,7 @@ from .SubComponents.Materials.Binary import MaterialPayload
 from .SubComponents.Model.Binary import ModelPayload
 from .SubComponents.Animations.Binary import AnimationPayload
 from .SubComponents.Physics.Binary import PhysicsPayload
-
+from .SubComponents.CommonStructures.SceneNode.EPL.EPLBinary import EPLBinary as EPLObjBinary
 
 class GFSBinary(Serializable):
     def __init__(self, endianness='>'):
@@ -61,3 +61,24 @@ class GFSBinary(Serializable):
     def get_animation_block(self):  return self.get_container(AnimationPayload.TYPECODE)
     def get_physics_block(self):    return self.get_container(PhysicsPayload.TYPECODE)
     def get_0x000100F8_block(self): return self.get_container(0x000100F8)
+    
+
+class EPLBinary(Serializable):
+    def __init__(self, endianness='>'):
+        super().__init__()
+        self.context.endianness = endianness
+        
+        self.magic = b'GFS0'
+        self.start_block = GFS0ContainerBinary(endianness)
+        self.epl = None
+        
+        
+    def __repr__(self):
+        return f"[EPL]"
+        
+    def read_write(self, rw):
+        self.magic      = rw.rw_bytestring(self.magic, 4)
+        rw.assert_equal(self.magic, b'GFS0')
+        rw.rw_obj(self.start_block)
+        self.epl = rw.rw_new_obj(self.epl, lambda: EPLObjBinary(self.context.endianness), self.start_block.version)
+        
