@@ -80,7 +80,9 @@ class ModelInterface:
         binary.flags.has_bounding_sphere = keep_bounding_sphere
         binary.flags.flag_3              = flag_3
         
-        # Need to return mesh binary list here too!
+        # At this point, the bone indices in the mesh binaries are global.
+        # Need to convert them to "local" matrix palette bones at the end of 
+        # the function.
         binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, morphs, epls)
 
         ####################
@@ -148,14 +150,6 @@ class ModelInterface:
                 break
             
         if binary.flags.has_skin_data:
-            # GENERATE SKINNING DATA STRUCTURE
-            # world_matrices = [None]*len(bones)
-            # for i, bone in enumerate(bones):
-            #     local_matrix = transforms_to_matrix(bone.position, bone.rotation, [1., 1., 1.])
-            #     if bone.parent_idx > -1:
-            #         world_matrices[i] = multiply_transform_matrices(world_matrices[bone.parent_idx], local_matrix)
-            #     else:
-            #         world_matrices[i] = local_matrix
             world_matrices = [bone.bind_pose_matrix for bone in bones]
             
             bpms = []
@@ -165,11 +159,21 @@ class ModelInterface:
             for mesh_binary, mesh_node_id in mesh_binaries[::-1]:
                 node_matrix = world_matrices[mesh_node_id]
                 if mesh_binary.flags.has_weights:
+                    # Find all indices
                     indices = set()
+                    local_unweighted_indices = set()
                     for vertex in mesh_binary.vertices:
                         for idx, wgt in zip(vertex.indices[::-1], vertex.weights[::-1]):
-                            indices.add(idx)
-                        
+                            if wgt == 0:
+                                local_unweighted_indices.add(idx)
+                            else:
+                                indices.add(idx)
+                    
+                    # Deal with unweighted
+                    for idx in sorted(local_unweighted_indices):
+                        index_lookup[(mesh_node_id, idx)] = 0
+                    
+                    # Deal with weighted
                     for idx in sorted(indices):                           
                         index_matrix = bones[idx].bind_pose_matrix
                         #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
