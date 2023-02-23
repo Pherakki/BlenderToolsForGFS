@@ -335,9 +335,6 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
     
-    return bpy_mesh_object
-
-    
     ########################
     # DO THE LEFTOVER DATA #
     ########################
@@ -383,6 +380,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     
     bpy.context.view_layer.objects.active = prev_obj
 
+    return bpy_mesh_object
 
 def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, transform):
     # # Bounding box
