@@ -186,7 +186,7 @@ class AnimationInterface:
         instance.bounding_box_max_dims = binary.bounding_box_max_dims
         instance.bounding_box_min_dims = binary.bounding_box_min_dims
         instance.speed                 = binary.speed
-        instance.properties            = binary.properties.data
+        instance.properties = [PropertyInterface.from_binary(prop) for prop in binary.properties.data]
 
         # These should be removable...?
         # Maybe these say which channels are activated..?!
@@ -432,8 +432,9 @@ class AnimationInterface:
         binary.bounding_box_max_dims = self.bounding_box_max_dims
         binary.bounding_box_min_dims = self.bounding_box_min_dims
         binary.speed                 = self.speed
-        binary.properties.data       = self.properties
+        binary.properties.data       = [prop.to_binary() for prop in self.properties]
         binary.properties.count      = len(self.properties)
+        
         binary.controllers.data.extend([a.to_controller(old_node_id_to_new_node_id_map) for a in self.node_animations]) # Nodes are first
         binary.controllers.data.extend([a.to_controller() for a in self.camera_animations  ]) # Then cameras - SOMETIMES MIXED WITH NODES?!
         binary.controllers.data.extend([a.to_controller() for a in self.material_animations]) # Then materials
