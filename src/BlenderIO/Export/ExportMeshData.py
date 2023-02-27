@@ -7,6 +7,7 @@ import numpy as np
 from ..WarningSystem.Warning import ReportableError
 from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
+from ..Utils.UVMapManagement import is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
@@ -292,6 +293,41 @@ def generate_loop_to_face_map(mesh):
             lidx_to_fidx[loop_idx] = face.index
     return lidx_to_fidx
 
+def pack_colour(colour):
+    # RGBA -> ARGB
+    return tuple([max(int(colour[3]*255), 255), 
+                  max(int(colour[0]*255), 255), 
+                  max(int(colour[1]*255), 255),
+                  max(int(colour[2]*255), 255)])
+
+def extract_colours(bpy_mesh):
+    colours = [None, None]
+    # Blender 3.2+ 
+    # vertex_colors is equivalent to color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER").
+    # Original data is just uint8s so this is accurate.
+    if hasattr(bpy_mesh, "color_attributes"):
+        for ca in bpy_mesh.color_attributes:
+            if is_valid_color_map(ca.name):
+                colour_idx = get_color_idx_from_name(ca.name)
+                if colour_idx > 1:
+                    continue
+                if ca.domain == "CORNER":
+                    colours[colour_idx] = tuple([pack_colour(c.color) for c in ca.data])
+                elif ca.domain == "POINT":
+                    # Copy vertex data to loop data
+                    colours[colour_idx] = tuple([pack_colour(ca.data[loop.vertex_index].color) for loop in bpy_mesh.loop])
+                else:
+                    pass
+    # Blender 2.81-3.2
+    else:
+        for vc in bpy_mesh.vertex_colors:
+            if is_valid_color_map(vc.name):
+                colour_idx = get_color_idx_from_name(vc.name)
+                if colour_idx > 1:
+                    continue
+                colours[colour_idx] = tuple([pack_colour(l.color) for l in vc.data])
+
+    return colours
 
 def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor):
     mesh = mesh_obj.data
@@ -305,9 +341,6 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     group_map = {g.index: bone_names[g.name] for g in nonempty_groups}
     
     map_ids = list(mesh.uv_layers.keys())[:8]
-    colour_map = list(mesh.vertex_colors.keys())[:2]
-    n_colours = len(colour_map)
-
     use_normals   = mesh.GFSTOOLS_MeshProperties.export_normals
     use_tangents  = mesh.GFSTOOLS_MeshProperties.export_tangents
     use_binormals = mesh.GFSTOOLS_MeshProperties.export_binormals
@@ -339,9 +372,10 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
         UV_data = [tuple()]*nloops
 
     # Extract colours
-    col_data = [None]*n_colours
-    for i, map_id in enumerate(colour_map):
-        col_data[i] = fetch_data(mesh.vertex_colors[map_id].data, "color", sigfigs)
+    col_data = [[None for _ in range(nloops)]]*2
+    for col_idx, col_loops in enumerate(extract_colours(mesh)):
+        if col_loops is not None:
+            col_data[col_idx] = col_loops
     if len(col_data):
         col_data = [tuple(elems) for elems in zip(*col_data)]
     else:
@@ -394,7 +428,9 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
                                         VertexAttributes.TEXCOORD6,
                                         VertexAttributes.TEXCOORD7], unique_value[1]):
                 vb[attr_idx] = value
-            if len(unique_value[2]): vb.color1   = unique_value[2][0]
+            for attr_idx, value in zip([VertexAttributes.COLOR1,
+                                       VertexAttributes.COLOR2], unique_value[2]):
+                vb[attr_idx] = value
             if len(unique_value[3]): vb.tangent  = unique_value[3][0]
             if len(unique_value[4]): vb.binormal = unique_value[4][0]
             if len(group_indices):
