@@ -487,7 +487,7 @@ def fetch_tangent(obj, sigfigs):
 
     signs = array.array('f', [0.0] * (len(obj)))
     obj.foreach_get("bitangent_sign", data)
-    return [(*round_to_sigfigs(datum, sigfigs), sign) for datum, sign in zip(zip(*(iter(data),) * dsize), signs)]
+    return [tuple(round_to_sigfigs(datum, sigfigs)) for datum, sign in zip(zip(*(iter(data),) * dsize), signs)]
 
 def get_bone_id(mesh_obj, bone_names, grp):
     group_idx = grp.group
