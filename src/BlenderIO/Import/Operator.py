@@ -11,6 +11,7 @@ from .ImportModel import import_model
 from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
+from .ImportEPLs import import_epls
 from ..WarningSystem import handle_warning_system, ErrorLogger
 from ..UI.HelpWindows import HelpWindow
 
@@ -39,10 +40,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Try to load file and log any errors...
         errorlog = ErrorLogger()
         try:
-            gfs = GFSInterface.from_file(filepath) 
-            if len(gfs.morphs):
-                errorlog.log_error_message("The file you attempted to load contains morph data, which cannot currently be loaded.")
-           
+            gfs = GFSInterface.from_file(filepath)
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
         except ParticlesError:
@@ -60,14 +58,16 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures)
-        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename)
+        import_animations(gfs, armature, filename, gfs_to_bpy_bone_map)
         
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
+        
+        import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map)
         
         # Report any warnings that were logged
         errorlog.digest_warnings()

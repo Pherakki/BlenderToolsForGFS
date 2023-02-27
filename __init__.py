@@ -30,6 +30,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Materials     import GFSToolsMaterialProperties
     from .src.BlenderIO.Properties.Meshes        import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
     from .src.BlenderIO.Properties.Model         import GFSToolsModelProperties, GFSToolsModelNodeProperties
+    from .src.BlenderIO.Properties.Nodes         import BlobProperty
     from .src.BlenderIO.Properties.Textures      import GFSToolsImageProperties
     from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationPanel
     from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
@@ -61,6 +62,7 @@ def init_bpy():
         ExportGFS,
         ExportGAP,
         GFSExportSubmenu,
+        BlobProperty,
         GFSToolsGenericProperty,
         OpenDocumentation,
         OBJECT_PT_GFSToolsAnimationPanel,

@@ -1,11 +1,27 @@
 from ..CustomProperty import PropertyInterface
 from .NodeAttachmentBinary import NodeAttachmentBinary
-from .NodeBinary import SceneNodeBinary
-from .MeshBinary import MeshBinary
-from .LightBinary import LightBinary
+from .NodeBinary   import SceneNodeBinary
+from .MeshBinary   import MeshBinary
+from .LightBinary  import LightBinary
 from .CameraBinary import CameraBinary
+from .MorphBinary  import MorphBinary
 
 
+def generate_morphs(node_list, mesh_list):
+    out = []
+    for mesh in mesh_list:
+        if len(mesh.morphs):
+            mi = MorphInterface()
+            mi.node = mesh.node
+            binary = MorphBinary(endianness='>')
+            binary.target_count = len(mesh.morphs)
+            binary.targets      = [0]*binary.target_count  # Always seems to be 0...
+            binary.parent_name  = binary.parent_name.from_name(node_list[mi.node].name)
+            mi.binary = binary
+            out.append(mi)
+    return out
+
+        
 class NodeInterface:
     def __init__(self):
         self.parent_idx       = None
@@ -23,14 +39,14 @@ class NodeInterface:
         mesh_list        = []
         camera_list      = []
         light_list       = []
-        morph_list       = []
+        #morph_list       = []
         epl_list         = []
-        cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list, morph_list, epl_list)
+        cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list, epl_list)
         
-        return node_list, mesh_list, camera_list, light_list, morph_list, epl_list
+        return node_list, mesh_list, camera_list, light_list, epl_list
         
     @classmethod
-    def _fetch_node_from_tree(cls, node, parent, node_list, mesh_list, camera_list, light_list, morph_list, epl_list):
+    def _fetch_node_from_tree(cls, node, parent, node_list, mesh_list, camera_list, light_list, epl_list):
         node_idx = len(node_list)
         node_list.append(cls.from_binary(node, parent))
         for attachment in node.attachments:
@@ -43,14 +59,15 @@ class NodeInterface:
             elif attachment.type == 7:
                 epl_list.append(EPLInterface.from_binary(node_idx, attachment.data))
             elif attachment.type == 9:
-                morph_list.append(MorphInterface.from_binary(node_idx, attachment.data))
+                pass
+            #     morph_list.append(MorphInterface.from_binary(node_idx, attachment.data))
             else:
                 raise NotImplementedError("No Interface exists for attachment type '{attachment.type}'")
         for child in node.children[::-1]:
-            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list, morph_list, epl_list)
+            cls._fetch_node_from_tree(child, node_idx, node_list, mesh_list, camera_list, light_list, epl_list)
     
     @classmethod
-    def list_to_binary_node_tree(cls, node_list, mesh_list, camera_list, light_list, morph_list, epl_list):
+    def list_to_binary_node_tree(cls, node_list, mesh_list, camera_list, light_list, epl_list):
         node_children = {}
         # First not in list required to be root
         # Should probably throw in a check here to make sure...
@@ -85,11 +102,11 @@ class NodeInterface:
                 binaries.append((attachment.data, remapped_node))
             return binaries
                 
-        add_attachments("Morph",  9, morph_list)
+        add_attachments("Morph",  9, generate_morphs(node_list, mesh_list))
         mesh_binaries = add_attachments("Mesh",   4, mesh_list)
         add_attachments("Camera", 5, camera_list)
         add_attachments("Light",  6, light_list)
-        add_attachments("EPL",  7, epl_list)
+        add_attachments("EPL",    7, epl_list)
         
         return node_collection[0], id_map, mesh_binaries
     
@@ -171,7 +188,7 @@ class MeshInterface:
         self.vertices = None
         self.material_name = None
         self.indices = None
-        self.morphs = None
+        self.morphs = []
         self.unknown_0x12 = None
         self.unknown_float_1 = None
         self.unknown_float_2 = None
@@ -227,7 +244,7 @@ class MeshInterface:
         instance.material_name   = binary.material_name.string
         instance.indices         = binary.indices
         instance.index_type      = binary.index_type # Can probably remove this...
-        instance.morphs          = binary.morph_data # NEEDS UNPACKING
+        instance.morphs          = [t.position_deltas for t in binary.morph_data.targets]
         instance.unknown_0x12    = binary.unknown_0x12
         instance.unknown_float_1 = binary.unknown_float_1
         instance.unknown_float_2 = binary.unknown_float_2
@@ -279,10 +296,10 @@ class MeshInterface:
         binary.flags.has_bounding_box    = self.keep_bounding_box
         binary.flags.has_bounding_sphere = self.keep_bounding_sphere
         binary.flags.flag_5              = self.flag_5
-        if self.morphs is None:
-            binary.flags.has_morphs = False
-        else:
+        if len(self.morphs):
             binary.flags.has_morphs      = not (self.morphs.count is None or self.morphs.count == 0)
+        else:
+            binary.flags.has_morphs = False
         binary.flags.flag_7              = self.flag_7
         binary.flags.flag_8              = self.flag_8
         binary.flags.flag_9              = self.flag_9
@@ -325,10 +342,11 @@ class MeshInterface:
         binary.vertex_count  = len(self.vertices)
         binary.unknown_0x12  = self.unknown_0x12
         binary.vertices      = self.vertices
-        if self.morphs is not None:
-            binary.morph_data.flags = self.morphs.flags        # NEEDS UNPACKING
-            binary.morph_data.count = len(self.morphs.targets) # NEEDS UNPACKING
-            binary.morph_data.targets = self.morphs.targets    # NEEDS UNPACKING
+        if len(self.morphs):
+            binary.morph_data.flags = 2
+            binary.morph_data.count = 0
+            for position_deltas in self.morphs:
+                binary.morph_data.add_target(2, position_deltas)
         binary.indices       = self.indices
         binary.material_name = binary.material_name.from_name(self.material_name)
         
@@ -361,7 +379,7 @@ class MeshInterface:
                 binary.bounding_sphere_radius = radius
             else:
                 raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
-                
+        
         return binary
     
 class CameraInterface:
@@ -400,6 +418,7 @@ class LightInterface:
         return self.binary
 
 class MorphInterface:
+    # This attachment should actually be redundant since the data is always the same
     def __init__(self):
         self.node = None
         self.binary = None

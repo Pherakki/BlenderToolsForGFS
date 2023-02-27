@@ -40,7 +40,6 @@ class EPLFlags(BitVector0x20):
     flag_31     = BitVector0x20.DEF_FLAG(0x1F)
 
 
-
 class EPLBinary(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()

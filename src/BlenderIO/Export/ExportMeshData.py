@@ -9,6 +9,7 @@ from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
+
 class NonTriangularFacesError(ReportableError):
     __slots__ = ("mesh", "poly_indices", "prev_obj")
     
@@ -86,36 +87,100 @@ class TooManyIndicesError(ReportableError):
 def export_mesh_data(gfs, armature, errorlog):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     material_names = set()
+    out = []
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
+        out.append((bpy_mesh_object.data, node_id))
+
+        # Convert bpy meshes -> gfs meshes
+        gfs_meshes = []
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog))
+        attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
+        for bpy_submesh_object in attached_meshes:
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog))
+            
         
-        bind_pose_matrix = convert_Zup_to_Yup(armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world)
         
-        # Keep this code around in case you ever allow meshes to be 
-        # parented to anything other that RootNode
+        # Now create the parent node
         parent_idx = 0
+        bind_pose_matrix = convert_Zup_to_Yup(armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world)
         parent_relative_bind_pose_matrix = bind_pose_matrix
-        #parent_relative_bind_pose_matrix = armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
+        
+        # Check if we can convert any weighted meshes to node children
+        # to save on matrix palette space
+        # To do this we'll check if there's single bone we can parent the mesh
+        # to
+        # index_sets = []
+        # for gm in gfs_meshes:
+        #     indices = set()
+        #     if gm.vertices[0].indices is not None:
+        #         for v in gm.vertices:
+        #             for idx, wgt in zip(v.indices, v.weights):
+        #                 if wgt > 0:
+        #                     indices.add(idx)
+        #     index_sets.append(indices)
+        # all_indices = set.union(*index_sets)
+        # if len(all_indices) == 1:
+        #     # We can re-parent the node to this node and yeet the vertex
+        #     # weights
+        #     parent_idx = list(all_indices)[0]
+        #     parent_relative_bind_pose_matrix = armature.matrix_world.inverted() @ armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
+        #     for gm in gfs_meshes:
+        #         for v in gm.vertices:
+        #             v.indices = None
+        #             v.weights = None
+    
+        # Now create the transforms for the node
         pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
         
+        # Other crap, create node
         node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
         bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
         gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
         for prop in node_props.properties:
             gfs_node.add_property(*prop.extract_data(prop))
-        
-        create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog)
-        attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
-        for bpy_submesh_object in attached_meshes:
-            create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog)
-        
-    return sorted(material_names)
+    
+    return sorted(material_names), out
 
 
+def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
+    out = []
+    skeys = bpy_mesh_object.data.shape_keys
+    if skeys is None:
+        return out
+    for shp in skeys.key_blocks:
+        # This is a fragile way of identifying the basis key - sort it out 
+        # later.
+        if shp.name == "Basis":
+            continue
+        
+        # The following assumes that the "Basis" shapekey is exactly the 
+        # underlying mesh.
+        # It *should* be frankly, but might want to export the basis positions
+        # instead of the vertex positions if the basis is present...
+        # Sounds *fun*...
+        # If there's *multiple* bases / relative keys, that's also something
+        # that just can't be exported, unless the relative keys all form chains
+        # going back to the singular root Basis key.
+        # Since shape keys are stored with absolute positions, we're just gonna
+        # assume that they are all relative to the edit mesh and export those
+        # positions. Even if there's relative-key chains, the final positions 
+        # of the shape keys will get exported, although the inheritance chain 
+        # will be removed.
+        # Here we also assume that the gfs_vert_to_bpy_vert is a sorted
+        # dict from 0->max; the vertex splitter function should create
+        # such a dict.
+        verts = bpy_mesh_object.data.vertices
+        position_deltas = [(tuple(shp.data[bpy_idx].co - verts[bpy_idx].co)) 
+                           for bpy_idx in gfs_vert_to_bpy_vert.values()]
+        out.append(position_deltas)
+        
+    return out
+    
 def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    vertices, indices = extract_vertex_data(bpy_mesh_object, bone_names)
+    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names)
     
     # Check if any of the mesh data is invalid... we'll accumulate these
     # into an error report for the user.
@@ -136,18 +201,21 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
     
     # Now convert mesh to GFS structs... don't worry if it contains invalid data,
     # we're going to throw an exception at the end of export if any of the meshes
-    # were flagged as invalid
+    # were flagged as invalid by the errorlog.
     mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     mesh = gfs.add_mesh(node_id, vertices, 
                         bpy_mesh_object.active_material.name if bpy_mesh_object.active_material is not None else None, 
                         [fidx for face in indices for fidx in face], 
-                        [], # Morphs! 
+                        extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert),
                         mesh_props.unknown_0x12, 
                         mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
                         mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
                         mesh_props.export_bounding_box, 
                         mesh_props.export_bounding_sphere)
     
+    # Export flags we can't currently deduce from Blender data...
+    # We might be able to represent some of these flags within Blender itself
+    # if we can figure out what some of them do.
     mesh.flag_5 = mesh_props.flag_5
     mesh.flag_7 = mesh_props.flag_7
     mesh.flag_8 = mesh_props.flag_8
@@ -174,8 +242,12 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
     mesh.flag_30 = mesh_props.flag_30
     mesh.flag_31 = mesh_props.flag_31
     
+    # Finally log the name of the material so we can pass it on to the material
+    # exporter in a different function
     if bpy_mesh_object.active_material is not None:
         export_materials.add(bpy_mesh_object.active_material.name)
+    
+    return mesh
 
 #####################
 # PRIVATE FUNCTIONS #
@@ -201,9 +273,9 @@ def extract_vertex_data(mesh_obj, bone_names):
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor)
+    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor)
     
-    return export_verts, export_faces
+    return export_verts, export_faces, gfs_vert_to_bpy_vert
 
 def generate_vertex_to_loops_map(mesh):
     vidx_to_lidxs = {}
@@ -292,6 +364,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     unique_val_map = {key: i for i, key in enumerate(list(set(loop_idx_to_key)))}
     loop_idx_to_unique_key = {i: unique_val_map[key] for i, key in enumerate(loop_idx_to_key)}
 
+    gfs_vert_to_bpy_vert = {}
     for vert_idx, linked_loops in vidx_to_lidxs.items():
         vertex = mesh.vertices[vert_idx]
         unique_ids = {i: [] for i in list(set(loop_idx_to_unique_key[ll] for ll in linked_loops))}
@@ -330,6 +403,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
                 vb.weights = [*group_weights, *([0]*n_extra)]
 
             n_verts = len(exported_vertices)
+            gfs_vert_to_bpy_vert[len(exported_vertices)] = vert_idx
             exported_vertices.append(vb)
 
             for l in loops_with_this_value:
@@ -337,7 +411,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
                 faces[face_idx][l] = n_verts
 
     faces = [list(face_verts.values()) for face_verts in faces]
-    return exported_vertices, faces
+    return exported_vertices, faces, gfs_vert_to_bpy_vert
 
 def get_all_nonempty_vertex_groups(mesh_obj):
     nonempty_vgs = set()

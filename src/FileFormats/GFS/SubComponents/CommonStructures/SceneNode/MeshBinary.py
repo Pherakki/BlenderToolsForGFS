@@ -111,7 +111,7 @@ class MeshBinary(Serializable):
         if self.flags.has_indices: # Triangles
             self.tri_count  = rw.rw_uint32(self.tri_count)
             self.index_type = rw.rw_uint16(self.index_type)
-            
+        
         self.vertex_count = rw.rw_uint32(self.vertex_count)
         self.unknown_0x12 = rw.rw_uint32(self.unknown_0x12)
         
@@ -150,16 +150,16 @@ class MeshBinary(Serializable):
         # Do materials
         if self.flags.has_material:
             rw.rw_obj(self.material_name, version)
-            
+        
         # Bounding box / sphere
         if self.flags.has_bounding_box:
             self.bounding_box_max_dims = rw.rw_float32s(self.bounding_box_max_dims, 3)
             self.bounding_box_min_dims = rw.rw_float32s(self.bounding_box_min_dims, 3)
-
+        
         if self.flags.has_bounding_sphere:
             self.bounding_sphere_centre = rw.rw_float32s(self.bounding_sphere_centre, 3)
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
-            
+        
         # Unknown floats
         if self.flags.has_unknown_floats:
             self.unknown_float_1 = rw.rw_float32(self.unknown_float_1)
@@ -365,8 +365,8 @@ class MorphDataBinary(Serializable):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = None
-        self.count = None
+        self.flags = 2
+        self.count = 0
         self.targets = []
         
     def __repr__(self):
@@ -376,14 +376,23 @@ class MorphDataBinary(Serializable):
         self.flags = rw.rw_uint32(self.flags)
         self.count = rw.rw_uint32(self.count)
         self.targets = rw.rw_obj_array(self.targets, MorphTarget, self.count)
+        
+    def add_target(self, flags, position_deltas):
+        target = MorphTarget(self.context.endianness)
+        target.flags = 2
+        target.count = len(position_deltas)
+        target.position_deltas = position_deltas
+        self.targets.append(target)
+        self.count += 1
+        return target
 
 class MorphTarget(Serializable):
     def __init__(self, endianness=">"):
         super().__init__()
         self.context.endianness = endianness
         
-        self.flags = None
-        self.count = None
+        self.flags = 2
+        self.count = 0
         self.position_deltas = []
            
         

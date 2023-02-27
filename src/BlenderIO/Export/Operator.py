@@ -13,6 +13,8 @@ from .ExportCameras import export_cameras
 from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
 from .ExportAnimations import export_animations
+from .ExportEPLs import export_epls
+
 from ..WarningSystem import ErrorLogger, handle_warning_system
 
 
@@ -83,12 +85,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names = export_mesh_data(gfs, selected_model, errorlog)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
         export_physics(gfs, selected_model)
         export_0x000100F8(gfs, selected_model)
+        export_epls(gfs, selected_model, bpy_node_meshes, errorlog)
         if self.pack_animations:
             export_animations(gfs, selected_model)
         

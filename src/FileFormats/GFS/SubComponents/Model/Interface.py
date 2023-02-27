@@ -20,7 +20,6 @@ class ModelInterface:
         meshes,  \
         cameras, \
         lights,  \
-        morphs,  \
         epls     = NodeInterface.binary_node_tree_to_list(binary.root_node)
 
         nodes_with_ibpms = {}
@@ -70,10 +69,10 @@ class ModelInterface:
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
                     
-        return bones, meshes, cameras, lights, morphs, epls, keep_bounding_box, keep_bounding_sphere, flag_3
+        return bones, meshes, cameras, lights, epls, keep_bounding_box, keep_bounding_sphere, flag_3
         
     @staticmethod
-    def to_binary(bones, meshes, cameras, lights, morphs, epls, keep_bounding_box, keep_bounding_sphere, flag_3, copy_verts=True):
+    def to_binary(bones, meshes, cameras, lights, epls, keep_bounding_box, keep_bounding_sphere, flag_3, copy_verts=True):
         binary = ModelPayload()
 
         binary.flags.has_bounding_box    = keep_bounding_box
@@ -83,7 +82,7 @@ class ModelInterface:
         # At this point, the bone indices in the mesh binaries are global.
         # Need to convert them to "local" matrix palette bones at the end of 
         # the function.
-        binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, morphs, epls)
+        binary.root_node, old_node_id_to_new_node_id_map, mesh_binaries = NodeInterface.list_to_binary_node_tree(bones, meshes, cameras, lights, epls)
 
         ####################
         # BOUNDING VOLUMES #
@@ -199,17 +198,29 @@ class ModelInterface:
             binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(invert_pos_rot_matrix(bpm)) for bpm in bpms]
             binary.skinning_data.bone_count = len(matrix_palette)
             
+            print(">>", binary.skinning_data.bone_count, len(binary.skinning_data.matrix_palette), len(old_node_id_to_new_node_id_map))
+            #print(old_node_id_to_new_node_id_map)
+            #print(index_lookup)
+            
+            all_indices = set()
             # REMAP VERTEX INDICES
             for mesh, mesh_node_id in mesh_binaries:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
                 if mesh.vertices[0].indices is not None:
                     for v in mesh.vertices:
-                        indices = [old_node_id_to_new_node_id_map[index_lookup[(mesh_node_id, idx)]] for idx in v.indices]
+                        # I don't think old_node_id_to_new_node_id_map is needed here,
+                        # but it might be needed... somewhere...
+                        # Shouldn't be though since the bpms are extracted from the unremapped
+                        # bone indices, so this should all still be OK.
+                        indices = [index_lookup[(mesh_node_id, idx)] for idx in v.indices]
+                        all_indices.update(indices)
                         for wgt_idx, wgt in enumerate(v.weights):
                             if wgt == 0:
                                 indices[wgt_idx] = 0
                         v.indices = indices[::-1]
+            print(sorted(all_indices), len(all_indices))
+            
         
         return binary, old_node_id_to_new_node_id_map
     

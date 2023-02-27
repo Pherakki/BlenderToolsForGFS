@@ -8,7 +8,7 @@ from .SubComponents.Textures.Interface import TextureInterface
 from .SubComponents.Textures.Binary import TexturePayload
 from .SubComponents.Animations import AnimationPayload, AnimationInterface, LookAtAnimationsInterface
 from .SubComponents.Model.Interface import ModelInterface
-from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightInterface, CameraInterface
+from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightInterface, CameraInterface, EPLInterface
 
 from .SubComponents.GFS0ContainerBinary import UnsupportedVersionError
 from .SubComponents.Animations.Binary.AnimationBinary import ParticlesError
@@ -23,7 +23,7 @@ class GFSInterface:
         self.meshes = []
         self.cameras = []
         self.lights = []
-        self.morphs = []
+        #self.morphs = []  # Should be able to just auto-create these
         self.epls   = []
         self.bones = []
         self.materials = []
@@ -88,13 +88,10 @@ class GFSInterface:
             elif ctr.type == 0x000100FB:
                 instance.materials = [MaterialInterface.from_binary(mb) for mb in ctr.data]
             elif ctr.type == 0x00010003:
-                # Wrong but it will do as an approximation for now
-                # Need to include other data types in export
                 instance.bones,             \
                 instance.meshes,            \
                 instance.cameras,           \
                 instance.lights,            \
-                instance.morphs,            \
                 instance.epls,              \
                 instance.keep_bounding_box, \
                 instance.keep_bounding_sphere,\
@@ -202,7 +199,7 @@ class GFSInterface:
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.morphs, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
+            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
@@ -329,7 +326,7 @@ class GFSInterface:
         mesh.vertices        = vertices
         mesh.material_name   = material_name
         mesh.indices         = indices
-        #mesh.morphs = morphs
+        mesh.morphs = morphs
         mesh.unknown_0x12    = unknown_0x12
         mesh.unknown_float_1 = unknown_float_1
         mesh.unknown_float_2 = unknown_float_2
@@ -381,6 +378,13 @@ class GFSInterface:
         cam.binary.unknown_0x50 = unknown_0x50
         self.cameras.append(cam)
         return cam
+    
+    def add_epl(self, node_id, binary):
+        epl = EPLInterface()
+        epl.node   = node_id
+        epl.binary = binary
+        self.epls.append(epl)
+        return epl
 
     def add_animation(self):
         anim = AnimationInterface()

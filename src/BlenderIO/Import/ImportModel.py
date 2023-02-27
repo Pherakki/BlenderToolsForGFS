@@ -5,7 +5,9 @@ import bpy
 from mathutils import Matrix, Vector, Quaternion
 
 from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup
+from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
+from ..Utils.UVMapManagement import make_color_map_name
 from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
 from .ImportProperties import import_properties
 
@@ -18,11 +20,11 @@ def import_model(gfs, name):
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
     
-    main_armature.data.GFSTOOLS_ModelProperties.root_node_name = gfs.bones[0].name if len(gfs.bones) else ""
-    main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box = gfs.keep_bounding_box
+    main_armature.data.GFSTOOLS_ModelProperties.root_node_name         = gfs.bones[0].name if len(gfs.bones) else ""
+    main_armature.data.GFSTOOLS_ModelProperties.has_external_emt       = gfs.data_0x000100F8 is not None
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = gfs.keep_bounding_box
     main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.keep_bounding_sphere
-    main_armature.data.GFSTOOLS_ModelProperties.flag_3 = gfs.flag_3
+    main_armature.data.GFSTOOLS_ModelProperties.flag_3                 = gfs.flag_3
     
     bpy.ops.object.mode_set(mode='EDIT')
     bpy_node_names  = [None]*len(gfs.bones)
@@ -34,33 +36,48 @@ def import_model(gfs, name):
         nodes_with_meshes.add(mesh.node)
     
     rigged_bones, unrigged_bones = filter_rigging_bones_and_ancestors(gfs)
-    meshes_to_rename         = set.intersection(rigged_bones,   nodes_with_meshes)
-    bones_to_ignore          = set.intersection(unrigged_bones, nodes_with_meshes)
-    unrigged_bones_to_import = set.difference(unrigged_bones, bones_to_ignore)
-        
+    meshes_to_rename             = set.intersection(rigged_bones,   nodes_with_meshes)
+    bones_to_ignore              = set.intersection(unrigged_bones, nodes_with_meshes)
+    unrigged_bones_to_import     = set.difference  (unrigged_bones, bones_to_ignore)
+    
     # Get rid of root node
     bones_to_ignore.add(0)
     
 
     gfs_to_bpy_bone_map = {}
+    mesh_node_map = {}
     bpy_bone_counter = 0
 
+    # Import nodes
     for i, node in enumerate(gfs.bones):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
         if i not in bones_to_ignore:            
             bpy_bone = construct_bone(node.name, main_armature, 
                                      MayaBoneToBlenderBone(matrix), 
-                                      10)
+                                     10)
             if node.parent_idx > -1:
                 bpy_bone.parent = bpy_nodes[node.parent_idx] 
             bpy_nodes[i]           = bpy_bone
             gfs_to_bpy_bone_map[i] = bpy_bone_counter
             bpy_bone_counter      += 1
-        bpy_node_names[i]  = node.name
+        
         bone_transforms[i] = convert_Yup_to_Zup(matrix)
 
     bpy.ops.object.mode_set(mode="OBJECT")
+
+    # 
+    bpy_bone_counter = 0
+    for i, node in enumerate(gfs.bones):
+        if i in gfs_to_bpy_bone_map:
+            bpy_bone = main_armature.data.bones[gfs_to_bpy_bone_map[i]]
+            bpy_node_name = bpy_bone.name
+            bpy_node_names[i] = bpy_node_name
+            if bpy_node_name != node.name:
+                bpy_bone.GFSTOOLS_NodeProperties.override_name = node.name
+        else:
+            bpy_node_names[i] = node.name
+    
 
     # If there are meshes, create bone layers of rigged and unrigged bones
     if len(gfs.meshes):
@@ -92,7 +109,7 @@ def import_model(gfs, name):
         if (i in bones_to_ignore) or (i in meshes_to_rename):
             continue
         
-        bpy_bone = main_armature.data.bones[node.name]
+        bpy_bone = main_armature.data.bones[gfs_to_bpy_bone_map[i]]
         bpy_bone.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
         
         import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties)
@@ -167,8 +184,9 @@ def import_model(gfs, name):
         mesh_name = bpy_node_names[node_idx]
         if node_idx in meshes_to_rename:
             mesh_name += "_mesh"
-        import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
-    
+        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
+        mesh_node_map[node_idx] = bpy_mesh_obj.data
+        
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
         import_camera("camera", i, cam, main_armature, bpy_node_names)
@@ -183,7 +201,7 @@ def import_model(gfs, name):
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.context.view_layer.objects.active = initial_obj
 
-    return main_armature, gfs_to_bpy_bone_map
+    return main_armature, gfs_to_bpy_bone_map, mesh_node_map
 
 
 def filter_rigging_bones_and_ancestors(gfs):
@@ -236,6 +254,8 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
         child_bpy_mesh_object.location = [0., 0., 0.]
         child_bpy_mesh_object.rotation_quaternion = [1., 0., 0., 0.]
         child_bpy_mesh_object.scale = [1, 1., 1.]
+    
+    return bpy_mesh_object
     
     
 def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature):
@@ -335,6 +355,40 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     modifier = bpy_mesh_object.modifiers.new(name="Armature", type="ARMATURE")
     modifier.object = armature
     
+    
+    #####################
+    # IMPORT MORPH KEYS #
+    #####################
+    # This is a bit simplified.
+    # There are a few bits of data here that are neglected since they seem to
+    # always take the same values / be unused.
+    # The entire morph set has flags that always seems to just be 0x00000002,
+    # each morph itself has flags that always seems to just be 0x00000002,
+    # and then there's a set of integers as an attachment to nodes with
+    # morphable meshes that always just seems to be a list of 0s with the
+    # same length as the morph set.
+    # We're just going to ignore that data on import (since it's not added to
+    # the GFSInterface) and create it on export automatically with the
+    # GFSInterface.
+    # Use the GFSBinary in a separate script if, for some reason, these values
+    # need to be edited!
+    if len(mesh.morphs):
+        # Create base position
+        sk_basis = bpy_mesh_object.shape_key_add(name='Basis')
+        sk_basis.interpolation = 'KEY_LINEAR'
+        bpy_mesh_object.data.shape_keys.use_relative = True
+        for vidx, v in enumerate(mesh.vertices):
+            sk_basis.data[vidx].co = v.position
+        
+        # Import each shape key
+        for i, position_deltas in enumerate(mesh.morphs):
+            sk = bpy_mesh_object.shape_key_add(name=str(i))
+            sk.interpolation = "KEY_LINEAR"
+            
+            # position each vert
+            for vidx in range(len(position_deltas)):
+                sk.data[vidx].co = [x1 + x2 for x1, x2 in zip(mesh.vertices[vidx].position, position_deltas[vidx])]
+        
     ########################
     # DO THE LEFTOVER DATA #
     ########################
