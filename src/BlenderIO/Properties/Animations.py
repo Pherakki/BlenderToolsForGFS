@@ -1,9 +1,15 @@
 import bpy
 
 from .GFSProperties import GFSToolsGenericProperty
+from .Nodes import BlobProperty
 
     
 def find_anims_of_type(self, context, anim_type):
+    """
+    WARNING: THIS FUNCTION IS BROKEN!
+    ANY TIME A NEW ENUM IS INSERTED INTO THE LIST IT SCREWS UP WHAT IS POINTED
+    TO BY OTHER PROPERTIES
+    """
     # Do this for NLA tracks instead.
     # Object for an NLA track can be found with track.id_data
     out = []
@@ -11,6 +17,15 @@ def find_anims_of_type(self, context, anim_type):
         props = action.GFSTOOLS_AnimationProperties
         if props.category == anim_type:
             out.append((action.name, action.name, ""))
+            
+    # if context.animation_data is None:
+    #     return out
+    # for track in context.animation_data.nla_tracks:
+    #     if len(track.strips) == 1:
+    #         props = track.strips[0].action.GFSTOOLS_AnimationProperties
+    #         if props.category == anim_type:
+    #             out.append((track.name, track.name, ""))
+    
     return out
 
 
@@ -44,6 +59,9 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
         name="Category"
     )
 
+    epls:                bpy.props.CollectionProperty(name="EPLs",
+                                                      type=BlobProperty,
+                                                      options={'HIDDEN'})
     
     # Common properties
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0", default=True) # Enable node anims?

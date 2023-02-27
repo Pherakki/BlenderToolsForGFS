@@ -6,6 +6,7 @@ import numpy as np
 
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
+from ...FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import EPLEntry
 from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup
 from ..Utils.Interpolation import lerp
 
@@ -171,6 +172,18 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
     for prop in props.properties:
         gfs_anim.add_property(*prop.extract_data(prop))
     
+    # Export bone epls
+    for epl_prop in props.epls:
+        stream = io.BytesIO()
+        stream.write(bytes.fromhex(epl_prop.blob))
+        stream.seek(0)
+        rdr = Reader(None)
+        rdr.bytestream = stream
+        epl_entry = EPLEntry(endianness=">")
+        rdr.rw_obj(epl_entry, 0x01105100)
+        
+        gfs_anim.epls.append(epl_entry)
+
     # # Only for Blend and LookAt animations
     # has_scale_action:   bpy.props.BoolProperty("Has Scale Channel")
     # blend_scale_action: bpy.props.EnumProperty(name="Scale Channel", items=find_blendscales)

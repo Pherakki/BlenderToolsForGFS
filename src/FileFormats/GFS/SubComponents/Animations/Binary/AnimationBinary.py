@@ -40,7 +40,7 @@ class AnimationFlags(BitVector):
     has_speed          = BitVector.DEF_FLAG(0x19) # USED (Normal, Blend)
     flag_26            = BitVector.DEF_FLAG(0x1A) # USED (Blend)
     flag_27            = BitVector.DEF_FLAG(0x1B)
-    has_particles      = BitVector.DEF_FLAG(0x1C)
+    has_epls           = BitVector.DEF_FLAG(0x1C)
     has_lookat_anims   = BitVector.DEF_FLAG(0x1D) # USED (Normal)
     has_bounding_box   = BitVector.DEF_FLAG(0x1E) # USED (Normal, Blend, Unk)
     has_extra_data     = BitVector.DEF_FLAG(0x1F) # USED (Normal)
@@ -55,7 +55,7 @@ class AnimationBinary(Serializable):
         self.duration    = None
         self.controllers = SizedObjArray(AnimationControllerBinary)
         
-        self.particle_data = SizedObjArray(EPLEntry, endianness)
+        self.epls = SizedObjArray(EPLEntry, endianness)
         self.lookat_animations = None
         self.extra_track_data   = None
         # Bounding boxes should probably go into a custom datatype
@@ -63,7 +63,6 @@ class AnimationBinary(Serializable):
         self.bounding_box_min_dims = None
         self.speed = None
         self.properties = SizedObjArray(PropertyBinary)
-        
         
     def __repr__(self):
         return f"[GFDBinary::Animation {safe_format(self.flags._value, hex32_format)}] {self.duration}"
@@ -74,8 +73,8 @@ class AnimationBinary(Serializable):
         self.duration    = rw.rw_float32(self.duration)
         self.controllers = rw.rw_obj(self.controllers, version)
         # Only certain flags used for certain chunk versions..?
-        if self.flags.has_particles:
-            rw.rw_obj(self.particle_data, version)
+        if self.flags.has_epls:
+            rw.rw_obj(self.epls, version)
         if self.flags.has_lookat_anims:
             self.lookat_animations = rw.rw_new_obj(self.lookat_animations, LookAtAnimationsBinary, version)
         if self.flags.has_extra_data:

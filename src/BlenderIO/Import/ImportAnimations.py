@@ -13,7 +13,7 @@ from .ImportProperties import import_properties
 # EXPORTED FUNCTIONS #
 ######################
 
-def import_animations(gfs, armature, filename):
+def import_animations(gfs, armature, filename, gfs_to_bpy_bone_map=None):
     prev_obj = bpy.context.view_layer.objects.active
 
     armature.animation_data_create()
@@ -21,7 +21,7 @@ def import_animations(gfs, armature, filename):
     bpy.ops.object.mode_set(mode="POSE")
     actions = []
     for anim_idx, anim in enumerate(gfs.animations):
-        action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_blend=False)
+        action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_blend=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
     
         if anim.lookat_animations is not None:
             import_lookat_animations(action.GFSTOOLS_AnimationProperties, armature, anim.lookat_animations, f"{filename}_{anim_idx}")
@@ -29,7 +29,7 @@ def import_animations(gfs, armature, filename):
         actions.append(action)
             
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_blend=True)
+        action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
         
     ap_props = armature.data.GFSTOOLS_AnimationPackProperties
     ap_props.flag_0  = gfs.anim_flag_0
@@ -66,8 +66,8 @@ def import_animations(gfs, armature, filename):
     
     # Lookat Animations
     if gfs.lookat_animations is not None:
-        import_lookat_animations(ap_props, armature, gfs.lookat_animations, f"{filename}")
-        
+        import_lookat_animations(ap_props, armature, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map)
+    
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
 
@@ -174,7 +174,7 @@ def build_track(action, armature, blend_type, speed=None):
         strip.scale = 1 / speed
     armature.animation_data.action = None
     
-def add_animation(track_name, anim, armature, is_blend):
+def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None):
     action = bpy.data.actions.new(track_name)
     if is_blend:    
         scale_action = bpy.data.actions.new(track_name + "_scale")
@@ -182,13 +182,27 @@ def add_animation(track_name, anim, armature, is_blend):
 
     # Base action
     # Need to import root node animations here too
+    available_names = {
+        (
+            bpy_bone.name
+            if bpy_bone.GFSTOOLS_NodeProperties.override_name == ""
+            else bpy_bone.GFSTOOLS_NodeProperties.override_name
+        ): bpy_bone.name
+        for bpy_bone in armature.data.bones
+    }
     unimported_node_animations = []
     for track_idx, data_track in enumerate(anim.node_animations):
-        bone_name = data_track.name
+        if gfs_to_bpy_bone_map is None:
+            bone_name = available_names.get(data_track.name)
+        else:
+            if data_track.id in gfs_to_bpy_bone_map:
+                bone_name = armature.data.bones[gfs_to_bpy_bone_map[data_track.id]].name
+            else:
+                bone_name = None
         
         #if bone_name == armature.GFSTOOLS_ModelProperties.root_node_name:
         #    continue
-        if bone_name not in armature.data.bones:
+        if bone_name is None or bone_name not in armature.data.bones:
             unimported_node_animations.append(track_idx)
             continue
         
@@ -261,13 +275,29 @@ def add_animation(track_name, anim, armature, is_blend):
     # Import properties
     import_properties(anim.properties, action.GFSTOOLS_AnimationProperties.properties)
     
+    # Import EPLs
+    props        = action.GFSTOOLS_AnimationProperties
+    
+    # Write the EPL to a blob
+    for epl_entry in ai.epls:
+        stream = io.BytesIO()
+        wtr = Writer(None)
+        wtr.bytestream = stream
+        wtr.rw_obj(epl_entry.binary, 0x01105100)
+        stream.seek(0)
+        
+        # Add blob
+        item = props.epls.add()
+        item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+
+    
     return action
     
-def import_lookat_animations(props, armature, lookat_animations, anim_name):
-    a_r = add_animation(f"{anim_name}_right", lookat_animations.right, armature, is_blend=True)
-    a_l = add_animation(f"{anim_name}_left",  lookat_animations.left,  armature, is_blend=True)
-    a_u = add_animation(f"{anim_name}_up",    lookat_animations.up,    armature, is_blend=True)
-    a_d = add_animation(f"{anim_name}_down",  lookat_animations.down,  armature, is_blend=True)
+def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_to_bpy_bone_map):
+    a_r = add_animation(f"{anim_name}_right", lookat_animations.right, armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_l = add_animation(f"{anim_name}_left",  lookat_animations.left,  armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_u = add_animation(f"{anim_name}_up",    lookat_animations.up,    armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_d = add_animation(f"{anim_name}_down",  lookat_animations.down,  armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
     
     a_r.GFSTOOLS_AnimationProperties.category = "LOOKAT"
     a_l.GFSTOOLS_AnimationProperties.category = "LOOKAT"

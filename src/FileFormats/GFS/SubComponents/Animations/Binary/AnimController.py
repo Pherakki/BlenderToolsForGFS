@@ -22,4 +22,3 @@ class AnimationControllerBinary(Serializable):
         self.target_id = rw.rw_uint32(self.target_id)
         self.target_name = rw.rw_obj(self.target_name, version)
         rw.rw_obj(self.tracks, version)
-        

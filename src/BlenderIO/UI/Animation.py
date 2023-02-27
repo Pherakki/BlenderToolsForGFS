@@ -83,4 +83,4 @@ OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(
     "Strip",
     lambda context: context.active_nla_strip.action.GFSTOOLS_AnimationProperties,
     lambda cls, context: True
-    )
+)

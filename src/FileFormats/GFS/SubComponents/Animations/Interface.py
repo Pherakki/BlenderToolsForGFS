@@ -38,6 +38,7 @@ from .Binary.AnimTrack import NodeSHalf
 from .Binary.AnimTrack import NodeTSHalf
 from .Binary.AnimTrack import NodeRSHalf
 from .Binary.AnimTrack import Tex1UVSnap
+from .Binary.AnimationBinary import EPLEntry
 
 import numpy as np
 
@@ -121,7 +122,7 @@ class AnimationInterface:
         self.morph_animations    = []
         self.unknown_animations  = []
         
-        self.particle_data         = None
+        self.epls                  = []
         self.lookat_animations     = None
         self.extra_track_data      = None
         self.bounding_box_max_dims = None
@@ -180,8 +181,8 @@ class AnimationInterface:
                 
         if binary.flags.has_lookat_anims:
             instance.lookat_animations = LookAtAnimationsInterface.from_binary(binary.lookat_animations)
-        if binary.flags.has_particles:
-            instance.particle_data = binary.particle_data
+        if binary.flags.has_epls:
+            instance.epls = binary.epls.data
         instance.extra_track_data      = binary.extra_track_data
         instance.bounding_box_max_dims = binary.bounding_box_max_dims
         instance.bounding_box_min_dims = binary.bounding_box_min_dims
@@ -419,13 +420,14 @@ class AnimationInterface:
         binary.flags.has_speed          = self.speed is not None
         binary.flags.flag_26            = self.flag_26
         binary.flags.flag_27            = self.flag_27
-        binary.flags.has_particles      = self.particle_data         is not None
+        binary.flags.has_epls           = len(self.epls)
         binary.flags.has_lookat_anims   = self.lookat_animations     is not None
         binary.flags.has_bounding_box   = self.bounding_box_max_dims is not None
         binary.flags.has_extra_data     = self.extra_track_data      is not None
 
-        if binary.flags.has_particles:
-            binary.particle_data     = self.particle_data
+        if binary.flags.has_epls:
+            binary.epls.data            = self.epls
+            binary.epls.count           = len(self.epls)
         if binary.flags.has_lookat_anims:
             binary.lookat_animations = self.lookat_animations.to_binary()
         binary.extra_track_data      = self.extra_track_data
@@ -480,6 +482,8 @@ class AnimationInterface:
         self.properties.append(prop)
         return prop
 
+    def add_epl(self, binary):
+        self.epls.append(binary)
 
 def construct_frames(*keyframe_sets):
     all_frames = set()
