@@ -288,6 +288,10 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     add_uv_map(bpy_mesh, [v.texcoord6 for v in mesh.vertices], make_uv_map_name(6))
     add_uv_map(bpy_mesh, [v.texcoord7 for v in mesh.vertices], make_uv_map_name(7))
 
+    # Create Vertex Colours
+    add_color_map(bpy_mesh, [v.color1 for v in mesh.vertices], make_color_map_name(0))
+    add_color_map(bpy_mesh, [v.color2 for v in mesh.vertices], make_color_map_name(1))
+
     # Rig
     if mesh.vertices[0].indices is not None:
         groups = {}
@@ -517,6 +521,26 @@ def add_uv_map(bpy_mesh, texcoords, name):
         for loop_idx, loop in enumerate(bpy_mesh.loops):
             uv_layer.data[loop_idx].uv = texcoords[loop.vertex_index]
 
+def unpack_colour(colour):
+    # ARGB -> RGBA
+    return [colour[1]/255, colour[2]/255, colour[3]/255, colour[0]/255]
+
+def add_color_map(bpy_mesh, color_data, name):
+    if color_data[0] is not None:
+        # Blender 3.2+ 
+        # vertex_colors is equivalent to color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER").
+        # Original data is just uint8s so this is accurate.
+        if hasattr(bpy_mesh, "color_attributes"):
+            ca = bpy_mesh.color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER")
+            for loop_idx, loop in enumerate(bpy_mesh.loops):
+                ca.data[loop_idx].color = unpack_colour(color_data[loop.vertex_index])
+        # Blender 2.81-3.2
+        else:
+            vc = bpy_mesh.vertex_colors.new(name=name)
+            for loop_idx, loop in enumerate(bpy_mesh.loops):
+                vc.data[loop_idx].color = unpack_colour(color_data[loop_idx])
+
+
 def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera = bpy.data.cameras.new(f"{name}_{i}")
     
@@ -535,13 +559,16 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera_object = bpy.data.objects.new(bpy_camera.name, bpy_camera)
     bpy.context.collection.objects.link(bpy_camera_object)
 
+    # Lock Transforms
+    lock_obj_transforms(bpy_camera_object)
+    
     # Link to the armature
-    bpy_camera_object.parent = armature
-    bpy_camera_object.parent_type = "BONE"
     cam_bone = bpy_node_names[camera.node]
-    bpy_camera_object.parent_bone = cam_bone
-    parent_transform = Matrix.Translation([0., -armature.data.bones[cam_bone].length, 0.])
-    parent_transform @= Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
+    constraint = bpy_camera_object.constraints.new("CHILD_OF")
+    constraint.target    = armature
+    constraint.subtarget = cam_bone
+    constraint.inverse_matrix = Matrix.Identity(4)
+    parent_transform = Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
     
     # Set view matrix
     bpy_camera_object.matrix_local = Matrix([camera.binary.view_matrix[ 0: 4],
@@ -620,13 +647,16 @@ def import_light(name, i, light, armature, bpy_node_names):
     bpy_light_object = bpy.data.objects.new(bpy_light.name, bpy_light)
     bpy.context.collection.objects.link(bpy_light_object)
 
-    # Link to the armature
-    bpy_light_object.parent = armature
-    bpy_light_object.parent_type = "BONE"
-    light_bone = bpy_node_names[light.node]
-    bpy_light_object.parent_bone = light_bone
+    # Lock Transforms
+    lock_obj_transforms(bpy_light_object)
     
-    parent_transform = Matrix.Translation([0., -armature.data.bones[light_bone].length, 0.])
-    parent_transform @= Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
-    bpy_light_object.matrix_local = parent_transform
+    # Link to the armature
+    light_bone = bpy_node_names[light.node]
+    constraint = bpy_light_object.constraints.new("CHILD_OF")
+    constraint.target    = armature
+    constraint.subtarget = light_bone
+    constraint.inverse_matrix = Matrix.Identity(4)
+    
+    transform = Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
+    bpy_light_object.matrix_local = transform
     

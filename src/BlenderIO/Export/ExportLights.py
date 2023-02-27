@@ -4,16 +4,19 @@ import bpy
 from mathutils import Matrix, Quaternion
 
 from ..Utils.Maths import convert_rotation_to_quaternion
-
+from .Utils import find_obj_parent_bone
 
 def export_lights(gfs, armature):
     bpy_lights = [obj for obj in armature.children if obj.type == "LIGHT"]
     
-    for bpy_light in bpy_lights:
-        if bpy_light.parent_type != "BONE":
+    for obj in bpy_lights:
+        light_bone = find_obj_parent_bone(obj, armature)
+        if light_bone is None:
             continue
         
-        node_idx = [b.name for b in gfs.bones].index(bpy_light.parent_bone)
+        bpy_light = obj
+        
+        node_idx = [b.name for b in gfs.bones].index(light_bone)
         props = bpy_light.data.GFSTOOLS_LightProperties
         
         if props.dtype == "TYPE1":
