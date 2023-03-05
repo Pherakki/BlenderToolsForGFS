@@ -1,4 +1,5 @@
 import bpy
+from .HelpWindows import defineHelpWindow
 
 
 class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
@@ -90,4 +91,12 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
         ctr.prop(light.GFSTOOLS_LightProperties, "flag_29")
         ctr.prop(light.GFSTOOLS_LightProperties, "flag_30")
         ctr.prop(light.GFSTOOLS_LightProperties, "flag_31")
-        
+
+    LightHelpWindow = defineHelpWindow("Light",
+        "- 'Color Alpha' is the alpha channel for the light color.\n"\
+        "- 'Color 1' is a color that seems to be unused.\n"\
+        "- 'Color 3' is a color that seems to be unused.\n"\
+        "- 'Type' is the light type: Type1 (doesn't seem to do anything), Sphere, and Hemisphere.\n"\
+        "- 'Unknown Flags' are unknown."\
+        "- All other properties are unknown, except that the 'Unknown Setting' for Spheres and Hemispheres will create a light that illuminates everything inside the 'Inner Radius', with the illumination attenuating to zero between the 'Inner Radius' and 'Outer Radius'."
+    )

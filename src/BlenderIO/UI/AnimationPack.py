@@ -1,4 +1,5 @@
 import bpy
+from .HelpWindows import defineHelpWindow
 
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
@@ -16,6 +17,8 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     def draw(self, context):
         armature = context.armature
         layout = self.layout
+        
+        layout.operator(self.AnimationPackHelpWindow.bl_idname)
         
         props = armature.GFSTOOLS_AnimationPackProperties
         
@@ -66,3 +69,8 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         lookat_col.prop(props, "lookat_right_factor")
         
         lookat_col.enabled = props.has_lookat_anims
+
+    AnimationPackHelpWindow = defineHelpWindow("AnimationPack",
+        "- 'Unknown Flags' are unknown. Only Flag 3 appears to be used and may do something.\n"\
+        "- 'LookAt Anims' are a set of animations for the four directions the character can look in.\n"\
+    )

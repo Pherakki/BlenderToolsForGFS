@@ -1,4 +1,5 @@
 import bpy
+from .HelpWindows import defineHelpWindow
 from .GFSProperties import makeCustomPropertiesPanel
 
 
@@ -23,6 +24,8 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         
         active_action = context.active_nla_strip.action
         props = active_action.GFSTOOLS_AnimationProperties
+        
+        layout.operator(self.AnimationHelpWindow.bl_idname)
         
         layout.prop(props, "autocorrect_action")
         layout.prop(props, "category")
@@ -74,6 +77,14 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
             col.prop(props, "blend_scale_action")
             col.enabled = props.has_scale_action
 
+    AnimationHelpWindow = defineHelpWindow("Animation",
+        "- 'Autocorrect Action' will autoamtically set the keyframe interpolation and strip blending method to those appropriate for whichever Animation category you switch to.\n"\
+        "- 'Category' is the animation category.\n"\
+        "- 'Unknown Flags' are unknown. Flags 0-3 may represent the presence of bone, material, camera, and morph animations respectively.\n"\
+        "- 'LookAt Anims' are shown if the animation is a Normal Animation. Each animation is a direction the character looks in.\n"\
+        "- 'Blend Scale' is shown if the animation is a Blend or LookAt Animation. This is a separate action for the bone scale channels animation.\n"\
+        "- GFS Properties of specific data types can be added, removed, and re-ordered with the Properties listbox. Properties that may be recognised and what they may do have not yet been enumerated."
+    )
 
 OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(
     "OBJECT_PT_GFSToolsAnimationPanel",
