@@ -11,7 +11,7 @@ from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animati
 from ..Utils.Interpolation import lerp
 
 
-def export_animations(gfs, armature):
+def export_animations(gfs, armature, keep_unused_anims):
     if armature.animation_data is not None:
         ap_props = armature.data.GFSTOOLS_AnimationPackProperties
         
@@ -53,11 +53,11 @@ def export_animations(gfs, armature):
             if not len(track.strips):
                 continue
             action = track.strips[0].action
-            if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(armature, gfs.add_animation(),       track, is_blend=False)
-            elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(armature, gfs.add_blend_animation(), track, is_blend=True)
-        export_lookat_animations(armature, ap_props, gfs)
+            if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(gfs, armature, gfs.add_animation(),       action, is_blend=False, keep_unused_anims=keep_unused_anims)
+            elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(gfs, armature, gfs.add_blend_animation(), action, is_blend=True,  keep_unused_anims=keep_unused_anims)
+        export_lookat_animations(armature, ap_props, gfs, keep_unused_anims)
 
-def export_lookat_animations(armature, props, gfs_obj):
+def export_lookat_animations(armature, props, gfs_obj, keep_unused_anims):
         if props.has_lookat_anims:
             la_up, la_down, la_left, la_right = gfs_obj.add_lookat_animations(
                 props.lookat_up_factor, 
@@ -153,16 +153,37 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
         export_lookat_animations(armature, props, gfs_anim, keep_unused_anims)
         gfs_anim.extra_track_data = unimported_tracks.extra_track_data
         
-    gfs_anim.node_animations.extend([t for t in unimported_tracks.node_animations 
-                                     if t.name not in animated_nodes])
-    gfs_anim.material_animations = unimported_tracks.material_animations
-    gfs_anim.camera_animations   = unimported_tracks.camera_animations
-    gfs_anim.morph_animations    = unimported_tracks.morph_animations
+    # Export unused bone animations
+    bone_names = [b.name for b in gfs_obj.bones]
+    for track in unimported_tracks.node_animations:
+        if track.name not in animated_nodes:
+            if remap_track_id(track, bone_names, keep_unused_anims):
+                gfs_anim.node_animations.append(track)
+    
+    # Export unused material animations
+    material_names = [m.name for m in gfs_obj.materials]
+    for track in unimported_tracks.material_animations:
+        if remap_track_id(track, material_names, keep_unused_anims):
+            gfs_anim.material_animations.append(track)
+            
+    # Export unused camera animations
+    camera_names = [bone_names[cam.node] for cam in gfs_obj.cameras]
+    for track in unimported_tracks.camera_animations:
+        if remap_track_id(track, camera_names, keep_unused_anims):
+            gfs_anim.camera_animations.append(track)
+            
+    # Export unused morph animations
+    morph_names = [bone_names[mesh.node] for mesh in gfs_obj.meshes if len(mesh.morphs)]
+    for track in unimported_tracks.morph_animations:
+        if remap_track_id(track, morph_names, keep_unused_anims):
+            gfs_anim.morph_animations.append(track)
+            
+    # Absolutely no idea what these are. Better not do anything important...
     gfs_anim.unknown_animations  = unimported_tracks.unknown_animations
     
-    # If scale is outside the range 0.995 - 1.005...
-    if abs(strip.scale - 1) > 0.005:
-        gfs_anim.speed = 1 / strip.scale
+    # Bake the speed into the frame times, no sensible way to separate speed and
+    # frame times in Blender sadly
+    gfs_anim.speed = None
     
     # Export the custom properties
     for prop in props.properties:
@@ -180,10 +201,18 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
         
         gfs_anim.epls.append(epl_entry)
 
-    # # Only for Blend and LookAt animations
-    # has_scale_action:   bpy.props.BoolProperty("Has Scale Channel")
-    # blend_scale_action: bpy.props.EnumProperty(name="Scale Channel", items=find_blendscales)
 
+def remap_track_id(track, names, keep_unused_anims):
+    elem_idx = next((i for i, nm in enumerate(names) if track.name == nm), None)
+    if elem_idx is None:
+        if keep_unused_anims:
+            track.id = 0
+        else:
+            return False
+    else:
+        track.id = elem_idx
+    
+    return True
 
 #############################
 # STUFF THAT SHOULD BE USED #

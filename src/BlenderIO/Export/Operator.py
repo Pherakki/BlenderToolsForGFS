@@ -93,7 +93,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_0x000100F8(gfs, selected_model)
         export_epls(gfs, selected_model, bpy_node_meshes, errorlog)
         if self.pack_animations:
-            export_animations(gfs, selected_model)
+            export_animations(gfs, selected_model, keep_unused_anims=False)
         
         
         # Check if any errors occurred that prevented export.
@@ -107,7 +107,6 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         gb = gfs.to_binary(int(self.version, 0x10))
         model_bin = gb.get_model_block()
         if model_bin is not None:
-            #print(">>CHECKING SKINNING PALETTE",  model_bin.data.skinning_data.bone_count )
             if model_bin.data.skinning_data.bone_count is not None:
                 if model_bin.data.skinning_data.bone_count > 256:
                     errorlog.log_error_message("More than 256 vertex groups are used across the model. A maximum of 256 are supported. Reduce the number of vertex groups to enable export.")
@@ -187,7 +186,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
-        export_animations(gfs, selected_model)
+        export_animations(gfs, selected_model, keep_unused_anims=True)
         
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
