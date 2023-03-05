@@ -88,7 +88,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
             continue
 
         bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
-        build_transformed_fcurves(action, armature, bone_name, 24, {0: node.position}, {0: node.rotation}, {0: node.scale})
+        build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale})
     
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
