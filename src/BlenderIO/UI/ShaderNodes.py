@@ -91,18 +91,18 @@ class OBJECT_PT_GFSToolsImagePanel(bpy.types.Panel):
         layout.prop(img.GFSTOOLS_ImageProperties, "unknown_2")
         layout.prop(img.GFSTOOLS_ImageProperties, "unknown_3")
         layout.prop(img.GFSTOOLS_ImageProperties, "unknown_4")
+
+    TextureHelpWindow = defineHelpWindow("Texture", 
+        "- The purpose of Unknown 1 is unknown."\
+        "- The purpose of Unknown 2 is unknown."\
+        "- The purpose of Unknown 3 is unknown."\
+        "- The purpose of Unknown 4 is unknown."\
+    )
+
+    @classmethod
+    def register(cls):
+        bpy.utils.register_class(cls.TextureHelpWindow)
     
-        TextureHelpWindow = defineHelpWindow("Texture", 
-            "- The purpose of Unknown 1 is unknown."\
-            "- The purpose of Unknown 2 is unknown."\
-            "- The purpose of Unknown 3 is unknown."\
-            "- The purpose of Unknown 4 is unknown."\
-        )
-    
-        @classmethod
-        def register(cls):
-            bpy.utils.register_class(cls.TextureHelpWindow)
-        
-        @classmethod
-        def unregister(cls):
-            bpy.utils.unregister_class(cls.TextureHelpWindow)
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.TextureHelpWindow)
