@@ -27,7 +27,7 @@ def import_animations(gfs, armature, filename, gfs_to_bpy_bone_map=None):
             import_lookat_animations(action.GFSTOOLS_AnimationProperties, armature, anim.lookat_animations, f"{filename}_{anim_idx}")
 
         actions.append(action)
-            
+    
     for anim_idx, anim in enumerate(gfs.blend_animations):
         action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
         
@@ -88,7 +88,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
             continue
 
         bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
-        build_transformed_fcurves(action, armature, bone_name, {0: node.position}, {0: node.rotation}, {0: node.scale})
+        build_transformed_fcurves(action, armature, bone_name, 24, {0: node.position}, {0: node.rotation}, {0: node.scale})
     
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
@@ -126,10 +126,8 @@ def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, 
         for fc in fcs:
             fc.lock = False
             
-def build_transformed_fcurves(action, armature, bone_name, positions, rotations, scales):
+def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales):
     actiongroup = action.groups.new(bone_name)
-
-    fps = 30
 
     bpy_bone = armature.data.bones[bone_name]
     if bpy_bone.parent is not None:
@@ -145,11 +143,9 @@ def build_transformed_fcurves(action, armature, bone_name, positions, rotations,
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, positions, [0, 1, 2]   )
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, scales,    [0, 1, 2]   )
 
-def build_blend_fcurves(action, scale_action, armature, bone_name, positions, rotations, scales):
+def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales):
     actiongroup       = action      .groups.new(bone_name)
     scale_actiongroup = scale_action.groups.new(bone_name)
-
-    fps = 30
     
     prematrix = convert_YDirBone_to_XDirBone(Matrix.Identity(4))
     postmatrix = convert_XDirBone_to_YDirBone
@@ -163,15 +159,13 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, positions, ro
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, scales,    [0, 1, 2]   )
     
     
-def build_track(action, armature, blend_type, speed=None):
+def build_track(action, armature, blend_type):
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
     track.name = action.name
     track.mute = True
     strip = track.strips.new(action.name, 1, action)
     strip.blend_type = blend_type
-    if speed is not None:
-        strip.scale = 1 / speed
     armature.animation_data.action = None
     
 def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None):
@@ -206,20 +200,21 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
             unimported_node_animations.append(track_idx)
             continue
         
+        fps = 30*(1 if anim.speed is None else anim.speed) # Blender has an FPS of 24
         if is_blend:
-            build_blend_fcurves(action, scale_action, armature, bone_name, data_track.positions, data_track.rotations, data_track.scales)
+            build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales)
         else:
-            build_transformed_fcurves(action, armature, bone_name, data_track.positions, data_track.rotations, data_track.scales)
+            build_transformed_fcurves(action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales)
 
-    if is_blend:    
+    if is_blend:
         if len(scale_action.fcurves):  
-            build_track(scale_action, armature, "ADD", anim.speed)
+            build_track(scale_action, armature, "ADD")
             action.GFSTOOLS_AnimationProperties.has_scale_action   = True
             action.GFSTOOLS_AnimationProperties.blend_scale_action = scale_action
         else:
             scale_action.user_clear()
-    build_track(action, armature, "COMBINE" if is_blend else "REPLACE", anim.speed)
             bpy.data.actions.remove(scale_action)
+    build_track(action, armature, "COMBINE" if is_blend else "REPLACE")
     
     # Put extra common data on
     props = action.GFSTOOLS_AnimationProperties

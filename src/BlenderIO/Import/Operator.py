@@ -16,6 +16,17 @@ from ..WarningSystem import handle_warning_system, ErrorLogger
 from ..UI.HelpWindows import HelpWindow
 
 
+def set_fps(self, context):
+    if self.set_fps:
+        context.scene.render.fps = 30
+
+def define_set_fps():
+    return bpy.props.BoolProperty(
+        name="Set Blender Scene FPS to 30",
+        description="Set the animation framerate of the current scene to 30, so that imported animations display at the correct speed",
+        default=False
+    )
+
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
     bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
@@ -32,6 +43,8 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
                                               default='*.GMD;*.GFS',
                                               options={'HIDDEN'},
                                           )
+    
+    set_fps: define_set_fps()
     
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
@@ -72,6 +85,8 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Report any warnings that were logged
         errorlog.digest_warnings()
 
+        set_fps(self, context)
+        
         return {'FINISHED'}
     
     def execute(self, context):
@@ -103,6 +118,8 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
                                            default=False,
                                            options={'HIDDEN'},
                                       )
+    
+    set_fps: define_set_fps()
     
     def find_selected_model(self, context):
         sel_obj = context.active_object
@@ -148,7 +165,9 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         # Report any warnings that were logged
         errorlog.digest_warnings()
-
+        
+        set_fps(self, context)
+        
         return {'FINISHED'}
     
     def execute(self, context):
