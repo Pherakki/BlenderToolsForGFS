@@ -71,6 +71,8 @@ class NodeInterface:
         node_children = {}
         # First not in list required to be root
         # Should probably throw in a check here to make sure...
+        # Although, frankly, it's probably smarter to remove root from the list
+        # and have an implicit root node.
         for i, node in enumerate(node_list[1:]):
             n_id = node.parent_idx
             if n_id not in node_children:
@@ -92,14 +94,16 @@ class NodeInterface:
                 if elem.node < 0:
                     raise ValueError(f"{typename} {i} has an invalid node parent: {elem.node} must be >= 0")
 
-                remapped_node = id_map[elem.node]
-                node = node_collection[remapped_node]
+                # Don't remap the nodes since node_collection is in the
+                # Interface order, not the Binary order.
+                #remapped_node = id_map[elem.node]
+                node = node_collection[elem.node]
                 attachment = NodeAttachmentBinary()
                 attachment.type = typevalue
                 attachment.data = elem.to_binary()
                 node.attachments.append(attachment)
                 node.attachment_count += 1
-                binaries.append((attachment.data, remapped_node))
+                binaries.append((attachment.data, elem.node))
             return binaries
                 
         add_attachments("Morph",  9, generate_morphs(node_list, mesh_list))
