@@ -122,9 +122,9 @@ def import_model(gfs, name, is_vertex_merge_allowed):
     min_bone_length = 0.01
     dims = calc_model_dims(gfs)
     if dims is None:
-        dims = [10., 10., 10.]
+        dims = Vector([10., 10., 10.])
     else:
-        dims = [max(0.05*d, min_bone_length) for d in dims]
+        dims = Vector([max(0.05*d, min_bone_length) for d in dims])
     
     bpy.context.view_layer.objects.active = main_armature
     bpy.ops.object.mode_set(mode="EDIT")
@@ -183,7 +183,10 @@ def import_model(gfs, name, is_vertex_merge_allowed):
                 # head_to_tail points...
                 length = sum(dims)/3
             else:
-                length = bpy_bone.parent.length
+                own_direction = (bpy_bone.tail - bpy_bone.head).normalized()
+                parent_direction = (bpy_bone.parent.tail - bpy_bone.parent.head).normalized()
+                projection = (own_direction).dot(parent_direction)
+                length = bpy_bone.parent.length * projection + (own_direction.dot(dims)) * (1 - projection)
         
         bpy_bone.length = length
     bpy.ops.object.mode_set(mode="OBJECT")
