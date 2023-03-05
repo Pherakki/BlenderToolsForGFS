@@ -8,6 +8,7 @@
 \usepackage{fancyhdr}
 \usepackage{graphicx}
 \usepackage[hidelinks]{hyperref}
+\usepackage{longtable}
 \usepackage[most]{tcolorbox}
 \usepackage{tikz}
 \usetikzlibrary{shadows}
@@ -93,6 +94,42 @@
   	}
 }
 
+
+% ############## %
+% LISTINGS STUFF %
+% ############## %
+% FROM https://tex.stackexchange.com/a/656423
+% Default fixed font does not support bold face
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{12}  % for normal
+
+% Custom colors
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\usepackage{listings}
+
+
+
+\lstdefinestyle{pythonstyling}{
+language=Python,
+basicstyle=\ttm\small,
+morekeywords={self},              % Add keywords here
+keywordstyle=\ttb\small\color{deepblue},
+emph={__init__},          % Custom highlighting
+emphstyle=\ttb\small\color{deepred},    % Custom highlighting style
+stringstyle=\color{deepgreen},
+frame=tb,                         % Any extra options here
+showstringspaces=false,
+numbers=left,
+stepnumber=1,
+tabsize=1,
+breaklines=true,
+breakatwhitespace=false,
+}
+
 % ############## %
 % VARIABLE SETUP %
 % ############## %
@@ -115,12 +152,7 @@
 \pagenumbering{arabic} 
 
 \section{Getting Started}
-BlenderToolsForGFS is a \textbf{Blender 2.81+} plugin. It should work on all versions of Blender including and beyond 2.81. The plugin has been developed on versions 2.83 and 3.4.1.
-
-\subsection{Installing the Plugin}
-
-
-\subsection{Removing the Plugin}
+BlenderToolsForGFS is a \textbf{Blender 2.81+} plugin. It should work on all versions of Blender including and beyond 2.81 that are compatible with the 2.81 API. The plugin has been developed on versions 2.83 and 3.4.1. You should install and remove it like any other Blender plugin.
 
 \subsection{A Note on Expectations}
 This plugin should be viewed as a \textbf{supplement} to existing model-editing tools, and not as a replacement. You should, in particular, post-process any models exported from Blender in \textbf{GFD Studio}, following existing tutorials and knowledge to achieve your goals.
@@ -137,16 +169,14 @@ What this guide \textit{is} intended for is to assist you in successfully export
 Currently, a subset of features of the GFS format are not supported by the plugin and cannot be exported. These are:
 \begin{itemize}
 \item File versions outside of the range 0x01104920 - 0x01105100
-\item EPL Data (Subfiles / Particle Effects)
-\item Morphs / Shapekeys
-\item Strings that are not SHIFT-JIS- (for texture file names) or UTF8- (everything else) encoded
 \end{itemize}
-
+\noindent
 There are also some additional considerations to bear in mind.
 \begin{itemize}
 \item During import, meshes are re-parented from their positioning node to the root node, whilst preserving their world transform. This is because there does not seem to be a straightforward way to make a mesh follow the transform of a bone whilst also being deformed by an armature without Blender double-counting transformations. These positioning nodes are also removed from the import if they are not used for any other purpose.
 \item Animations of the Root Node and of mesh positioning nodes are not editable from Blender. Any mesh positioning node animations \textbf{will be messed up} by the Blender import if these nodes were not originally children of the root node. This must be fixed outside of Blender by re-parenting and repositioning these nodes.
 \item Only non-BC7 DDS texture slots are currently importable in models.
+\item There is a lot of extra data, such as EPL effects and physics, that is not explicity expressed as Blender data but is still attached to the model for export. This data is non-interactable from Blender in the current version. If some chunk of data is not mentioned in the documentation, you can assume that it is probably stored in this fashion.
 \end{itemize}
 
 \clearpage 
@@ -155,7 +185,9 @@ There are also some additional considerations to bear in mind.
 \begin{guide}{Accessing the Model Import Menu}
 \item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
 \guideimage{images/import/import_gmd.png}
-\item Select the GMD or GFS file to import using the file browser that pops up.
+\item From the import options on the right, choose whether to set the Blender render speed to that which is appropraite for GFS models and whether to merge model vertices such that the mesh is smooth (recommended).
+\guideimage{images/import/import_gmd_properties.png}
+\item Select the GMD or GFS file to import using the file browser.
 \end{guide}
 
 \clearpage
@@ -165,9 +197,9 @@ There are also some additional considerations to bear in mind.
 \item Ensure that you have first imported the model that the animation is modelled for.
 \item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GAP Animation} submenu item.
 \guideimage{images/import/import_gap.png}
-\item Select the armature for your imported model using the drop-down.
-\guideimage{images/import/import_gap_armature_select.png}
-\item Select the GAP file to import using the file browser that pops up.
+\item Select the armature for your imported model using the drop-down. Also choose whether to set the Blender render speed to that which is appropriate for GFS models.
+\guideimage{images/import/import_gap_properties.png}
+\item Select the GAP file to import using the file browser.
 \end{guide}
 
 \clearpage
@@ -240,6 +272,7 @@ There are no special considerations for bones beyond how they behave in Blender.
 \clearpage
 
 \subsubsection{Rest Pose}
+GFS models have a \textbf{rest pose} in addition to the bind pose. The bones are imported in the \textbf{bind pose}, and the \textbf{rest pose} is added as a single-frame animation. The \textbf{rest pose} is used as a ``default transform" for any animations, such that any bones without animation data uses the \textbf{rest pose} instead. If you want the \textbf{rest pose} to differ from the \textbf{bind pose}, create a single-frame action and push it to an NLA track called \textbf{Rest Pose}. This should always be at the \textbf{bottom} of the NLA editor, since it should have the lowest priority.
 
 \subsubsection{Meshes}
 Meshes that belong to a GFS model are parented under an armature. Meshes can use an armature deform with vertex groups as usual inside Blender. However, each vertex is only allowed to be part of a maximum of 4 vertex groups, and a maximum of 256 vertex groups are permitted across the entire model. If two meshes are weighted to the same bone, this counts as two vertex groups, since vertex groups are tied to the transform of a mesh in the GFS file format. The two vertex groups can be counted as one if meshes are parented to each other, as will be described momentarily.
@@ -470,6 +503,10 @@ Currently, only \textbf{bone animations} are editable from within Blender. There
 \item \textbf{Animation Type 5}: Unknown animation type, so nothing can be done with it currently. 
 \end{itemize}
 
+GFS Animations are expected to be rendered at \textbf{30 FPS}. Blender by default renders at \textbf{24 FPS}. Animations will be imported assuming a 30 FPS render speed so that animation frames can be placed at integer frame indices. You should change Blender's animation speed to 30 FPS to preview the animations at the correct speed, either by changing it in the scene properties or by checking the box to set Blender to 30 FPS in the import window.
+
+If an animation additionally has a custom ``speed", this speed is baked into the animation frames. This will cause the animation frames to be placed at non-integer frame values.
+
 \subsubsection{Normal Animations}
 \label{SECTION::Edits::Animations::NormalAnimations}
 ``Normal Animations" are regular animations. The animated quantities in these animations should override those that are present in the Rest Pose. In-game, all interpolations are done with \textbf{linear interpolation (LERP)}, except for quaternion animations which are done with \textbf{spherical linear interpolation (SLERP)}. For this reason, to ensure that the animation you see in Blender is accurately reflected in-game, you should ensure the following settings are applied:
@@ -480,8 +517,6 @@ Currently, only \textbf{bone animations} are editable from within Blender. There
 See Section~\ref{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}, Subitem ``Auto-Correcting Actions" for information on how to apply these settings automatically.
 
 \textbf{Normal Animations} have a set of properties that also need to be exported. Details on these are given below.
-
-\clearpage
 
 \begin{guide}{Accessing Normal Animation Properties}
 \item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
@@ -497,6 +532,7 @@ but since these do not seem to influence how animations are displayed and do not
 \guideimage{images/editing_models/edits_normal_animations_1.png}
 \item Further down, you can set ``Look At" animations for a Normal Animation. A \textbf{LookAt animation} is a kind of \textbf{Blend Animation} that makes a character look up, down, left, and right. Further details can be found in sections~\ref{SECTION::Edits::Animations::BlendAnimations} and \ref{SECTION::Edits::Animations::LookAtAnimations}. If you tick the box saying that an animation has lookat animations, you \textbf{must select all four animations you want to use as lookats} in order to successfully export. You can do this by clicking the animation boxes and selecting the animation that pops up. The only available animations are those that have been given the \textbf{LookAt} category.
 The role of the LookAt factors is unknown.
+In addition, animations can have GFS Properties like bones can. See section~\ref{SECTION::GfsProperties} for more information.
 \guideimage{images/editing_models/edits_normal_animations_2.png}
 \end{guide}
 
@@ -504,25 +540,33 @@ The role of the LookAt factors is unknown.
 \label{SECTION::Edits::Animations::BlendAnimations}
 \textbf{Blend Animations} are animations that are overlaid on \textbf{Normal Animations}. The animations are combined by combining each transformation channel individually. Positions and scales are added, and quaternions are combined with quaternion multiplication. Therefore, the Strip Blending type should be set to \textbf{COMBINE}. Keyframe interpolation should be handlded the same as the \textbf{Normal Animations}. However, Blender will attempt to \textbf{multiply} scale channels instead of adding them under the \textbf{COMBINE} Strip Blending mode. For this reason, scales should be separated to their own action with the \textbf{ADD} Strip Blending mode, and given the special \textbf{Blend Scale} category rather than the \textbf{Blend} category. Details on this are given in the Blend Properties Step-By-Step below, which also discusses other Blend animation properties. This means that any scales present in a \textbf{Blend Animation} will be ignored on export, and instead taken from a linked \textbf{Blend Scale Animation} if one is present.
 \begin{guide}{Accessing Blend Animation Properties}
-\item Test
+\item The \textbf{category} for Blend animations is \textbf{Blend}. The \textbf{Unknown Flags} are the same as the \textbf{Normal Animations}.
 \guideimage{images/editing_models/edits_blend_animations_1.png}
-\item Test
+\item Instead of \textbf{LookAt} animations, \textbf{Blend} animations can link to a \textbf{Blend Scale} animation as described above. To link a \textbf{Blend Scale} animation, select one from the dropdown.
 \guideimage{images/editing_models/edits_blend_animations_2.png}
 \end{guide}
 
 \subsubsection{LookAt Animations}
 \label{SECTION::Edits::Animations::LookAtAnimations}
-
+A \textbf{LookAt} animation is a special \textbf{Blend} animation used to represent looking left, right, up, and down. This is typically just a single frame representing the pose. \textbf{Normal Animations} can link to a \textbf{LookAt} animation from their properties panel. If the \textbf{LookAt} animation is not linked to a \textbf{Normal Animation}, it will not be exported.
 \begin{guide}{Accessing LookAt Animation Properties}
-\item Test
+\item The \textbf{category} for a \textbf{LookAt} animation is \textbf{LookAt}. All properties are the same as \textbf{Blend Animations}.
 \guideimage{images/editing_models/edits_lookat_animations.png}
 \end{guide}
 
 \subsubsection{Animation Packs}
 \label{SECTION::Edits::Animations::AnimationPacks}
+Animations are exported as an \textbf{Animation Pack}. This animation pack is either exported \textbf{inside a GMD/GFS file}, or exported as \textbf{a separate GAP animation file}. When exporting a GMD/GFS file, you will be given the option to pack animations inside it or not. See section~\ref{SECTION::EXPORT::ExportingModels} for further information.
 
+Currently, \textbf{only the most recently loaded animation pack properties are available inside the plugin}. That means that if you load a model that contains an animation pack, and then load a GAP file on top of it, the properties of the internal animation pack \textbf{will be overwritten}. Since models containing animations typically do not require external animation files, this should not be a problem. When editing external animation packs, ensure that the pack you intend to edit is loaded last. All available animations in the NLA track will be exported, so either delete unwanted animations from the NLA editor before export, or only load the animation pack you wish to edit. If you pack too many animations inside an animation pack, you can fix this with an external program such as \textbf{GFD Studio} or the Python interface.
+
+If a sensible way to easily separate invididual animation packs without making it complicated to assign animations to them can be found, this feature will be reworked to allow multiple animation packs to co-exist within Blender and export individually.
+
+Animation Pack properties are stored on a model armature. The section below will cover the specifics of this.
 \begin{guide}{Accessing Animation Pack Properties}
-\item Test
+\item Animation Pack properties can be found in the \textbf{Armature Data} panel of the Properties Panel.
+\item The \textbf{Unknown Flags} are unknown and appear to be completely unused except for Flag 3. The purpose of Flag 3 is unknown. An animation pack can also have some global \textbf{LookAt} animations, similar to a \textbf{Normal Animation}. See section~\ref{SECTION::Edits::Animations::NormalAnimations} for further information.
+\item Bear in mind that \textbf{only the properties of the most recently imported animation pack for a particular model} are saved.
 \guideimage{images/editing_models/edits_animation_pack.png}
 \end{guide}
 
@@ -532,25 +576,47 @@ The role of the LookAt factors is unknown.
 \paragraph{Auto-Correcting Actions}
 \label{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}
 \begin{guide}{Auto-Correcting Actions}
-\item Test
+\item The interpolation and strip blending of an NLA strip and action can be automatically set when switching the action type. Do this inside the Animation Properties.
+\item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
+\item Check the \textbf{Auto-Correct Action} box.
+\guideimage{images/editing_models/edits_autocorrect_animations.png}
+\item Changing the animation \textbf{category} will now automatically change the interpolation and strip blending types for those appropriate for the selected category. This will not be done when first checking the box, so switch to a different category and back to apply the changes.
 \end{guide}
 
 \paragraph{Previewing with the NLA Editor}
 \label{SECTION::Editing::Animations::TipsForEditing::PreviewingNLA}
 \begin{guide}{Previewing with the NLA Editor}
-\item Test
+\item Unmute whichever animations you want to preview. You should unmute a \textbf{single} \textbf{Normal Animation} plus whatever \textbf{Blend Animation}s you want to see overlaid on it.
+\item The \textbf{Rest Pose} should \textbf{always} be unmuted.
+\item Actions at the \textbf{top} of the editor have the highest priority. Should should have the \textbf{Rest Pose} at the bottom, followed by the \textbf{Normal Animations}, and then any \textbf{Blend Animations}.
+\guideimage{images/editing_models/edits_previewing_blends_1.png}
 \end{guide}
 
 \paragraph{Previewing Blend Animations during Editing}
 \label{SECTION::Editing::Animations::TipsForEditing::PreviewingBlends}
 \begin{guide}{Previewing Blend Animations during Editing}
-\item Test
+\item Unmute whichever \textbf{Normal Animation} you want to use as a base, and the \textbf{Blend Animation} you want to edit in the NLA editor.
+\guideimage{images/editing_models/edits_previewing_blends_1.png}
+\item Press \keystroke{Tab} to pin the action to the Action Editor.
+\guideimage{images/editing_models/edits_previewing_blends_2.png}
+\item You can now edit the action in the Action Editor whilst previewing the full effect of the other umutued NLA tracks.
 \end{guide}
 
 \clearpage
 
 \subsection{GFS Properties}
 \label{SECTION::GfsProperties}
+Bones, armatures, meshes, and animations can have additional \textbf{GFS properties}. These can be added with the \textbf{GFS Properties} collection widget in their corresponding UI panels. When adding a property, you will be required to provide a name, data type, and then the data the property will store. Although the name fields are free text fields, there do appear to be specific properties that are looked for and will do certain things. For this reason the properties box may be replaced with sub-panels implementing this behvaviour automatically once it is fully understood. For now, like with everything else that isn't fully understood about the format, any edits you make will have to be somewhat manual.
+
+\begin{guide}{Manipulating GFS Properties}
+\item Navigate the the properties panel for the selected object.
+\item Within the object's properties panel, locate the \textbf{GFS Node} subpanel. Within that panel, locate the \textbf{Properties} subpanel.
+\item Properties attached to the object will be displayed in the box. The selected property is highlighted in a different colour. You can add, remove, and re-order properties with the four buttons on the right of the box.
+\item Change the name of a property by editing the value in the leftmost box.
+\item Change the property data type by selecting a value from the dropdown.
+\item Change the attached data by editing the rightmost box(es).
+\guideimage{images/editing_models/edits_gfs_properties.png}
+\end{guide}
 
 \clearpage
 
@@ -562,20 +628,241 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 
 \clearpage
 
+\section{Export}
+\subsection{Exporting Model (GMD/GFS) Files}
+\label{SECTION::EXPORT::ExportingModels}
+\begin{guide}{Accessing the Model Export Menu}
+\item Open the File menu and navigate to the \textbf{Export} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
+\guideimage{images/export/export_gmd.png}
+\item From the export options on the right, choose whether to export animations packed into the model, and which file version to export as.
+\guideimage{images/export/export_gmd_properties.png}
+\item Set a filename and export.
+\end{guide}
+
+\subsection{Exporting Animation (GAP) Files}
+\label{SECTION::EXPORT::ExportingAnimations}
+\begin{guide}{Accessing the Animation Export Menu}
+\item Open the File menu and navigate to the \textbf{Export} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GAP Animation} submenu item.
+\guideimage{images/export/export_gap.png}
+\item From the export options on the right, choose which file version to export as.
+\guideimage{images/export/export_gap_properties.png}
+\item Set a filename and export.
+\end{guide}
+
+\clearpage
+
 \section{BlenderToolsForGFS as a Python Library}
 \label{SECTION::PythonLibrary}
-\textbf{NOTE: This section is for users of the Python programming language who wish to write scripts using the plugin. A user will not get much out of this section without some knowledge of Python, which you are encouraged to learn using the wealth of information freely available on the internet if you need to use the library's scripting API.}\\\\
+\textbf{NOTE: This section is for users of the Python programming language who wish to write scripts using the plugin. A user will not get much out of this section without some knowledge of Python. if you need to use the library's scripting API, you are encouraged to pick up the basics of Python using the wealth of information freely available on the internet.}\\\\
 \noindent
-The Blender plugin can also be used as a plain Python library for manipulating GFS and EPL files. This is possible because all Blender-related code is not loaded by default when initialising the plugin, and because the file-editing code is well-separated from the Blender interface. Furthermore, the non-Blender part of the plugin only utilises the standard library, and therefore no additional third-party libraries are required in order to use the plugin as a library. Using the plugin in this manner is outlined in section \ref{SECTION::UsingAsAPythonLibrary}.
+\textbf{NOTE: The API is currently unstable. This document should be correct for whatever release of the tools it is labelled for, but the same cannot be said for development versions. The documentation should be fully updated once feature development for each new release is complete. You should expect the API to change between versions as the file format becomes better understood and smarter ways of arranging and creating data become clear.}
+\\\\
+\noindent
+The Blender plugin can also be used as a plain Python library for manipulating GFS and EPL files. This is possible because all Blender-related code is not loaded by default when initialising the plugin, and because the file-editing code is well-separated from the Blender interface. Furthermore, the non-Blender part of the plugin only utilises the standard library, and therefore no additional third-party libraries are required in order to use the plugin as a library. Using the plugin in this manner is outlined in section \ref{SECTION::UsingAsAPythonLibrary}. \textbf{However, bear in mind that this is not fully documented since it is not yet intended as an end-user feature. Adventurous users can use the Python API, but should bear in mind that there are many ways to create annoying data inconsistencies. This can be remedied with further development to make the Python API safer to use by an end-user.}
 
 If you have the `bpy' package installed, you can activate the plugin's Blender interface and write Blender scripts outside of Blender. You can also write these scripts inside Blender with the scripting feature. Notes on how to use the plugin in this manner are given in \ref{SECTION::UsingAsABlenderPlugin}.
 
 \subsection{Python Library Usage}
 \label{SECTION::UsingAsAPythonLibrary}
+GMD, GFS, GAP, and EPL files can be manipulated with the Python API, which can be imported independently from the Blender Interface.
+
+\subsubsection{GFS/GMD/GAP}
+The first thing to do is to import the \textbf{GFSInterface} object.
+\begin{lstlisting}[style=pythonstyling]
+from BlenderToolsForGFS import GFSInterface
+\end{lstlisting}
+This object can be used to access various elements of the file. First of all, you will need to load a file.
+\begin{lstlisting}[style=pythonstyling]
+gi = GFSInterface.from_file(filepath=...) 
+\end{lstlisting}
+The GFSInterface can be written to a file with the \textbf{to\_file(filepath, version)} method.
+\begin{lstlisting}[style=pythonstyling]
+# version is an int, e.g. 0x01105100
+gi.to_file(filepath=..., version=...)
+\end{lstlisting}
+
+The available attributes of the GFSInterface are given below.\\
+These are likely to be changed to read-only properties with \textbf{add()} and \textbf{remove()} methods in the future.
+\begin{center}
+\begin{longtable}{p{.2\textwidth}p{.33\textwidth}p{.46\textwidth}}
+\hline
+Name & Type & Description\\
+\hline
+meshes & List[MeshInterface] & A list of meshes.\\
+cameras & List[CameraInterface] & A list of cameras.\\
+lights & List[LightInterface] & A list of lights.\\
+epls & List[EPLInterface] & A list of epls.\\
+bones & List[NodeInterface] & A list of nodes/bones.\\
+materials & List[MaterialInterface] & A list of materials.\\
+textures & List[TextureInterface] & A list of textures.\\
+animations & List[AnimationInterface] & A list of normal animations.\\
+blend\_animations & List[AnimationInterface] & A list of blend animations.\\
+lookat\_animations & LookAtAnimationsInterface & A container for the global lookat animations.\\
+\hline
+\end{longtable}
+\end{center}
+
+New elements can be added to these attributes with the following methods.
+\begin{center}
+\begin{longtable}{p{.15\textwidth}p{.2\textwidth}p{.25\textwidth}p{.39\textwidth}}
+\hline
+Name & Return & Inputs & Input Description\\
+\hline
+add\_mesh & MeshInterface & node\_id & Node that the MeshInterface should be attached to.\\
+& & vertices & A list of Vertex objects.\\
+& & material\_name & The name of the material used by the mesh.\\
+& & indices & Vertex indices that are used to create the triangles. This is a flat list, with every three indices creating a triangle.\\
+& & morphs & A list of lists of 3D position vectors. Each sub-list represents a position offset for its corresponding vertex. Each sub-list should have the same number of entries as the mesh vertices.\\
+& & unknown\_0x12 & Unknown integer. Usually 0.\\
+& & unknown\_float\_1 & Unknown float. May be None is unknown\_float\_2 is also None.\\
+& & unknown\_float\_2 & Unknown float. May be None is unknown\_float\_1 is also None.\\
+& & keep\_bounding\_box & Bool. Whether to create a bounding box on export.\\
+& & keep\_bounding\_sphere & Bool. Whether to create a bounding sphere on export.\\
+\hline
+add\_camera & CameraInterface & node\_id & Node that the CameraInterface should be attached to.\\
+& & view\_matrix & A row-major 4x4 transform matrix represented as a flat list of 16 elements.\\
+& & zNear & The near clip distance.\\
+& & zFar & The far clip distance.\\
+& & fov & The Field of View in degrees.\\
+& & aspect\_ratio & The aspect ratio.\\
+& & unknown\_0x50 & Unknown float.\\
+\hline
+add\_light & LightInterface & node\_id & Node that the LightInterface should be attached to.\\
+& & type & 1 = Type1, 2 = Sphere, 3 = Hemisphere.\\
+& & color\_1 & A 4-vector representing an RGBA color. Apparently unused.\\
+& & color\_2 & A 4-vector representing an RGBA color. Main light color.\\
+& & color\_3 & A 4-vector representing an RGBA color. Apparently unused.\\
+\hline
+add\_epl & EPLInterface & node\_id & Node that the EPL should be attached to.\\
+& & binary & An EPLBinary object. \textbf{You can create EPLBinaries manually, but it is recommended to consider this function off-limits for creating new EPLs}.\\
+\hline
+add\_node & NodeInterface & parent\_idx & Index of the NodeInterface's parent NodeInterface.\\
+ & & position & 3D position vector.\\
+ & & rotation & XYZW quaternion.\\
+ & & scale & 3D scale vector.\\
+ & & unknown\_float & Unknown.\\
+ & & bind\_pose\_matrix & A row-major 4x4 transform matrix represented as a flat list of 16 elements.\\
+\hline
+add\_material & MaterialInterface & name & The material name.\\
+\hline
+add\_texture & TextureInterface & name & The texture name.\\
+& & data & A bytes-like object representing raw data for a DDS file.\\
+& & unknown\_1 & Unknown int. Usually 1.\\
+& & unknown\_2 & Unknown int. Usually 1.\\
+& & unknown\_3 & Unknown int. Usually 0.\\
+& & unknown\_4 & Unknown int. Usually 0.\\
+\hline
+\end{longtable}
+\end{center}
+
+\textbf{TODO: Description of each Interface}
+
+\subsubsection{EPL}
+\textbf{TODO}
 
 \subsection{Blender Script Usage}
 \label{SECTION::UsingAsABlenderPlugin}
+Most Blender scripts will need to begin by importing the \textbf{bpy} module.
+\begin{lstlisting}[style=pythonstyling]
+import bpy
+\end{lstlisting}
 
+If you are writing a script outside of Blender, you will also need to add the \textbf{BlenderToolsForGFS} module to your import path (or create your python script in the same directory as a copy of the BlenderToolsForGFS library), and then import and register the module with Blender by calling the module's \textbf{register()} method.
+\begin{lstlisting}[style=pythonstyling]
+import BlenderToolsForGFS
+BlenderToolsForGFS.register()
+\end{lstlisting}
+
+After the module is registered, you can import and export data using the operators that the plugin adds for these purposes.
+\begin{lstlisting}[style=pythonstyling]
+bpy.ops.import_file.import_gfs(filepath=...)
+bpy.ops.import_file.import_gap(filepath=..., armature_name=...)
+
+# Need to select the armature in order to use export functions
+bpy.data.objects[...].select_set(True)
+
+bpy.ops.export_file.export_gfs(filepath=...)
+bpy.ops.export_file.export_gap(filepath=...)
+\end{lstlisting}
+
+These operators have the following keyword arguments:
+\begin{center}
+\begin{tabular}{p{.2\textwidth}p{.1\textwidth}p{.69\textwidth}}
+\hline
+\multicolumn{3}{c}{import\_gfs}\\
+Keyword & Type & Description\\
+\hline
+filepath & string & The filepath to the file to import.\\
+set\_fps & bool & Switches Blender animation to 30 FPS. Default: False.\\
+debug\_mode & bool & Allows exceptions to be raised instead of silently suppressed by popup windows. Default: False.\\
+merge\_vertices & bool & Attempts to create a manifold mesh out of the input vertices. Default: True.\\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{p{.2\textwidth}p{.1\textwidth}p{.69\textwidth}}
+\hline
+\multicolumn{3}{c}{import\_gap}\\
+Keyword & Type & Description\\
+\hline
+filepath & string & The filepath to the file to import.\\
+set\_fps & bool & Switches Blender animation to 30 FPS. Default: False.\\
+debug\_mode & bool & Allows exceptions to be raised instead of silently suppressed by popup windows. Default: False.\\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{p{.2\textwidth}p{.1\textwidth}p{.69\textwidth}}
+\hline
+\multicolumn{3}{c}{export\_gfs}\\
+Keyword & Type & Description\\
+\hline
+filepath & string & The filepath to the file to import.\\
+version & string & The file version to export as. Default: 0x01105100.\\
+debug\_mode & bool & Allows exceptions to be raised instead of silently suppressed by popup windows. Default: False.\\
+pack\_animations & bool & Whether to pack animations into the model or not. Default: False.\\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{p{.2\textwidth}p{.1\textwidth}p{.69\textwidth}}
+\hline
+\multicolumn{3}{c}{export\_gap}\\
+Keyword & Type & Description\\
+\hline
+filepath & string & The filepath to the file to import.\\
+version & string & The file version to export as. Default: 0x01105100.\\
+debug\_mode & bool & Allows exceptions to be raised instead of silently suppressed by popup windows. Default: False.\\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{TODO: Custom PropertyGroups}
 \clearpage
+
+\section{Future Development}
+Listed here are a few directions that future development could go. This is not a promise of feature development; just an inexhaustive record of ideas for any contributors who might want to improve the tools in some fashion.
+\subsection{Blender Interface}
+\begin{itemize}
+\item Create an accurate Shader Node for GFS materials. This will require the material data structures to be fully researched beforehand.
+\item Redesign the animation import/export so that more than just node animations can be imported. Material animations would need to be somehow linked to a corresponding node animation, and so forth. An idea on how to do this would be to have a list of exported animations on the animation pack, and each animation entry can contain a \textbf{CollectionProperty} of \textbf{PointerProperties} to \textbf{bpy.types.Action}s. Each animation can additionally have a checkbox next to it that will mute or unmute \textbf{bpy.types.Action}s that are linked to it simultaneously, so that the user does not have to indivudually unmute every animation on every object to preview the entire animation.
+\item Related to the above: a \textbf{CollectionProperty} of Animation Packs could be implemented so that multiple Animation Packs can be imported and exported. Since we would already be collecting exported animations into a \textbf{CollectionProperty}, that would just mean that each AnimationPack would be in charge of its own \textbf{CollectionProperty} of animations.
+\item After the previous points are implemented and are guaranteed to work well both technically and from a user's perspective, then material, camera, and morph animations can be added.
+\item Physics colliders and joint physics can be imported as meshes with rigid body physics and a bunch of properties. Buttons to generate these meshes can be added to a menu somewhere.
+\item EPL submodels should be imported into the scene tree too, but only after the animation and material refactors have been implemented.
+\item GFS Properties could be turned into a group of settings instead of an arbitrary list (or both could be available). For example, any Properties required to create collision triggers could be added with a subpanel rather than asking the user to copy out a list of collision properties. However, the various sets of properties would have to first be researched and property understood.
+\item The vertex-merging algorithm should be refactored to work by merging vertices such that \textbf{any face} will not be removed, rather than just checking if there are two overlapping antiparallel faces.
+\end{itemize}
+
+\subsection{Python API}
+\begin{itemize}
+\item RootNodes should be moved out of the node list. Any parentless nodes in the GFS node list should be automatically parented to the RootNode, which must always exist by construction. Currently the GFSInterface is fragile, in the sense that if the first node is \textit{not} the root node, everything explodes.
+\item Cameras need a proper Interface.
+\item Lights need a proper Interface.
+\item The AnimationInterface needs to be more cleanly designed: it currently has a lot of awkward heuristics to serialise node animations and can duplicate tracks and so forrth due to a lack of understanding of how all the animation keys work.
+\end{itemize}
 
 \end{document}
