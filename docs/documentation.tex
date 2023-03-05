@@ -150,6 +150,7 @@ There are also some additional considerations to bear in mind.
 \end{itemize}
 
 \clearpage 
+
 \subsection{Importing Model (GMD/GFS) Files}
 \begin{guide}{Accessing the Model Import Menu}
 \item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
@@ -157,6 +158,7 @@ There are also some additional considerations to bear in mind.
 \item Select the GMD or GFS file to import using the file browser that pops up.
 \end{guide}
 
+\clearpage
 
 \subsection{Importing Animation (GAP) Files}
 \begin{guide}{Accessing the Animation Import Menu}
@@ -167,6 +169,8 @@ There are also some additional considerations to bear in mind.
 \guideimage{images/import/import_gap_armature_select.png}
 \item Select the GAP file to import using the file browser that pops up.
 \end{guide}
+
+\clearpage
 
 \subsection{Blender Settings}
 \subsubsection{Previewing Materials}
@@ -325,8 +329,7 @@ There are then two essential pieces to Material editing:
 \item GFS Material Attributes
 \end{itemize}
 
-\noindent\underline{Texture Samplers}\\
-You can edit the textures used by a material by accessing the Shader Nodes. The first step is to open the Shader Node Editor.
+\paragraph{Texture Samplers:}You can edit the textures used by a material by accessing the Shader Nodes. The first step is to open the Shader Node Editor.
 \begin{guide}{Opening the Shader Node Editor}
 \item Select the mesh in the Outliner or in the Viewport.
 \guideimage{images/editing_models/edits_select_mesh.png}
@@ -375,7 +378,7 @@ meaning that up to 8 maps are allowed per mesh.
 \guideimage{images/editing_models/edits_texture_sampler_properties.png}
 \end{guide}
 
-\noindent\underline{GFS Material Attributes}\\
+\paragraph{GFS Material Attributes:}
 \noindent Materials have certain attributes that may be exported. These are:
 \begin{itemize}
 \item \textbf{Unknown Flags}: The purpose of Unknown Flags is not known. Checking and unchecking these may cause or fix crashes.
@@ -407,37 +410,172 @@ Textures must be DDS images with either no compression, or DXT1, DX3, or DXT5 co
 These attributes can be edited from the \textbf{GFS Texture} Sidebar panel on a Texture Image node in the Shader Editor, as described in section \ref{SECTION::EditingMaterials}.
 
 \subsubsection{Cameras}
-Cameras are parented to bones on the model armature. The rest transform of a camera is:
+Cameras are constrained to a bone in the model armature with a \textbf{Child Of} constraint. Due to the way that bones are imported, \textbf{you will need a 90 degree rotation in the Z axis} on the camera to make it point ``horizontally". The camera will be exported in whatever orientation it is in within Blender, however \textbf{it is strongly recommended} to just keep a 90-degree Z-rotation on the camera and do all other positioning using the bone it is constrained to.
+
+For a camera to be recognised for export, you must do one of the following:
 \begin{itemize}
-\item A 90 degree rotation in the Z axis
-\item A Y translation that puts the camera at the head of the bone it is parented to.
+\item Constrain the camera to follow a bone with a ``Child Of" constraint.
+\item Parent the Camera to a bone. Note that parenting a Camera to a bone will place the camera at the tail of the bone rather than the head, although this should not affect the pose in which the camera is exported.
 \end{itemize}
-The Camera will have a View Matrix defined relative to this transform.
+
+Some properties of Blender cameras will be exported to GFS camera properties, and some properties are not represented in Blender. This is described below.
+\begin{guide}{Accessing Camera Properties}
+\item In the \textbf{Camera Data} Properties panel, there are a number of camera properties. In the \textbf{Lens} section, the \textbf{Type} must be set to \textbf{Perspective} and the \textbf{Lens Unit} to \textbf{Field of View}. The \textbf{Field of View} attribute will be exported, although it may not exactly match up with the in-game field-of-view in the current version of the plugin. Additionally, the \textbf{Clip Start} and \textbf{Clip End} fields will be exported and will appear in-game as they do in Blender.
+\item Furthermore, there are two properties not represented in Blender that can be exported, found in the \textbf{GFS Camera}. \textbf{Aspect Ratio}s can be represented in Blender, but only for the entire scene and not for individual cameras, so this is not currently represented. \textbf{Unknown 0x50} is unknown.
+\guideimage{images/editing_models/edits_camera_properties.png}
+\end{guide}
 
 \subsubsection{Lights}
+Lights are constrained to a bone in the model armature with a \textbf{Child Of} constraint. Due to the way that bones are imported, \textbf{you will need a 90 degree rotation in the Z axis} on the camera to make it point ``horizontally". The light will be \textbf{exported assuming a 90-degree Z-rotation on the light}---do all other positioning using the bone it is constrained to.
+
+For a light to be recognised for export, you must do one of the following:
+\begin{itemize}
+\item Constrain the Light to follow a bone with a ``Child Of" constraint.
+\item Parent the Light to a bone. Note that parenting a Light to a bone will place the light at the tail of the bone rather than the head, \textbf{and the light will be repositioned to the head of the bone during export due to GFS file format constraints}.
+\end{itemize}
+
+Some properties of Blender lights will be exported to GFS light properties, and some properties are not represented in Blender. This is described below.
+\begin{guide}{Accessing Light Properties}
+\item In the \textbf{Light Data} Properties panel, there are a number of light properties.
+The only Blender property currently exported is the \textbf{Color} property, which sets the RGB light color.
+\item The additional properties are in the \textbf{GFS Light} panel. There are first three elements common to all lights:
+\begin{itemize}
+\item \textbf{Color Alpha} is the alpha channel of the light color.
+\item \textbf{Color 1} is a color variable that does not seem to be used.
+\item \textbf{Color 3} is a color variable that does not seem to be used.
+\end{itemize}
+There are then three kinds of light, selectable from the drop-down:
+\begin{itemize}
+\item \textbf{Type 1}: Unknown light type, does not appear to render in-game. Has no specific properties.
+\item \textbf{Sphere}: A point light that can have an attentuation radius. This has the unknown properties \textbf{unknown 0x34}, \textbf{unknown 0x38}, and \textbf{unknown 0x3C}, plus an \textbf{unknown setting}. If the unknown setting is active, the point light will illuminate everything within the \textbf{inner radius}, and attenuate to zero illumination between the \textbf{inner radius} and \textbf{outer radius}. Switching the setting off instead provides the settings \textbf{unknown 0x48}, \textbf{unknown 0x4C}, and \textbf{unknown 0x50}. Attempts to get a light to render using these variables have been unsuccessful.
+\item \textbf{Hemisphere}: A spot light that can have an attentuation radius. This has the unknown properties \textbf{unknown 0x54}, \textbf{unknown 0x58}, \textbf{unknown 0x5C}, \textbf{unknown 0x60}, \textbf{unknown 0x64}, \textbf{unknown 0x68}, \textbf{unknown 0x6C}, and \textbf{unknown 0x70}. This also has an \textbf{Unknown Setting} similar to the Sphere light. In principle these settings could be mapped to the Blender ``Spot Shape", but lights should be better understood overall before implementing this.
+\end{itemize}
+At the end of the properties is a list of flags. Only \textbf{flag 0} seems to be used amongst the provided flags, and its purpose is unknown.
+\guideimage{images/editing_models/edits_light_properties.png}
+\end{guide}
 
 
 \subsubsection{Physics}
-Model physics are not currently editable from Blender.
+Model physics are not currently editable from Blender, but should be preserved for re-export.
 
+\clearpage
 \subsection{GFS Animations}
+In this section, the three major kinds of animation are covered. Sections~\ref{SECTION::Edits::Animations::NormalAnimations}, \ref{SECTION::Edits::Animations::BlendAnimations}, and \ref{SECTION::Edits::Animations::LookAtAnimations} cover the properties and Blender data required for each of these types to be exported and displayed correctly. Section~\ref{SECTION::Edits::Animations::AnimationPacks} covers how to organise the set of animations in an Animation Pack that can be exported. In section~\ref{SECTION::Edits::Animations::TipsForEditing}, some useful information on editing Blend animations from within Blender is provided.
+
+Currently, only \textbf{bone animations} are editable from within Blender. There are (at least) four other kinds of animation, but they are not exposed to the user for the following reasons:
+\begin{itemize}
+\item \textbf{Material Animations}: Not enough known about materials to create an animation node with animatable inputs.
+\item \textbf{Camera Animations}: No strategy currently developed to link Camera object animations to the corresponding Armature animation.
+\item \textbf{Morph Animations}: No strategy currently developed to link Shape Key animations to the corresponding Armature animation.
+\item \textbf{Animation Type 5}: Unknown animation type, so nothing can be done with it currently. 
+\end{itemize}
 
 \subsubsection{Normal Animations}
+\label{SECTION::Edits::Animations::NormalAnimations}
+``Normal Animations" are regular animations. The animated quantities in these animations should override those that are present in the Rest Pose. In-game, all interpolations are done with \textbf{linear interpolation (LERP)}, except for quaternion animations which are done with \textbf{spherical linear interpolation (SLERP)}. For this reason, to ensure that the animation you see in Blender is accurately reflected in-game, you should ensure the following settings are applied:
+\begin{itemize}
+\item The Strip Blending should be set to \textbf{REPLACE}.
+\item The keyframe interpolation should be set to \textbf{LINEAR} for all animations except for \textbf{rotation\_quaterion}, which should be set to \textbf{BEZIER}.
+\end{itemize}
+See Section~\ref{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}, Subitem ``Auto-Correcting Actions" for information on how to apply these settings automatically.
+
+\textbf{Normal Animations} have a set of properties that also need to be exported. Details on these are given below.
+
+\clearpage
+
+\begin{guide}{Accessing Normal Animation Properties}
+\item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
+\item The \textbf{Category} should be set to ``Normal". Most of the \textbf{Unknown Flags} are unused. The first five flags are usually ticked if the following animations are present:
+\begin{enumerate}
+\item Flag 0 - Bone animations
+\item Flag 1 - Material animations
+\item Flag 2 - Camera animations
+\item Flag 3 - Morph animations
+\item Flag 4 - Unknown animations
+\end{enumerate}
+but since these do not seem to influence how animations are displayed and do not have an exact correspondence to these types of animation being present, they are left as unnamed flags for now.
+\guideimage{images/editing_models/edits_normal_animations_1.png}
+\item Further down, you can set ``Look At" animations for a Normal Animation. A \textbf{LookAt animation} is a kind of \textbf{Blend Animation} that makes a character look up, down, left, and right. Further details can be found in sections~\ref{SECTION::Edits::Animations::BlendAnimations} and \ref{SECTION::Edits::Animations::LookAtAnimations}. If you tick the box saying that an animation has lookat animations, you \textbf{must select all four animations you want to use as lookats} in order to successfully export. You can do this by clicking the animation boxes and selecting the animation that pops up. The only available animations are those that have been given the \textbf{LookAt} category.
+The role of the LookAt factors is unknown.
+\guideimage{images/editing_models/edits_normal_animations_2.png}
+\end{guide}
 
 \subsubsection{Blend Animations}
+\label{SECTION::Edits::Animations::BlendAnimations}
+\textbf{Blend Animations} are animations that are overlaid on \textbf{Normal Animations}. The animations are combined by combining each transformation channel individually. Positions and scales are added, and quaternions are combined with quaternion multiplication. Therefore, the Strip Blending type should be set to \textbf{COMBINE}. Keyframe interpolation should be handlded the same as the \textbf{Normal Animations}. However, Blender will attempt to \textbf{multiply} scale channels instead of adding them under the \textbf{COMBINE} Strip Blending mode. For this reason, scales should be separated to their own action with the \textbf{ADD} Strip Blending mode, and given the special \textbf{Blend Scale} category rather than the \textbf{Blend} category. Details on this are given in the Blend Properties Step-By-Step below, which also discusses other Blend animation properties. This means that any scales present in a \textbf{Blend Animation} will be ignored on export, and instead taken from a linked \textbf{Blend Scale Animation} if one is present.
+\begin{guide}{Accessing Blend Animation Properties}
+\item Test
+\guideimage{images/editing_models/edits_blend_animations_1.png}
+\item Test
+\guideimage{images/editing_models/edits_blend_animations_2.png}
+\end{guide}
 
 \subsubsection{LookAt Animations}
+\label{SECTION::Edits::Animations::LookAtAnimations}
+
+\begin{guide}{Accessing LookAt Animation Properties}
+\item Test
+\guideimage{images/editing_models/edits_lookat_animations.png}
+\end{guide}
+
+\subsubsection{Animation Packs}
+\label{SECTION::Edits::Animations::AnimationPacks}
+
+\begin{guide}{Accessing Animation Pack Properties}
+\item Test
+\guideimage{images/editing_models/edits_animation_pack.png}
+\end{guide}
+
+\subsubsection{Tips for Editing Animations in Blender}
+\label{SECTION::Edits::Animations::TipsForEditing}
+
+\paragraph{Auto-Correcting Actions}
+\label{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}
+\begin{guide}{Auto-Correcting Actions}
+\item Test
+\end{guide}
+
+\paragraph{Previewing with the NLA Editor}
+\label{SECTION::Editing::Animations::TipsForEditing::PreviewingNLA}
+\begin{guide}{Previewing with the NLA Editor}
+\item Test
+\end{guide}
+
+\paragraph{Previewing Blend Animations during Editing}
+\label{SECTION::Editing::Animations::TipsForEditing::PreviewingBlends}
+\begin{guide}{Previewing Blend Animations during Editing}
+\item Test
+\end{guide}
+
+\clearpage
 
 \subsection{GFS Properties}
 \label{SECTION::GfsProperties}
 
+\clearpage
 
-\section{Export}
-\subsection{Exporting Model (GMD/GFS) Files}
-\subsection{Exporting Animation (GAP) Files}
+\subsection{EPLs}
+\label{SECTION::Edits::Epls}
+EPL files are not currently editable in Blender. GFS files containing EPLs are loadable, but the EPL data will not be accessible. GFS files contained within EPLs can be extracted by other programs or by using this plugin as a library for the Python programming language, as described in section~\ref{SECTION::PythonLibrary}. These extracted GFS files may then be possible to open in Blender, edit, and then re-inject into the EPL files with other programs or \textit{via} the Python interface. Note however that, as of this version of the plugin, this is not well-tested nor intended to be an end-user feature. Users are welcome to use the library in this way, but are reminded that since it is an unsupported part of the library, pull requests that improve the feature are significantly more likely to get attention than issue tickets asking for improvements to it.
+
+If sections of EPLs can be sensibly imported and exported from Blender, such as submodels, EPLs may be better supported in future versions of the plugin.
+
 \clearpage
 
 \section{BlenderToolsForGFS as a Python Library}
+\label{SECTION::PythonLibrary}
+\textbf{NOTE: This section is for users of the Python programming language who wish to write scripts using the plugin. A user will not get much out of this section without some knowledge of Python, which you are encouraged to learn using the wealth of information freely available on the internet if you need to use the library's scripting API.}\\\\
+\noindent
+The Blender plugin can also be used as a plain Python library for manipulating GFS and EPL files. This is possible because all Blender-related code is not loaded by default when initialising the plugin, and because the file-editing code is well-separated from the Blender interface. Furthermore, the non-Blender part of the plugin only utilises the standard library, and therefore no additional third-party libraries are required in order to use the plugin as a library. Using the plugin in this manner is outlined in section \ref{SECTION::UsingAsAPythonLibrary}.
+
+If you have the `bpy' package installed, you can activate the plugin's Blender interface and write Blender scripts outside of Blender. You can also write these scripts inside Blender with the scripting feature. Notes on how to use the plugin in this manner are given in \ref{SECTION::UsingAsABlenderPlugin}.
+
+\subsection{Python Library Usage}
+\label{SECTION::UsingAsAPythonLibrary}
+
+\subsection{Blender Script Usage}
+\label{SECTION::UsingAsABlenderPlugin}
+
 \clearpage
 
 \end{document}
