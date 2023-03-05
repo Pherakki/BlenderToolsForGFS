@@ -118,6 +118,13 @@ def import_model(gfs, name):
     #######################
     # ADJUST BONE LENGTHS #
     #######################
+    min_bone_length = 0.01
+    dims = calc_model_dims(gfs)
+    if dims is None:
+        dims = [10., 10., 10.]
+    else:
+        dims = [max(0.05*d, min_bone_length) for d in dims]
+    
     bpy.context.view_layer.objects.active = main_armature
     bpy.ops.object.mode_set(mode="EDIT")
     
@@ -126,16 +133,9 @@ def import_model(gfs, name):
         head_to_tail = bpy_bone.tail - bpy_bone.head
         
         if len(bpy_bone.children):
-            # Before blasting ahead with this, should really take the 
-            # dot product between the bone and all of its children
-            # to see if there is an "obvious" candidate that it points
-            # towards.
-            # If there is no such candidate, then you can do some
-            # interpolated heuristic, ideally weighted
-            # by the dot product between the bone and each child...
-            
             # Find out if there's an obvious successor bone
             possible_successors = []
+            possible_successor_dot_products = []
             dot_products = []
             angular_discriminator = math.cos(1*math.pi/180) # Checking for bones aligned within 1 degree of separation
             for child in bpy_bone.children:
@@ -145,9 +145,25 @@ def import_model(gfs, name):
                 dot_products.append(projection)
                 if projection > angular_discriminator:
                     possible_successors.append(child)
+                    possible_successor_dot_products.append(projection)
                 
+            # Now decide the bone length after we've gathered all necessary
+            # info
             if len(possible_successors) == 1:
+                # Just link bone to its successor
                 length = (possible_successors[0].head - bpy_bone.head).length
+            elif len(possible_successors):
+                # Take a weighted average of successor positions,
+                # where the weighting factor is parameterised by how aligned
+                # the bonehead->bonetail vector is to the 
+                # bonehead->childhead vector
+                length = 0.
+                total_weight = 0.
+                for successor, dp in zip(possible_successors, dot_products):
+                    weight = (dp-.99*angular_discriminator) # Always +ve for successors
+                    length +=  weight*(successor.head - bpy_bone.head).length
+                    total_weight += weight
+                length /= total_weight
             else:
                 # Average together child positions
                 tail_target = list(zip(*[c.head for c in bpy_bone.children]))
@@ -155,16 +171,16 @@ def import_model(gfs, name):
                 head_to_target = tail_target - position
                 
                 alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
-                length = head_to_target.length * alignment_factor + 10. * (1 - alignment_factor)
+                length = head_to_target.length * alignment_factor + sum(dims)/3 * (1 - alignment_factor)
                 
             # Set some minimum length scale...
-            if length < 0.01:
-                length = 0.01
+            if length < min_bone_length:
+                length = min_bone_length
         else:
             if bpy_bone.parent is None:
                 # Should set this depending on model dimensions and where
                 # head_to_tail points...
-                length = 10.
+                length = sum(dims)/3
             else:
                 length = bpy_bone.parent.length
         
@@ -659,4 +675,33 @@ def import_light(name, i, light, armature, bpy_node_names):
     
     transform = Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
     bpy_light_object.matrix_local = transform
+
+def make_bounding_box(gfs):
+    maxes = []
+    mins = []
+    for mesh in gfs.meshes:
+        if mesh.vertices[0].position is not None:
+            local_max = mesh.vertices[0].position
+            local_min = mesh.vertices[0].position
+            for vertex in mesh.vertices[1:]:
+                pos = vertex.position
+                local_max = [max(mx, p) for mx, p in zip(local_max, pos)]
+                local_min = [min(mn, p) for mn, p in zip(local_min, pos)]
+            maxes.append(local_max)
+            mins.append(local_min)
+            
+    if len(maxes):
+        global_max = [max(ps) for ps in zip(*maxes)]
+        global_min = [max(ps) for ps in zip(*mins)]
+        
+        return global_max, global_min
+    else:
+        return None, None
     
+def calc_model_dims(gfs):
+    mx, mn = make_bounding_box(gfs)
+    if mx is None:
+        return None
+    else:
+        return [mxi - mni for mxi, mni in zip(mx, mn)]
+            
