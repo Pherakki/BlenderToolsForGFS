@@ -5,7 +5,7 @@ from mathutils import Matrix
 import numpy as np
 
 from ..WarningSystem.Warning import ReportableError
-from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup, BlenderBoneToMayaBone, convert_YDirBone_to_XDirBone
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from ..Utils.UVMapManagement import is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
@@ -111,26 +111,28 @@ def export_mesh_data(gfs, armature, errorlog):
         # to save on matrix palette space
         # To do this we'll check if there's single bone we can parent the mesh
         # to
-        # index_sets = []
-        # for gm in gfs_meshes:
-        #     indices = set()
-        #     if gm.vertices[0].indices is not None:
-        #         for v in gm.vertices:
-        #             for idx, wgt in zip(v.indices, v.weights):
-        #                 if wgt > 0:
-        #                     indices.add(idx)
-        #     index_sets.append(indices)
-        # all_indices = set.union(*index_sets)
-        # if len(all_indices) == 1:
-        #     # We can re-parent the node to this node and yeet the vertex
-        #     # weights
-        #     parent_idx = list(all_indices)[0]
-        #     parent_relative_bind_pose_matrix = armature.matrix_world.inverted() @ armature.data.bones[gfs.bones[parent_idx].name].matrix_local @ bind_pose_matrix
-        #     for gm in gfs_meshes:
-        #         for v in gm.vertices:
-        #             v.indices = None
-        #             v.weights = None
-    
+        index_sets = []
+        for gm in gfs_meshes:
+            indices = set()
+            if gm.vertices[0].indices is not None:
+                for v in gm.vertices:
+                    for idx, wgt in zip(v.indices, v.weights):
+                        if wgt > 0:
+                            indices.add(idx)
+            index_sets.append(indices)
+        all_indices = set.union(*index_sets)
+        if len(all_indices) == 1:
+            # We can re-parent the node to this node and yeet the vertex
+            # weights
+            node_idx = list(all_indices)[0] # SOMETHING WRONG HERE???
+            parent_relative_bind_pose_matrix = (convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local).inverted() @ (armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world))
+            #parent_relative_bind_pose_matrix = parent_bone_matrix.inverted() @ bind_pose_matrix
+            for gm in gfs_meshes:
+                for v in gm.vertices:
+                    v.indices = None
+                    v.weights = None
+            parent_idx = node_idx
+            
         # Now create the transforms for the node
         pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
         
