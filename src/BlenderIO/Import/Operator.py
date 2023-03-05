@@ -46,6 +46,17 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     set_fps: define_set_fps()
     
+    merge_vertices: bpy.props.BoolProperty(
+        name="Merge Vertices",
+        description="Merge vertices with the same position data such that "\
+                    "they form a smooth mesh that Blender can more accurately "\
+                    "calculate normal and tangent vectors for. Merged GFS "\
+                    "vertices become loops of the Blender vertices. Note that "\
+                    "any vertices that are not part of faces are currently "
+                    "dropped by this feature",
+        default=True
+    )
+    
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
         bpy.ops.object.select_all(action='DESELECT')
@@ -56,12 +67,6 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
             gfs = GFSInterface.from_file(filepath)
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
-        except ParticlesError:
-            return {'CANCELLED'}
-            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
-        except HasParticleDataError:
-            return {'CANCELLED'}
-            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
 
         # Report any file-loading errors
         if len(errorlog.errors):
@@ -71,7 +76,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures)
-        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0])
+        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], self.merge_vertices)
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]

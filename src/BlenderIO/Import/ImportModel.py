@@ -8,11 +8,12 @@ from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
 from ..Utils.UVMapManagement import make_color_map_name
-from .Utils.BoneConstruction import mat3_to_vec_roll, construct_bone
+from .Utils.BoneConstruction import construct_bone
+from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
 
 
-def import_model(gfs, name):
+def import_model(gfs, name, is_vertex_merge_allowed):
     initial_obj = bpy.context.view_layer.objects.active
 
     armature_name = name
@@ -200,7 +201,7 @@ def import_model(gfs, name):
         mesh_name = bpy_node_names[node_idx]
         if node_idx in meshes_to_rename:
             mesh_name += "_mesh"
-        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx])
+        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], is_vertex_merge_allowed)
         mesh_node_map[node_idx] = bpy_mesh_obj.data
         
     # Import cameras
@@ -248,8 +249,8 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform):
-    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature)
+def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, is_vertex_merge_allowed):
+    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, is_vertex_merge_allowed)
 
     bpy_mesh_object.parent = armature
     pos, quat, scale = transform.decompose()
@@ -263,7 +264,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     import_properties(gfs_node.properties, bpy_mesh_object.data.GFSTOOLS_NodeProperties.properties)
 
     for i, mesh in enumerate(meshes[1:]):
-        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature)
+        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature, is_vertex_merge_allowed)
     
         child_bpy_mesh_object.parent = bpy_mesh_object
         child_bpy_mesh_object.rotation_mode = "QUATERNION"
@@ -274,7 +275,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     return bpy_mesh_object
     
     
-def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature):
+def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature, is_vertex_merge_allowed):
     # Cache the Blender states we are going to change
     prev_obj = bpy.context.view_layer.objects.active
     
@@ -286,32 +287,41 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
     bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
     
+    # Merge vertices if requested
+    new_verts, new_tris, new_facevert_to_old_facevert_map = merge_vertices(
+        mesh.vertices, 
+        [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])], 
+        is_vertex_merge_allowed
+    )
+    
     # Generate geometry
-    positions = [v.position for v in mesh.vertices]
-    new_tris = [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])]
+    positions = [v.position for v in new_verts]
     bpy_mesh_object.data.from_pydata(positions, [], new_tris)
     bpy.context.collection.objects.link(bpy_mesh_object)
     
     bpy.context.view_layer.objects.active = bpy_mesh_object
 
+    # Generate loop data
+    loop_data, bpy_vert_to_gfs_verts = facevert_to_loop_lookup(new_facevert_to_old_facevert_map, bpy_mesh, mesh)
+
     # Create UVs
-    add_uv_map(bpy_mesh, [v.texcoord0 for v in mesh.vertices], make_uv_map_name(0))
-    add_uv_map(bpy_mesh, [v.texcoord1 for v in mesh.vertices], make_uv_map_name(1))
-    add_uv_map(bpy_mesh, [v.texcoord2 for v in mesh.vertices], make_uv_map_name(2))
-    add_uv_map(bpy_mesh, [v.texcoord3 for v in mesh.vertices], make_uv_map_name(3))
-    add_uv_map(bpy_mesh, [v.texcoord4 for v in mesh.vertices], make_uv_map_name(4))
-    add_uv_map(bpy_mesh, [v.texcoord5 for v in mesh.vertices], make_uv_map_name(5))
-    add_uv_map(bpy_mesh, [v.texcoord6 for v in mesh.vertices], make_uv_map_name(6))
-    add_uv_map(bpy_mesh, [v.texcoord7 for v in mesh.vertices], make_uv_map_name(7))
+    add_uv_map(bpy_mesh, [v.texcoord0 for v in loop_data], make_uv_map_name(0))
+    add_uv_map(bpy_mesh, [v.texcoord1 for v in loop_data], make_uv_map_name(1))
+    add_uv_map(bpy_mesh, [v.texcoord2 for v in loop_data], make_uv_map_name(2))
+    add_uv_map(bpy_mesh, [v.texcoord3 for v in loop_data], make_uv_map_name(3))
+    add_uv_map(bpy_mesh, [v.texcoord4 for v in loop_data], make_uv_map_name(4))
+    add_uv_map(bpy_mesh, [v.texcoord5 for v in loop_data], make_uv_map_name(5))
+    add_uv_map(bpy_mesh, [v.texcoord6 for v in loop_data], make_uv_map_name(6))
+    add_uv_map(bpy_mesh, [v.texcoord7 for v in loop_data], make_uv_map_name(7))
 
     # Create Vertex Colours
-    add_color_map(bpy_mesh, [v.color1 for v in mesh.vertices], make_color_map_name(0))
-    add_color_map(bpy_mesh, [v.color2 for v in mesh.vertices], make_color_map_name(1))
+    add_color_map(bpy_mesh, [v.color1 for v in loop_data], make_color_map_name(0))
+    add_color_map(bpy_mesh, [v.color2 for v in loop_data], make_color_map_name(1))
 
     # Rig
-    if mesh.vertices[0].indices is not None:
+    if new_verts[0].indices is not None:
         groups = {}
-        for vert_idx, v in enumerate(mesh.vertices):
+        for vert_idx, v in enumerate(new_verts):
             for bone_idx, weight in zip(v.indices, v.weights):
                 if weight == 0.:
                     continue
@@ -325,7 +335,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     # Remove this if you can get bone parenting to work.
     else:
         vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
-        vertex_group.add([i for i in range(len(mesh.vertices))], 1., 'REPLACE')
+        vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
 
     # Assign normals
     # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
@@ -336,7 +346,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
         face.use_smooth = True  # loop normals have effect only if smooth shading ?
 
     # Set loop normals
-    loop_normals = [Vector(mesh.vertices[loop.vertex_index].normal) for loop in bpy_mesh.loops]
+    loop_normals = [l.normal for l in loop_data]
     bpy_mesh.loops.foreach_set("normal", [subitem for item in loop_normals for subitem in item])
 
     bpy_mesh.validate(clean_customdata=False)  # important to not remove loop normals here!
@@ -397,7 +407,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
         sk_basis = bpy_mesh_object.shape_key_add(name='Basis')
         sk_basis.interpolation = 'KEY_LINEAR'
         bpy_mesh_object.data.shape_keys.use_relative = True
-        for vidx, v in enumerate(mesh.vertices):
+        for vidx, v in enumerate(new_verts):
             sk_basis.data[vidx].co = v.position
         
         # Import each shape key
@@ -406,8 +416,24 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
             sk.interpolation = "KEY_LINEAR"
             
             # position each vert
-            for vidx in range(len(position_deltas)):
-                sk.data[vidx].co = [x1 + x2 for x1, x2 in zip(mesh.vertices[vidx].position, position_deltas[vidx])]
+            for bpy_vidx, gfs_vidxs in bpy_vert_to_gfs_verts.items():
+                vert_position_deltas = [position_deltas[gfs_vidx] for gfs_vidx in gfs_vidxs]
+                
+                # Safety check: Check that the shapekey is manifold
+                avg_pos = [sum(dim)/len(vert_position_deltas) for dim in zip(*vert_position_deltas)]
+                for delta in vert_position_deltas:
+                    # Check if any of the deltas disagree by more than 0.1% from the average
+                    if any([abs((pi - di)/di) > 0.001 
+                            if (abs(di) > 0.001 and abs(pi) > 0.001) 
+                            else (pi - di) > 0.001
+                            for pi, di
+                            in zip(avg_pos, delta)]):
+                        raise ValueError("Invalid shapekey. Try importing without merging vertices")
+                        
+                sk.data[bpy_vidx].co = [x1 + x2 for x1, x2 in zip(new_verts[bpy_vidx].position, vert_position_deltas[0])]
+                
+            # for vidx in range(len(position_deltas)):
+            #     sk.data[vidx].co = [x1 + x2 for x1, x2 in zip(mesh.vertices[vidx].position, position_deltas[vidx])]
         
     ########################
     # DO THE LEFTOVER DATA #
@@ -535,7 +561,7 @@ def add_uv_map(bpy_mesh, texcoords, name):
     if texcoords[0] is not None:
         uv_layer = bpy_mesh.uv_layers.new(name=name, do_init=True)
         for loop_idx, loop in enumerate(bpy_mesh.loops):
-            uv_layer.data[loop_idx].uv = texcoords[loop.vertex_index]
+            uv_layer.data[loop_idx].uv = texcoords[loop_idx]
 
 def unpack_colour(colour):
     # ARGB -> RGBA
@@ -549,7 +575,7 @@ def add_color_map(bpy_mesh, color_data, name):
         if hasattr(bpy_mesh, "color_attributes"):
             ca = bpy_mesh.color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER")
             for loop_idx, loop in enumerate(bpy_mesh.loops):
-                ca.data[loop_idx].color = unpack_colour(color_data[loop.vertex_index])
+                ca.data[loop_idx].color = unpack_colour(color_data[loop_idx])
         # Blender 2.81-3.2
         else:
             vc = bpy_mesh.vertex_colors.new(name=name)
