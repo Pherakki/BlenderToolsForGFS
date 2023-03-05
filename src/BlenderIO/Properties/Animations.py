@@ -3,48 +3,39 @@ import bpy
 from .GFSProperties import GFSToolsGenericProperty
 from .Nodes import BlobProperty
 
-    
-def find_anims_of_type(self, context, anim_type):
-    """
-    WARNING: THIS FUNCTION IS BROKEN!
-    ANY TIME A NEW ENUM IS INSERTED INTO THE LIST IT SCREWS UP WHAT IS POINTED
-    TO BY OTHER PROPERTIES
-    """
-    # Do this for NLA tracks instead.
-    # Object for an NLA track can be found with track.id_data
-    out = []
-    for action in bpy.data.actions:
-        props = action.GFSTOOLS_AnimationProperties
-        if props.category == anim_type:
-            out.append((action.name, action.name, ""))
-            
-    # if context.animation_data is None:
-    #     return out
-    # for track in context.animation_data.nla_tracks:
-    #     if len(track.strips) == 1:
-    #         props = track.strips[0].action.GFSTOOLS_AnimationProperties
-    #         if props.category == anim_type:
-    #             out.append((track.name, track.name, ""))
-    
-    return out
-
-
-def find_blendscales(self, context):
-    return find_anims_of_type(self, context, "BLENDSCALE")
-
-def find_lookats(self, context):
-    return find_anims_of_type(self, context, "LOOKAT")
 
 def update_category(self, context):
     if context.active_nla_strip is None:
         return
     
-    action = context.active_nla_strip.action
+    strip = context.active_nla_strip
+    action = strip.action
     props = action.GFSTOOLS_AnimationProperties
     
     if props.autocorrect_action:
-        print("TODO: UPDATE THE CATEGORY!")
-        
+        for fc in action.fcurves:
+            if fc.datapath.endswith("rotation_quaternion"):
+                for k in fc.keyframe_points:
+                    k.interpolation = "BEZIER"
+            else:
+                for k in fc.keyframe_points:
+                    k.interpolation = "LINEAR"
+        if props.category == "NORMAL":
+            strip.blend_type = "REPLACE"
+        elif props.category in {"BLEND", "LOOKAT"}:
+            strip.blend_type = "COMBINE"
+        elif props.category == "BLENDSCALE":
+            strip.blend_type = "ADD"
+
+
+def poll_blendscale_action(self, action):
+    return action.GFSTOOLS_AnimationProperties.category == "BLENDSCALE"
+
+ 
+def poll_lookat_action(self, action):
+    return action.GFSTOOLS_AnimationProperties.category == "LOOKAT"
+    
+
 class GFSToolsAnimationProperties(bpy.types.PropertyGroup):   
     autocorrect_action: bpy.props.BoolProperty(name="Auto-correct Actions", 
                                                description="Automatically set the keyframe interpolation and strip blending that will show how the animations looks in-game when selecting a category for the animation",
@@ -95,10 +86,10 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
     
     # Only for Normal animations
     has_lookat_anims:    bpy.props.BoolProperty(name="LookAt Anims")
-    lookat_right:        bpy.props.EnumProperty(name="LookAt Right", items=find_lookats)
-    lookat_left:         bpy.props.EnumProperty(name="LookAt Left",  items=find_lookats)
-    lookat_up:           bpy.props.EnumProperty(name="LookAt Up",    items=find_lookats)
-    lookat_down:         bpy.props.EnumProperty(name="LookAt Down",  items=find_lookats)
+    lookat_right:        bpy.props.PointerProperty(name="LookAt Right", type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_left:         bpy.props.PointerProperty(name="LookAt Left",  type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_up:           bpy.props.PointerProperty(name="LookAt Up",    type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_down:         bpy.props.PointerProperty(name="LookAt Down",  type=bpy.types.Action, poll=poll_lookat_action)
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
@@ -106,7 +97,7 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
     
     # Only for Blend and LookAt animations
     has_scale_action:   bpy.props.BoolProperty(name="Has Scale Channel")
-    blend_scale_action: bpy.props.EnumProperty(name="Scale Channel", items=find_blendscales)
+    blend_scale_action: bpy.props.PointerProperty(name="Scale Channel", type=bpy.types.Action, poll=poll_blendscale_action)
 
     properties:          bpy.props.CollectionProperty(name="Properties", type=GFSToolsGenericProperty)
     active_property_idx: bpy.props.IntProperty(options={'HIDDEN'})

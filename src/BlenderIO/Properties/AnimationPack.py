@@ -1,6 +1,6 @@
 import bpy
 
-from .Animations import find_lookats
+from .Animations import poll_lookat_action
 
 
 class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
@@ -37,10 +37,10 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
     flag_31: bpy.props.BoolProperty(name="Unknown Flag 31 (Unused?)")
     
     has_lookat_anims: bpy.props.BoolProperty(name="Has LookAt Anims")
-    lookat_right: bpy.props.EnumProperty(name="LookAt Right", items=find_lookats)
-    lookat_left:  bpy.props.EnumProperty(name="LookAt Left",  items=find_lookats)
-    lookat_up:    bpy.props.EnumProperty(name="LookAt Up",    items=find_lookats)
-    lookat_down:  bpy.props.EnumProperty(name="LookAt Down",  items=find_lookats)
+    lookat_right:        bpy.props.PointerProperty(name="LookAt Right", type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_left:         bpy.props.PointerProperty(name="LookAt Left",  type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_up:           bpy.props.PointerProperty(name="LookAt Up",    type=bpy.types.Action, poll=poll_lookat_action)
+    lookat_down:         bpy.props.PointerProperty(name="LookAt Down",  type=bpy.types.Action, poll=poll_lookat_action)
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")

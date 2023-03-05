@@ -66,16 +66,13 @@ def export_lookat_animations(armature, props, gfs_obj):
                 props.lookat_right_factor
             )
             
-            export_animation(armature, la_up,    armature.animation_data.nla_tracks[props.lookat_up],    is_blend=True)
-            export_animation(armature, la_down,  armature.animation_data.nla_tracks[props.lookat_down],  is_blend=True)
-            export_animation(armature, la_left,  armature.animation_data.nla_tracks[props.lookat_left],  is_blend=True)
-            export_animation(armature, la_right, armature.animation_data.nla_tracks[props.lookat_right], is_blend=True)
-        
+            export_animation(gfs_obj, armature, la_up,    props.lookat_up,    is_blend=True, keep_unused_anims=keep_unused_anims)
+            export_animation(gfs_obj, armature, la_down,  props.lookat_down,  is_blend=True, keep_unused_anims=keep_unused_anims)
+            export_animation(gfs_obj, armature, la_left,  props.lookat_left,  is_blend=True, keep_unused_anims=keep_unused_anims)
+            export_animation(gfs_obj, armature, la_right, props.lookat_right, is_blend=True, keep_unused_anims=keep_unused_anims)
 
-def export_animation(armature, gfs_anim, nla_track, is_blend):
-    strip = nla_track.strips[0]
-    action = strip.action
-    
+
+def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_anims):
     # EXPORT NODE ANIMS
     animated_nodes = set()
     node_transforms = get_action_data(action, armature, is_blend)
@@ -93,8 +90,7 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
         # The scale track needs to be separated since it's additive, not
         # multiplicative
         if action.GFSTOOLS_AnimationProperties.has_scale_action:
-            scale_action_name = action.GFSTOOLS_AnimationProperties.blend_scale_action
-            scale_action = bpy.data.actions.get(scale_action_name)
+            scale_action = action.GFSTOOLS_AnimationProperties.blend_scale_action
             if scale_action is not None:
                 scale_transforms = get_action_data(scale_action, armature, is_blend)
                 
@@ -154,7 +150,7 @@ def export_animation(armature, gfs_anim, nla_track, is_blend):
         unimported_tracks = AnimationInterface.from_binary(ab)
     
     if props.category == "NORMAL":
-        export_lookat_animations(armature, props, gfs_anim)
+        export_lookat_animations(armature, props, gfs_anim, keep_unused_anims)
         gfs_anim.extra_track_data = unimported_tracks.extra_track_data
         
     gfs_anim.node_animations.extend([t for t in unimported_tracks.node_animations 
@@ -232,9 +228,8 @@ def get_action_data(action, armature, is_blend):
                 k: [v[1], v[2], v[3], v[0]] 
                 for k, v in animation_data[bone_name]["rotation_quaternion"].items()
             }
-            
+        
         if is_blend:
-            
             prematrix = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
             postmatrix = convert_YDirBone_to_XDirBone
             

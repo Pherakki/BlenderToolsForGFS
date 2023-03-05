@@ -215,10 +215,11 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
         if len(scale_action.fcurves):  
             build_track(scale_action, armature, "ADD", anim.speed)
             action.GFSTOOLS_AnimationProperties.has_scale_action   = True
-            action.GFSTOOLS_AnimationProperties.blend_scale_action = scale_action.name
+            action.GFSTOOLS_AnimationProperties.blend_scale_action = scale_action
         else:
             scale_action.user_clear()
     build_track(action, armature, "COMBINE" if is_blend else "REPLACE", anim.speed)
+            bpy.data.actions.remove(scale_action)
     
     # Put extra common data on
     props = action.GFSTOOLS_AnimationProperties
@@ -305,10 +306,10 @@ def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_
     a_d.GFSTOOLS_AnimationProperties.category = "LOOKAT"
     
     props.has_lookat_anims = True
-    props.lookat_right = f"{anim_name}_right"
-    props.lookat_left  = f"{anim_name}_left"
-    props.lookat_up    = f"{anim_name}_up"
-    props.lookat_down  = f"{anim_name}_down"
+    props.lookat_right = a_r
+    props.lookat_left  = a_l
+    props.lookat_up    = a_u
+    props.lookat_down  = a_d
     props.lookat_right_factor = lookat_animations.right_factor
     props.lookat_left_factor  = lookat_animations.left_factor
     props.lookat_up_factor    = lookat_animations.up_factor
