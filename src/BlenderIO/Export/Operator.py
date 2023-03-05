@@ -132,9 +132,6 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     bl_label = 'Persona 5 Royal - PC (.GAP)'
     bl_options = {'REGISTER', 'UNDO'}
 
-    pack_animations: bpy.props.BoolProperty(name="Pack Animations into Model",
-                                            default=False)
-
     filter_glob: bpy.props.StringProperty(
                                               default="*.GAP",
                                               options={'HIDDEN'},
@@ -144,6 +141,8 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
                                            default=False,
                                            options={'HIDDEN'},
                                       )
+    
+    filename_ext = ".GAP"
     
     version: bpy.props.EnumProperty(items=(
             ("0x01104920", "0x01104920", ""),
