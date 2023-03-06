@@ -14,6 +14,9 @@ boneY_to_boneX_matrix = Matrix([[ 0.,  1.,  0.,  0.],
                                 [ 0.,  0.,  1.,  0.],
                                 [ 0.,  0.,  0.,  1.]])
 
+#boneY_to_boneX_matrix = Matrix.Identity(4)
+#upY_to_upZ_matrix = Matrix.Identity(4)
+
 def convert_XDirBone_to_YDirBone(matrix):
     return matrix @ boneY_to_boneX_matrix
 
