@@ -260,12 +260,13 @@ def filter_rigging_bones_and_ancestors(gfs):
 def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, is_vertex_merge_allowed):
     bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, is_vertex_merge_allowed)
 
+
     bpy_mesh_object.parent = armature
     pos, quat, scale = transform.decompose()
     bpy_mesh_object.rotation_mode = "QUATERNION"
     bpy_mesh_object.location = pos
     bpy_mesh_object.rotation_quaternion = quat
-    bpy_mesh_object.scale = scale
+    bpy_mesh_object.scale = gfs_node.scale # scale #[s1*s2 for s1, s2 in zip(scale, gfs_node.scale)] # Still seem to have some positioning errors...
     
     # Add Node Properties
     bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
