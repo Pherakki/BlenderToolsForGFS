@@ -53,7 +53,7 @@ def import_model(gfs, name, is_vertex_merge_allowed):
     for i, node in enumerate(gfs.bones):
         matrix = node.bind_pose_matrix
         matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
-        if i not in bones_to_ignore:            
+        if i not in bones_to_ignore:      
             bpy_bone = construct_bone(node.name, main_armature, 
                                      MayaBoneToBlenderBone(matrix), 
                                      10)
@@ -165,30 +165,35 @@ def import_model(gfs, name, is_vertex_merge_allowed):
                     length +=  weight*(successor.head - bpy_bone.head).length
                     total_weight += weight
                 length /= total_weight
+                length = abs(length)
             else:
                 # Average together child positions
+                # Should probably do something smarter than this
                 tail_target = list(zip(*[c.head for c in bpy_bone.children]))
                 tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
                 head_to_target = tail_target - position
                 
                 alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
-                length = head_to_target.length * alignment_factor + sum(dims)/3 * (1 - alignment_factor)
+                length = abs(head_to_target.length * alignment_factor) + abs(sum(dims)/3 * (1 - alignment_factor))
                 
             # Set some minimum length scale...
             if length < min_bone_length:
                 length = min_bone_length
         else:
+            own_direction = (bpy_bone.tail - bpy_bone.head).normalized()
+            projected_dim = abs(own_direction.dot(dims))
+            
             if bpy_bone.parent is None:
-                # Should set this depending on model dimensions and where
-                # head_to_tail points...
-                length = sum(dims)/3
+                length = projected_dim
             else:
-                own_direction = (bpy_bone.tail - bpy_bone.head).normalized()
                 parent_direction = (bpy_bone.parent.tail - bpy_bone.parent.head).normalized()
-                projection = (own_direction).dot(parent_direction)
-                length = bpy_bone.parent.length * projection + (own_direction.dot(dims)) * (1 - projection)
+                projection = abs((own_direction).dot(parent_direction))
+                    
+                length = bpy_bone.parent.length * projection + projected_dim * (1 - projection)
         
+        assert length > 0, "FATAL INTERNAL ERROR: ATTEMPTED TO GIVE A BONE A NEGATIVE LENGTH"
         bpy_bone.length = length
+        
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.mode_set(mode="EDIT")
         
