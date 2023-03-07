@@ -67,7 +67,7 @@ class PropertyInterface:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected an iterable object")
             if not len(binary.data) == 3:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents has length {len(self.data)}: expected 3")
-            if not all([type(t) is int for t in self.data]):
+            if not all([(type(t) is int or type(t) is float) for t in self.data]):
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents have types {[type(t) for t in self.data]}: expected all ints or floats")
                 
             binary.size = 9
@@ -77,13 +77,13 @@ class PropertyInterface:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected an iterable object")
             if not len(binary.data) == 4:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents has length {len(self.data)}: expected 4")
-            if not all([type(t) is int for t in self.data]):
+            if not all([(type(t) is int or type(t) is float)  for t in self.data]):
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents have types {[type(t) for t in self.data]}: expected all ints or floats")
                 
             binary.size = 12
                     
         elif binary.type == 9:
-            if type(binary.data) != bytes:
+            if type(binary.data) is not bytes:
                 raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected bytes")
             binary.size = len(binary.data)
             
