@@ -207,9 +207,7 @@ def import_model(gfs, name, is_vertex_merge_allowed):
         mesh_groups[mesh.node].append(mesh)
     for node_idx, meshes in mesh_groups.items():
         mesh_name = bpy_node_names[node_idx]
-        if node_idx in meshes_to_rename:
-            mesh_name += "_mesh"
-        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], is_vertex_merge_allowed)
+        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], is_vertex_merge_allowed, node_idx in meshes_to_rename)
         mesh_node_map[node_idx] = bpy_mesh_obj.data
         
     # Import cameras
@@ -257,7 +255,9 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, is_vertex_merge_allowed):
+def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, is_vertex_merge_allowed, is_unrigged):
+    if is_unrigged:
+        mesh_name += "_mesh"
     bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, is_vertex_merge_allowed)
 
 
@@ -266,7 +266,10 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     bpy_mesh_object.rotation_mode = "QUATERNION"
     bpy_mesh_object.location = pos
     bpy_mesh_object.rotation_quaternion = quat
-    bpy_mesh_object.scale = gfs_node.scale # scale #[s1*s2 for s1, s2 in zip(scale, gfs_node.scale)] # Still seem to have some positioning errors...
+    if is_unrigged:
+        bpy_mesh_object.scale = scale
+    else:
+        bpy_mesh_object.scale = gfs_node.scale # scale #[s1*s2 for s1, s2 in zip(scale, gfs_node.scale)] # Still seem to have some positioning errors...
     
     # Add Node Properties
     bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
@@ -279,7 +282,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
         child_bpy_mesh_object.rotation_mode = "QUATERNION"
         child_bpy_mesh_object.location = [0., 0., 0.]
         child_bpy_mesh_object.rotation_quaternion = [1., 0., 0., 0.]
-        child_bpy_mesh_object.scale = [1, 1., 1.]
+        child_bpy_mesh_object.scale = [1., 1., 1.]
     
     return bpy_mesh_object
     

@@ -62,10 +62,19 @@ class ModelInterface:
                 # Hopefully they're all similar
                 contributing_matrices = []
                 for node_idx, bpm in nodes_with_ibpms[i]:
-                    world_matrix = multiply_transform_matrices(world_pose_matrices[node_idx], bpm)
+                    scale = bones[node_idx].scale
+                    scale_matrix = [1/scale[0], 0, 0, 0,
+                                    0, 1/scale[1], 0, 0,
+                                    0, 0, 1/scale[2], 0]
+                    rescaled_bpm = multiply_transform_matrices(scale_matrix, bpm)
+                    rescaled_bpm = normalise_transform_matrix_scale(rescaled_bpm)
+                    world_matrix = multiply_transform_matrices(world_pose_matrices[node_idx], rescaled_bpm)
                     contributing_matrices.append(normalise_transform_matrix_scale(world_matrix))
+
                 n = len(contributing_matrices)
                 bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
+                
+            
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
                     
@@ -176,24 +185,33 @@ class ModelInterface:
                     for idx in sorted(indices):                           
                         index_matrix = bones[idx].bind_pose_matrix
                         #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
-                        bpm = multiply_transform_matrices(invert_pos_rot_matrix(node_matrix), index_matrix)
+                        bpm = multiply_transform_matrices(invert_pos_rot_matrix(normalise_transform_matrix_scale(node_matrix)), index_matrix)
+                        
+                                
+                        scale = bones[mesh_node_id].scale
+                        scale_matrix = [scale[0], 0, 0, 0,
+                                        0, scale[1], 0, 0,
+                                        0, 0, scale[2], 0]
+                        rescaled_bpm = multiply_transform_matrices(scale_matrix, bpm)
+                        rescaled_bpm = normalise_transform_matrix_scale(rescaled_bpm)
+                        
                         if idx not in matrix_cache:
                             matrix_cache[idx] = {}
                         
                         matching_matrix_found = False
                         for palette_idx, palette_bpm in matrix_cache[idx].items():
-                            if all(are_transform_matrices_close(bpm, palette_bpm, rot_tol=0.001, trans_tol=0.01)):
+                            if all(are_transform_matrices_close(rescaled_bpm, palette_bpm, rot_tol=0.001, trans_tol=0.01)):
                                 index_lookup[(mesh_node_id, idx)] = palette_idx
                                 matching_matrix_found = True
                                 break
                             
                         if not matching_matrix_found:
                             palette_idx = len(matrix_palette)
-                            matrix_cache[idx][palette_idx] = bpm
+                            matrix_cache[idx][palette_idx] = rescaled_bpm
                             matrix_palette.append(old_node_id_to_new_node_id_map[idx])
-                            bpms.append(bpm)
+                            bpms.append(rescaled_bpm)
                             index_lookup[(mesh_node_id, idx)] = palette_idx
-            
+                            
             binary.skinning_data.matrix_palette = matrix_palette
             binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(invert_pos_rot_matrix(bpm)) for bpm in bpms]
             binary.skinning_data.bone_count = len(matrix_palette)
