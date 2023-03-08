@@ -92,6 +92,8 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         set_fps(self, context)
         
+        self.report({"INFO"}, "Import successful.")
+        
         return {'FINISHED'}
     
     def execute(self, context):
@@ -172,6 +174,8 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         errorlog.digest_warnings()
         
         set_fps(self, context)
+        
+        self.report({"INFO"}, "Import successful.")
         
         return {'FINISHED'}
     
