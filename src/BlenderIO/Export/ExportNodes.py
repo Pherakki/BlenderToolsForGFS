@@ -18,7 +18,10 @@ def export_node_tree(gfs, armature, errorlog):
         if rest_pose_nla is not None:
             if len(rest_pose_nla.strips):
                 rest_pose_action = rest_pose_nla.strips[0].action
-    rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
+    if rest_pose_action is None:
+        rest_pose_matrices = rest_pose_from_armature_bind_pose(armature.data.bones)
+    else:
+        rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
     
     # Add root node
     rn_props = armature.data.GFSTOOLS_NodeProperties
@@ -95,6 +98,16 @@ def group_fcurves_by_bone_and_type(action):
             # Get value of first keyframe point
             res[bone_name][curve_type][array_index] = fcurve.keyframe_points[0].co[1]
     return res
+
+def rest_pose_from_armature_bind_pose(armature):
+    out = {}
+    for bpy_bone in armature.data.bones:
+        if bpy_bone.parent is None:
+            parent_matrix = Matrix.Identity(4)
+        else:
+            parent_matrix = bpy_bone.parent.matrix_local
+        out[bpy_bone.name] = parent_matrix.inverted() @ bpy_bone.matrix_local
+    return out
 
 
 def extract_first_frame(action, pose_bones):
