@@ -19,7 +19,6 @@ def handle_warning_system(unhandled_context_msg):
                 else:
                     print(''.join(traceback.TracebackException.from_exception(e).format()))
                     bpy.ops.gfstools.unhandlederrorbox('INVOKE_DEFAULT', exception_msg=str(e), context_msg=unhandled_context_msg)
-            else:
-                return {"CANCELLED"}
+                    return {"CANCELLED"}
         return handled_execute
     return impl
