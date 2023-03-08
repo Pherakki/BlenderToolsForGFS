@@ -26,13 +26,14 @@ class NonTriangularFacesError(ReportableError):
     def showErrorData(self):
         self.prev_obj = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
         
         self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
         self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
         self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
         
         for pidx in self.poly_indices:
-            self.mesh.data.polygons[pidx].select_set(True)
+            self.mesh.data.polygons[pidx].select = True
         
         bpy.ops.object.mode_set(mode="EDIT")
         bpy.ops.mesh.select_mode(type="FACE")
@@ -63,13 +64,14 @@ class TooManyIndicesError(ReportableError):
     def showErrorData(self):
         self.prev_obj = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
         
         self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
         self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
         self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
         
         for vidx in self.vertex_indices:
-            self.mesh.data.vertices[vidx].select_set(True)
+            self.mesh.data.vertices[vidx].select = True
         
         bpy.ops.object.mode_set(mode="EDIT")
         bpy.ops.mesh.select_mode(type="VERTEX")
@@ -124,7 +126,7 @@ def export_mesh_data(gfs, armature, errorlog):
         if len(all_indices) == 1:
             # We can re-parent the node to this node and yeet the vertex
             # weights
-            node_idx = list(all_indices)[0] # SOMETHING WRONG HERE???
+            node_idx = list(all_indices)[0]
             parent_relative_bind_pose_matrix = (convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local).inverted() @ (armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world))
             #parent_relative_bind_pose_matrix = parent_bone_matrix.inverted() @ bind_pose_matrix
             for gm in gfs_meshes:
