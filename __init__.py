@@ -51,6 +51,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
     from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
+    from .src.BlenderIO.UI.RegisterWindow import RegisterWindow
     from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
     from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
     
@@ -64,6 +65,7 @@ def init_bpy():
         GFSExportSubmenu,
         BlobProperty,
         GFSToolsGenericProperty,
+        RegisterWindow,
         OpenDocumentation,
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
@@ -134,6 +136,9 @@ def register():
         
     for obj, elem in LIST_ITEMS:
         obj.append(elem)
+     
+    # Apparently not allowed to do this. Would be handy though to direct users...  
+    # bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
 
 
 def unregister():
