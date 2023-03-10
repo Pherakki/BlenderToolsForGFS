@@ -11,6 +11,46 @@ from ..Utils.UVMapManagement import is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
+
+class MissingVertexGroupsError(ReportableError):
+    __slots__ = ("mesh", "vertex_indices", "prev_obj")
+    
+    HAS_DISPLAYABLE_ERROR = True
+    
+    def __init__(self, mesh, vertex_indices, bone_names):
+        newline = '\n'
+        msg = f"Mesh '{mesh.name}' has {len(vertex_indices)} vertices weighted to bones that do not exist. These vertices have been selected for you. If you wish to ignore this error, check the 'Strip Missing Vertex Groups' option when exporting. The missing bones are:{newline}{newline.join(bone_names)}"
+        super().__init__(msg)
+        self.mesh = mesh
+        self.vertex_indices = vertex_indices
+        self.prev_obj = None
+        
+    def showErrorData(self):
+        self.prev_obj = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        
+        for vidx in self.vertex_indices:
+            self.mesh.data.vertices[vidx].select = True
+        
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_mode(type="VERT")
+        
+    def hideErrorData(self):
+        bpy.context.view_layer.objects.active = self.mesh
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        self.mesh.data.polygons.foreach_set("select", (False,) * len(self.mesh.data.polygons))
+        self.mesh.data.edges   .foreach_set("select", (False,) * len(self.mesh.data.edges))
+        self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
+        if self.prev_obj is not None:
+            bpy.context.view_layer.objects.active = self.prev_obj
+        
+
 class NonTriangularFacesError(ReportableError):
     __slots__ = ("mesh", "poly_indices", "prev_obj")
     
@@ -74,7 +114,7 @@ class TooManyIndicesError(ReportableError):
             self.mesh.data.vertices[vidx].select = True
         
         bpy.ops.object.mode_set(mode="EDIT")
-        bpy.ops.mesh.select_mode(type="VERTEX")
+        bpy.ops.mesh.select_mode(type="VERT")
         
     def hideErrorData(self):
         bpy.context.view_layer.objects.active = self.mesh
@@ -87,7 +127,7 @@ class TooManyIndicesError(ReportableError):
             bpy.context.view_layer.objects.active = self.prev_obj
         
 
-def export_mesh_data(gfs, armature, errorlog):
+def export_mesh_data(gfs, armature, errorlog, log_missing_weights):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     material_names = set()
     out = []
@@ -97,10 +137,10 @@ def export_mesh_data(gfs, armature, errorlog):
 
         # Convert bpy meshes -> gfs meshes
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights))
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
-            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog))
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights))
             
         
         
@@ -182,10 +222,10 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
         
     return out
     
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names)
+    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights)
     
     # Check if any of the mesh data is invalid... we'll accumulate these
     # into an error report for the user.
@@ -196,13 +236,8 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
             bad_polys.append(pidx)
     if len(bad_polys):
         errorlog.log_error(NonTriangularFacesError(bpy_mesh_object, bad_polys))
-    # 2) Check for vertices belonging to more than 4 vertex groups
-    bad_vertices = []
-    for vidx, vertex in enumerate(bpy_mesh_object.data.vertices):
-        if len(vertex.groups) > 4:
-            bad_vertices.append(vidx)
-    if len(bad_vertices):
-        errorlog.log_error(TooManyIndicesError(bpy_mesh_object, bad_vertices))
+    # 2) We already checked for vertices belonging to more than 4 vertex groups
+    #    and verts with missing vertex group bones in the data extraction
     
     # Now convert mesh to GFS structs... don't worry if it contains invalid data,
     # we're going to throw an exception at the end of export if any of the meshes
@@ -257,7 +292,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
 #####################
 # PRIVATE FUNCTIONS #
 #####################
-def extract_vertex_data(mesh_obj, bone_names):
+def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights):
     # Switch to input variables
     vweight_floor = 0
     
@@ -278,7 +313,7 @@ def extract_vertex_data(mesh_obj, bone_names):
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor)
+    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights)
     
     return export_verts, export_faces, gfs_vert_to_bpy_vert
 
@@ -333,16 +368,12 @@ def extract_colours(bpy_mesh):
 
     return colours
 
-def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor):
+def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights):
     mesh = mesh_obj.data
     has_uvs = len(mesh.uv_layers) > 0
 
     exported_vertices = []
-    vgroup_verts = {}
     faces = [{l: mesh.loops[l].vertex_index for l in f.loop_indices} for f in mesh.polygons]
-    nonempty_groups = get_all_nonempty_vertex_groups(mesh_obj)
-
-    group_map = {g.index: bone_names[g.name] for g in nonempty_groups}
     
     map_ids = list(mesh.uv_layers.keys())[:8]
     use_normals   = mesh.GFSTOOLS_MeshProperties.export_normals
@@ -403,6 +434,9 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     loop_idx_to_unique_key = {i: unique_val_map[key] for i, key in enumerate(loop_idx_to_key)}
 
     gfs_vert_to_bpy_vert = {}
+    too_many_indices_verts = []
+    missing_weight_verts = []
+    missing_bone_names = set()
     for vert_idx, linked_loops in vidx_to_lidxs.items():
         vertex = mesh.vertices[vert_idx]
         unique_ids = {i: [] for i in list(set(loop_idx_to_unique_key[ll] for ll in linked_loops))}
@@ -410,15 +444,35 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
             unique_ids[loop_idx_to_unique_key[ll]].append(ll)
         unique_values = [(loop_idx_to_key[lids[0]], lids) for id_, lids in unique_ids.items()]
 
+        # Extract bone weights and check for any errors with them
+        group_indices = [grp for grp in vertex.groups if grp.weight > vweight_floor]
+        group_bone_ids = [0, 0, 0, 0]
+        group_weights  = [0, 0, 0, 0]
+        grp_idx = 0
+        has_missing_weights = False
+        if len(group_indices) > 4:
+            too_many_indices_verts.append(vert_idx)
+            continue
+        for grp in group_indices:
+            grp_bone_idx = get_bone_id(mesh_obj, bone_names, grp)
+            if grp_bone_idx is None:
+                has_missing_weights = True
+                missing_bone_names.add(mesh_obj.vertex_groups[grp.group].name)
+            else:
+                group_bone_ids[grp_idx] = grp_bone_idx
+                group_weights[grp_idx] = grp.weight
+                grp_idx += 1
+        
+        if has_missing_weights:
+            missing_weight_verts.append(vert_idx)
+            
+        # Normalise the group weights
+        total_weight = sum(group_weights)
+        if total_weight > 0.:
+            group_weights = [wght / total_weight for wght in group_weights]
+        
+        # Now split the verts by their loop data
         for unique_value, loops_with_this_value in unique_values:
-            group_indices = [grp for grp in vertex.groups if grp.weight > vweight_floor]
-            group_bone_ids = [get_bone_id(mesh_obj, bone_names, grp) for grp in group_indices]
-            group_weights = [grp.weight for grp in group_indices]
-
-            # Normalise the group weights
-            total_weight = sum(group_weights)
-            if total_weight > 0.:
-                group_weights = [wght / total_weight for wght in group_weights]
 
             vb = VertexBinary()
             vb.position = vertex.co
@@ -438,9 +492,8 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
             if len(unique_value[3]): vb.tangent  = unique_value[3][0]
             if len(unique_value[4]): vb.binormal = unique_value[4][0]
             if len(group_indices):
-                n_extra = 4 - len(group_indices)
-                vb.indices = [*group_bone_ids, *([0]*n_extra)]
-                vb.weights = [*group_weights, *([0]*n_extra)]
+                vb.indices = group_bone_ids
+                vb.weights = group_weights
 
             n_verts = len(exported_vertices)
             gfs_vert_to_bpy_vert[len(exported_vertices)] = vert_idx
@@ -451,6 +504,13 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
                 faces[face_idx][l] = n_verts
 
     faces = [list(face_verts.values()) for face_verts in faces]
+    
+    # Log any errors that were encountered
+    if log_missing_weights and len(missing_weight_verts):
+        errorlog.log_error(MissingVertexGroupsError(mesh_obj, missing_weight_verts, missing_bone_names))
+    if len(too_many_indices_verts):
+        errorlog.log_error(TooManyIndicesError(mesh_obj, too_many_indices_verts))
+        
     return exported_vertices, faces, gfs_vert_to_bpy_vert
 
 def get_all_nonempty_vertex_groups(mesh_obj):
@@ -496,5 +556,5 @@ def fetch_tangent(obj, sigfigs):
 def get_bone_id(mesh_obj, bone_names, grp):
     group_idx = grp.group
     bone_name = mesh_obj.vertex_groups[group_idx].name
-    bone_id = bone_names[bone_name]
+    bone_id = bone_names.get(bone_name)
     return bone_id

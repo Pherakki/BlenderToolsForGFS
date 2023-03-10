@@ -43,6 +43,12 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
                                            options={'HIDDEN'},
                                       )
     
+    strip_missing_vertex_groups: bpy.props.BoolProperty(
+                                           name="Strip Missing Vertex Groups",
+                                           description="If a mesh has vertex groups with no corresponding bone, ignore those groups and renormalize the vertex weights with those groups removed.",
+                                           default=False
+                                      )
+    
     version: bpy.props.EnumProperty(items=(
             ("0x01104920", "0x01104920", ""),
             ("0x01104950", "0x01104950", ""),
@@ -76,6 +82,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         
         original_obj  = bpy.context.view_layer.objects.active
         original_mode = selected_model.mode
+        bpy.ops.object.mode_set(mode="OBJECT")
         bpy.context.view_layer.objects.active = selected_model
         bpy.ops.object.mode_set(mode="OBJECT")
         
@@ -85,7 +92,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
