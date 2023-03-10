@@ -130,6 +130,8 @@ dmypy.json
 
 # LaTeX
 docs/*.aux
+docs/*.dvi
 docs/*.out
+docs/*.pdf
 docs/*.synctex.gz
 docs/*.toc
