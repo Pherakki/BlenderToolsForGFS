@@ -352,7 +352,8 @@ class MeshInterface:
             for position_deltas in self.morphs:
                 binary.morph_data.add_target(2, position_deltas)
         binary.indices       = self.indices
-        binary.material_name = binary.material_name.from_name(self.material_name)
+        if self.material_name is not None:
+            binary.material_name = binary.material_name.from_name(self.material_name)
         
         ####################
         # BOUNDING VOLUMES #
