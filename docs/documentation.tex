@@ -4,6 +4,8 @@
 % PACKAGE IMPORTS %
 % ############### %
 \usepackage[utf8]{inputenc}
+
+\usepackage{amsmath}
 %\usepackage[margin=80pt]{geometry}
 \usepackage{fancyhdr}
 \usepackage{graphicx}
@@ -634,7 +636,12 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 \begin{guide}{Accessing the Model Export Menu}
 \item Open the File menu and navigate to the \textbf{Export} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
 \guideimage{images/export/export_gmd.png}
-\item From the export options on the right, choose whether to export animations packed into the model, and which file version to export as.
+\item From the export options on the right, choose:
+\begin{itemize}
+\item Whether to export animations packed into the model.
+\item Which file version to export as.
+\item Whether to strip any vertex groups from the export that do not correspond to a bone in the armature. Leaving this option unticked means that undefined vertex groups will cause an error when attempting to export.
+\end{itemize}
 \guideimage{images/export/export_gmd_properties.png}
 \item Set a filename and export.
 \end{guide}
