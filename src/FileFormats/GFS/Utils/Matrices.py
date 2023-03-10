@@ -104,23 +104,18 @@ def are_transform_matrices_close(a, b, rot_tol, trans_tol, debug=False):
     
     return results
 
-"""
-Borrowed from https://github.com/ThomIves/MatrixInverse,
-following from this answer https://stackoverflow.com/a/62940942
-Errors out if main diagonal is a zero vector?!
-"""
-def invert_matrix(AM, IM):
-    for fd in range(len(AM)):
-        fdScaler = 1.0 / AM[fd][fd]
-        for j in range(len(AM)):
-            AM[fd][j] *= fdScaler
-            IM[fd][j] *= fdScaler
-        for i in list(range(len(AM)))[0:fd] + list(range(len(AM)))[fd+1:]:
-            crScaler = AM[i][fd]
-            for j in range(len(AM)):
-                AM[i][j] = AM[i][j] - crScaler * AM[fd][j]
-                IM[i][j] = IM[i][j] - crScaler * IM[fd][j]
-    return IM
+
+def invert_3x3_matrix(matrix):
+    """
+    From https://stackoverflow.com/q/42489310
+    """
+    m1, m2, m3, m4, m5, m6, m7, m8, m9 = matrix
+    determinant = m1*m5*m9 + m4*m8*m3 + m7*m2*m6 - m1*m6*m8 - m3*m5*m7 - m2*m4*m9  
+    return [
+                (m5*m9-m6*m8)/determinant, (m3*m8-m2*m9)/determinant, (m2*m6-m3*m5)/determinant,
+                (m6*m7-m4*m9)/determinant, (m1*m9-m3*m7)/determinant, (m3*m4-m1*m6)/determinant,
+                (m4*m8-m5*m7)/determinant, (m2*m7-m1*m8)/determinant, (m1*m5-m2*m4)/determinant
+           ]
 
 
 def slice_rotation_from_transform(matrix):
@@ -264,40 +259,41 @@ def invert_transform_matrix(matrix):
     # |  0       1    |
     
     # First let's invert A
-    Ainv = invert_matrix(
+    Ainv = invert_3x3_matrix(
         [
-            [matrix[0], matrix[1], matrix[2]],
-            [matrix[4], matrix[5], matrix[6]],
-            [matrix[8], matrix[9], matrix[10]]
-        ],
-        [
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., 0., 1.]
+            matrix[0], matrix[1], matrix[2],
+            matrix[4], matrix[5], matrix[6],
+            matrix[8], matrix[9], matrix[10]
         ]
     )
     
     # Now create the output matrix and calculate the second block
-    out[0]  = Ainv[0][0]
-    out[1]  = Ainv[0][1]
-    out[2]  = Ainv[0][2]
+    out[0]  = Ainv[0]
+    out[1]  = Ainv[1]
+    out[2]  = Ainv[2]
     out[3]  = -(out[0]*matrix[3] + out[1]*matrix[7] + out[2]*matrix[11])
-    out[4]  = Ainv[1][0]
-    out[5]  = Ainv[1][1]
-    out[6]  = Ainv[1][2]
+    out[4]  = Ainv[3]
+    out[5]  = Ainv[4]
+    out[6]  = Ainv[5]
     out[7]  = -(out[4]*matrix[3] + out[5]*matrix[7] + out[6]*matrix[11])
-    out[8]  = Ainv[2][0]
-    out[9]  = Ainv[2][1]
-    out[10] = Ainv[2][2]
+    out[8]  = Ainv[6]
+    out[9]  = Ainv[7]
+    out[10] = Ainv[8]
     out[11] = -(out[8]*matrix[3] + out[9]*matrix[7] + out[10]*matrix[11])
     
     return out
 
 
-def normalise_transform_matrix_scale(matrix):
+def slice_scale_from_matrix(matrix):
     scale_x = (matrix[0]**2 + matrix[4]**2 + matrix[ 8]**2)**.5
     scale_y = (matrix[1]**2 + matrix[5]**2 + matrix[ 9]**2)**.5
     scale_z = (matrix[2]**2 + matrix[6]**2 + matrix[10]**2)**.5
+    
+    return [scale_x, scale_y, scale_z]
+
+
+def normalise_transform_matrix_scale(matrix):
+    scale_x, scale_y, scale_z = slice_scale_from_matrix(matrix)
     
     matrix[0] /= scale_x
     matrix[4] /= scale_x
