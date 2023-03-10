@@ -1,8 +1,8 @@
 import bpy
-from .Nodes import GFSToolsNodeProperties
+from .Nodes import make_node_props_class
 
-class GFSToolsModelNodeProperties(GFSToolsNodeProperties):
-    pass
+
+GFSToolsModelNodeProperties = make_node_props_class("GFSToolsModelNodeProperties")
 
 
 class GFSToolsModelProperties(bpy.types.PropertyGroup):

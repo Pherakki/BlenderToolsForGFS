@@ -1,4 +1,4 @@
-from .Nodes import GFSToolsNodeProperties
+from .Nodes import make_node_props_class
 
-class GFSToolsBoneNodeProperties(GFSToolsNodeProperties):
-    pass
+
+GFSToolsBoneNodeProperties = make_node_props_class("GFSToolsBoneNodeProperties")

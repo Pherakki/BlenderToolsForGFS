@@ -1,8 +1,8 @@
 import bpy
-from .Nodes import GFSToolsNodeProperties
+from .Nodes import make_node_props_class
 
-class GFSToolsMeshNodeProperties(GFSToolsNodeProperties):
-    pass
+
+GFSToolsMeshNodeProperties = make_node_props_class("GFSToolsMeshNodeProperties")
 
 
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):
@@ -44,4 +44,3 @@ class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     flag_29: bpy.props.BoolProperty(name="Unknown Flag 29", default=False)
     flag_30: bpy.props.BoolProperty(name="Unknown Flag 30", default=False)
     flag_31: bpy.props.BoolProperty(name="Unknown Flag 31", default=True)
-
