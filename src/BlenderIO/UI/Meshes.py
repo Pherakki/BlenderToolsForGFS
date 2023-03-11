@@ -90,7 +90,9 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         "WINDOW",
         "data", 
         lambda context: context.mesh.GFSTOOLS_NodeProperties,
-        lambda cls, context: context.mesh is not None and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH",
+        lambda cls, context: (context.mesh is not None and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH") 
+                             if context.active_object.parent is not None
+                             else False,
         parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel"
     )        
     
