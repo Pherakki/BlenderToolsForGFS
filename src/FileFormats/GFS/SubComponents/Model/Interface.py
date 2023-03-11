@@ -2,10 +2,21 @@ import copy
 
 from ...Utils.Matrices import multiply_transform_matrices, normalise_transform_matrix_scale, invert_pos_rot_matrix
 from ...Utils.Matrices import transforms_to_matrix, transposed_mat4x4_to_mat4x3, mat4x3_to_transposed_mat4x4
-from ...Utils.Matrices import are_transform_matrices_close
+from ...Utils.Matrices import are_transform_matrices_close, invert_transform_matrix
 
 from ..CommonStructures.SceneNode import NodeInterface
 from .Binary import ModelPayload
+
+
+def build_rest_pose(bone, bones):
+    local_pose = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+    parent_idx = bone.parent_idx
+    
+    if parent_idx >= 0:
+        parent_pose = build_rest_pose(bones[parent_idx], bones)
+        return multiply_transform_matrices(parent_pose, local_pose)
+    else:
+        return local_pose
 
 
 class ModelInterface:
@@ -22,6 +33,7 @@ class ModelInterface:
         lights,  \
         epls     = NodeInterface.binary_node_tree_to_list(binary.root_node)
 
+        # Find which nodes have BPMs, and which meshes give them context
         nodes_with_ibpms = {}
         if binary.flags.has_skin_data is not None:
             for mesh in meshes:
@@ -42,19 +54,23 @@ class ModelInterface:
                     for palette_idx in palette_indices:
                         weighted_node_idx = binary.skinning_data.matrix_palette[palette_idx]
                         weighted_ibpm     = binary.skinning_data.ibpms[palette_idx]
-                        bpm               = invert_pos_rot_matrix(transposed_mat4x4_to_mat4x3(weighted_ibpm))
+                        bpm               = invert_transform_matrix(transposed_mat4x4_to_mat4x3(weighted_ibpm))
                         
                         if weighted_node_idx not in nodes_with_ibpms:
                             nodes_with_ibpms[weighted_node_idx] = []
                         nodes_with_ibpms[weighted_node_idx].append((node_idx, bpm))
-        
+
         # Now construct bind poses for bones
         world_pose_matrices = [None]*len(bones)
         world_pose_matrices[0] = transforms_to_matrix(bones[0].position, bones[0].rotation, [1., 1., 1.])
+        world_rest_matrices = [None]*len(bones)
+        world_rest_matrices[0] = transforms_to_matrix(bones[0].position, bones[0].rotation, bones[0].scale)
         for i, bone in enumerate(bones[1:]):
             i = i+1
             local_bpm = transforms_to_matrix(bone.position, bone.rotation, [1., 1., 1.])
             world_pose_matrices[i] = multiply_transform_matrices(world_pose_matrices[bone.parent_idx], local_bpm)
+            local_rpm = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+            world_rest_matrices[i] = multiply_transform_matrices(world_rest_matrices[bone.parent_idx], local_rpm)
             
         for i, bone in enumerate(bones):
             if i in nodes_with_ibpms:
@@ -62,19 +78,11 @@ class ModelInterface:
                 # Hopefully they're all similar
                 contributing_matrices = []
                 for node_idx, bpm in nodes_with_ibpms[i]:
-                    scale = bones[node_idx].scale
-                    scale_matrix = [1/scale[0], 0, 0, 0,
-                                    0, 1/scale[1], 0, 0,
-                                    0, 0, 1/scale[2], 0]
-                    rescaled_bpm = multiply_transform_matrices(scale_matrix, bpm)
-                    rescaled_bpm = normalise_transform_matrix_scale(rescaled_bpm)
-                    world_matrix = multiply_transform_matrices(world_pose_matrices[node_idx], rescaled_bpm)
+                    world_matrix = multiply_transform_matrices(world_rest_matrices[node_idx], bpm)
                     contributing_matrices.append(normalise_transform_matrix_scale(world_matrix))
 
                 n = len(contributing_matrices)
                 bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
-                
-            
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
                     
@@ -157,17 +165,24 @@ class ModelInterface:
                 binary.flags.has_skin_data = True
                 break
             
-        if binary.flags.has_skin_data:
-            world_matrices = [bone.bind_pose_matrix for bone in bones]
+        # Create the world rest pose matrices
+        rest_pose_matrices = [None]*len(bones)
+        for i, bone in enumerate(bones):
+            rest_pose_matrices[i] = build_rest_pose(bone, bones)
             
-            bpms = []
+        if binary.flags.has_skin_data:
+            ibpms = []
             matrix_palette = []
             matrix_cache = {}
             index_lookup = {}
             for mesh_binary, mesh_node_id in mesh_binaries[::-1]:
-                node_matrix = world_matrices[mesh_node_id]
+                node_matrix = rest_pose_matrices[mesh_node_id]
+                
                 if mesh_binary.flags.has_weights:
                     # Find all indices
+                    # Track unweighted indices and weighted indices separately,
+                    # because unweighted indices can be merged into a single
+                    # index because they don't matter
                     indices = set()
                     local_unweighted_indices = set()
                     for vertex in mesh_binary.vertices:
@@ -182,38 +197,29 @@ class ModelInterface:
                         index_lookup[(mesh_node_id, idx)] = 0
                     
                     # Deal with weighted
-                    for idx in sorted(indices):                           
+                    for idx in sorted(indices):        
                         index_matrix = bones[idx].bind_pose_matrix
-                        #inv_index_matrix = invert_pos_rot_matrix(normalise_transform_matrix_scale(world_matrices[idx]))
-                        bpm = multiply_transform_matrices(invert_pos_rot_matrix(normalise_transform_matrix_scale(node_matrix)), index_matrix)
-                        
-                                
-                        scale = bones[mesh_node_id].scale
-                        scale_matrix = [scale[0], 0, 0, 0,
-                                        0, scale[1], 0, 0,
-                                        0, 0, scale[2], 0]
-                        rescaled_bpm = multiply_transform_matrices(scale_matrix, bpm)
-                        rescaled_bpm = normalise_transform_matrix_scale(rescaled_bpm)
+                        ibpm = multiply_transform_matrices(invert_transform_matrix(index_matrix), node_matrix)
                         
                         if idx not in matrix_cache:
                             matrix_cache[idx] = {}
                         
                         matching_matrix_found = False
-                        for palette_idx, palette_bpm in matrix_cache[idx].items():
-                            if all(are_transform_matrices_close(rescaled_bpm, palette_bpm, rot_tol=0.001, trans_tol=0.01)):
+                        for palette_idx, palette_ibpm in matrix_cache[idx].items():
+                            if all(are_transform_matrices_close(ibpm, palette_ibpm, rot_tol=0.001, trans_tol=0.01)):
                                 index_lookup[(mesh_node_id, idx)] = palette_idx
                                 matching_matrix_found = True
                                 break
                             
                         if not matching_matrix_found:
                             palette_idx = len(matrix_palette)
-                            matrix_cache[idx][palette_idx] = rescaled_bpm
+                            matrix_cache[idx][palette_idx] = ibpm
                             matrix_palette.append(old_node_id_to_new_node_id_map[idx])
-                            bpms.append(rescaled_bpm)
+                            ibpms.append(ibpm)
                             index_lookup[(mesh_node_id, idx)] = palette_idx
-                            
+            
             binary.skinning_data.matrix_palette = matrix_palette
-            binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(invert_pos_rot_matrix(bpm)) for bpm in bpms]
+            binary.skinning_data.ibpms = [mat4x3_to_transposed_mat4x4(ibpm) for ibpm in ibpms]
             binary.skinning_data.bone_count = len(matrix_palette)
             
             all_indices = set()
