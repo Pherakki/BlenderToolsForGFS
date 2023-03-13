@@ -85,6 +85,15 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         "- 'Blend Scale' is shown if the animation is a Blend or LookAt Animation. This is a separate action for the bone scale channels animation.\n"\
         "- GFS Properties of specific data types can be added, removed, and re-ordered with the Properties listbox. Properties that may be recognised and what they may do have not yet been enumerated."
     )
+    
+    @classmethod
+    def register(cls):
+        bpy.utils.register_class(cls.AnimationHelpWindow)
+        
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.AnimationHelpWindow)
+
 
 OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(
     "OBJECT_PT_GFSToolsAnimationPanel",
