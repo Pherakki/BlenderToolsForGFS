@@ -1,13 +1,13 @@
 import io
 
 import bpy
-from mathutils import Matrix, Quaternion
+from mathutils import Matrix, Quaternion, Vector
 import numpy as np
 
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
 from ...FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import EPLEntry
-from ..Utils.Maths import convert_rotation_to_quaternion, transform_node_animations, convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Zup_to_Yup
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_XDirBone_to_YDirBone, convert_Zup_to_Yup
 from ..Utils.Interpolation import lerp
 
 
@@ -259,35 +259,65 @@ def get_action_data(action, armature, is_blend):
             }
         
         if is_blend:
-            prematrix = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
-            postmatrix = convert_YDirBone_to_XDirBone
+            # Extract animation data
+            positions = animation_data[bone_name].get("location", {})
+            rotations = animation_data[bone_name].get("rotation_quaternion", {})
+            scales    = animation_data[bone_name].get("scale", {})
             
-            t = animation_data[bone_name].get("location", {})
-            r = animation_data[bone_name].get("rotation_quaternion", {})
-            s = animation_data[bone_name].get("scale", {})
-            
-            t, _, _ = transform_node_animations(t,                 {0: [0., 0., 0., 1.]}, {0: [1., 1., 1.]}, prematrix, postmatrix)
-            _, r, _ = transform_node_animations({0: [0., 0., 0.]}, r,                     {0: [1., 1., 1.]}, prematrix, postmatrix)
-            _, _, s = transform_node_animations({0: [0., 0., 0.]}, {0: [0., 0., 0., 1.]}, s,                 prematrix, postmatrix)
-        else:
+            # Get the matrices required to convert animations from Blender -> GFS
+            axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
             bpy_bone = armature.data.bones[bone_name]
             if bpy_bone.parent is not None:
-                base_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() @ bpy_bone.matrix_local
+                local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
             else:
-                base_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
-
-            t, r, s = transform_node_animations(animation_data[bone_name].get("location", {}),
-                                                animation_data[bone_name].get("rotation_quaternion", {}),
-                                                animation_data[bone_name].get("scale", {}),
-                                                base_matrix,
-                                                convert_YDirBone_to_XDirBone)
-        
+                local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
+                
+            # This can DEFINITELY be made more efficient if it's a bottleneck
+            bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
+            bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
+            inv_bind_pose_rotation = bind_pose_rotation.inverted()
+            inv_axis_conversion    = axis_conversion.inverted()
+            
+            g_positions = {k: bind_pose_rotation @ Matrix.Translation(v)                                      @ inv_bind_pose_rotation for k, v in positions.items()}
+            g_rotations = {k: axis_conversion    @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ inv_axis_conversion    for k, v in rotations.items()}
+            g_scales    = {k: axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ inv_axis_conversion    for k, v in scales.items()   }
+            
+            g_positions = {k: v.decompose()[0]     for k, v in g_positions.items()}
+            g_rotations = {k: q.decompose()[1]     for k, q in g_rotations.items()}
+            g_scales    = {k: v.decompose()[2]     for k, v in g_scales.items()}
+        else:
+            # Extract animation data
+            positions = animation_data[bone_name].get("location", {})
+            rotations = animation_data[bone_name].get("rotation_quaternion", {})
+            scales    = animation_data[bone_name].get("scale", {})
+            
+            # Get the matrices required to convert animations from Blender -> GFS
+            axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
+            bpy_bone = armature.data.bones[bone_name]
+            if bpy_bone.parent is not None:
+                local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+            else:
+                local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
+                
+            # This can DEFINITELY be made more efficient if it's a bottleneck
+            bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
+            bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
+            inv_bind_pose_rotation = bind_pose_rotation.inverted()
+            inv_axis_conversion    = axis_conversion.inverted()
+            
+            g_positions = {k: bind_pose_rotation @ Matrix.Translation(Vector(v) - bind_pose_translation)      @ inv_bind_pose_rotation for k, v in positions.items()}
+            g_rotations = {k: bind_pose_rotation @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ inv_axis_conversion    for k, v in rotations.items()}
+            g_scales    = {k: axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ inv_axis_conversion    for k, v in scales.items()   }
+            
+            g_positions = {k: v.decompose()[0]     for k, v in g_positions.items()}
+            g_rotations = {k: q.decompose()[1]     for k, q in g_rotations.items()}
+            g_scales    = {k: v.decompose()[2]     for k, v in g_scales.items()}
         
         fps = 30
         out.append([bone_names.index(bone_name), bone_name, 
-                    {(k-1)/fps : v for k, v in t.items()}, 
-                    {(k-1)/fps : v for k, v in r.items()}, 
-                    {(k-1)/fps : v for k, v in s.items()}])
+                    {(k-1)/fps : v for k, v in g_positions.items()}, 
+                    {(k-1)/fps : v for k, v in g_rotations.items()}, 
+                    {(k-1)/fps : v for k, v in g_scales.items()}])
     
     return out
 

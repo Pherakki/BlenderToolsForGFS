@@ -1,7 +1,7 @@
 import io
 
 import bpy
-from mathutils import Matrix, Quaternion
+from mathutils import Matrix, Quaternion, Vector
 
 from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
@@ -127,36 +127,75 @@ def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, 
             fc.lock = False
             
 def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales):
+    # Set up action data
     actiongroup = action.groups.new(bone_name)
-
+    
+    # Get the matrices required to convert animations from GFS -> Blender
+    axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
     bpy_bone = armature.data.bones[bone_name]
     if bpy_bone.parent is not None:
-        parent_matrix = convert_YDirBone_to_XDirBone(bpy_bone.parent.matrix_local).inverted() 
-        local_bind_matrix = parent_matrix @ bpy_bone.matrix_local
+        local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
     else:
         local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
+        
+    # Transform the GFS data to Blender equivalents
+    # See section "Technical Details" of the documentation for an explanation
+    # of the maths.
+    # This can DEFINITELY be made more efficient if it's a bottleneck
+    bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
+    bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
+    inv_bind_pose_rotation = bind_pose_rotation.inverted()
+    inv_axis_conversion    = axis_conversion.inverted()
     
-    positions, rotations, scales = transform_node_animations(positions, rotations, scales, local_bind_matrix.inverted(), convert_XDirBone_to_YDirBone)
+    b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(Vector(v) - bind_pose_translation)      @ bind_pose_rotation for k, v in positions.items()}
+    b_rotations = {k: inv_bind_pose_rotation @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ axis_conversion    for k, v in rotations.items()}
+    b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
+    
+    b_positions = {k: v.decompose()[0] for k, v in b_positions.items()}
+    b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
+    b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
   
+
     # Create animations
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, rotations, [3, 0, 1, 2])
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, positions, [0, 1, 2]   )
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, scales,    [0, 1, 2]   )
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3])
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   )
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   )
+
 
 def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales):
+    # Set up action data
     actiongroup       = action      .groups.new(bone_name)
     scale_actiongroup = scale_action.groups.new(bone_name)
+
+    # Get the matrices required to convert animations from GFS -> Blender
+    axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
+    bpy_bone = armature.data.bones[bone_name]
+    if bpy_bone.parent is not None:
+        local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
+    else:
+        local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
+        
+    # Transform the GFS data to Blender equivalents
+    # See section "Technical Details" of the documentation for an explanation
+    # of the maths.
+    # This can DEFINITELY be made more efficient if it's a bottleneck
+    bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
+    bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
+    inv_bind_pose_rotation = bind_pose_rotation.inverted()
+    inv_axis_conversion    = axis_conversion.inverted()
     
-    prematrix = convert_YDirBone_to_XDirBone(Matrix.Identity(4))
-    postmatrix = convert_XDirBone_to_YDirBone
-    positions, _        , _      = transform_node_animations(positions,         {0: [0., 0., 0., 1.]}, {0: [1., 1., 1.]}, prematrix, postmatrix)
-    _        , rotations, _      = transform_node_animations({0: [0., 0., 0.]}, rotations,             {0: [1., 1., 1.]}, prematrix, postmatrix)
-    _        , _        , scales = transform_node_animations({0: [0., 0., 0.]}, {0: [0., 0., 0., 1.]}, scales,            prematrix, postmatrix)
+    b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(v)                                      @ bind_pose_rotation for k, v in positions.items()}
+    b_rotations = {k: inv_axis_conversion    @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ axis_conversion    for k, v in rotations.items()}
+    b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
+    
+    b_positions = {k: v.decompose()[0] for k, v in b_positions.items()}
+    b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
+    b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
 
     # Create animations
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, rotations, [3, 0, 1, 2])
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, positions, [0, 1, 2]   )
-    create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, scales,    [0, 1, 2]   )
+    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 4])
+    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   )
+    create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   )
     
     
 def build_track(action, armature, blend_type):
