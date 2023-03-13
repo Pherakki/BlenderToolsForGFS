@@ -14,8 +14,8 @@ boneY_to_boneX_matrix = Matrix([[ 0.,  1.,  0.,  0.],
                                 [ 0.,  0.,  1.,  0.],
                                 [ 0.,  0.,  0.,  1.]])
 
-#boneY_to_boneX_matrix = Matrix.Identity(4)
-#upY_to_upZ_matrix = Matrix.Identity(4)
+# boneY_to_boneX_matrix = Matrix.Identity(4)
+# upY_to_upZ_matrix = Matrix.Identity(4)
 
 def convert_XDirBone_to_YDirBone(matrix):
     return matrix @ boneY_to_boneX_matrix
@@ -72,6 +72,18 @@ def convert_rotation_to_quaternion(rotation_quat, rotation_euler, rotation_mode)
             raise NotImplementedError("Failed to find rotation mode: THIS SHOULD NEVER HAPPEN")
             
         return q
+
+
+def left_transform(v, inv_transform):
+    return inv_transform @ v
+
+
+def right_transform(v, transform):
+    return v @ transform
+
+
+def conjugate_transform(v, transform, inv_transform):
+    return inv_transform @ v @ transform
 
 
 def transform_node_animations(in_positions, in_rotations, in_scales, base_matrix, axis_conversion):
