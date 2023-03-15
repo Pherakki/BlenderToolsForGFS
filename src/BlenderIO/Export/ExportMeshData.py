@@ -379,10 +379,13 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     use_normals   = mesh.GFSTOOLS_MeshProperties.export_normals
     use_tangents  = mesh.GFSTOOLS_MeshProperties.export_tangents
     use_binormals = mesh.GFSTOOLS_MeshProperties.export_binormals
-    map_name = map_ids[0] if len(map_ids) else 'dummy'
+    map_name = map_ids[0] if len(map_ids) else None # Change this to normal texture UV
     can_export_tangents = has_uvs and mesh.uv_layers.get(map_name) is not None and (use_normals and (use_tangents or use_binormals))
 
-    if can_export_tangents:
+    # Create loop data if we need it but it doesn't exist
+    if use_normals and tuple(mesh.loops[0].normal) == (0., 0., 0.):
+        mesh.calc_normals_split()
+    if can_export_tangents and tuple(mesh.loops[0].tangents) == (0., 0., 0.):
         mesh.calc_tangents(uvmap=map_name)
 
     sigfigs = 4
@@ -424,7 +427,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
 
     # Calculate binormals
     if use_binormals and can_export_tangents:
-        bitangents = [(tuple(round_to_sigfigs(tangent[0][3] * np.cross(normal, tangent[0][:3]), sigfigs)),) for normal, tangent in zip(normals, tangents)]
+        bitangents = [(tuple(round_to_sigfigs(l.bitangent_sign * np.cross(normal[0], tangent[0]), sigfigs)),) for normal, tangent, l in zip(normals, tangents, mesh.loops)]
     else:
         bitangents = [tuple()]*nloops
 
@@ -548,10 +551,8 @@ def fetch_tangent(obj, sigfigs):
     dsize = len(getattr(obj[0], "tangent"))
     data = array.array('f', [0.0] * (len(obj) * dsize))
     obj.foreach_get("tangent", data)
+    return [tuple(round_to_sigfigs(datum, sigfigs)) for datum in zip(*(iter(data),) * dsize)]
 
-    signs = array.array('f', [0.0] * (len(obj)))
-    obj.foreach_get("bitangent_sign", data)
-    return [tuple(round_to_sigfigs(datum, sigfigs)) for datum, sign in zip(zip(*(iter(data),) * dsize), signs)]
 
 def get_bone_id(mesh_obj, bone_names, grp):
     group_idx = grp.group
