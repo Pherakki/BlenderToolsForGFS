@@ -366,33 +366,34 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
         vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
 
     # Assign normals
-    # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
-    # which a few of these comments below are also taken from
-    # Do this LAST because it can remove some loops
-    bpy_mesh.create_normals_split()
-    for face in bpy_mesh.polygons:
-        face.use_smooth = True  # loop normals have effect only if smooth shading ?
-
-    # Set loop normals
-    loop_normals = [l.normal for l in loop_data]
-    bpy_mesh.loops.foreach_set("normal", [subitem for item in loop_normals for subitem in item])
-
-    bpy_mesh.validate(clean_customdata=False)  # important to not remove loop normals here!
-    bpy_mesh.update()
-
-    clnors = array.array('f', [0.0] * (len(bpy_mesh.loops) * 3))
-    bpy_mesh.loops.foreach_get("normal", clnors)
-
-    bpy_mesh.polygons.foreach_set("use_smooth", [True] * len(bpy_mesh.polygons))
-    # This line is pretty smart (came from the stackoverflow answer)
-    # 1. Creates three copies of the same iterator over clnors
-    # 2. Splats those three copies into a zip
-    # 3. Each iteration of the zip now calls the iterator three times, meaning that three consecutive elements
-    #    are popped off
-    # 4. Turn that triplet into a tuple
-    # In this way, a flat list is iterated over in triplets without wasting memory by copying the whole list
-    bpy_mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
-
+    if loop_data[0].normal is not None:
+        # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
+        # which a few of these comments below are also taken from
+        # Do this LAST because it can remove some loops
+        bpy_mesh.create_normals_split()
+        for face in bpy_mesh.polygons:
+            face.use_smooth = True  # loop normals have effect only if smooth shading ?
+    
+        # Set loop normals
+        loop_normals = [l.normal for l in loop_data]
+        bpy_mesh.loops.foreach_set("normal", [subitem for item in loop_normals for subitem in item])
+    
+        bpy_mesh.validate(clean_customdata=False)  # important to not remove loop normals here!
+        bpy_mesh.update()
+    
+        clnors = array.array('f', [0.0] * (len(bpy_mesh.loops) * 3))
+        bpy_mesh.loops.foreach_get("normal", clnors)
+    
+        bpy_mesh.polygons.foreach_set("use_smooth", [True] * len(bpy_mesh.polygons))
+        # This line is pretty smart (came from the stackoverflow answer)
+        # 1. Creates three copies of the same iterator over clnors
+        # 2. Splats those three copies into a zip
+        # 3. Each iteration of the zip now calls the iterator three times, meaning that three consecutive elements
+        #    are popped off
+        # 4. Turn that triplet into a tuple
+        # In this way, a flat list is iterated over in triplets without wasting memory by copying the whole list
+        bpy_mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
+    
     bpy_mesh.use_auto_smooth = True
     
     ####################
