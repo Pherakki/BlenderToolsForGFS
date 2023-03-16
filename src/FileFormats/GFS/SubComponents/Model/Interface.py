@@ -43,11 +43,16 @@ class ModelInterface:
                     # Remap indices from local indices to global indices
                     palette_indices = set()
                     for v in mesh.vertices:
-                        for idx, wgt in zip(v.indices[::-1], v.weights):
+                        indices = [0, 0, 0, 0]
+                        for idx_idx, (idx, wgt) in enumerate(zip(v.indices[::-1], v.weights)):
                             if wgt > 0:
                                 palette_indices.add(idx)
-                        v.indices = [binary.skinning_data.matrix_palette[idx] for idx in v.indices[::-1]]
-                    
+                            if idx < len(binary.skinning_data.matrix_palette):
+                                indices[idx_idx] = binary.skinning_data.matrix_palette[idx]
+                            else:
+                                indices[idx_idx] = 0
+                        v.indices = indices
+
                     # Link IBPMs to the nodes they are relative to
                     palette_indices = sorted(palette_indices)
                     node_idx = mesh.node
