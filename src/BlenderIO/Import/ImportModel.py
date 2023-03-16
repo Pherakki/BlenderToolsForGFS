@@ -508,10 +508,6 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     
     bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_box    = mesh.keep_bounding_box
     bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere
-    if len(mesh.vertices):
-        bpy_mesh.GFSTOOLS_MeshProperties.export_normals   = mesh.vertices[0].normal   is not None
-        bpy_mesh.GFSTOOLS_MeshProperties.export_tangents  = mesh.vertices[0].tangent  is not None
-        bpy_mesh.GFSTOOLS_MeshProperties.export_binormals = mesh.vertices[0].binormal is not None
     
     bpy.context.view_layer.objects.active = prev_obj
 

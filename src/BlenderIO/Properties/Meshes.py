@@ -15,10 +15,6 @@ class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     export_bounding_box:    bpy.props.BoolProperty(name="Export Bounding Box",    default=True)
     export_bounding_sphere: bpy.props.BoolProperty(name="Export Bounding Sphere", default=True)
     
-    export_normals:   bpy.props.BoolProperty(name="Export Normals",   default=True)
-    export_tangents:  bpy.props.BoolProperty(name="Export Tangents",  default=False)
-    export_binormals: bpy.props.BoolProperty(name="Export Binormals", default=False)
-    
     flag_5:  bpy.props.BoolProperty(name="Unknown Flag 5", default=False)
     flag_7:  bpy.props.BoolProperty(name="Unknown Flag 7", default=True)
     flag_8:  bpy.props.BoolProperty(name="Unknown Flag 8", default=False)

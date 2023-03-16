@@ -27,19 +27,6 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_box")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_sphere")
         
-        # Vertex properties
-        # Normals
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_normals")
-        has_uv_maps = (len(mesh.uv_layers) > 0)
-        # Tangents
-        row_tangent = ctr.row()
-        row_tangent.prop(mesh.GFSTOOLS_MeshProperties, "export_tangents")
-        row_tangent.active = has_uv_maps
-        # Binormals
-        row_binormal = ctr.row()
-        row_binormal.prop(mesh.GFSTOOLS_MeshProperties, "export_binormals")
-        row_binormal.active = has_uv_maps
-        
         # Flags
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_5")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_7")

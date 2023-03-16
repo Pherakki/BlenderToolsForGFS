@@ -6,10 +6,9 @@ import numpy as np
 
 from ..WarningSystem.Warning import ReportableError
 from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup, BlenderBoneToMayaBone, convert_YDirBone_to_XDirBone
-from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
-from ..Utils.UVMapManagement import is_valid_color_map, get_color_idx_from_name
+from ..Utils.UVMapManagement import make_uv_map_name, is_valid_uv_map, get_uv_idx_from_name
+from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
-
 
 
 class MissingVertexGroupsError(ReportableError):
@@ -339,54 +338,151 @@ def pack_colour(colour):
                   max(int(colour[1]*255), 255),
                   max(int(colour[2]*255), 255)])
 
-def extract_colours(bpy_mesh):
-    colours = [None, None]
+def extract_colours(bpy_mesh, map_name):
     # Blender 3.2+ 
     # vertex_colors is equivalent to color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER").
     # Original data is just uint8s so this is accurate.
     if hasattr(bpy_mesh, "color_attributes"):
-        for ca in bpy_mesh.color_attributes:
-            if is_valid_color_map(ca.name):
-                colour_idx = get_color_idx_from_name(ca.name)
-                if colour_idx > 1:
-                    continue
-                if ca.domain == "CORNER":
-                    colours[colour_idx] = tuple([pack_colour(c.color) for c in ca.data])
-                elif ca.domain == "POINT":
-                    # Copy vertex data to loop data
-                    colours[colour_idx] = tuple([pack_colour(ca.data[loop.vertex_index].color) for loop in bpy_mesh.loop])
-                else:
-                    pass
+        if map_name not in bpy_mesh.color_attributes:
+            return 0
+        
+        ca = bpy_mesh.color_attributes[map_name]
+        if ca.domain == "CORNER":
+            return tuple([pack_colour(c.color) for c in ca.data])
+        elif ca.domain == "POINT":
+            # Copy vertex data to loop data
+            return tuple([pack_colour(ca.data[loop.vertex_index].color) for loop in bpy_mesh.loop])
+        else:
+            return 1
     # Blender 2.81-3.2
     else:
-        for vc in bpy_mesh.vertex_colors:
-            if is_valid_color_map(vc.name):
-                colour_idx = get_color_idx_from_name(vc.name)
-                if colour_idx > 1:
-                    continue
-                colours[colour_idx] = tuple([pack_colour(l.color) for l in vc.data])
+        if map_name not in bpy_mesh.vertex_colors:
+            return 0
+        vc = bpy_mesh.vertex_colors[map_name]
+        return tuple([pack_colour(l.color) for l in vc.data])
 
-    return colours
+
+def extract_colour_map(bpy_mesh_obj, idx, errorlog):
+    map_name = make_color_map_name(0)
+    cols = extract_colours(bpy_mesh_obj.data, map_name)
+    if cols == 0:
+        errorlog.log_warning_message(f"Could not find '{map_name}' on mesh '{bpy_mesh_obj.name}' required by material '{bpy_mesh_obj.active_material.name}' - defaulting to white (1, 1, 1, 1) for each vertex")
+        return [(255, 255, 255, 255) for _ in range(len(bpy_mesh_obj.data.loops))]
+    elif cols == 1:
+        errorlog.log_warning_message(f"Color map '{map_name}' on mesh '{bpy_mesh_obj.name}' required by material '{bpy_mesh_obj.active_material.name}' does not have 'Corner' or 'Vertex' as the map domain - defaulting to white (1, 1, 1, 1) for each vertex")
+        return [(255, 255, 255, 255) for _ in range(len(bpy_mesh_obj.data.loops))]
+    else:
+        return cols
+        
+
+
+def get_tex_idx(nodes, node_name, default_map):
+    tex_idx = 0
+    uv_map_name = default_map
+    
+    tex_node = nodes[node_name]
+    if tex_node.type != "TEX_IMAGE":
+        return tex_idx, uv_map_name
+    
+    connections = tex_node.inputs["Vector"].links
+    if len(connections):
+        uv_node = connections[0].from_socket.node
+        if uv_node.type == "UVMAP":
+            uv_map_name = uv_node.uv_map
+            if is_valid_uv_map(uv_map_name):
+                proposed_tex_idx = get_uv_idx_from_name(uv_map_name)
+                if proposed_tex_idx < 8:
+                    tex_idx = proposed_tex_idx
+    return tex_idx, uv_map_name
+
 
 def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights):
     mesh = mesh_obj.data
-    has_uvs = len(mesh.uv_layers) > 0
+    
+    # Figure out what vertex attributes to export 
+    if mesh_obj.active_material is not None:
+        material = mesh_obj.active_material
+        mat_props = material.GFSTOOLS_MaterialProperties
+        
+        use_normals   = mat_props.requires_normals
+        use_tangents  = mat_props.requires_tangents
+        use_binormals = mat_props.requires_binormals
+        use_color0    = mat_props.requires_color0s
+        use_color1    = mat_props.requires_color1s
+        
+        uv0_map = None
+        uv1_map = None
+        uv2_map = None
+        uv3_map = None
+        uv4_map = None
+        uv5_map = None
+        uv6_map = None
+        uv7_map = None
+        
+        if mesh.uv_layers.active is not None:
+            default_map = mesh.uv_layers.active.name
+        else:
+            default_map = None
+        
+        # Check what tex indices we need to export
+        nodes = material.node_tree.nodes
+        for nm in ["Diffuse Texture",
+                   "Normal Texture",
+                   "Specular Texture",
+                   "Reflection Texture",
+                   "Highlight Texture",
+                   "Glow Texture",
+                   "Night Texture",
+                   "Detail Texture",
+                   "Shadow Texture"]:
+            
+            if nm in nodes:
+                tex_idx, uv_map_name = get_tex_idx(nodes, nm, default_map)
+                
+                if   tex_idx == 0: uv0_map = uv_map_name
+                elif tex_idx == 1: uv1_map = uv_map_name
+                elif tex_idx == 2: uv2_map = uv_map_name
+                elif tex_idx == 3: uv3_map = uv_map_name
+                elif tex_idx == 4: uv4_map = uv_map_name
+                elif tex_idx == 5: uv5_map = uv_map_name
+                elif tex_idx == 6: uv6_map = uv_map_name
+                elif tex_idx == 7: uv7_map = uv_map_name
+            
+        # Check if we can ID a tex coord to use for tangent calculations
+        tangent_uvs = None
+        for nm in ["Normal Texture"]: # Add more if other maps might need tangents
+            if nm in nodes:
+                _, tangent_uvs = get_tex_idx(nodes, nm, None)
+        if tangent_uvs is None:
+            tangent_uvs = default_map
+                
+    else:
+        tangent_uvs = None
+        use_normals = True
+        use_tangents = False
+        use_binormals = False
+        use_color0 = False
+        use_color1 = False
+        uv0_map = None
+        uv1_map = None
+        uv2_map = None
+        uv3_map = None
+        uv4_map = None
+        uv5_map = None
+        uv6_map = None
+        uv7_map = None
 
     exported_vertices = []
     faces = [{l: mesh.loops[l].vertex_index for l in f.loop_indices} for f in mesh.polygons]
     
-    map_ids = list(mesh.uv_layers.keys())[:8]
-    use_normals   = mesh.GFSTOOLS_MeshProperties.export_normals
-    use_tangents  = mesh.GFSTOOLS_MeshProperties.export_tangents
-    use_binormals = mesh.GFSTOOLS_MeshProperties.export_binormals
-    map_name = map_ids[0] if len(map_ids) else None # Change this to normal texture UV
-    can_export_tangents = has_uvs and mesh.uv_layers.get(map_name) is not None and (use_normals and (use_tangents or use_binormals))
-
     # Create loop data if we need it but it doesn't exist
     if use_normals and tuple(mesh.loops[0].normal) == (0., 0., 0.):
         mesh.calc_normals_split()
-    if can_export_tangents and tuple(mesh.loops[0].tangents) == (0., 0., 0.):
-        mesh.calc_tangents(uvmap=map_name)
+    if (use_tangents or use_binormals) and tuple(mesh.loops[0].tangent) == (0., 0., 0.):
+        if tangent_uvs is None:
+            errorlog.log_error_message(f"Material '{mesh_obj.active_material.name}' requires tangents for export, but mesh '{mesh_obj.name}' does not have any UV maps")
+        else:
+            mesh.calc_tangents(uvmap=tangent_uvs)
 
     sigfigs = 4
     nloops = len(mesh.loops)
@@ -399,11 +495,15 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
 
     # Extract UVs
     UV_data = [[None for _ in range(nloops)]]*8
-    for map_id in map_ids:
-        if is_valid_uv_map(map_id): # Need to throw a warning here
-            idx = get_uv_idx_from_name(map_id)
-            if idx < 8:
-                UV_data[idx] = fetch_data(mesh.uv_layers[map_id].data, "uv", sigfigs+2)
+    if uv0_map is not None: UV_data[0] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv1_map is not None: UV_data[1] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv2_map is not None: UV_data[2] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv3_map is not None: UV_data[3] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv4_map is not None: UV_data[4] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv5_map is not None: UV_data[5] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv6_map is not None: UV_data[6] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv7_map is not None: UV_data[7] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    
     if len(UV_data):
         UV_data = [tuple(elems) for elems in zip(*UV_data)]
     else:
@@ -411,22 +511,22 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
 
     # Extract colours
     col_data = [[None for _ in range(nloops)]]*2
-    for col_idx, col_loops in enumerate(extract_colours(mesh)):
-        if col_loops is not None:
-            col_data[col_idx] = col_loops
+    if use_color0: col_data[0] = extract_colour_map(mesh_obj, 0, errorlog)
+    if use_color1: col_data[1] = extract_colour_map(mesh_obj, 1, errorlog)
+    
     if len(col_data):
         col_data = [tuple(elems) for elems in zip(*col_data)]
     else:
         col_data = [tuple()]*nloops
 
     # Extract tangents
-    if can_export_tangents:
+    if use_tangents:
         tangents = [(elem,) for elem in fetch_tangent(mesh.loops, sigfigs)]
     else:
         tangents = [tuple()]*nloops
 
     # Calculate binormals
-    if use_binormals and can_export_tangents:
+    if use_binormals:
         bitangents = [(tuple(round_to_sigfigs(l.bitangent_sign * np.cross(normal[0], tangent[0]), sigfigs)),) for normal, tangent, l in zip(normals, tangents, mesh.loops)]
     else:
         bitangents = [tuple()]*nloops
@@ -476,7 +576,6 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
         
         # Now split the verts by their loop data
         for unique_value, loops_with_this_value in unique_values:
-
             vb = VertexBinary()
             vb.position = vertex.co
             if len(unique_value[0]): vb.normal = unique_value[0][0]
