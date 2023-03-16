@@ -88,7 +88,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map)
         
         # Report any warnings that were logged
-        errorlog.digest_warnings()
+        errorlog.digest_warnings(self.debug_mode)
 
         set_fps(self, context)
         
@@ -152,14 +152,19 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
+        warnings = []
         try:
-            gfs = GFSInterface.from_file(filepath) 
+            gfs = GFSInterface.from_file(filepath, warnings=warnings) 
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
         except ParticlesError:
             errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
         except HasParticleDataError:
             errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
+
+        # Add any file-loading warnings to the warnings list
+        for warning_msg in warnings:
+            errorlog.log_warning_message(warning_msg)
 
         # Report any file-loading errors
         if len(errorlog.errors):
@@ -171,7 +176,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         import_animations(gfs, armature, filename)
         
         # Report any warnings that were logged
-        errorlog.digest_warnings()
+        errorlog.digest_warnings(self.debug_mode)
         
         set_fps(self, context)
         
