@@ -4,14 +4,16 @@ import bpy
 
 from ..WarningSystem.Warning import ReportableWarning, ReportableError
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
+from .Data import dummy_image_data
 
 
 def export_materials_and_textures(gfs, bpy_material_names, errorlog):
     texture_names = set()
     for bpy_material_name in bpy_material_names:
         bpy_material = bpy.data.materials[bpy_material_name]
+        mat_name = bpy_material.name
         
-        mat = gfs.add_material(bpy_material.name)
+        mat = gfs.add_material(mat_name)
         mat.flag_0              = bpy_material.GFSTOOLS_MaterialProperties.flag_0
         mat.flag_1              = bpy_material.GFSTOOLS_MaterialProperties.flag_1
         mat.enable_specular     = bpy_material.GFSTOOLS_MaterialProperties.enable_specular
@@ -57,15 +59,15 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
 
         # Export any samplers
         nodes = bpy_material.node_tree.nodes
-        texture_names.add(export_texture_node_data("Diffuse Texture",    nodes, mat.set_diffuse_texture   , errorlog))
-        texture_names.add(export_texture_node_data("Normal Texture",     nodes, mat.set_normal_texture    , errorlog))
-        texture_names.add(export_texture_node_data("Specular Texture",   nodes, mat.set_specular_texture  , errorlog))
-        texture_names.add(export_texture_node_data("Reflection Texture", nodes, mat.set_reflection_texture, errorlog))
-        texture_names.add(export_texture_node_data("Highlight Texture",  nodes, mat.set_highlight_texture , errorlog))
-        texture_names.add(export_texture_node_data("Glow Texture",       nodes, mat.set_glow_texture      , errorlog))
-        texture_names.add(export_texture_node_data("Night Texture",      nodes, mat.set_night_texture     , errorlog))
-        texture_names.add(export_texture_node_data("Detail Texture",     nodes, mat.set_detail_texture    , errorlog))
-        texture_names.add(export_texture_node_data("Shadow Texture",     nodes, mat.set_shadow_texture    , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Diffuse Texture",    nodes, mat.set_diffuse_texture   , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Normal Texture",     nodes, mat.set_normal_texture    , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Specular Texture",   nodes, mat.set_specular_texture  , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Reflection Texture", nodes, mat.set_reflection_texture, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Highlight Texture",  nodes, mat.set_highlight_texture , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Glow Texture",       nodes, mat.set_glow_texture      , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Night Texture",      nodes, mat.set_night_texture     , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Detail Texture",     nodes, mat.set_detail_texture    , errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Shadow Texture",     nodes, mat.set_shadow_texture    , errorlog))
           
         props = bpy_material.GFSTOOLS_MaterialProperties
         
@@ -488,7 +490,11 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
 
 def export_texture(gfs, texture_name, errorlog):
     # Retreive image data block from Blender
-    bpy_image = bpy.data.images[texture_name]
+    if texture_name == "dummy" and texture_name not in bpy.data.images:
+        gfs.add_texture("dummy", dummy_image_data, 1, 1, 0, 0)
+        return
+    else:
+        bpy_image = bpy.data.images[texture_name]
     
     # Check that the image is a file; if it is then we can just
     # embed it in the model
@@ -513,18 +519,29 @@ def export_texture(gfs, texture_name, errorlog):
     # Not sure what to do with non-DDS data currently
     # Should add support later
     if image_data[:4] != b"DDS ":
-        errorlog.log_error(ReportableError(f"Attempted to export image '{bpy_image.name}', but it is not a DDS texture."))
+        errorlog.log_warning_message(f"Attempted to export image '{bpy_image.name}', but it is not a DDS texture. This will be replaced with a dummy texture.")
+        image_data = dummy_image_data
     
-    props = bpy_image.GFSTOOLS_ImageProperties
-    gfs.add_texture(texture_name, image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
+    tex_names = set(tex.name for tex in gfs.textures)
+    if texture_name not in tex_names:
+        props = bpy_image.GFSTOOLS_ImageProperties
+        gfs.add_texture(texture_name, image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
     
         
-def export_texture_node_data(name, nodes, create_sampler, errorlog):
+def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
     if name in nodes:
         tex_node = nodes[name]
+        if tex_node.type != "TEX_IMAGE":
+            errorlog.log_error(f"Node '{name}' on material '{mat_name}' is not an Image Texture node")
+            return None
+        
         connections = tex_node.inputs["Vector"].links
         
-        image_name = tex_node.image.name
+        if tex_node.image is None:
+            image_name = "dummy"
+            errorlog.log_warning_message(f"No image found for image texture node '{name}' on material '{mat_name}'. Defaulting to a dummy texture.")
+        else:
+            image_name = tex_node.image.name
         
         tex_idx = None
         if len(connections):
@@ -536,13 +553,13 @@ def export_texture_node_data(name, nodes, create_sampler, errorlog):
                     if proposed_tex_idx < 8:
                         tex_idx = proposed_tex_idx
                     else:
-                        errorlog.log_warning(ReportableWarning(f"Texture sampler '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                        errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
                 else:
-                    errorlog.log_warning(ReportableWarning(f"Texture sampler '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                    errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
             else:
-                errorlog.log_warning(ReportableWarning(f"Texture sampler '{name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0."))
+                errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0."))
         else:
-            errorlog.log_warning(ReportableWarning(f"Texture sampler '{name}' does not have an input UV map. Defaulting to UV map 0."))
+            errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' does not have an input UV map. Defaulting to UV map 0."))
         if tex_idx is None:
             tex_idx = 0
             
