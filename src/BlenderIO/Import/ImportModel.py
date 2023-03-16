@@ -464,13 +464,10 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
                             else (pi - di) > 0.001
                             for pi, di
                             in zip(avg_pos, delta)]):
-                        raise ValueError("Invalid shapekey. Try importing without merging vertices")
+                        raise ValueError("Invalid shapekey. Try importing without merging vertices.")
                         
                 sk.data[bpy_vidx].co = [x1 + x2 for x1, x2 in zip(new_verts[bpy_vidx].position, vert_position_deltas[0])]
                 
-            # for vidx in range(len(position_deltas)):
-            #     sk.data[vidx].co = [x1 + x2 for x1, x2 in zip(mesh.vertices[vidx].position, position_deltas[vidx])]
-        
     ########################
     # DO THE LEFTOVER DATA #
     ########################
