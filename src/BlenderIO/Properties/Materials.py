@@ -71,6 +71,15 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     unknown_0x5E:    bpy.props.IntProperty        (name="Unknown 0x5E",   default=0, min=-32768, max=32767) # Flags?
     unknown_0x6A:    bpy.props.IntProperty        (name="Unknown 0x6A",   default=-1, min=-2147483648, max=2147483647) # Always -1
 
+    # Required vertex attributes
+    requires_normals:   bpy.props.BoolProperty(name="Requires Normals",      default=True )
+    requires_tangents:  bpy.props.BoolProperty(name="Requires Tangents",     default=False)
+    requires_binormals: bpy.props.BoolProperty(name="Requires Binormals",    default=False)
+    requires_color0s:   bpy.props.BoolProperty(name="Requires Color Map 0 ", default=False)
+    requires_color1s:   bpy.props.BoolProperty(name="Requires Color Map 1",  default=False)
+    # Positions?
+    # Weights?
+    
     ##################
     # TOON ATTRIBUTE #
     ##################

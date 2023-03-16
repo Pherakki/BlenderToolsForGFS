@@ -13,7 +13,18 @@ from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
 
 
-def import_model(gfs, name, is_vertex_merge_allowed):
+class VertexAttributeTracker:
+    __slots__ = ("normals", "tangents", "binormals", "color0s", "color1s")
+    
+    def __init__(self):
+        self.normals   = []
+        self.tangents  = []
+        self.binormals = []
+        self.color0s   = []
+        self.color1s   = []
+
+
+def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     initial_obj = bpy.context.view_layer.objects.active
 
     armature_name = name
@@ -202,13 +213,18 @@ def import_model(gfs, name, is_vertex_merge_allowed):
     # IMPORT ATTACHMENTS #
     ######################
     # Import meshes and parent them to the armature
+    # While we're building the meshes, infer which materials need which vertex
+    # attributes by asking the meshes what vertex attributes they have
+    material_vertex_attributes = {k: VertexAttributeTracker() for k in materials.keys()}
     mesh_groups = {idx: [] for idx in sorted(set((mesh.node for mesh in gfs.meshes)))}
     for mesh in gfs.meshes:
         mesh_groups[mesh.node].append(mesh)
     for node_idx, meshes in mesh_groups.items():
         mesh_name = bpy_node_names[node_idx]
-        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], is_vertex_merge_allowed, node_idx in meshes_to_rename)
+        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, node_idx in meshes_to_rename)
         mesh_node_map[node_idx] = bpy_mesh_obj.data
+    
+    set_material_vertex_attributes(materials, material_vertex_attributes, errorlog)
         
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
@@ -255,10 +271,10 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, is_vertex_merge_allowed, is_unrigged):
+def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, is_unrigged):
     if is_unrigged:
         mesh_name += "_mesh"
-    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, is_vertex_merge_allowed)
+    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
 
 
     bpy_mesh_object.parent = armature
@@ -276,7 +292,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     import_properties(gfs_node.properties, bpy_mesh_object.data.GFSTOOLS_NodeProperties.properties)
 
     for i, mesh in enumerate(meshes[1:]):
-        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature, is_vertex_merge_allowed)
+        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
     
         child_bpy_mesh_object.parent = bpy_mesh_object
         child_bpy_mesh_object.rotation_mode = "QUATERNION"
@@ -287,7 +303,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     return bpy_mesh_object
     
     
-def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature, is_vertex_merge_allowed):
+def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed):
     # Cache the Blender states we are going to change
     prev_obj = bpy.context.view_layer.objects.active
     
@@ -379,14 +395,21 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
 
     bpy_mesh.use_auto_smooth = True
     
-    # Set materials
+    ####################
+    # SET THE MATERIAL #
+    ####################
     if mesh.material_name is not None:
-        active_material = bpy.data.materials.get(mesh.material_name)
+        active_material = materials.get(mesh.material_name)
         if active_material is not None:
             bpy_mesh.materials.append(active_material)
             bpy.data.objects[meshobj_name].active_material = active_material
-        else:
-            raise NotImplementedError("This needs to be a ReportableWarning")
+            vas = material_vertex_attributes[mesh.material_name]
+            
+            vas.normals  .append(mesh.vertices[0].normal   is not None)
+            vas.tangents .append(mesh.vertices[0].tangent  is not None)
+            vas.binormals.append(mesh.vertices[0].binormal is not None)
+            vas.color0s  .append(mesh.vertices[0].color1   is not None)
+            vas.color1s  .append(mesh.vertices[0].color2   is not None)
     
     bpy_mesh.validate(verbose=True, clean_customdata=False)
     
@@ -714,6 +737,7 @@ def import_light(name, i, light, armature, bpy_node_names):
     transform = Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
     bpy_light_object.matrix_local = transform
 
+
 def make_bounding_box(gfs):
     maxes = []
     mins = []
@@ -736,10 +760,56 @@ def make_bounding_box(gfs):
     else:
         return None, None
     
+
 def calc_model_dims(gfs):
     mx, mn = make_bounding_box(gfs)
     if mx is None:
         return None
     else:
         return [mxi - mni for mxi, mni in zip(mx, mn)]
-            
+
+        
+def set_material_vertex_attributes(materials, material_vertex_attributes, errorlog):
+    for key in materials:
+        props = materials[key].GFSTOOLS_MaterialProperties
+        vas   = material_vertex_attributes[key]
+        
+        # Normals
+        if any(vas.normals):
+            if not all(vas.normals):
+                errorlog.log_warning_message(f"Meshes using material '{key}' inconsistently possess vertex normals - assuming the material requires normals")
+            props.requires_normals = True
+        else:
+            props.requires_normals = False
+        
+        # Tangents
+        if any(vas.tangents):
+            if not all(vas.tangents):
+                errorlog.log_warning_message(f"Meshes using material '{key}' inconsistently possess vertex tangents - assuming the material requires tangents")
+            props.requires_tangents = True
+        else:
+            props.requires_tangents = False
+
+        # Binormals
+        if any(vas.binormals):
+            if not all(vas.binormals):
+                errorlog.log_warning_message(f"Meshes using material '{key}' inconsistently possess vertex binormals - assuming the material requires binormals")
+            props.requires_binormals = True
+        else:
+            props.requires_binormals = False
+
+        # Color0
+        if any(vas.color0s):
+            if not all(vas.color0s):
+                errorlog.log_warning_message(f"Meshes using material '{key}' inconsistently possess vertex color map 0 - assuming the material requires color map 0")
+            props.requires_color0s = True
+        else:
+            props.requires_color0s = False
+
+        # Color1
+        if any(vas.color1s):
+            if not all(vas.color1s):
+                errorlog.log_warning_message(f"Meshes using material '{key}' inconsistently possess vertex color map 1 - assuming the material requires color map 1")
+            props.requires_color1s = True
+        else:
+            props.requires_color1s = False

@@ -7,3 +7,4 @@ from .Attribute4           import OBJECT_PT_GFSToolsMaterialAttributeType4Panel
 from .Attribute5           import OBJECT_PT_GFSToolsMaterialAttributeType5Panel
 from .Attribute6           import OBJECT_PT_GFSToolsMaterialAttributeType6Panel
 from .Attribute7           import OBJECT_PT_GFSToolsMaterialAttributeType7Panel
+from .VertexAttributes     import OBJECT_PT_GFSToolsMaterialVertexAttributePanel
