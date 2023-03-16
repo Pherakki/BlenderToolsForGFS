@@ -63,11 +63,16 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         # Try to load file and log any errors...
         errorlog = ErrorLogger()
+        warnings = []
         try:
-            gfs = GFSInterface.from_file(filepath)
+            gfs = GFSInterface.from_file(filepath, warnings=warnings) 
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
 
+        # Add any file-loading warnings to the warnings list
+        for warning_msg in warnings:
+            errorlog.log_warning_message(warning_msg)
+        
         # Report any file-loading errors
         if len(errorlog.errors):
             errorlog.digest_errors(self.debug_mode)

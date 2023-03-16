@@ -21,7 +21,7 @@ def build_rest_pose(bone, bones):
 
 class ModelInterface:
     @classmethod
-    def from_binary(cls, binary, copy_verts=True):
+    def from_binary(cls, binary, copy_verts=True, warnings=None):
         #instance.skinning_data = binary.skinning_data
         keep_bounding_box = binary.flags.has_bounding_box
         keep_bounding_sphere = binary.flags.has_bounding_sphere
@@ -35,6 +35,7 @@ class ModelInterface:
 
         # Find which nodes have BPMs, and which meshes give them context
         nodes_with_ibpms = {}
+        has_bad_vidxs = False
         if binary.flags.has_skin_data is not None:
             for mesh in meshes:
                 if copy_verts:
@@ -51,6 +52,7 @@ class ModelInterface:
                                 indices[idx_idx] = binary.skinning_data.matrix_palette[idx]
                             else:
                                 indices[idx_idx] = 0
+                                has_bad_vidxs = True
                         v.indices = indices
 
                     # Link IBPMs to the nodes they are relative to
@@ -90,7 +92,9 @@ class ModelInterface:
                 bone.bind_pose_matrix = [sum([m[comp_idx] for m in contributing_matrices])/n for comp_idx in range(12)]
             else:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
-                    
+         
+        if has_bad_vidxs and warnings is not None:
+            warnings.append("Vertex indices were detected that overflow the bind pose matrix buffer. These have been remapped to the first non-root bone.")
         return bones, meshes, cameras, lights, epls, keep_bounding_box, keep_bounding_sphere, flag_3
         
     @staticmethod

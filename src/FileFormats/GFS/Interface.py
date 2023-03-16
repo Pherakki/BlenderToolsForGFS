@@ -72,13 +72,13 @@ class GFSInterface:
 
 
     @classmethod
-    def from_file(cls, filepath):
+    def from_file(cls, filepath, warnings=None):
         binary = GFSBinary()
         binary.read(filepath)
-        return cls.from_binary(binary, duplicate_data=False)
+        return cls.from_binary(binary, duplicate_data=False, warnings=warnings)
 
     @classmethod
-    def from_binary(cls, binary, duplicate_data=True):
+    def from_binary(cls, binary, duplicate_data=True, warnings=None):
         instance = cls()
         
         instance.has_end_container = False
@@ -95,7 +95,7 @@ class GFSInterface:
                 instance.epls,              \
                 instance.keep_bounding_box, \
                 instance.keep_bounding_sphere,\
-                instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data)
+                instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data, warnings)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
                 instance.anim_flag_0    = ctr.data.flags.flag_0
