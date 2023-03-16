@@ -44,26 +44,30 @@ class ErrorLogger:
     def log_error(self, error):
         self._errors.append(error)
         
-    def digest_warnings(self):
+    def digest_warnings(self, debug_mode=False):
         # This is wrong but can't do anything better for now.
         # Ideally should load all errors into a single popup.
         if len(self.warnings):
-            msg = ""
             lines = []
             for i, warning in enumerate(self.warnings):
-                current_warning = wrapText(f"{i+1}) {warning.msg}".splitlines(), 80)
+                current_warning = wrapText(f"{i+1}) {warning.msg}", 80)
                 if len(lines) + len(current_warning) < 15:
                     lines.extend(current_warning)
+                    print(warning.msg)
                 else:
+                    lines.append(f"Plus {len(self.warnings) - i} additional warnings. Check the console for details.")
+                    for warning in self.warnings[i:]:
+                        print(warning.msg)
                     break
-            bpy.ops.gfstools.basicwarningbox("INVOKE_DEFAULT", message='\n'.join(msg))
+            
+            bpy.ops.gfstools.basicwarningbox("INVOKE_DEFAULT", message='\n'.join(lines))
         self.warnings.clear()
 
     def log_warning_message(self, message):
-        self._errors.append(ReportableError(message))
+        self._warnings.append(ReportableWarning(message))
         
     def log_warning(self, warning):
-        self._warning.append(warning)
+        self._warnings.append(warning)
         
     def clear(self):
         self._errors.clear()
