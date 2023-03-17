@@ -553,13 +553,13 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
                     if proposed_tex_idx < 8:
                         tex_idx = proposed_tex_idx
                     else:
-                        errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                        errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
                 else:
-                    errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                    errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
             else:
-                errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0."))
+                errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0."))
         else:
-            errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' does not have an input UV map. Defaulting to UV map 0."))
+            errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' does not have an input UV map. Defaulting to UV map 0."))
         if tex_idx is None:
             tex_idx = 0
             
