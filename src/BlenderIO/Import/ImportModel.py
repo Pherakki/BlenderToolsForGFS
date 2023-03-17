@@ -400,7 +400,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     # SET THE MATERIAL #
     ####################
     if mesh.material_name is not None:
-        active_material = materials.get(mesh.material_name)
+        active_material, gfs_material = materials.get(mesh.material_name)
         if active_material is not None:
             bpy_mesh.materials.append(active_material)
             bpy.data.objects[meshobj_name].active_material = active_material
@@ -411,7 +411,25 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
             vas.binormals.append(mesh.vertices[0].binormal is not None)
             vas.color0s  .append(mesh.vertices[0].color1   is not None)
             vas.color1s  .append(mesh.vertices[0].color2   is not None)
-    
+            
+            if mesh.vertices[0].tangent is not None:
+                if len(bpy_mesh.uv_layers):
+                    uv_map = bpy_mesh.uv_layers.active
+                    
+                    if gfs_material.normal_texture is not None:
+                        uv_idx = gfs_material.texture_indices_1.normal
+                        uv_map_name = make_uv_map_name(uv_idx)
+                        if uv_map_name in bpy_mesh.uv_layers:
+                            uv_map = bpy_mesh.uv_layers[uv_map_name]
+                        else:
+                            errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' uses material '{active_material.name}', which uses UV map '{uv_map_name}' for the normal texture but this UV map is not present on the mesh - falling back to the active UV map to calculate vertex tangents.")
+                    else:
+                        errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangent vectors, but no normal map - using the default UV map to calculate tangent vectors.")
+                    
+                    bpy_mesh.calc_tangents(uvmap=uv_map.name)
+                else:
+                    errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangents but no UV layers - tangents cannot be imported to Blender.")
+        
     bpy_mesh.validate(verbose=True, clean_customdata=False)
     
     bpy_mesh.update()
@@ -765,7 +783,7 @@ def calc_model_dims(gfs):
         
 def set_material_vertex_attributes(materials, material_vertex_attributes, errorlog):
     for key in materials:
-        props = materials[key].GFSTOOLS_MaterialProperties
+        props = materials[key][0].GFSTOOLS_MaterialProperties
         vas   = material_vertex_attributes[key]
         
         # Normals

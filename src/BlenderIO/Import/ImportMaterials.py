@@ -16,7 +16,7 @@ def import_materials(gfs, textures, errorlog):
     # Load materials
     for mat in gfs.materials:
         bpy_material = bpy.data.materials.new(mat.name)
-        materials[mat.name] = bpy_material
+        materials[mat.name] = (bpy_material, mat)
         
         bpy_material.use_nodes = True
         
