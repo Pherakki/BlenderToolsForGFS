@@ -1,5 +1,6 @@
 import bpy
 
+from ..Data import dummy_image_data
 from ..Utils.UVMapManagement import make_uv_map_name
 
 
@@ -501,7 +502,13 @@ def add_texture_to_material_node(bpy_material, name, texture, texcoord_id):
         node = nodes.new('ShaderNodeTexImage')
         node.name = name
         node.label = name
-        node.image = bpy.data.images[texture.name.string]
+        
+        tex_name = texture.name.string
+        if tex_name in textures:
+            node.image = textures[tex_name]
+        else:
+            make_dummy_img_if_doesnt_exist()
+            node.image = bpy.data.images["dummy"]
         
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
@@ -532,3 +539,26 @@ def add_texture_to_material_node(bpy_material, name, texture, texcoord_id):
         
         return node
     return None
+
+
+def make_dummy_img_if_doesnt_exist():
+    import os
+    
+    if "dummy" not in bpy.data.images:
+        filepath = os.path.join(bpy.app.tempdir, "dummy.dds")
+        # Try/finally seems to prevent a race condition between Blender and 
+        # Python forming
+        try:
+            with open(filepath, 'wb') as F:
+                F.write(dummy_image_data)
+            img = bpy.data.images.load(filepath)
+            img.pack()
+            img.filepath_raw = "dummy.dds"
+            
+            img.GFSTOOLS_ImageProperties.unknown_1 = 1
+            img.GFSTOOLS_ImageProperties.unknown_2 = 1
+            img.GFSTOOLS_ImageProperties.unknown_3 = 0
+            img.GFSTOOLS_ImageProperties.unknown_4 = 0
+        finally:
+            os.remove(filepath)
+        
