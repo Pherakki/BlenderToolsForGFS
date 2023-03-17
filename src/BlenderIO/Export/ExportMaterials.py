@@ -2,9 +2,9 @@ import os
 
 import bpy
 
+from ..Data import dummy_image_data
 from ..WarningSystem.Warning import ReportableWarning, ReportableError
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
-from .Data import dummy_image_data
 
 
 def export_materials_and_textures(gfs, bpy_material_names, errorlog):
