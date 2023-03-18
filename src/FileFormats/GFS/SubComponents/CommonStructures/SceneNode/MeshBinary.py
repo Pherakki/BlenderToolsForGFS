@@ -102,7 +102,7 @@ class MeshBinary(Serializable):
         return self.__morph_data
         
     def __repr__(self):
-        return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {safe_format(self.flags, hex32_format)} {safe_format(self.vertex_format, hex32_format)}"
+        return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {safe_format(self.flags._value, hex32_format)} {safe_format(self.vertex_format._value, hex32_format)}"
     
     def read_write(self, rw, version):
         self.flags         = rw.rw_obj(self.flags)

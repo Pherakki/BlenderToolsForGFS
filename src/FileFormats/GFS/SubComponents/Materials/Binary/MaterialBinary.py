@@ -98,15 +98,17 @@ class MaterialBinary(Serializable):
         self.attributes = SizedObjArray(MaterialAttributeBinary)
         
     def __repr__(self):
-        return f"[GFD::Material] {self.name} "                                                                   \
-               f"{safe_format(self.flags._value, hex32_format)} "                                                       \
-               f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "                           \
-               f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "                         \
-               f"{self.reflectivity} {self.outline_idx} "                                                       \
-               f"{safe_format(self.unknown_0x50, list)} {self.unknown_0x56} "                                    \
-               f"{self.unknown_0x58} {self.unknown_0x5A} {self.unknown_0x5C} {self.unknown_0x5E} "               \
-               f"{safe_format(self.unknown_0x60, hex32_format)} {safe_format(self.unknown_0x64, hex32_format)} " \
-               f"{self.disable_backface_culling} {self.unknown_0x6A} {self.attribute_count}"
+        return f"[GFD::Material] {self.name} "                                                     \
+               f"{safe_format(self.flags._value, hex32_format)} "                                  \
+               f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "             \
+               f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "           \
+               f"{self.reflectivity} {self.outline_idx} "                                          \
+               f"{self.draw_method} {self.unknown_0x51} {self.unknown_0x52} {self.unknown_0x53} "  \
+               f"{self.unknown_0x54} {self.unknown_0x55} {self.unknown_0x56} "                     \
+               f"{self.unknown_0x58} {self.unknown_0x5A} {self.unknown_0x5C} {self.unknown_0x5E} " \
+               f"{safe_format(self.texture_indices_1._value, hex32_format)} "                      \
+               f"{safe_format(self.texture_indices_2._value, hex32_format)} "                      \
+               f"{self.disable_backface_culling} {self.unknown_0x6A} {len(self.attributes)}"
 
     def read_write(self, rw, version):
         self.name         = rw.rw_obj(self.name, version)

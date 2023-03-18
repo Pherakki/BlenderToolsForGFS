@@ -69,7 +69,7 @@ class ModelPayload(Serializable):
         self.root_node = SceneNodeBinary()
         
     def __repr__(self):
-        return f"[GFD::SceneContainer] {safe_format(self.flags, hex32_format)}"
+        return f"[GFD::SceneContainer] {safe_format(self.flags._value, hex32_format)}"
 
     def read_write(self, rw, version):
         self.flags = rw.rw_obj(self.flags)
