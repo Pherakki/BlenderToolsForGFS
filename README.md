@@ -1,6 +1,8 @@
 # BlenderToolsForGFS
 A Blender 2.81+ plugin for importing and exporting GFS and GAP files.
 
+A collection of preset materials, which you should use alongside this plugin to maximise your likelihood of a successful export, can be found in MadMax1960's [GFD Asset Library](https://github.com/MadMax1960/gfd-asset-library) repository.
+
 <!--
 #### ⚠ IMPORTANT NOTE ⚠
 
