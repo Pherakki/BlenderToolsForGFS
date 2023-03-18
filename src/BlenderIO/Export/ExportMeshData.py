@@ -126,7 +126,7 @@ class TooManyIndicesError(ReportableError):
             bpy.context.view_layer.objects.active = self.prev_obj
         
 
-def export_mesh_data(gfs, armature, errorlog, log_missing_weights):
+def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     material_names = set()
     out = []
@@ -136,10 +136,10 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights):
 
         # Convert bpy meshes -> gfs meshes
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents))
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
-            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights))
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents))
             
         
         
@@ -221,10 +221,10 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
         
     return out
     
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights, recalculate_tangents):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights)
+    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights, recalculate_tangents)
     
     # Check if any of the mesh data is invalid... we'll accumulate these
     # into an error report for the user.
@@ -291,7 +291,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
 #####################
 # PRIVATE FUNCTIONS #
 #####################
-def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights):
+def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, recalculate_tangents):
     # Switch to input variables
     vweight_floor = 0
     
@@ -312,7 +312,7 @@ def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights):
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights)
+    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents)
     
     return export_verts, export_faces, gfs_vert_to_bpy_vert
 
@@ -396,7 +396,7 @@ def get_tex_idx(nodes, node_name, default_map):
     return tex_idx, uv_map_name
 
 
-def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights):
+def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents):
     mesh = mesh_obj.data
     
     # Figure out what vertex attributes to export 
@@ -478,7 +478,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     # Create loop data if we need it but it doesn't exist
     if use_normals and tuple(mesh.loops[0].normal) == (0., 0., 0.):
         mesh.calc_normals_split()
-    if (use_tangents or use_binormals) and tuple(mesh.loops[0].tangent) == (0., 0., 0.):
+    if (use_tangents or use_binormals) and (tuple(mesh.loops[0].tangent) == (0., 0., 0.) or recalculate_tangents):
         if tangent_uvs is None:
             errorlog.log_error_message(f"Material '{mesh_obj.active_material.name}' requires tangents for export, but mesh '{mesh_obj.name}' does not have any UV maps")
         else:

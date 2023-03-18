@@ -30,24 +30,32 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'}
     )
 
-    pack_animations: bpy.props.BoolProperty(name="Pack Animations into Model",
-                                            default=False)
+    pack_animations: bpy.props.BoolProperty(
+        name="Pack Animations into Model",
+        default=False
+    )
 
     filter_glob: bpy.props.StringProperty(
-                                              default="*.GMD;*.GFS",
-                                              options={'HIDDEN'},
-                                          )
+        default="*.GMD;*.GFS",
+        options={'HIDDEN'},
+    )
     
     debug_mode: bpy.props.BoolProperty(
-                                           default=False,
-                                           options={'HIDDEN'},
-                                      )
+        default=False,
+        options={'HIDDEN'},
+    )
     
     strip_missing_vertex_groups: bpy.props.BoolProperty(
-                                           name="Strip Missing Vertex Groups",
-                                           description="If a mesh has vertex groups with no corresponding bone, ignore those groups and renormalize the vertex weights with those groups removed.",
-                                           default=False
-                                      )
+        name="Strip Missing Vertex Groups",
+        description="If a mesh has vertex groups with no corresponding bone, ignore those groups and renormalize the vertex weights with those groups removed.",
+        default=False
+    )
+    
+    recalculate_tangents: bpy.props.BoolProperty(
+        name="Recalculate Tangents",
+        description="Recalcualte tangents on export if they are required.",
+        default=True
+    )
     
     version: bpy.props.EnumProperty(items=(
             ("0x01104920", "0x01104920", ""),
@@ -92,7 +100,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
