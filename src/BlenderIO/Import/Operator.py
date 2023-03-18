@@ -59,6 +59,8 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
+        if bpy.context.view_layer.objects.active is not None:        
+            bpy.ops.object.mode_set(mode="OBJECT")
         bpy.ops.object.select_all(action='DESELECT')
         
         # Try to load file and log any errors...
@@ -145,6 +147,8 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
 
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, armature, filepath):
+        if bpy.context.view_layer.objects.active is not None:        
+            bpy.ops.object.mode_set(mode="OBJECT")
         bpy.ops.object.select_all(action='DESELECT')
 
         # Try to load file and log any errors...
