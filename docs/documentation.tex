@@ -318,14 +318,13 @@ Ignore \textbf{Clear Parent Inverse}.
 \item Press \keystroke{Alt} + \keystroke{P} with the mouse in the Viewport.
 \item Click \textbf{Clear Parent Inverse}.
 \end{itemize}
-This will remove the hidden ``parent inverse" matrix that sometimes gets inserted when parenting objects. This is harmless, but merely means that you object's transform may not align with what you see in the viewport if it is not a unit transform.
+This will remove the hidden ``parent inverse" matrix that sometimes gets inserted when parenting objects. This is harmless, but merely means that you object's transform may not align with what you see in the viewport if it is not a unit transform.\\
 \guideimage{images/editing_models/editing_unparent.png}
 \end{guide}
 
 Meshes have certain attributes that may be exported. These are:
 \begin{itemize}
 \item \textbf{Export Bounding Box}/\textbf{Sphere}: Define a bounding Box / Sphere on export.
-\item \textbf{Export Normals}/\textbf{Tangents}/\textbf{Binormals}: Export these attributes. They are required for specific material options to work.
 \item \textbf{Unknown Flag}: The purpose of Unknown Flags is not known. Checking and unchecking these may cause or fix crashes.
 \item \textbf{Unknown 0x12}: Purpose unknown.
 \item The GFS Node sub-panel will appear if the Mesh is not parented under another Mesh. Refer to section \ref{SECTION::EditingBones} for further details.
@@ -421,6 +420,11 @@ meaning that up to 8 maps are allowed per mesh.
 \item \textbf{Enable UV Anims}: Allow the UV coordinates of the mesh to be animated.
 \item \textbf{Use Light 2}: Purpose unknown.
 \item \textbf{Purple Wireframe}: Render the mesh as a purple wireframe.
+\item \textbf{Requires Normals}: Whether the material requires vertex normals to work. If this is active, any meshes using this material will be exported with vertex normals.
+\item \textbf{Requires Tangents}: Whether the material requires vertex tangents to work. If this is active, any meshes using this material will be exported with vertex tangents.
+\item \textbf{Requires Binormals}: Whether the material requires vertex binormals to work. If this is active, any meshes using this material will be exported with vertex binormals.
+\item \textbf{Requires Color0}: Whether the material requires vertex colours in slot 0 to work. If this is active, any meshes using this material will be exported with vertex colours taken from a Color map called ``Map0" if it exists; if it does not, the mesh will be exported with an opaque white colour (1.0, 1.0, 1.0, 1.0) at each vertex.
+\item \textbf{Requires Color1}: Whether the material requires vertex colours in slot 1 to work. If this is active, any meshes using this material will be exported with vertex colours taken from a Color map called ``Map1" if it exists; if it does not, the mesh will be exported with an opaque white colour (1.0, 1.0, 1.0, 1.0) at each vertex.
 \item The GFS Node sub-panel will appear if the Mesh is not parented under another Mesh. Refer to section \ref{SECTION::EditingBones} for further details.
 \end{itemize}
 \begin{guide}{Accessing Extra Material Attributes}
@@ -639,8 +643,9 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 \item From the export options on the right, choose:
 \begin{itemize}
 \item Whether to export animations packed into the model.
-\item Which file version to export as.
 \item Whether to strip any vertex groups from the export that do not correspond to a bone in the armature. Leaving this option unticked means that undefined vertex groups will cause an error when attempting to export.
+\item Whether to recalculate tangents on export if a mesh needs to be exported with tangents. This can be useful if an imported model has incorrect tangent vectors, and if the Blender tangent calculator gives better results. This is active by default.
+\item Which file version to export as.
 \end{itemize}
 \guideimage{images/export/export_gmd_properties.png}
 \item Set a filename and export.
