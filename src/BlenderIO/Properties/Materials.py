@@ -58,14 +58,14 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     emissive:        bpy.props.FloatVectorProperty(name="Emissive Color", size=4, default=(1., 1., 1., 1.))
     reflectivity:    bpy.props.FloatProperty      (name="Reflectivity",   default=0.)
     outline_idx:     bpy.props.FloatProperty      (name="Outline Idx.",   default=0.)
-    draw_method:     bpy.props.IntProperty        (name="Draw Method",    default=0, min=0, max=6) # Change to enum later
-    unknown_0x51:    bpy.props.BoolProperty       (name="Unknown 0x51",   default=True)
-    unknown_0x52:    bpy.props.IntProperty        (name="Unknown 0x52",   default=0, min=0, max=255)
-    unknown_0x53:    bpy.props.BoolProperty       (name="Unknown 0x53",   default=True)
-    unknown_0x54:    bpy.props.IntProperty        (name="Unknown 0x54",   default=0, min=0, max=255)
-    unknown_0x55:    bpy.props.IntProperty        (name="Unknown 0x55",   default=1, min=1, max=3) # Change to enum later
+    draw_method:     bpy.props.IntProperty        (name="Draw Method",    default=0, min=0, max=65535) # Change to enum later
+    unknown_0x51:    bpy.props.IntProperty        (name="Unknown 0x51",   default=0, min=0, max=65535)
+    unknown_0x52:    bpy.props.IntProperty        (name="Unknown 0x52",   default=0, min=0, max=65535)
+    unknown_0x53:    bpy.props.IntProperty        (name="Unknown 0x53",   default=0, min=0, max=65535)
+    unknown_0x54:    bpy.props.IntProperty        (name="Unknown 0x54",   default=0, min=0, max=65535)
+    unknown_0x55:    bpy.props.IntProperty        (name="Unknown 0x55",   default=1, min=0, max=65536) # Change to enum later
     unknown_0x56:    bpy.props.IntProperty        (name="Unknown 0x56",   default=0, min=0, max=65535) # Some kind of 8-bit flag?!
-    unknown_0x58:    bpy.props.IntProperty        (name="Unknown 0x58",   default=0, min=0, max=7) # Change to enum later?
+    unknown_0x58:    bpy.props.IntProperty        (name="Unknown 0x58",   default=0, min=0, max=65535) # Change to enum later?
     unknown_0x5A:    bpy.props.IntProperty        (name="Unknown 0x5A",   default=1, min=-32768, max=32767) # Flags?
     unknown_0x5C:    bpy.props.IntProperty        (name="Unknown 0x5C",   default=0, min=-32768, max=32767) # Flags?
     unknown_0x5E:    bpy.props.IntProperty        (name="Unknown 0x5E",   default=0, min=-32768, max=32767) # Flags?
@@ -219,7 +219,7 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     # Should replace outline_type with an enum when all types are known
     # These should also have a max of 2**32 - 1, but blender doesn't offer
     # an unsigned int type
-    outline_type:  bpy.props.IntProperty(name="Type",  min=0, max=3, default=0)
+    outline_type:  bpy.props.IntProperty(name="Type",  min=0, max=255, default=0)
     outline_color: bpy.props.IntProperty(name="Color", min=0, max=(2**31) - 1, default=0)
     
     outline_ctr_flag_0:  bpy.props.BoolProperty(name="Unknown Attr. Flag 0",            default=True)
@@ -331,7 +331,7 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     a4_unknown_0x38:       bpy.props.FloatProperty(name="unknown 0x38", default=1.)
     a4_unknown_0x3C:       bpy.props.FloatProperty(name="unknown 0x3C", default=0.)
     a4_unknown_0x40:       bpy.props.FloatProperty(name="unknown 0x40", default=0.)
-    a4_unknown_0x44:       bpy.props.IntProperty(name="unknown 0x44", min=1, max=4, default=1)
+    a4_unknown_0x44:       bpy.props.IntProperty(name="unknown 0x44", min=0, max=255, default=1)
     a4_unknown_0x45:       bpy.props.FloatProperty(name="unknown 0x45", default=0.)
     a4_unknown_0x49:       bpy.props.FloatProperty(name="unknown 0x49", default=0.)
     
