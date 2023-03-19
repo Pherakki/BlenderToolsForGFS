@@ -42,6 +42,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     bpy_node_names  = [None]*len(gfs.bones)
     bpy_nodes       = [None]*len(gfs.bones)
     bone_transforms = [None]*len(gfs.bones)
+    bone_rest_transforms = [None]*len(gfs.bones)
     
     nodes_with_meshes = set()
     for mesh in gfs.meshes:
@@ -74,6 +75,14 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
             gfs_to_bpy_bone_map[i] = bpy_bone_counter
             bpy_bone_counter      += 1
         
+        t = node.position
+        r = node.rotation
+        s = node.scale
+        rest_matrix = Matrix.Translation(t) @ Quaternion([r[3], r[0], r[1], r[2]]).to_matrix().to_4x4() @ Matrix.Diagonal([*s, 1.])
+        if node.parent_idx > -1:
+            bone_rest_transforms[i] = bone_rest_transforms[node.parent_idx] @ rest_matrix
+        else:
+            bone_rest_transforms[i] = convert_Yup_to_Zup(rest_matrix)
         bone_transforms[i] = convert_Yup_to_Zup(matrix)
 
     bpy.ops.object.mode_set(mode="OBJECT")
@@ -159,7 +168,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
         mesh_groups[mesh.node].append(mesh)
     for node_idx, meshes in mesh_groups.items():
         mesh_name = bpy_node_names[node_idx]
-        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, node_idx in meshes_to_rename)
+        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], bone_rest_transforms[node_idx], materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, node_idx in meshes_to_rename)
         mesh_node_map[node_idx] = bpy_mesh_obj.data
     
     set_material_vertex_attributes(materials, material_vertex_attributes, errorlog)
@@ -209,21 +218,39 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, transform, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, is_unrigged):
-    if is_unrigged:
+def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, bind_transform, rest_transform, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, requires_rename):
+    if requires_rename:
         mesh_name += "_mesh"
     bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
 
 
     bpy_mesh_object.parent = armature
+    
+    # There's going to be a bug here if unrigged and rigged meshes share a
+    # positioning node.
+    # This should be fixed, but it's so unlikely that it's barely ever
+    # going to actually happen...
+    # Fix when less lazy
+    # We differentiate between rigged and unrigged meshes here in the first
+    # place because the game does too.
+    # We treat unrigged meshes as being rigged only to a single bone. That
+    # single bone can control the scale of the mesh via animation.
+    # The rigged meshes can't have their positioning node animated. So we
+    # place them in their rest pose, where they have correct access to their
+    # bones.
+    is_unrigged = meshes[0].vertices[0].indices is None
+    if is_unrigged:
+        transform = bind_transform
+    else:
+        transform = rest_transform
+    
+    # Set transform
     pos, quat, scale = transform.decompose()
     bpy_mesh_object.rotation_mode = "QUATERNION"
     bpy_mesh_object.location = pos
     bpy_mesh_object.rotation_quaternion = quat
-    if is_unrigged:
-        bpy_mesh_object.scale = scale
-    else:
-        bpy_mesh_object.scale = gfs_node.scale # scale #[s1*s2 for s1, s2 in zip(scale, gfs_node.scale)] # Still seem to have some positioning errors...
+    bpy_mesh_object.scale = scale
+        
     
     # Add Node Properties
     bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
