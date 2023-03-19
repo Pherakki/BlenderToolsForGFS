@@ -319,7 +319,8 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     new_verts, new_tris, new_facevert_to_old_facevert_map = merge_vertices(
         mesh.vertices, 
         [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])], 
-        is_vertex_merge_allowed
+        is_vertex_merge_allowed,
+        errorlog
     )
     
     # Generate geometry
