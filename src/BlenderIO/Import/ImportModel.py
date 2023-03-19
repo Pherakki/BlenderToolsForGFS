@@ -4,7 +4,7 @@ import math
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 
-from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup
+from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup, decomposableToTRS
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
 from ..Utils.UVMapManagement import make_color_map_name
@@ -243,6 +243,8 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
         transform = bind_transform
     else:
         transform = rest_transform
+        if not decomposableToTRS(transform):
+            errorlog.log_warning_message(f"Mesh '{mesh_name}' has a skewed world transform. This means that non-uniform scales are present in the non-leaf nodes used to position the mesh. This is not possible to represent in Blender, and you should expect this mesh to have an incorrect rotation and scale.")
     
     # Set transform
     pos, quat, scale = transform.decompose()
