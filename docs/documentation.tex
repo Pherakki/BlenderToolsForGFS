@@ -6,11 +6,13 @@
 \usepackage[utf8]{inputenc}
 
 \usepackage{amsmath}
+\usepackage{amssymb}
 %\usepackage[margin=80pt]{geometry}
 \usepackage{fancyhdr}
 \usepackage{graphicx}
 \usepackage[hidelinks]{hyperref}
 \usepackage{longtable}
+\usepackage{mathtools}
 \usepackage[most]{tcolorbox}
 \usepackage{tikz}
 \usetikzlibrary{shadows}
@@ -876,5 +878,545 @@ Listed here are a few directions that future development could go. This is not a
 \item Lights need a proper Interface.
 \item The AnimationInterface needs to be more cleanly designed: it currently has a lot of awkward heuristics to serialise node animations and can duplicate tracks and so forrth due to a lack of understanding of how all the animation keys work.
 \end{itemize}
+
+\clearpage
+
+\section{Technical Details}
+\subsection{Scene Graph Importing and Animation}
+
+For our purposes, we will define a \textbf{Scene Graph} as having the following properties:
+\begin{enumerate}
+\item A \textbf{Scene Graph} is a \textbf{Directed Acyclic Graph} consisting of \textbf{Directed Edges} and \textbf{Scene Nodes}.
+\item It has a single \textbf{root} or \textbf{origin node}, which may be implicit.
+\item 
+\end{enumerate}
+
+
+\subsubsection{Basic Transform Matrix Definitions and Identities}
+\paragraph{3D Homogeneous Coordinates}\mbox{}\\
+3D homogeneous coordinates are an embedding of 3D transforms into 4D space, with the fourth dimension typically treated in a unitary fashion. For example, a 3D vector becomes
+\begin{equation}
+v = \begin{pmatrix}
+a\\
+b\\
+c\\
+1
+\end{pmatrix}
+\end{equation}
+and a 3D matrix becomes
+\begin{equation}
+M =
+\begin{pmatrix}
+m_{11} & m_{12} & m_{13} & 0\\
+m_{21} & m_{22} & m_{23} & 0\\
+m_{31} & m_{32} & m_{33} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}.
+\end{equation}
+We will use this coordinate system not only because it is the coordinate system used both by the GFS models and by Blender, but also because it allows us to represent translations as matrices on the same footing and rotations and scales.
+
+\paragraph{Translation Matrices}\mbox{}\\
+We define a 3D transformation matrix as
+\begin{equation}
+T = \begin{pmatrix}
+1 & 0 & 0 & t_x\\
+0 & 1 & 0 & t_y\\
+0 & 0 & 1 & t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}.
+\end{equation}
+This has three degrees of freedom in $t_x$, $t_y$, and $t_z$. These represent translations in the $x$, $y$, and $z$ dimensions respectively.
+
+We note that the inverse of a translation matrix is also a translation matrix, and that it always exists:
+\begin{equation}
+T^{-1} = T' = \begin{pmatrix}
+1 & 0 & 0 & -t_x\\
+0 & 1 & 0 & -t_y\\
+0 & 0 & 1 & -t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}.
+\end{equation}
+\paragraph{Rotation Matrices}\mbox{}\\
+We define a 3D rotation matrix as having the following form:
+\begin{equation}
+R = \begin{pmatrix}
+r_{11} & r_{12} & r_{13} & 0\\
+r_{21} & r_{22} & r_{23} & 0\\
+r_{31} & r_{32} & r_{33} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}.
+\end{equation}
+In addition, a rotation matrix is a \textbf{special orthogonal matrix}, \textit{i.e.} it both obeys orthogonality
+\begin{equation}
+R^T R = I,
+\end{equation}
+and has determinant 1,
+\begin{equation}
+\det R = 1.
+\end{equation}
+We will not prove this here, but this also constrains a rotation matrix to three degrees of freedom, which can be decomposed as (for example)
+\begin{itemize}
+\item A rotation around the X, Y, and Z axes,
+\item A quaternion constrained to have a norm of 1.
+\end{itemize}
+We note that the inverse of a rotation matrix is also a rotation matrix, and that it always exists:
+\begin{equation}
+R^{-1} = R^T = R' =  \begin{pmatrix}
+r_{11} & r_{21} & r_{31} & 0\\
+r_{12} & r_{22} & r_{32} & 0\\
+r_{13} & r_{23} & r_{33} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}.
+\end{equation}
+\paragraph{Scale Matrices}\mbox{}\\
+We define a 3D scale matrix as having the following form:
+\begin{equation}
+S = \begin{pmatrix}
+s_{x} & 0 & 0 & 0\\
+0 & s_y & 0 & 0\\
+0 & 0 & s_z & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix},
+\end{equation}
+which again has three degrees of freedom in $s_x$, $s_y$, and $s_z$, which are the scale factors in the $x$, $y$, and $z$ dimensions.
+\textbf{A scale matrix is not guaranteed to have an inverse}, but if it exists, it is also a scale matrix:
+\begin{equation}
+S^{-1} = S' = \begin{pmatrix}
+\frac{1}{s_x} & 0 & 0 & 0\\
+0 & \frac{1}{s_y} & 0 & 0\\
+0 & 0 & \frac{1}{s_z} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix},
+\end{equation}
+which does not exist if any of $s_x$, $s_y$, or $s_z$ are 0.
+
+\paragraph{Combinations of transforms}\mbox{}\\
+Having defined our three basic types of transformation matrix, we can now see how they interact with each other. There are nine different products we can take of these three transforms:
+\begin{center}
+\begin{tabular}{|c|ccc|}
+\hline
+& $T$ & $R$ & $S$ \\
+\hline
+$T$ & $TT$ & $TR$ & $TS$ \\
+$R$ & $RT$ & $RR$ & $RS$ \\
+$S$ & $ST$ & $SR$ & $SS$ \\
+\hline
+\end{tabular}
+\end{center}
+We will need to manipulate all of these products in the following sections, so let us prove some basic facts about them.\\
+
+\noindent
+\textit{Lemma.} \textbf{A product of a two translation matrices is also a translation matrix.}
+\begin{equation}
+T_1 T_2 = T_3.
+\end{equation}
+\noindent
+\textit{Proof.} 
+\begin{align}
+M &= T_1T_2 \\
+&=
+\begin{pmatrix}
+1 & 0 & 0 & t_{x, 1}\\
+0 & 1 & 0 & t_{y, 1}\\
+0 & 0 & 1 & t_{z, 1}\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 0 & t_{x, 2}\\
+0 & 1 & 0 & t_{y, 2}\\
+0 & 0 & 1 & t_{z, 2}\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&= 
+\begin{pmatrix}
+1 & 0 & 0 & t_{x, 1} + t_{x, 2}\\
+0 & 1 & 0 & t_{y, 2} + t_{y, 2}\\
+0 & 0 & 1 & t_{z, 2} + t_{z, 2}\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&= T_3.
+\end{align}
+\noindent
+\textit{Lemma.}\textbf{ A product of a rotation and a translation matrix can be decomposed to a product of a distinct translation and the same rotation matrix.}
+\begin{equation}
+R T_1 = T_2 R
+\end{equation}
+
+\noindent\textit{Proof.}
+\begin{align}
+M &= RT_1 \\
+&=
+\begin{pmatrix}
+r_{11} & r_{12} & r_{13} & 0\\
+r_{21} & r_{22} & r_{23} & 0\\
+r_{31} & r_{32} & r_{33} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 0 & t_x\\
+0 & 1 & 0 & t_y\\
+0 & 0 & 1 & t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&=
+\begin{pmatrix}
+r_{11} & r_{12} & r_{13} & r_{11}t_x + r_{12}t_y + r_{13}t_z\\
+r_{21} & r_{22} & r_{23} & r_{21}t_x + r_{22}t_y + r_{23}t_z\\
+r_{31} & r_{32} & r_{33} & r_{31}t_x + r_{32}t_y + r_{33}t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&=
+\begin{pmatrix}
+1 & 0 & 0 & r_{11}t_x + r_{12}t_y + r_{13}t_z\\
+0 & 1 & 0 & r_{21}t_x + r_{22}t_y + r_{23}t_z\\
+0 & 0 & 1 & r_{31}t_x + r_{32}t_y + r_{33}t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+r_{11} & r_{12} & r_{13} & 0\\
+r_{21} & r_{22} & r_{23} & 0\\
+r_{31} & r_{32} & r_{33} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&= T_2 R
+\end{align}
+
+\noindent
+\textit{Lemma.}\textbf{ A product of a scale and a translation matrix can be decomposed to a product of a distinct translation and the same scale matrix.}
+\begin{equation}
+S T_1 = T_2 S
+\end{equation}
+
+\noindent\textit{Proof.}
+\begin{align}
+M &= ST_1 \\
+&=
+\begin{pmatrix}
+s_x & 0 & 0 & 0\\
+0 & s_y & 0 & 0\\
+0 & 0 & s_z & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 0 & t_x\\
+0 & 1 & 0 & t_y\\
+0 & 0 & 1 & t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&=
+\begin{pmatrix}
+s_x & 0 & 0 & s_x t_x\\
+0 & s_y & 0 & s_y t_y\\
+0 & 0 & s_z & s_z t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&=
+\begin{pmatrix}
+1 & 0 & 0 & s_x t_x\\
+0 & 1 & 0 & s_y t_y\\
+0 & 0 & 1 & s_z t_z\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+s_x & 0 & 0 & 0\\
+0 & s_y & 0 & 0\\
+0 & 0 & s_z & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&= T_2 S
+\end{align}
+
+\clearpage
+
+\subsubsection{Bone/Node Animations}
+We will need to match the Blender animation equation to the GFS animation equation in order to import animations. We will start by considering just the bone animations, and leave vertex animations until we have determined these.
+
+GFS node animations are given by
+\begin{equation}
+A_\mathrm{GFS}  = \left( \prod_i \left(T_\mathrm{base} T_A\right) \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \right)
+\end{equation}
+where
+\begin{itemize}
+\item $T_\mathrm{base}$ is the base parent-relative translation matrix, taken from the currently-active ``normal" animation (or the rest pose if undefined by the animation).
+\item $T_\mathrm{A}$ is the translation defined by a Blend animation. An arbitrary number of $T_A$s, including 0, can be applied to the right of $T_\mathrm{base}$.
+\item $R_\mathrm{base}$ is the base parent-relative rotation matrix, taken from the currently-active ``normal" animation (or the rest pose if undefined by the animation).
+\item $R_\mathrm{A}$ is the rotation defined by a Blend animation. An arbitrary number of $R_A$s, including 0, can be applied to the right of $R_\mathrm{base}$.
+\item $S_\mathrm{base}$ is the base parent-relative scale matrix, taken from the currently-active ``normal" animation (or the rest pose if undefined by the animation).
+\item $S_\mathrm{A}$ is the scale defined by a Blend animation. An arbitrary number of $S_A$s, including 0, can be applied to the right of $S_\mathrm{base}$. Note that the Blend scale matrices have a 0 in the bottom-right corner of the transformation matrix rather than the typical 1. Equivalently, you can consider the scale vectors to be summed before being converted to a translation matrix.
+\end{itemize}
+We also need to bear in mind the following conventions:
+\begin{itemize}
+\item Rotations are relative to the $X$-axis.
+\item The coordinate system is a right-handed, Y-up coordinate system.
+\end{itemize}
+In contrast to the GFS animation equation,
+\begin{itemize}
+\item Rotations are relative to the $Y$-axis.
+\item The coordinate system is a right-handed, Z-up coordinate system.
+\item Bone animations are relative to a \textbf{local bind pose transform}, not the \textbf{parent transform}.
+\end{itemize}
+
+The \textbf{local bind pose} is the transformation from the \textbf{bone's parent bind pose} to the \textbf{bone's bind pose}. A \textbf{bind pose} is a Translation-Rotation matrix providing an anchor point for vertices weighted to the bone to be deformed relative to,
+\begin{equation}
+M_\mathrm{BP} = T_\mathrm{BP}R_\mathrm{BP},
+\end{equation}
+and we mathematically denote the local bind pose as
+\begin{align}
+M_\mathrm{BPL} &= \left(M^\mathrm{P}_\mathrm{BP}\right)^{-1} M_\mathrm{BP}\\
+ &=  \left(T_\mathrm{BP}^\mathrm{P} R_\mathrm{BP}^\mathrm{P}\right)^{-1} T_\mathrm{BP}R_\mathrm{BP}\\
+ &= \left(R_\mathrm{BP}^\mathrm{P}\right)^{-1} \left(T_\mathrm{BP}^\mathrm{P}\right)^{-1} T_\mathrm{BP}R_\mathrm{BP}\\
+ &=  T_\mathrm{BPL} \left(R_\mathrm{BP}^\mathrm{P}\right)^{-1} R_\mathrm{BP}\\
+ &=  T_\mathrm{BPL} R_\mathrm{BPL}
+\end{align}
+which defines
+\begin{align}
+T_\mathrm{BPL} &= \left(R_\mathrm{BP}^\mathrm{P}\right)^{-1} \left(T_\mathrm{BP}^\mathrm{P}\right)^{-1} T_\mathrm{BP} R_\mathrm{BP}^\mathrm{P}\\
+R_\mathrm{BPL} &= \left(R_\mathrm{BP}^\mathrm{P}\right)^{-1} R_\mathrm{BP}
+\end{align}
+However, we note that bones with no parents are a \textbf{special case} where
+\begin{equation}
+M_\mathrm{BPL} = M_\mathrm{BP}.
+\end{equation}
+
+We have three main steps we need to take in order to convert the GFS animation to Blender animations:
+\begin{itemize}
+\item Convert the transforms from parent-relative to bind-relative,
+\item Convert the rotations from $X$-axis relative to $Y$-axis relative,
+\item Convert the transforms from a right-handed Y-up coordinate system to a right-handed Z-up coordinate system.
+\end{itemize}
+In order to maintain alignment with the GFS animation system, we furthermore require the following:
+\begin{itemize}
+\item The Rest Pose is implemented as a single-frame bind-relative animation that is always active and at the bottom of the NLA editor order,
+\item Normal Animations are bind-relative animations using \textbf{REPLACE} strip blending and have higher priority than the Rest Pose in the NLA editor,
+\item Blend Animations use the \textbf{COMBINE} strip blending for translation and rotations, and \textbf{ADD} strip blending for scale channels, and have higher priority than Normal animations in the NLA editor.
+\end{itemize}
+
+With these strip blending types and priority ordering, we can create the following animation equation in Blender:
+\begin{equation}
+A_\mathrm{Blender} = \left( \prod_i {M}_\mathrm{BPL} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 S_2\right) \right) M_\mathrm{BP}^{-1}
+\end{equation}
+
+We can then match GFS animations to Blender equations by requiring that
+\begin{equation}
+A_\mathrm{Blender} = A_\mathrm{GFS} M^{-1}_\mathrm{BP}
+\end{equation}
+and calculating the transformation rules for our three transformation conditions.
+
+\paragraph{Parent-relative to bind-relative transformations}\mbox{}\\
+We will start from $A = A_\mathrm{GFS} M^{-1}_\mathrm{BP}$ and determine how to reshape this equation into a Blender-compatible form.
+\begin{align}
+A &= \left( \prod_i \left(T_\mathrm{base} T_A\right) \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \right) M_\mathrm{BP}^{-1}\\
+ &= \left( \prod_i M_\mathrm{BPL} M_\mathrm{BPL}^{-1} \left(T_\mathrm{base} T_A\right) \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \right) M_\mathrm{BP}^{-1}\\
+  &= \left( \prod_i M_\mathrm{BPL} R_\mathrm{BPL}^{-1} T_\mathrm{BPL}^{-1} \left(T_\mathrm{base} T_A\right) \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \right) M_\mathrm{BP}^{-1}
+\end{align}
+Define $T_\mathrm{offset} = T^{-1}_\mathrm{BPL} T_\mathrm{base}$,
+\begin{equation}
+A  = \left( \prod_i M_\mathrm{BPL} R_\mathrm{BPL}^{-1} \left(T_\mathrm{offset} T_A\right) \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \right) M_\mathrm{BP}^{-1}
+\end{equation}
+We now need to absorb the $R^{-1}_\mathrm{BPL}$ factor into the rotation matrices. We can use the fact that $R^{-1} = R'$ and that $RT = T'R$ to move the rotation matrices past the translation matrices. We can equivalently note that $RT = T'R \Rightarrow T = R^{-1}TR$, and use this fact to insert factors of $R_\mathrm{BPL}R^{-1}_\mathrm{BPL} = 1$ into the equation in order to generate redefined translation matrices. 
+\begin{align}
+A  &= 
+\begin{multlined}[t]
+\Bigg( \prod_i M^L_\mathrm{BP} R_\mathrm{BPL}^{-1} \left(T_\mathrm{offset} R_\mathrm{BPL}R_\mathrm{BPL}^{-1}T_A R_\mathrm{BPL}R_\mathrm{BPL}^{-1}\right) \\
+\hspace{130pt}  \cdot \left(R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \Bigg) M_\mathrm{BP}^{-1}
+\end{multlined}\\
+ &= \begin{multlined}[t]
+\Bigg( \prod_i M^L_\mathrm{BP} \left( R_\mathrm{BPL}^{-1} T_\mathrm{offset} R_\mathrm{BPL}\right)\left( R_\mathrm{BPL}^{-1}T_A R_\mathrm{BPL}\right) \cdot \\
+\hspace{110pt} \left(R_\mathrm{BPL}^{-1}  R_\mathrm{base} R_A\right) \cdot \left(S_\mathrm{base} + S_A\right) \Bigg) M_\mathrm{BP}^{-1}
+\end{multlined}
+\end{align}
+Since we know that the products $R^{-1}_\mathrm{BPL} T R_\mathrm{BPL}$ are themselves translation matrices, and that the product of two rotation matrices is another rotation matrix, we can now identity
+\begin{align}
+T_1 &= R_\mathrm{BPL}^{-1} T_\mathrm{offset} R_\mathrm{BPL}\\
+T_2 &= R_\mathrm{BPL}^{-1} T_A R_\mathrm{BPL}\\
+R_1 &= R_\mathrm{BPL}^{-1} R_\mathrm{base}\\
+R_2 &= R_A\\
+S_1 &= S_\mathrm{base}\\
+S_2 &= S_a
+\end{align}
+
+\paragraph{Axis Permutations}\mbox{}\\
+Consider the case where we take ${M}_\mathrm{BP} \to {M}_\mathrm{BP} P_\mathrm{axis} \triangleq {M}_\mathrm{BPA}$. We note that since, for non-root bones, 
+\begin{equation}
+{M}_\mathrm{BPL} = \left({M}_\mathrm{BPL}^\mathrm{P}\right)^{-1} {M}_\mathrm{BP},
+\end{equation}
+the local bind pose will transform as
+\begin{align}
+{M}_\mathrm{BPL}  &\to P_\mathrm{axis}^{-1} \left({M_i}_\mathrm{BP}^\mathrm{P}\right)^{-1} {M_i}_\mathrm{BP} P_\mathrm{axis} \\
+&\to P_\mathrm{axis}^{-1}{M_i}_\mathrm{BPL} P_\mathrm{axis}
+\end{align}
+For convenience we will define this is the \textbf{A}xis-permuted \textbf{L}ocal \textbf{B}ind \textbf{P}ose matrix,
+\begin{equation}
+P_\mathrm{axis}^{-1}M_\mathrm{BPL} P_\mathrm{axis} \triangleq M_\mathrm{BPLA}.
+\end{equation}
+However, for the root bone, we have that
+\begin{equation}
+{M_0}_\mathrm{BPL} = {M_0}_\mathrm{BP}
+\end{equation}
+and so the transformation rule is instead
+\begin{equation}
+{M_0}_\mathrm{BPL} \to {M_0}_\mathrm{BPL} P_\mathrm{axis}.
+\end{equation}
+Following our previous conventions, we define this as
+\begin{equation}
+{M_0}_\mathrm{BPL} P_\mathrm{axis} \triangleq {M_0}_\mathrm{BPLA} = {M_0}_\mathrm{BPA}.
+\end{equation}
+We should therefore expect to treat the root node differently to other nodes.
+
+In order switch from using $M_\mathrm{BP}$ and $M_\mathrm{BPL}$ to  $M_\mathrm{BPA}$ and $M_\mathrm{BPLA}$ whilst leaving the overall animation invariant, we will insert factors of $P_\mathrm{axis}^{-1}P_\mathrm{axis}$---this product being just a unit matrix---into the animation equation in a manner that allows us to factor out the axis-permuted versions of the bind pose matrices.
+
+We'll start by taking the Blender animation equation for a bone, and separating out the root bone transforms.
+\begin{align}
+A &= \left( \prod_i {M_i}^L_\mathrm{BP} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right) M_\mathrm{BP}^{-1}\\
+ &= \!\begin{multlined}[t] \left( {M_0}^L_\mathrm{BP} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right)\\
+ \cdot \left( \prod_{i=1}^{i=N} {M_i}^L_\mathrm{BP} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right) M_\mathrm{BP}^{-1}
+\end{multlined}
+\end{align}
+We can then insert the relevant factors of $P_\mathrm{axis}P_\mathrm{axis}^{-1}$ that allows us to factorise out the axis-permuted bind poses as
+\begin{align}
+A &= \!\begin{multlined}[t] \left( {M_0}_\mathrm{BPL} P_\mathrm{axis}P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right)\\
+ \cdot \left( \prod_{i=1}^{i=N}  P_\mathrm{axis} P_\mathrm{axis}^{-1} {M_i}_\mathrm{BPL}  P_\mathrm{axis} P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right)\\
+ \cdot P_\mathrm{axis} P_\mathrm{axis}^{-1} M_\mathrm{BP}^{-1}
+\end{multlined}\\
+&= \!\begin{multlined}[t] \left( {M_0}_\mathrm{BPLA} P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right)\\
+ \cdot \left( \prod_{i=1}^{i=N}  P_\mathrm{axis} {M_i}_\mathrm{BPLA}  P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \right)
+ \cdot P_\mathrm{axis} M_\mathrm{BPA}^{-1}
+\end{multlined}
+\end{align}
+We are now left with the problem of removing the leftover permutation matrices. Since permutation matrices are a special case of a rotation matrix, if we can absorb them into the rotation matrices then we will be left with an animation equation with the same form as the Blender animation equation.
+
+The first step we will take is recognising that if we insert a factor $P_\mathrm{axis}P_\mathrm{axis}^{-1}$ after the scaling factors for a bone, we will cancel out the $P_\mathrm{axis}$ at the front of the next term. On the final bone, this will cancel out the $P_\mathrm{axis}$ generated by factorising $M^{-1}_\mathrm{BP} \to M^{-1}_\mathrm{BPA}$.
+\begin{align}
+A &= \!\begin{multlined}[t] \left( {M_0}_\mathrm{BPLA} P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \cdot \left(P_\mathrm{axis}P_\mathrm{axis}^{-1}\right)\right)\\
+ \cdot \left( \prod_{i=1}^{i=N}  P_\mathrm{axis} {M_i}_\mathrm{BPLA}  P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \cdot \left(P_\mathrm{axis}P_\mathrm{axis}^{-1}\right) \right)\\
+ \cdot P_\mathrm{axis} M_\mathrm{BPA}^{-1}
+\end{multlined}\\
+&= \!\begin{multlined}[t] \left( {M_0}_\mathrm{BPLA} P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \cdot P_\mathrm{axis}\right)\\
+ \cdot \left( \prod_{i=1}^{i=N} {M_i}_\mathrm{BPLA}  P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \cdot P_\mathrm{axis} \right) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}\\
+&= \left( \prod_{i} {M_i}_\mathrm{BPLA}  P_\mathrm{axis}^{-1} \left(T_1 T_2\right) \cdot \left(R_1 R_2\right) \cdot \left(S_1 + S_2\right) \cdot P_\mathrm{axis} \right) \cdot M_\mathrm{BPA}^{-1}
+\end{align}
+The bone transforms are now sandwiched between two permutation matrices. We can attack the matrix in front of the translation matrices in the same manner as we dealt with the rotation matrices in section \ref{}: we recognise that since $RT = T'R$, we can construct a translation matrix as $T=R^{-1}T'R$. Applying this strategy gives us
+\begin{align}
+A &= \begin{multlined}[t]
+\Bigg( \prod_{i} {M_i}_\mathrm{BPLA}  P_\mathrm{axis}^{-1} \left(T_1 P_\mathrm{axis} P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis}^{-1} P_\mathrm{axis} \right) \cdot \left(R_1 R_2\right) \\
+\cdot \left(S_1 + S_2\right) \cdot P_\mathrm{axis} \Bigg) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}\\
+&= \begin{multlined}[t]
+\Bigg( \prod_{i} {M_i}_\mathrm{BPLA}  \left(P_\mathrm{axis}^{-1} T_1 P_\mathrm{axis} \right)\left(P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis} \right)  P_\mathrm{axis}^{-1} \left(R_1 R_2\right) \\
+\cdot \left(S_1 + S_2\right) \cdot P_\mathrm{axis} \Bigg) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}
+\end{align}
+We now need to deal with the permutation matrix to the right of the scales. We can note that, whilst the product of a scale and a rotation cannot generally be decomposed as a product of a rotation and a scale ($SR \neq RS' $), this \textit{is} true for the special case where $R$ is a permutation matrix. We can therefore construct scale matrices as $S' = P^{-1}SP$. Applying this, we now find that
+\begin{align}
+A &= \begin{multlined}[t]
+\Bigg( \prod_{i} {M_i}_\mathrm{BPLA}  \left(P_\mathrm{axis}^{-1} T_1 P_\mathrm{axis} \right)\left(P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis} \right)  P_\mathrm{axis}^{-1} \left(R_1 R_2\right) \\
+\cdot P_\mathrm{axis}^{-1} P_\mathrm{axis} \left(S_1 + S_2\right) \cdot P_\mathrm{axis} \Bigg) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}\\
+&= \begin{multlined}[t]
+\Bigg( \prod_{i} {M_i}_\mathrm{BPLA}  \left(P_\mathrm{axis}^{-1} T_1 P_\mathrm{axis} \right)\left(P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis} \right)  \left( P_\mathrm{axis}^{-1} R_1 R_2  P_\mathrm{axis}\right) \\
+\cdot \left( \left( P_\mathrm{axis}^{-1} S_1 P_\mathrm{axis}\right) + \left( P_\mathrm{axis}^{-1} S_2 P_\mathrm{axis} \right)\right)\Bigg) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}
+\end{align}
+We can in principle absorb the permutation matrices into $R_1$ and $R_2$ to create a valid Blender animation equation. However, doing this will mean that the equation is only valid for two rotations. If we add or remove axis-permuted translations or scales from the equation, the equation remains valid because the permutation matrices will always hit an inverse on a neighbouring transform. However, if we want to add (or remove) a rotation, we have to redefine the rotation matrices. For example, if instead of $P^{-1}_\mathrm{axis} R_1 R_2 P_\mathrm{axis}$ we have $P^{-1}_\mathrm{axis} R_1 R_2 R_3 P_\mathrm{axis}$, we have to absorb the right-hand $P_\mathrm{axis}$ into $R_3$ instead of $R_2$. This is clearly not a maintable thing to do in Blender, since Blender allows us to swap the order of animations however we like and import arbitrary numbers of animations.
+
+Luckily, we can introduce composibility by remembering that we already noticed that translations and scales can be arbitrarily combined due to the fact that they are sandwiched between a permutation matrix and an inverse. We can introduce another factor of $P^{-1}_\mathrm{axis}P_\mathrm{axis}$ between the rotation matrices to obtain an animation equation with fully composable transformation components:
+\begin{align}
+A &= \begin{multlined}[t]
+\Bigg( \prod_{i} {M_i}_\mathrm{BPLA}  \left(P_\mathrm{axis}^{-1} T_1 P_\mathrm{axis} \right)\left(P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis} \right)  \left(  P_\mathrm{axis}^{-1} R_1 P_\mathrm{axis}\right) \\
+\cdot  \left( P_\mathrm{axis}^{-1} R_2  P_\mathrm{axis} \right) \left(\left(P_\mathrm{axis}^{-1} S_1 P_\mathrm{axis} \right) + \left( P_\mathrm{axis}^{-1} S_2 P_\mathrm{axis}\right)\right) \Bigg) \cdot M_\mathrm{BPA}^{-1}
+\end{multlined}
+\end{align}
+We therefore find the following transformation rules for the transform components under a permutation of axes for the bind pose matrices:
+\begin{align}
+T_1 &\to P_\mathrm{axis}^{-1} T_1 P_\mathrm{axis}\\
+T_2 &\to P_\mathrm{axis}^{-1} T_2 P_\mathrm{axis}\\
+R_1 &\to P_\mathrm{axis}^{-1} R_1 P_\mathrm{axis}\\
+R_2 &\to P_\mathrm{axis}^{-1} R_2 P_\mathrm{axis}\\
+S_1 &\to P_\mathrm{axis}^{-1} S_1 P_\mathrm{axis}\\
+S_2 &\to P_\mathrm{axis}^{-1} S_2 P_\mathrm{axis}
+\end{align}
+
+\paragraph{Parent-relative transforms to axis-permuted rest-relative transforms}\mbox{}\\
+Now that we have found the transformation rules for both constructing rest-relative transforms out of parent-relative transforms, and for moving rest-relative transforms to axis-permuted rest relative transforms, we can now combine the two.
+
+We previously found that we can move from parent-relative to rest-relative transforms with the rules
+\begin{align}
+T_1 &= R_\mathrm{BPL}^{-1} T_\mathrm{offset} R_\mathrm{BPL}\\
+T_2 &= R_\mathrm{BPL}^{-1} T_A R_\mathrm{BPL}\\
+R_1 &= R_\mathrm{BPL}^{-1} R_\mathrm{base}\\
+R_2 &= R_A\\
+S_1 &= S_\mathrm{base}\\
+S_2 &= S_a
+\end{align}
+We then found that we need to insert a factor of $P_\mathrm{axis}^{-1}$ and $P_\mathrm{axis}$ on the left and right of each term respectively. However, we need our equations to all be in terms of $M_\mathrm{BPLA}$, and not $M_\mathrm{BPL}$. Due to this, \textbf{for non-root bones only}, we'll have to insert additional factors of $P_\mathrm{axis}^{-1} P_\mathrm{axis}$ in order to factorise out $M_\mathrm{BPLA}$.
+
+Therefore, the transformation rules for root bones are
+\begin{align}
+T_1 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1} T_\mathrm{offset} R_\mathrm{BPL} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} T_\mathrm{offset} R_\mathrm{BPLA}\\
+T_2 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1} T_A R_\mathrm{BPL} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} T_A R_\mathrm{BPLA}  \\
+R_1 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1} R_\mathrm{base} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} R_\mathrm{base} P_\mathrm{axis}\\
+R_2 &= P_\mathrm{axis}^{-1} R_A P_\mathrm{axis}\\
+S_1 &= P_\mathrm{axis}^{-1} S_\mathrm{base} P_\mathrm{axis}\\
+S_2 &= P_\mathrm{axis}^{-1} S_a P_\mathrm{axis}
+\end{align}
+and for non-root bones,
+\begin{align}
+T_1 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1} P_\mathrm{axis} P_\mathrm{axis}^{-1} T_\mathrm{offset} P_\mathrm{axis} P_\mathrm{axis}^{-1}  R_\mathrm{BPL} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1} T_\mathrm{offset} P_\mathrm{axis} R_\mathrm{BPLA}\\
+T_2 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1} P_\mathrm{axis} P_\mathrm{axis}^{-1}  T_A P_\mathrm{axis} P_\mathrm{axis}^{-1} R_\mathrm{BPL} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1} T_A P_\mathrm{axis} R_\mathrm{BPLA}  \\
+R_1 &= P_\mathrm{axis}^{-1} R_\mathrm{BPL}^{-1}P_\mathrm{axis} P_\mathrm{axis}^{-1}  R_\mathrm{base} P_\mathrm{axis} \\
+&= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1}  R_\mathrm{base} P_\mathrm{axis}\\
+R_2 &= P_\mathrm{axis}^{-1} R_A P_\mathrm{axis}\\
+S_1 &= P_\mathrm{axis}^{-1} S_\mathrm{base} P_\mathrm{axis}\\
+S_2 &= P_\mathrm{axis}^{-1} S_a P_\mathrm{axis}
+\end{align}
+
+In summary, root bone transformations transform to:
+\begin{tcolorbox}
+\begin{align}
+T_1 &= R_\mathrm{BPLA}^{-1} T_\mathrm{offset} R_\mathrm{BPLA}\\
+T_2 &= R_\mathrm{BPLA}^{-1} T_A R_\mathrm{BPLA}  \\
+R_1 &= R_\mathrm{BPLA}^{-1} R_\mathrm{base} P_\mathrm{axis}\\
+R_2 &= P_\mathrm{axis}^{-1} R_A P_\mathrm{axis}\\
+S_1 &= P_\mathrm{axis}^{-1} S_\mathrm{base} P_\mathrm{axis}\\
+S_2 &= P_\mathrm{axis}^{-1} S_a P_\mathrm{axis}
+\end{align}
+\end{tcolorbox}
+and, non-root bone transformations transform to:
+\begin{tcolorbox}
+\begin{align}
+T_1 &= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1} T_\mathrm{offset} P_\mathrm{axis} R_\mathrm{BPLA}\\
+T_2 &= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1} T_A P_\mathrm{axis} R_\mathrm{BPLA}  \\
+R_1 &= R_\mathrm{BPLA}^{-1} P_\mathrm{axis}^{-1}  R_\mathrm{base} P_\mathrm{axis}\\
+R_2 &= P_\mathrm{axis}^{-1} R_A P_\mathrm{axis}\\
+S_1 &= P_\mathrm{axis}^{-1} S_\mathrm{base} P_\mathrm{axis}\\
+S_2 &= P_\mathrm{axis}^{-1} S_a P_\mathrm{axis}
+\end{align}
+\end{tcolorbox}
+
+
+\iffalse
+
+\subsubsection{Deformable Meshes}
+
+\begin{equation}
+v' = \sum_i w_i A_i v
+\end{equation}
+
+\begin{equation}
+v' =  A_\mathrm{M} \sum_i w_i A_i M_\mathrm{BPM} v_\mathrm{GFS}
+\end{equation}
+
+\begin{align}
+v &= M_\mathrm{mesh} v_\mathrm{GFS}\\
+  &= \left( \prod_i  T_i R_i S_i \right) v_\mathrm{GFS}
+\end{align}
+
+\fi
 
 \end{document}
