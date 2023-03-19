@@ -34,15 +34,15 @@ def transforms_to_matrix(loc, quat, scale):
 	q_zw = q_z * q_w;
 
 	out[0] = 2 * s_x * (0.5 - q_yy - q_zz)
-	out[1] = 2 * s_x * (q_xy - q_zw)
-	out[2] = 2 * s_x * (q_xz + q_yw)
+	out[1] = 2 * s_y * (q_xy - q_zw)
+	out[2] = 2 * s_z * (q_xz + q_yw)
 	out[3] = l_x
-	out[4] = 2 * s_y * (q_xy + q_zw)
+	out[4] = 2 * s_x * (q_xy + q_zw)
 	out[5] = 2 * s_y * (0.5 - q_xx - q_zz)
-	out[6] = 2 * s_y * (q_yz - q_xw)
+	out[6] = 2 * s_z * (q_yz - q_xw)
 	out[7] = l_y
-	out[8] = 2 * s_z * (q_xz - q_yw)
-	out[9] = 2 * s_z * (q_yz + q_xw)
+	out[8] = 2 * s_x * (q_xz - q_yw)
+	out[9] = 2 * s_y * (q_yz + q_xw)
 	out[10] = 2 * s_z * (0.5 - q_xx - q_yy)
 	out[11] = l_z;
 
