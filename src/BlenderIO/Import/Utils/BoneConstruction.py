@@ -1,6 +1,6 @@
 import math
 
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 
 def construct_bone(name, armature, matrix, scale):
@@ -94,3 +94,69 @@ def mat3_to_vec_roll(mat):
     rollmat = vecmatinv @ mat
     roll = math.atan2(rollmat[0][2], rollmat[2][2])
     return vec, roll
+
+
+def resize_bone_length(bpy_bone, dims, min_bone_length):
+    position = bpy_bone.head
+    head_to_tail = bpy_bone.tail - bpy_bone.head
+    
+    if len(bpy_bone.children):
+        # Find out if there's an obvious successor bone
+        possible_successors = []
+        possible_successor_dot_products = []
+        dot_products = []
+        angular_discriminator = math.cos(1*math.pi/180) # Checking for bones aligned within 1 degree of separation
+        for child in bpy_bone.children:
+            child_target = child.head - bpy_bone.head
+            
+            projection = child_target.normalized().dot(head_to_tail.normalized())
+            dot_products.append(projection)
+            if projection > angular_discriminator:
+                possible_successors.append(child)
+                possible_successor_dot_products.append(projection)
+            
+        # Now decide the bone length after we've gathered all necessary
+        # info
+        if len(possible_successors) == 1:
+            # Just link bone to its successor
+            length = (possible_successors[0].head - bpy_bone.head).length
+        elif len(possible_successors):
+            # Take a weighted average of successor positions,
+            # where the weighting factor is parameterised by how aligned
+            # the bonehead->bonetail vector is to the 
+            # bonehead->childhead vector
+            length = 0.
+            total_weight = 0.
+            for successor, dp in zip(possible_successors, dot_products):
+                weight = (dp-.99*angular_discriminator) # Always +ve for successors
+                length +=  weight*(successor.head - bpy_bone.head).length
+                total_weight += weight
+            length /= total_weight
+            length = abs(length)
+        else:
+            # Average together child positions
+            # Should probably do something smarter than this
+            tail_target = list(zip(*[c.head for c in bpy_bone.children]))
+            tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
+            head_to_target = tail_target - position
+            
+            alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
+            length = abs(head_to_target.length * alignment_factor) + abs(sum(dims)/3 * (1 - alignment_factor))
+            
+        # Set some minimum length scale...
+        if length < min_bone_length:
+            length = min_bone_length
+    else:
+        own_direction = (bpy_bone.tail - bpy_bone.head).normalized()
+        projected_dim = abs(own_direction.dot(dims))
+        
+        if bpy_bone.parent is None:
+            length = projected_dim
+        else:
+            parent_direction = (bpy_bone.parent.tail - bpy_bone.parent.head).normalized()
+            projection = abs((own_direction).dot(parent_direction))
+                
+            length = bpy_bone.parent.length * projection + projected_dim * (1 - projection)
+    
+    assert length > 0, "FATAL INTERNAL ERROR: ATTEMPTED TO GIVE A BONE A NEGATIVE LENGTH"
+    bpy_bone.length = length

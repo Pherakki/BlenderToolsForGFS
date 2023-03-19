@@ -8,7 +8,7 @@ from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
 from ..Utils.UVMapManagement import make_color_map_name
-from .Utils.BoneConstruction import construct_bone
+from .Utils.BoneConstruction import construct_bone, resize_bone_length
 from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
 
@@ -141,69 +141,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     bpy.ops.object.mode_set(mode="EDIT")
     
     for bpy_bone in main_armature.data.edit_bones:
-        position = bpy_bone.head
-        head_to_tail = bpy_bone.tail - bpy_bone.head
-        
-        if len(bpy_bone.children):
-            # Find out if there's an obvious successor bone
-            possible_successors = []
-            possible_successor_dot_products = []
-            dot_products = []
-            angular_discriminator = math.cos(1*math.pi/180) # Checking for bones aligned within 1 degree of separation
-            for child in bpy_bone.children:
-                child_target = child.head - bpy_bone.head
-                
-                projection = child_target.normalized().dot(head_to_tail.normalized())
-                dot_products.append(projection)
-                if projection > angular_discriminator:
-                    possible_successors.append(child)
-                    possible_successor_dot_products.append(projection)
-                
-            # Now decide the bone length after we've gathered all necessary
-            # info
-            if len(possible_successors) == 1:
-                # Just link bone to its successor
-                length = (possible_successors[0].head - bpy_bone.head).length
-            elif len(possible_successors):
-                # Take a weighted average of successor positions,
-                # where the weighting factor is parameterised by how aligned
-                # the bonehead->bonetail vector is to the 
-                # bonehead->childhead vector
-                length = 0.
-                total_weight = 0.
-                for successor, dp in zip(possible_successors, dot_products):
-                    weight = (dp-.99*angular_discriminator) # Always +ve for successors
-                    length +=  weight*(successor.head - bpy_bone.head).length
-                    total_weight += weight
-                length /= total_weight
-                length = abs(length)
-            else:
-                # Average together child positions
-                # Should probably do something smarter than this
-                tail_target = list(zip(*[c.head for c in bpy_bone.children]))
-                tail_target = Vector([sum(coord)/len(coord) for coord in tail_target])
-                head_to_target = tail_target - position
-                
-                alignment_factor = abs(head_to_target.normalized().dot(head_to_tail.normalized()))
-                length = abs(head_to_target.length * alignment_factor) + abs(sum(dims)/3 * (1 - alignment_factor))
-                
-            # Set some minimum length scale...
-            if length < min_bone_length:
-                length = min_bone_length
-        else:
-            own_direction = (bpy_bone.tail - bpy_bone.head).normalized()
-            projected_dim = abs(own_direction.dot(dims))
-            
-            if bpy_bone.parent is None:
-                length = projected_dim
-            else:
-                parent_direction = (bpy_bone.parent.tail - bpy_bone.parent.head).normalized()
-                projection = abs((own_direction).dot(parent_direction))
-                    
-                length = bpy_bone.parent.length * projection + projected_dim * (1 - projection)
-        
-        assert length > 0, "FATAL INTERNAL ERROR: ATTEMPTED TO GIVE A BONE A NEGATIVE LENGTH"
-        bpy_bone.length = length
+        resize_bone_length(bpy_bone, dims, min_bone_length)
         
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.mode_set(mode="EDIT")
