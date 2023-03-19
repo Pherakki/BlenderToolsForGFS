@@ -5,6 +5,7 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
+from ..Data import available_versions_property
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
@@ -57,24 +58,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default=True
     )
     
-    version: bpy.props.EnumProperty(items=(
-            ("0x01104920", "0x01104920", ""),
-            ("0x01104950", "0x01104950", ""),
-            ("0x01105000", "0x01105000", ""),
-            ("0x01105010", "0x01105010", ""),
-            ("0x01105020", "0x01105020", ""),
-            ("0x01105030", "0x01105030", ""),
-            ("0x01105040", "0x01105040", ""),
-            ("0x01105050", "0x01105050", ""),
-            ("0x01105060", "0x01105060", ""),
-            ("0x01105070", "0x01105070", ""),
-            ("0x01105080", "0x01105080", ""),
-            ("0x01105090", "0x01105090", ""),
-            ("0x01105100", "0x01105100", "")
-        ),
-        name="Version",
-        default="0x01105100"
-    )
+    version: available_versions_property()
     
     @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
@@ -159,24 +143,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     
     filename_ext = ".GAP"
     
-    version: bpy.props.EnumProperty(items=(
-            ("0x01104920", "0x01104920", ""),
-            ("0x01104950", "0x01104950", ""),
-            ("0x01105000", "0x01105000", ""),
-            ("0x01105010", "0x01105010", ""),
-            ("0x01105020", "0x01105020", ""),
-            ("0x01105030", "0x01105030", ""),
-            ("0x01105040", "0x01105040", ""),
-            ("0x01105050", "0x01105050", ""),
-            ("0x01105060", "0x01105060", ""),
-            ("0x01105070", "0x01105070", ""),
-            ("0x01105080", "0x01105080", ""),
-            ("0x01105090", "0x01105090", ""),
-            ("0x01105100", "0x01105100", "")
-        ),
-        name="Version",
-        default="0x01105100"
-    )
+    version: available_versions_property()
     
     @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
