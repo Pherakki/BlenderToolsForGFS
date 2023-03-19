@@ -94,12 +94,14 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map)
         
-        # Report any warnings that were logged
-        errorlog.digest_warnings(self.debug_mode)
-
         set_fps(self, context)
         
-        self.report({"INFO"}, "Import successful.")
+        # Report any warnings that were logged
+        if len(errorlog.warnings):
+            errorlog.digest_warnings(self.debug_mode)
+            self.report({"INFO"}, "Import successful, with warnings.")
+        else:
+            self.report({"INFO"}, "Import successful.")
         
         return {'FINISHED'}
     

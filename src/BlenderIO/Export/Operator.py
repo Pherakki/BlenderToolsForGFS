@@ -216,6 +216,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # Tell the user if there are any warnings they should be aware of.
         if len(errorlog.warnings):
             errorlog.digest_warnings(self.debug_mode)
+            self.report({"INFO"}, "Export successful, with warnings.")
         elif not self.debug_mode:
             self.report({"INFO"}, "Export successful.")
         return {'FINISHED'}
