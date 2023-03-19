@@ -16,6 +16,7 @@ bl_info = {
 def init_bpy():
     import bpy
     
+    from .src.BlenderIO.Preferences import AddonPreferences
     from .src.BlenderIO.Import      import ImportGFS, ImportGAP
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export      import ExportGFS, ExportGAP
@@ -58,6 +59,7 @@ def init_bpy():
     
     
     CLASSES = (
+        AddonPreferences,
         ImportGFS,
         ImportGAP,
         GFSImportSubmenu,

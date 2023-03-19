@@ -6,6 +6,7 @@ import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
 from ..Data import available_versions_property
+from ..Preferences import get_preferences
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
@@ -60,6 +61,14 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     version: available_versions_property()
     
+    def invoke(self, context, event):
+        prefs = get_preferences()
+        self.strip_missing_vertex_groups = prefs.strip_missing_vertex_groups
+        self.recalculate_tangents  = prefs.recalculate_tangents
+        self.version = prefs.version
+        return super().invoke(context, event)
+
+
     @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger
@@ -145,6 +154,12 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     
     version: available_versions_property()
     
+    def invoke(self, context, event):
+        prefs = get_preferences()
+        self.version = prefs.version
+        return super().invoke(context, event)
+
+
     @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger

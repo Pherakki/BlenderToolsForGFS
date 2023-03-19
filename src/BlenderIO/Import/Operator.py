@@ -4,6 +4,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, ParticlesError, HasParticleDataError
+from ..Preferences import get_preferences
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
@@ -26,6 +27,7 @@ def define_set_fps():
         description="Set the animation framerate of the current scene to 30, so that imported animations display at the correct speed",
         default=False
     )
+
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
@@ -56,6 +58,13 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
                     "dropped by this feature",
         default=True
     )
+    
+    
+    def invoke(self, context, event):
+        prefs = get_preferences()
+        self.set_fps        = prefs.set_fps
+        self.merge_vertices = prefs.merge_vertices
+        return super().invoke(context, event)
     
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
@@ -136,6 +145,11 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
                                       )
     
     set_fps: define_set_fps()
+    
+    def invoke(self, context, event):
+        prefs = get_preferences()
+        self.set_fps = prefs.set_fps
+        return super().invoke(context, event)
     
     def find_selected_model(self, context):
         sel_obj = context.active_object
