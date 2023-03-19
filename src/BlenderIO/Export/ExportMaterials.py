@@ -484,11 +484,11 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
     if None in texture_names:
         texture_names.remove(None)
     texture_names = sorted(texture_names)
-    for texture_name in texture_names:
-        export_texture(gfs, texture_name, errorlog)
+    for (texture_name, mat_name, node_name) in texture_names:
+        export_texture(gfs, texture_name, mat_name, node_name, errorlog)
 
 
-def export_texture(gfs, texture_name, errorlog):
+def export_texture(gfs, texture_name, mat_name, node_name, errorlog):
     # Retreive image data block from Blender
     if texture_name == "dummy" and texture_name not in bpy.data.images:
         gfs.add_texture("dummy", dummy_image_data, 1, 1, 0, 0)
@@ -500,7 +500,7 @@ def export_texture(gfs, texture_name, errorlog):
     # embed it in the model
     # If it isn't... need to convert it to DDS, which we won't support currently
     if bpy_image.type != "FILE" and bpy_image.type != "IMAGE":
-        errorlog.log_error(ReportableError(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type}"))
+        errorlog.log_error(ReportableError(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} used by material '{mat_name}' on texture node '{node_name}'"))
     
     # Check if the file is packed in the blend or external;
     # get data depending on which is the case
@@ -511,15 +511,19 @@ def export_texture(gfs, texture_name, errorlog):
             with open(bpy_image.filepath_raw, 'rb') as F:
                 image_data = F.read()
         else:
-            errorlog.log_error(ReportableError(f"Attempted to export image '{bpy_image.name}', but it has an invalid filepath: '{img_path}. You may be able to export if you pack all images into Blender instead of referring to external files.'"))
+            errorlog.log_warning_message(f"Attempted to export external image file '{bpy_image.name}' used by material '{mat_name}' on texture node '{node_name}', but it could not be located at the path: '{img_path}'. You may be able to export if you pack all images into Blender instead of referring to external files. It will be replaced with a dummy texture.")
+            image_data = dummy_image_data
     else:
         image_data = bpy_image.packed_file.data
         
     # Check that it's a DDS
     # Not sure what to do with non-DDS data currently
     # Should add support later
-    if image_data[:4] != b"DDS ":
-        errorlog.log_warning_message(f"Attempted to export image '{bpy_image.name}', but it is not a DDS texture. This will be replaced with a dummy texture.")
+    if image_data is None:
+        errorlog.log_warning_message(f"Attempted to export image '{bpy_image.name}' used by material '{mat_name}' on texture node '{node_name}', but it has no image data attached. This will be replaced with a dummy texture.")
+        image_data = dummy_image_data
+    elif image_data[:4] != b"DDS ":
+        errorlog.log_warning_message(f"Attempted to export image '{bpy_image.name}' used by material '{mat_name}' on texture node '{node_name}', but it is not a DDS texture. This will be replaced with a dummy texture.")
         image_data = dummy_image_data
     
     tex_names = set(tex.name for tex in gfs.textures)
@@ -591,5 +595,5 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
             ]
         )
         
-        return image_name
+        return (image_name, mat_name, name)
     return None
