@@ -47,13 +47,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     strip_missing_vertex_groups: bpy.props.BoolProperty(
         name="Strip Missing Vertex Groups",
-        description="If a mesh has vertex groups with no corresponding bone, ignore those groups and renormalize the vertex weights with those groups removed.",
+        description="If a mesh has vertex groups with no corresponding bone, ignore those groups and renormalize the vertex weights with those groups removed",
         default=False
     )
     
     recalculate_tangents: bpy.props.BoolProperty(
         name="Recalculate Tangents",
-        description="Recalcualte tangents on export if they are required.",
+        description="Recalculate tangents on export if they are required",
         default=True
     )
     
@@ -240,17 +240,3 @@ def find_selected_model(errorlog):
     if parent_obj.type != "ARMATURE":
         errorlog.log_error_message(f"An object is selected, but the top-level object \'{parent_obj.name}\' is not an Armature object - has type {parent_obj.type}.")
     return parent_obj
-
-# def find_pinned_armatures(parent_obj):
-#     out = []
-#     for obj in bpy.data.objects:
-#         if not obj.type == "ARMATURE":
-#             continue
-#         for constr in obj.constraints:
-#             if constr.type != "CHILD_OF":
-#                 continue
-#             if constr.target == obj:
-#                 continue
-#             out.append(obj)
-#     return out
-                    
