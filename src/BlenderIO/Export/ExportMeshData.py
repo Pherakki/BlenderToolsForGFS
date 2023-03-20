@@ -145,8 +145,8 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         
         # Now create the parent node
         parent_idx = 0
-        bind_pose_matrix = convert_Zup_to_Yup(armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world)
-        parent_relative_bind_pose_matrix = bind_pose_matrix
+        bind_pose_matrix = convert_Zup_to_Yup(bpy_mesh_object.matrix_local)
+        parent_relative_bind_pose_matrix = armature.matrix_local.inverted() @ bind_pose_matrix
         
         # Check if we can convert any weighted meshes to node children
         # to save on matrix palette space
@@ -166,8 +166,8 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
             # We can re-parent the node to this node and yeet the vertex
             # weights
             node_idx = list(all_indices)[0]
-            parent_relative_bind_pose_matrix = (convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local).inverted() @ (armature.matrix_world.inverted() @ bpy_mesh_object.matrix_world))
-            #parent_relative_bind_pose_matrix = parent_bone_matrix.inverted() @ bind_pose_matrix
+            parent_relative_bind_pose_matrix = (convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local).inverted() @ bpy_mesh_object.matrix_local)
+
             for gm in gfs_meshes:
                 for v in gm.vertices:
                     v.indices = None
