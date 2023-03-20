@@ -37,6 +37,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = gfs.keep_bounding_box
     main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.keep_bounding_sphere
     main_armature.data.GFSTOOLS_ModelProperties.flag_3                 = gfs.flag_3
+    main_armature.rotation_mode = 'XYZ'
     
     bpy.ops.object.mode_set(mode='EDIT')
     bpy_node_names  = [None]*len(gfs.bones)
