@@ -3,7 +3,7 @@ import os
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, ParticlesError, HasParticleDataError
+from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
 from ..Preferences import get_preferences
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
@@ -76,7 +76,9 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         errorlog = ErrorLogger()
         warnings = []
         try:
-            gfs = GFSInterface.from_file(filepath, warnings=warnings) 
+            gfs = GFSInterface.from_file(filepath, warnings=warnings)
+        except NotAGFSFileError as e:
+            errorlog.log_error_message(str(e))
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
 
@@ -179,13 +181,11 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         warnings = []
         try:
-            gfs = GFSInterface.from_file(filepath, warnings=warnings) 
+            gfs = GFSInterface.from_file(filepath, warnings=warnings)
+        except NotAGFSFileError as e:
+            errorlog.log_error_message(str(e))
         except UnsupportedVersionError as e:
             errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
-        except ParticlesError:
-            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
-        except HasParticleDataError:
-            errorlog.log_error_message("The file you attempted to load contains EPL data, which cannot currently be loaded.")
 
         # Add any file-loading warnings to the warnings list
         for warning_msg in warnings:

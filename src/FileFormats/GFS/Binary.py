@@ -7,6 +7,12 @@ from .SubComponents.Animations.Binary import AnimationPayload
 from .SubComponents.Physics.Binary import PhysicsPayload
 from .SubComponents.CommonStructures.SceneNode.EPL.EPLBinary import EPLBinary as EPLObjBinary
 
+
+class NotAGFSFileError(Exception):
+    def __init__(self, magic):
+        super().__init__(f"Not a GFS file - found incorrect magic value '{magic}'")
+
+
 class GFSBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -20,7 +26,8 @@ class GFSBinary(Serializable):
         
     def read_write(self, rw):
         self.magic      = rw.rw_bytestring(self.magic, 4)
-        rw.assert_equal(self.magic, b'GFS0')
+        if (self.magic != b'GFS0'):
+            raise NotAGFSFileError(self.magic)
         
         if rw.mode() == "read":
             finished = False
