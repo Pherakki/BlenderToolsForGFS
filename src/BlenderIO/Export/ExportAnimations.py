@@ -75,7 +75,8 @@ def export_lookat_animations(armature, props, gfs_obj, keep_unused_anims):
 def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_anims):
     # EXPORT NODE ANIMS
     animated_nodes = set()
-    node_transforms = get_action_data(action, armature, is_blend)
+    node_transforms, root_transform = get_action_data(action, armature, is_blend)
+    
     if is_blend:
         # First export the translations and rotations
         node_anims = {}
@@ -107,6 +108,14 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
             anim.scales    = s
             animated_nodes.add(bname)
         
+    if root_transform is not None:
+        bidx, bname, t, r, s = root_transform
+        anim = gfs_anim.add_node_animation(bidx, bname)
+        anim.positions = t
+        anim.rotations = r
+        anim.scales    = s
+        animated_nodes.add(bname)
+    
     # Export extra data
     props = action.GFSTOOLS_AnimationProperties
     gfs_anim.flag_0  = props.flag_0
@@ -226,7 +235,7 @@ def get_action_data(action, armature, is_blend):
     bone_names = [b.name for b in armature.data.bones]
     out = []
     animation_data = {}
-    fcurve_groups = group_fcurves_by_bone_and_type(action)
+    fcurve_groups, obj_transforms = group_fcurves_by_bone_and_type(action)
     for bone_name, group in fcurve_groups.items():
         if bone_name not in armature.pose.bones:
             continue
@@ -234,29 +243,7 @@ def get_action_data(action, armature, is_blend):
                                      'location': {},
                                      'scale': {},
                                      'rotation_euler': {}}
-        # Get whether any of the locations, rotations, and scales are animated; plus the f-curves for those
-        # that are
-        elements_used, bone_data = get_used_animation_elements_in_group(group)
-        # For each set that is animated, interpolate missing keyframes for each component of the relevant vector
-        # on each keyframe where at least one element is used
-        for curve_type, isUsed in elements_used.items():
-            if isUsed:
-                curve_data = interpolate_missing_frame_elements(bone_data[curve_type], curve_defaults[curve_type], lerp)
-                zipped_data = zip_vector_elements(curve_data)
-                animation_data[bone_name][curve_type] = zipped_data
-           
-        rotation_mode = armature.pose.bones[bone_name].rotation_mode
-        if rotation_mode != "QUATERNION":
-            animation_data[bone_name]["rotation_quaternion"] = {
-                k: convert_rotation_to_quaternion(None, v, rotation_mode) 
-                for k, v in animation_data[bone_name]["rotation_euler"]
-            }
-        
-        if "rotation_quaternion" in animation_data[bone_name]:
-            animation_data[bone_name]["rotation_quaternion"] = {
-                k: [v[1], v[2], v[3], v[0]] 
-                for k, v in animation_data[bone_name]["rotation_quaternion"].items()
-            }
+        extract_clean_animation_data(group, curve_defaults, animation_data[bone_name], armature.pose.bones[bone_name])
         
         if is_blend:
             # Extract animation data
@@ -319,7 +306,26 @@ def get_action_data(action, armature, is_blend):
                     {(k-1)/fps : v for k, v in g_rotations.items()}, 
                     {(k-1)/fps : v for k, v in g_scales.items()}])
     
-    return out
+    root_animation = None
+    if obj_transforms is not None:
+        root_animation_buffer = {'rotation_quaternion': {},
+                                 'location':            {},
+                                 'scale':               {},
+                                 'rotation_euler':      {}}
+        extract_clean_animation_data(obj_transforms, curve_defaults, root_animation_buffer, armature)
+    
+        # Extract animation data
+        positions = root_animation_buffer.get("location", {})
+        rotations = root_animation_buffer.get("rotation_quaternion", {})
+        scales    = root_animation_buffer.get("scale", {})
+    
+        fps = 30
+        root_animation = ([0, armature.data.GFSTOOLS_ModelProperties.root_node_name, 
+                          {(k-1)/fps : v for k, v in positions.items()}, 
+                          {(k-1)/fps : v for k, v in rotations.items()}, 
+                          {(k-1)/fps : v for k, v in scales.items()}])
+        
+    return out, root_animation
 
 
 #####################
@@ -334,22 +340,37 @@ def get_fcurve_type(fcurve):
     return fcurve.data_path.split('.')[-1]
 
 
+def create_anim_init_data():
+    return {'rotation_quaternion': [None, None, None, None],
+            'location':            [None, None, None],
+            'scale':               [None, None, None],
+            'rotation_euler':      [None, None, None]}
+
+
 def group_fcurves_by_bone_and_type(action):
     res = {}
+    possible_transforms = set(create_anim_init_data().keys())
+    obj_transforms = None
+    
     for fcurve in action.fcurves:
+        # Bone transform
         if fcurve.data_path[:10] == 'pose.bones':
             bone_name = get_bone_name_from_fcurve(fcurve)
-            if bone_name not in res:
-                res[bone_name] = {'rotation_quaternion': [None, None, None, None],
-                                  'location':            [None, None, None],
-                                  'scale':               [None, None, None],
-                                  'rotation_euler':      [None, None, None]}
+            if bone_name not in res: res[bone_name] = create_anim_init_data()
             curve_type = get_fcurve_type(fcurve)
-            array_index = fcurve.array_index
-
-            # Get value of first keyframe point
-            res[bone_name][curve_type][array_index] = fcurve
-    return res
+            edit_transforms = res[bone_name]
+        # Object transforms
+        elif fcurve.data_path in possible_transforms:
+            if obj_transforms is None: obj_transforms = create_anim_init_data()
+            curve_type = fcurve.data_path
+            edit_transforms = obj_transforms
+        else:
+            continue
+        
+        array_index = fcurve.array_index
+        edit_transforms[curve_type][array_index] = fcurve
+            
+    return res, obj_transforms
 
 
 def get_used_animation_elements_in_group(group):
@@ -389,7 +410,7 @@ def get_used_animation_elements_in_group(group):
     bone_data = {'rotation_quaternion': [{}, {}, {}, {}],
                  'location':            [{}, {}, {}],
                  'scale':               [{}, {}, {}],
-                 'rotation_euler': [{}, {}, {}]}
+                 'rotation_euler':      [{}, {}, {}]}
     for curve_type in group:
         for curve_idx, f_curve in enumerate(group[curve_type]):
             if f_curve is None:
@@ -398,6 +419,7 @@ def get_used_animation_elements_in_group(group):
             bone_data[curve_type][curve_idx] = {k-1: v for k, v in [kfp.co for kfp in f_curve.keyframe_points]}
 
     return elements_used, bone_data
+
 
 
 def get_all_required_frames(curve_data):
@@ -491,3 +513,29 @@ def produce_interpolation_method(frame_idxs, frame_values, default_value, interp
             return interpolate_keyframe(frame_idxs, frame_values, input_frame_idx, interpolation_function)
 
     return interp_method
+
+
+def extract_clean_animation_data(group, curve_defaults, out_buffer, pose_object):
+    # Get whether any of the locations, rotations, and scales are animated; plus the f-curves for those
+    # that are
+    elements_used, bone_data = get_used_animation_elements_in_group(group)
+    # For each set that is animated, interpolate missing keyframes for each component of the relevant vector
+    # on each keyframe where at least one element is used
+    for curve_type, isUsed in elements_used.items():
+        if isUsed:
+            curve_data = interpolate_missing_frame_elements(bone_data[curve_type], curve_defaults[curve_type], lerp)
+            zipped_data = zip_vector_elements(curve_data)
+            out_buffer[curve_type] = zipped_data
+       
+    rotation_mode = pose_object.rotation_mode
+    if rotation_mode != "QUATERNION":
+        out_buffer["rotation_quaternion"] = {
+            k: convert_rotation_to_quaternion(None, v, rotation_mode) 
+            for k, v in out_buffer["rotation_euler"]
+        }
+    
+    if "rotation_quaternion" in out_buffer:
+        out_buffer["rotation_quaternion"] = {
+            k: [v[1], v[2], v[3], v[0]] 
+            for k, v in out_buffer["rotation_quaternion"].items()
+        }

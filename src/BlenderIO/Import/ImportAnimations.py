@@ -83,10 +83,16 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
     action = bpy.data.actions.new(track_name)
 
     # Base action
+    root_name = armature.data.GFSTOOLS_ModelProperties.root_node_name
     for node_idx, node in enumerate(gfs.bones):
-        if node_idx not in gfs_to_bpy_bone_map:
+        # Special cases
+        if node.name == root_name:
+            build_object_fcurves(action, armature, 30, {0: node.position}, {0: node.rotation}, {0: node.scale})
+            continue
+        elif node_idx not in gfs_to_bpy_bone_map:
             continue
 
+        # General bone
         bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
         build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale})
     
@@ -125,7 +131,21 @@ def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, 
             fc.update()
         for fc in fcs:
             fc.lock = False
-            
+
+
+def build_object_fcurves(action, object, fps, positions, rotations, scales):
+    # Set up action data
+    actiongroup = action.groups.new("Object Transforms")
+
+    # Create animations
+    q_rotations = {k: Quaternion([q[3], q[0], q[1], q[2]]) for k, q in rotations  .items()}
+    e_rotations = {k: q.to_euler()                         for k, q in q_rotations.items()}
+    create_fcurves(action, actiongroup, 'rotation_quaternion', "BEZIER", fps, q_rotations, [0, 1, 2, 3])
+    create_fcurves(action, actiongroup, 'rotation_euler',      "LINEAR", fps, e_rotations, [0, 1, 2]   )
+    create_fcurves(action, actiongroup, 'location',            "LINEAR", fps, positions,   [0, 1, 2]   )
+    create_fcurves(action, actiongroup, 'scale',               "LINEAR", fps, scales,      [0, 1, 2]   )
+
+
 def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales):
     # Set up action data
     actiongroup = action.groups.new(bone_name)
@@ -223,6 +243,10 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
         ): bpy_bone.name
         for bpy_bone in armature.data.bones
     }
+    root_name = armature.data.GFSTOOLS_ModelProperties.root_node_name
+    available_names[root_name] = root_name
+    
+    # Now import the animations
     unimported_node_animations = []
     for track_idx, data_track in enumerate(anim.node_animations):
         if gfs_to_bpy_bone_map is None:
@@ -233,13 +257,16 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
             else:
                 bone_name = None
         
-        #if bone_name == armature.GFSTOOLS_ModelProperties.root_node_name:
-        #    continue
-        if bone_name is None or bone_name not in armature.data.bones:
+        fps = 30*(1 if anim.speed is None else anim.speed) # Blender has an FPS of 24
+        
+        # Special cases
+        if bone_name == root_name:
+            build_object_fcurves(action, armature, fps, data_track.positions, data_track.rotations, data_track.scales)
+            continue
+        elif bone_name is None or bone_name not in armature.data.bones:
             unimported_node_animations.append(track_idx)
             continue
         
-        fps = 30*(1 if anim.speed is None else anim.speed) # Blender has an FPS of 24
         if is_blend:
             build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales)
         else:

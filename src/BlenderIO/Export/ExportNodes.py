@@ -20,17 +20,22 @@ def export_node_tree(gfs, armature, errorlog):
                 rest_pose_action = rest_pose_nla.strips[0].action
     if rest_pose_action is None:
         rest_pose_matrices = rest_pose_from_armature_bind_pose(armature.data.bones)
+        armature_rest_pose = Matrix.Identity(4)
     else:
-        rest_pose_matrices = extract_first_frame(rest_pose_action, armature.pose.bones)
+        rest_pose_matrices, armature_rest_pose = extract_first_frame(rest_pose_action, armature, armature.pose.bones)
     
     # Add root node
     rn_props = armature.data.GFSTOOLS_NodeProperties
+    t, r, s = armature_rest_pose.decompose()
+    bm = Matrix.Translation(t) @ r.to_matrix().to_4x4()
     root_node = gfs.add_node(-1, armature.data.GFSTOOLS_ModelProperties.root_node_name,
-                              [0., 0., 0.], [0., 0., 0., 1.],  [1., 1., 1.], 
+                              [t.x, t.y, t.z], [r.x, r.y, r.z, r.w],  [s.x, s.y, s.z], 
                               rn_props.unknown_float,
-                              [1., 0., 0., 0.,
-                               0., 1., 0., 0.,
-                               0., 0., 1., 0.])
+                              [
+                                  bm[0][0], bm[0][1], bm[0][2], bm[0][3],
+                                  bm[1][0], bm[1][1], bm[1][2], bm[1][3],
+                                  bm[2][0], bm[2][1], bm[2][2], bm[2][3],
+                              ])
     for prop in rn_props.properties:
         root_node.add_property(*prop.extract_data(prop))
     
@@ -81,23 +86,37 @@ def get_bone_name_from_fcurve(fcurve):
 def get_fcurve_type(fcurve):
     return fcurve.data_path.split('.')[-1]
 
+def create_anim_init_data():
+    return {'rotation_quaternion': [1., 0., 0., 0.],
+            'location':            [0., 0., 0.],
+            'scale':               [1., 1., 1.],
+            'rotation_euler':      [0., 0., 0.]}
 
 def group_fcurves_by_bone_and_type(action):
     res = {}
+    possible_transforms = set(create_anim_init_data().keys())
+    obj_transforms = None
+    
     for fcurve in action.fcurves:
+        # Bone transform
         if fcurve.data_path[:10] == 'pose.bones':
             bone_name = get_bone_name_from_fcurve(fcurve)
-            if bone_name not in res:
-                res[bone_name] = {'rotation_quaternion': [1., 0., 0., 0.],
-                                  'location':            [0., 0., 0.],
-                                  'scale':               [1., 1., 1.],
-                                  'rotation_euler':      [0., 0., 0.]}
+            if bone_name not in res: res[bone_name] = create_anim_init_data()
             curve_type = get_fcurve_type(fcurve)
-            array_index = fcurve.array_index
-
-            # Get value of first keyframe point
-            res[bone_name][curve_type][array_index] = fcurve.keyframe_points[0].co[1]
-    return res
+            edit_transforms = res[bone_name]
+        # Object transforms
+        elif fcurve.data_path in possible_transforms:
+            if obj_transforms is None: obj_transforms = create_anim_init_data()
+            curve_type = fcurve.data_path
+            edit_transforms = obj_transforms
+        else:
+            continue
+        
+        array_index = fcurve.array_index
+        # Get value of first keyframe point
+        edit_transforms[curve_type][array_index] = fcurve.keyframe_points[0].co[1]
+        
+    return res, obj_transforms
 
 def rest_pose_from_armature_bind_pose(armature):
     out = {}
@@ -110,22 +129,29 @@ def rest_pose_from_armature_bind_pose(armature):
     return out
 
 
-def extract_first_frame(action, pose_bones):
+def create_pose_matrix(pose_curves, pose_object):
+    rotation = convert_rotation_to_quaternion(pose_curves["rotation_quaternion"],
+                                              pose_curves["rotation_euler"],
+                                              pose_object.rotation_mode)
+    
+    t_matrix = Matrix.Translation(pose_curves['location'])
+    r_matrix = rotation.to_matrix().to_4x4()
+    s_matrix = Matrix.Diagonal([*pose_curves['scale'], 1.])
+    
+    return  t_matrix @ r_matrix @ s_matrix
+
+
+def extract_first_frame(action, armature_object, pose_bones):
     out = {}
-    extracted_fcurve_data = group_fcurves_by_bone_and_type(action)
+    extracted_fcurve_data, extracted_root_fcurve_data = group_fcurves_by_bone_and_type(action)
     for pose_bone in pose_bones:
         pose_curves = extracted_fcurve_data.get(pose_bone.name)
         if pose_curves is None:
             out[pose_bone.name] = Matrix.Identity(4)
             continue
 
-        rotation = convert_rotation_to_quaternion(pose_curves["rotation_quaternion"],
-                                                  pose_curves["rotation_euler"],
-                                                  pose_bone.rotation_mode)
+        out[pose_bone.name] = create_pose_matrix(pose_curves, pose_bone)
         
-        t_matrix = Matrix.Translation(pose_curves['location'])
-        r_matrix = rotation.to_matrix().to_4x4()
-        s_matrix = Matrix.Diagonal([*pose_curves['scale'], 1.])
+    root_pose = None if extracted_root_fcurve_data is None else create_pose_matrix(extracted_root_fcurve_data, armature_object)
         
-        out[pose_bone.name] = t_matrix @ r_matrix @ s_matrix
-    return out
+    return out, root_pose
