@@ -248,12 +248,13 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
     
     # Set transform
     pos, quat, scale = transform.decompose()
-    bpy_mesh_object.rotation_mode = "QUATERNION"
+    bpy_mesh_object.rotation_mode = "XYZ"
     bpy_mesh_object.location = pos
     bpy_mesh_object.rotation_quaternion = quat
+    bpy_mesh_object.rotation_euler = quat.to_euler('XYZ')
     bpy_mesh_object.scale = scale
-        
     
+  
     # Add Node Properties
     bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
     import_properties(gfs_node.properties, bpy_mesh_object.data.GFSTOOLS_NodeProperties.properties)
@@ -266,7 +267,7 @@ def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_no
         child_bpy_mesh_object.location = [0., 0., 0.]
         child_bpy_mesh_object.rotation_quaternion = [1., 0., 0., 0.]
         child_bpy_mesh_object.scale = [1., 1., 1.]
-    
+  
     return bpy_mesh_object
     
     
