@@ -4,6 +4,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
+from ..Data import bone_pose_enum_options
 from ..Preferences import get_preferences
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
@@ -58,12 +59,19 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
                     "dropped by this feature",
         default=True
     )
-    
+        
+    bone_pose: bpy.props.EnumProperty(
+        name="Bind Pose",
+        description="The method used to construct a bind pose for the skeleton",
+        items=bone_pose_enum_options()
+
+    )
     
     def invoke(self, context, event):
         prefs = get_preferences()
         self.set_fps        = prefs.set_fps
         self.merge_vertices = prefs.merge_vertices
+        self.bone_pose      = prefs.bone_pose
         return super().invoke(context, event)
     
     @handle_warning_system("The file you are trying to import.")
@@ -94,7 +102,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures, errorlog)
-        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.merge_vertices)
+        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.merge_vertices, self.bone_pose, filepath)
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]

@@ -4,6 +4,8 @@ import math
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 
+from ...FileFormats.GFS import GFSBinary
+from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode import NodeInterface
 from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup, decomposableToTRS
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
@@ -24,7 +26,121 @@ class VertexAttributeTracker:
         self.color1s   = []
 
 
-def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
+def build_bones_from_bind_pose(gfs, main_armature, bones_to_ignore):
+    skewed_bpm_nodes = []
+    gfs_to_bpy_bone_map = {}
+    bpy_bone_counter = 0
+    
+    bpy_nodes       = [None]*len(gfs.bones)
+    bone_transforms = [None]*len(gfs.bones)
+    bone_rest_transforms = [None]*len(gfs.bones)
+    for i, node in enumerate(gfs.bones):
+        matrix = node.bind_pose_matrix
+        matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
+
+        if i not in bones_to_ignore:      
+            bpy_bone = construct_bone(node.name, main_armature, 
+                                     MayaBoneToBlenderBone(matrix), 
+                                     10)
+            if node.parent_idx > -1:
+                bpy_bone.parent = bpy_nodes[node.parent_idx] 
+            bpy_nodes[i]           = bpy_bone
+            gfs_to_bpy_bone_map[i] = bpy_bone_counter
+            bpy_bone_counter      += 1
+            
+            if not decomposableToTRS(matrix):
+                skewed_bpm_nodes.append(i)
+        
+        t = node.position
+        r = node.rotation
+        s = node.scale
+        rest_matrix = Matrix.Translation(t) @ Quaternion([r[3], r[0], r[1], r[2]]).to_matrix().to_4x4() @ Matrix.Diagonal([*s, 1.])
+        if node.parent_idx > -1:
+            bone_rest_transforms[i] = bone_rest_transforms[node.parent_idx] @ rest_matrix
+        else:
+            bone_rest_transforms[i] = convert_Yup_to_Zup(rest_matrix)
+        bone_transforms[i] = convert_Yup_to_Zup(matrix)
+        
+    return bpy_nodes, bone_transforms, bone_rest_transforms, gfs_to_bpy_bone_map, skewed_bpm_nodes
+
+
+def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
+    skewed_bpm_nodes = []
+    gfs_to_bpy_bone_map = {}
+    bpy_bone_counter = 0
+    
+    bpy_nodes       = [None]*len(gfs.bones)
+    true_transforms = [None]*len(gfs.bones)
+    bone_transforms = [None]*len(gfs.bones)
+    for i, node in enumerate(gfs.bones):
+        t = node.position
+        r = node.rotation
+        
+        local_bind_matrix = Matrix.Translation(t) @ Quaternion([r[3], r[0], r[1], r[2]]).to_matrix().to_4x4()
+        if node.parent_idx > -1:
+            bind_matrix = true_transforms[node.parent_idx] @ local_bind_matrix
+        else:
+            bind_matrix = local_bind_matrix
+            
+        true_transforms[i] = bind_matrix
+
+        if i not in bones_to_ignore:      
+            bpy_bone = construct_bone(node.name, main_armature, 
+                                     MayaBoneToBlenderBone(bind_matrix), 
+                                     10)
+            if node.parent_idx > -1:
+                bpy_bone.parent = bpy_nodes[node.parent_idx] 
+            bpy_nodes[i]           = bpy_bone
+            gfs_to_bpy_bone_map[i] = bpy_bone_counter
+            bpy_bone_counter      += 1
+            
+            if not decomposableToTRS(bind_matrix):
+                skewed_bpm_nodes.append(i)
+
+        bone_transforms[i] = convert_Yup_to_Zup(bind_matrix)
+        
+    # Now let's replace the mesh vertex data with transformed data
+    gb = GFSBinary()
+    gb.read(filepath)
+    model_binary = gb.get_model_block().data
+    
+    bones,   \
+    meshes,  \
+    cameras, \
+    lights,  \
+    epls     = NodeInterface.binary_node_tree_to_list(model_binary.root_node)
+
+    matrix_lookup = model_binary.skinning_data.matrix_palette
+    if matrix_lookup is not None:
+        ibpms = model_binary.skinning_data.ibpms
+        ibpms = [Matrix([ibpm[0:4], ibpm[4:8], ibpm[8:12], ibpm[12:16]]).transposed() for ibpm in ibpms]
+        idx_count = len(matrix_lookup)
+    
+        y_up_to_z_up = convert_Yup_to_Zup(Matrix.Identity(4))
+        for raw_mesh, mesh in zip(meshes, gfs.meshes):
+            if mesh.vertices[0].indices is not None:
+                for raw_v, v in zip(raw_mesh.vertices, mesh.vertices):
+                    animation_matrix = Matrix.Diagonal([0., 0., 0., 0.])
+                    for idx, weight in zip(raw_v.indices[::-1], raw_v.weights):
+                        if idx >= idx_count: idx = 0
+                        animation_matrix += weight*(true_transforms[matrix_lookup[idx]] @ ibpms[idx])
+                    animation_matrix = y_up_to_z_up @ animation_matrix
+                    if v.position is not None: v.position = (animation_matrix @ Vector([*v.position, 1.]))[:3]
+                    if v.normal   is not None: v.normal   = (animation_matrix @ Vector([*v.normal,   0.]))[:3]
+                    if v.tangent  is not None: v.tangent  = (animation_matrix @ Vector([*v.tangent,  0.]))[:3]
+                    if v.binormal is not None: v.binormal = (animation_matrix @ Vector([*v.binormal, 0.]))[:3]
+
+    return bpy_nodes, bone_transforms, [Matrix.Identity(4) for b in bone_transforms], gfs_to_bpy_bone_map, skewed_bpm_nodes
+
+
+
+def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, filepath):
+    """
+    This is a really bad function. It's way too long - it needs to be split
+    up into smaller, more modular chunks. Although it's all logically
+    seperated into chunks, it's difficult to see where those chunk boundaries
+    are when it's a single monolithic function.
+    """
     initial_obj = bpy.context.view_layer.objects.active
 
     armature_name = name
@@ -40,10 +156,6 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     main_armature.rotation_mode = 'XYZ'
     
     bpy.ops.object.mode_set(mode='EDIT')
-    bpy_node_names  = [None]*len(gfs.bones)
-    bpy_nodes       = [None]*len(gfs.bones)
-    bone_transforms = [None]*len(gfs.bones)
-    bone_rest_transforms = [None]*len(gfs.bones)
     
     nodes_with_meshes = set()
     for mesh in gfs.meshes:
@@ -56,40 +168,32 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed):
     
     # Get rid of root node
     bones_to_ignore.add(0)
-    
-
-    gfs_to_bpy_bone_map = {}
+    bpy_node_names  = [None]*len(gfs.bones)
     mesh_node_map = {}
-    bpy_bone_counter = 0
 
     # Import nodes
-    for i, node in enumerate(gfs.bones):
-        matrix = node.bind_pose_matrix
-        matrix = Matrix([matrix[0:4], matrix[4:8], matrix[8:12], [0., 0., 0., 1.]])
-        if i not in bones_to_ignore:      
-            bpy_bone = construct_bone(node.name, main_armature, 
-                                     MayaBoneToBlenderBone(matrix), 
-                                     10)
-            if node.parent_idx > -1:
-                bpy_bone.parent = bpy_nodes[node.parent_idx] 
-            bpy_nodes[i]           = bpy_bone
-            gfs_to_bpy_bone_map[i] = bpy_bone_counter
-            bpy_bone_counter      += 1
-        
-        t = node.position
-        r = node.rotation
-        s = node.scale
-        rest_matrix = Matrix.Translation(t) @ Quaternion([r[3], r[0], r[1], r[2]]).to_matrix().to_4x4() @ Matrix.Diagonal([*s, 1.])
-        if node.parent_idx > -1:
-            bone_rest_transforms[i] = bone_rest_transforms[node.parent_idx] @ rest_matrix
-        else:
-            bone_rest_transforms[i] = convert_Yup_to_Zup(rest_matrix)
-        bone_transforms[i] = convert_Yup_to_Zup(matrix)
+    if bone_pose == "bindpose":
+        bpy_nodes,            \
+        bone_transforms,      \
+        bone_rest_transforms, \
+        gfs_to_bpy_bone_map,  \
+        skewed_bpm_nodes = build_bones_from_bind_pose(gfs, main_armature, bones_to_ignore)
+    elif bone_pose == "restpose":
+        bpy_nodes,            \
+        bone_transforms,      \
+        bone_rest_transforms, \
+        gfs_to_bpy_bone_map,  \
+        skewed_bpm_nodes = build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath)
+    else:
+        errorlog.log_error_message(f"CRITICAL INTERNAL ERROR: Did not recognise bone pose '{bone_pose}'. THIS IS A BUG - PLEASE REPORT IT.")
+
+    if len(skewed_bpm_nodes):
+        errorlog.log_warning_message(f"{len(skewed_bpm_nodes)} bones have skewed bind pose matrices. This should *not* happen, and is probably due to a buggy model. Bone rotations are likely to be incorrect. A list of skewed bones is printed in the console.")
+        print(", ".join([gfs.bones[i].name for i in skewed_bpm_nodes]))
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    # 
-    bpy_bone_counter = 0
+    # Figure out bone names
     for i, node in enumerate(gfs.bones):
         if i in gfs_to_bpy_bone_map:
             bpy_bone = main_armature.data.bones[gfs_to_bpy_bone_map[i]]

@@ -2,7 +2,7 @@ import os
 
 import bpy
 
-from .Data import get_package_name, available_versions_property
+from .Data import get_package_name, available_versions_property, bone_pose_enum_options
 
     
 def get_preferences():
@@ -22,6 +22,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
         name="Set FPS to 30",
         description="Default setting for 'Set FPS to 30' on import",
         default=False
+    )
+    
+    bone_pose: bpy.props.EnumProperty(
+        name="Bind Pose",
+        description="Default setting for 'Bind Pose' on import",
+        items=bone_pose_enum_options(),
+        default="bindpose"
     )
     
     strip_missing_vertex_groups: bpy.props.BoolProperty(
@@ -47,6 +54,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         import_col.label(text='Default Import settings:')
         import_col.prop(self, 'merge_vertices')
         import_col.prop(self, 'set_fps')
+        import_col.prop(self, 'bone_pose')
         
         export_col = io_row.column()
         export_col.label(text='Default Export settings:')

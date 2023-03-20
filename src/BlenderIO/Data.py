@@ -49,3 +49,9 @@ def available_versions_property():
         name="Version",
         default="0x01105100"
     )
+
+def bone_pose_enum_options():
+    return [
+        ("bindpose", "Reconstruct",         "Reconstruct the bind pose"),
+        ("restpose", "Scaleless Rest Pose", "Define the bind pose as the rest pose, without scales. As a side-effect, this bakes the mesh transforms into the vertices"),    
+    ]
