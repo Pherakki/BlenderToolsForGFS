@@ -94,7 +94,7 @@ class ModelInterface:
                 bone.bind_pose_matrix = normalise_transform_matrix_scale(world_pose_matrices[i])
          
         if has_bad_vidxs and warnings is not None:
-            warnings.append("Vertex indices were detected that overflow the bind pose matrix buffer. These have been remapped to the first non-root bone.")
+            warnings.append("Vertex indices were detected that overflow the bind pose matrix buffer. These have been remapped to the root node.")
         return bones, meshes, cameras, lights, epls, keep_bounding_box, keep_bounding_sphere, flag_3
         
     @staticmethod
