@@ -23,6 +23,7 @@ def export_node_tree(gfs, armature, errorlog):
         armature_rest_pose = Matrix.Identity(4)
     else:
         rest_pose_matrices, armature_rest_pose = extract_first_frame(rest_pose_action, armature, armature.pose.bones)
+        if armature_rest_pose is None: armature_rest_pose = Matrix.Identity(4)
     
     # Add root node
     rn_props = armature.data.GFSTOOLS_NodeProperties
