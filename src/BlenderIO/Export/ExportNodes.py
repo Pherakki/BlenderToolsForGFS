@@ -118,14 +118,19 @@ def group_fcurves_by_bone_and_type(action):
         
     return res, obj_transforms
 
+
+def local_bind_pose(bpy_bone):
+    if bpy_bone.parent is None:
+        parent_matrix = Matrix.Identity(4)
+    else:
+        parent_matrix = bpy_bone.parent.matrix_local
+    return parent_matrix.inverted() @ bpy_bone.matrix_local
+
+
 def rest_pose_from_armature_bind_pose(armature):
     out = {}
     for bpy_bone in armature.data.bones:
-        if bpy_bone.parent is None:
-            parent_matrix = Matrix.Identity(4)
-        else:
-            parent_matrix = bpy_bone.parent.matrix_local
-        out[bpy_bone.name] = parent_matrix.inverted() @ bpy_bone.matrix_local
+        out[bpy_bone.name] = Matrix.Identity(4) # local_bind_pose(bpy_bone)
     return out
 
 
