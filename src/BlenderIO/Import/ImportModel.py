@@ -126,9 +126,11 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
                         animation_matrix += weight*(true_transforms[matrix_lookup[idx]] @ ibpms[idx])
                     animation_matrix = y_up_to_z_up @ animation_matrix
                     if v.position is not None: v.position = (animation_matrix @ Vector([*v.position, 1.]))[:3]
-                    if v.tangent  is not None: v.tangent  = (animation_matrix @ Vector([*v.tangent,  0.]))[:3]
-                    if v.binormal is not None: v.binormal = (animation_matrix @ Vector([*v.binormal, 0.]))[:3]
                     if v.normal   is not None: v.normal   = (animation_matrix @ Vector([*v.normal,   0.])).normalized()[:3]
+                    
+                    # Not going to import these, no need to do them
+                    #if v.tangent  is not None: v.tangent  = (animation_matrix @ Vector([*v.tangent,  0.])).normalized()[:3]
+                    #if v.binormal is not None: v.binormal = (animation_matrix @ Vector([*v.binormal, 0.])).normalized()[:3]
 
     return bpy_nodes, bone_transforms, [Matrix.Identity(4) for b in bone_transforms], gfs_to_bpy_bone_map, skewed_bpm_nodes
 
