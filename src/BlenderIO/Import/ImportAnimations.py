@@ -257,7 +257,7 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
             else:
                 bone_name = None
         
-        fps = 30*(1 if anim.speed is None else anim.speed) # Blender has an FPS of 24
+        fps = 30/(1 if anim.speed is None else anim.speed) # Blender has an FPS of 24
         
         # Special cases
         if bone_name == root_name:
