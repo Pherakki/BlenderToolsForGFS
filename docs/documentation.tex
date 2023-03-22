@@ -19,6 +19,9 @@
 
 \pagestyle{fancy}
 
+\newcommand{\greencheck}{{\color{green}\checkmark}}
+\newcommand{\redcross}{{\color{red}$\times$}}
+
 % ################ %
 % ENVIRONMENT DEFS %
 % ################ %
@@ -189,7 +192,23 @@ There are also some additional considerations to bear in mind.
 \begin{guide}{Accessing the Model Import Menu}
 \item Open the File menu and navigate to the \textbf{Import} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GFS Model} submenu item.
 \guideimage{images/import/import_gmd.png}
-\item From the import options on the right, choose whether to set the Blender render speed to that which is appropraite for GFS models and whether to merge model vertices such that the mesh is smooth (recommended).
+\item From the import options on the right, choose whether to set the Blender render speed to that which is appropriate for GFS models, whether to merge model vertices such that the mesh is smooth (recommended), and the method used to construct the model bind pose. For this latter option there are two possibilities, of which \textbf{Reconstruct} recommended as a default.
+\begin{itemize}
+\item \textbf{Reconstruct}: Reconstructs the true bind pose using the model data.
+\begin{itemize}
+\item[\greencheck] Mesh vertices are unaltered, which makes rotating and scaling meshes work as intended.
+\item[\redcross] Skinned meshes will import into incorrect positions if their positioning matrices have shear components.
+\item[\redcross] Will not reproduce in-engine vertex positions if the model has an error where the mesh-positioning node transforms are inconsistent with the mesh-relative bind pose matrices in the file.
+\end{itemize}
+\item \textbf{Scaleless Rest Pose}: This will deform the mesh to a ficticious bind pose created from the node translations and rotations. 
+\begin{itemize}
+\item[\greencheck] Meshes will be positioned correctly, even if they have shear elements in their transforms.
+\item[\greencheck] Will reproduce in-engine vertex positions even if the model has an error where the mesh-positioning node transforms are inconsistent with the mesh-relative bind pose matrices in the file.
+\item[\redcross] Meshes will rotate and scale relative to the model origin, and not as intended.
+\item[\redcross] Meshes may be deformed in Edit Mode if the ficticious bind pose and the rest pose are dissimilar.
+\item[\redcross] The ficticious bind pose may not be as useful as the true bind pose for editing the model geometry.
+\end{itemize}
+\end{itemize}
 \guideimage{images/import/import_gmd_properties.png}
 \item Select the GMD or GFS file to import using the file browser.
 \end{guide}
@@ -888,8 +907,15 @@ For our purposes, we will define a \textbf{Scene Graph} as having the following 
 \begin{enumerate}
 \item A \textbf{Scene Graph} is a \textbf{Directed Acyclic Graph} consisting of \textbf{Directed Edges} and \textbf{Scene Nodes}.
 \item It has a single \textbf{root} or \textbf{origin node}, which may be implicit.
-\item 
+\item Each \textbf{node} other than the \textbf{root} node has a \textbf{parent}.
+\item Each \textbf{Directed Edge} is a \textbf{parent-child} relationship.
+\item Each \textbf{node} has a position, rotation, and scale, which are multiplied in that order in matrix-form to compute the local transform of the node.
+\item Each \textbf{node} has a \textbf{world transform} computed by multiplying the parent node's \textbf{world transform} by the \textbf{node}'s \textbf{local transform}.
 \end{enumerate}
+
+The nodes may in addition have additional ``attachments". For the purposes of this section, we will consider \textbf{meshes} as the only type of node attachment. For our purposes, a \textbf{mesh} is a collection of position vectors representing a point-cloud of vertices, where each vertex is coupled to up to four nodes in the scene graph with a weight. The sum of these weights is normalised to 1 for each vertex. Each mesh additionally inherits the \textbf{world transform} of the node it is attached to.
+
+Our goal in this section is to describe how to represent such a scene graph inside Blender. In particular, we shall attempt to represent the scene graph as a Blender \textbf{Armature} data structure, and meshes as Blender \textbf{Meshes}. We will begin this section by reviewing the basics of transformation matrices, and from there we will derive the mathematical transforms required to convert the scene graph nodes and meshes to their Blender equivalents.
 
 
 \subsubsection{Basic Transform Matrix Definitions and Identities}
@@ -925,7 +951,7 @@ m_{31} & m_{32} & m_{33} & 0\\
 We will use this coordinate system not only because it is the coordinate system used both by the GFS models and by Blender, but also because it allows us to represent translations as matrices on the same footing as rotations and scales.
 
 \paragraph{Translation Matrices}\mbox{}\\
-We define a 3D transformation matrix as
+We define a 3D translation matrix as
 \begin{equation}
 T = \begin{pmatrix}
 1 & 0 & 0 & t_x\\
@@ -1165,7 +1191,7 @@ which tells us
 We therefore see that $M$ is both orthogonal and has determinant 1, and so we can identify it as a rotation matrix.\\
 
 \noindent
-\textit{Lemma.}\textbf{ A product of a scale matrix and a rotation matrix cannot, generally, be decomposed to a different product of translations, rotations, and scales.}
+\textit{Lemma.}\textbf{ A product of a scale matrix and a rotation matrix cannot, generally, be decomposed to a different product of a rotation and a scale.}
 
 \noindent\textit{Proof.}
 \begin{align}
@@ -1200,6 +1226,9 @@ s'_x & 0 & 0 & 0\\
 0 & 0 & 0 & 1
 \end{pmatrix}
 \end{align}
+
+\iffalse
+
 In the final line we have separated out a scale matrix on the right, but the left factor is not obviously orthogonal. To orthoganalise this factor, we know that a general matrix can be decomposed into an orthognal matrix and an upper-triangular matrix with the $QR$ decomposition. Here, we will denote the orthogonal matrix as $R'$ rather than $Q$, and the upper-triangular as $H$ rather than $R$. We can also state that we can extract whichever reflection matrix makes $R'$ special orthogonal such that it is a proper rotation, move this through the upper-triangular matrix, and absorb it into the definition of the new scale matrix.
 \begin{align}
 S R &= R' H S'\\
@@ -1245,44 +1274,138 @@ R'^T R' = 1.
 \end{equation}
 Note that we have very carefully decided to take the product $R'^T R'$ rather than $R' R'^T$: as we will see, this immediately gives us some exactly solvable equations that we can bootstrap the remaining unknowns from. It might be expected that we would get nine equations from this product; the product is, however, a symmetric matrix---and thus we obtain identical contraints from opposing off-diagonal elements.
 
-Let us label the columns of $R'$ as $v_1$, $v_2$, and $v_3$ from left-to-right. Orthognality requires the following conditions to be true:
+Let us label the columns of $R'$ as $b_1$, $b_2$, and $b_3$ from left-to-right. Orthognality requires the following conditions to be true:
 \begin{align}
-\label{EQUATION::ShearV1V1} v_1 \cdot v_1 &= 1\\
-\label{EQUATION::ShearV2V1} v_2 \cdot v_1 &= 0 (= v_1 \cdot v_2)\\
-\label{EQUATION::ShearV2V2} v_2 \cdot v_2 &= 1\\
-\label{EQUATION::ShearV3V1} v_3 \cdot v_1 &= 0(= v_1 \cdot v_3)\\
-\label{EQUATION::ShearV3V2} v_3 \cdot v_2 &= 0(= v_2 \cdot v_3)\\
-\label{EQUATION::ShearV3V3} v_3 \cdot v_3 &= 1,
+\label{EQUATION::ShearB1B1} b_1 \cdot b_1 &= 1\\
+\label{EQUATION::ShearB2B1} b_2 \cdot b_1 &= 0 (= b_1 \cdot b_2)\\
+\label{EQUATION::ShearB2B2} b_2 \cdot b_2 &= 1\\
+\label{EQUATION::ShearB3B1} b_3 \cdot b_1 &= 0(= b_1 \cdot b_3)\\
+\label{EQUATION::ShearB3B2} b_3 \cdot b_2 &= 0(= b_2 \cdot b_3)\\
+\label{EQUATION::ShearB3B3} b_3 \cdot b_3 &= 1,
 \end{align}
 which we obtain by inspecting the elements of the unit matrix the product $R'^T R'$ is equal to.
 
-These equations are ordered in increasing complexity, and by inspecting them in order we will obtain results that can be used to simplify later equations. We therefore begin with equation (\ref{EQUATION::ShearV1V1}). This contains only a single unknown, and so we can directly solve it.
+Furthermore, let us label the columns of the matrix $SRS^{-1}$ as $v_1$, $v_2$, and $v_3$. Since $R' = SRS^{-1} H^{-1}$, we can then decompose our $b$ vectors as
+\begin{align}
+\label{EQUATION::ShearB1} b_1 &= v_1\\
+\label{EQUATION::ShearB2} b_2 &= -h_{xy}v_1 + v_2\\
+\label{EQUATION::ShearB3} b_3 &= -\widetilde{h} v_1 - h_{yz} v_2 + v_3.
+\end{align}
+
+Let's start by simplifying the orthogonality equations by expressing them in terms of $v$ and $b$ products.
+\begin{align}
+b_1 \cdot b_1 &= b_1 \cdot v_1 &&= v_1 \cdot b_1 = 1\\
+b_2 \cdot b_1 &= b_2 \cdot v_1 &&= v_1 \cdot b_2 = 0\\
+b_2 \cdot b_2 &= (-h_{xy} v_1 + v_2) \cdot b_2 &&= v_2 \cdot b_2 =1\\
+b_3 \cdot b_1 &= b_3 \cdot v_1 &&= v_1 \cdot b_3 = 0\\
+b_3 \cdot b_2 &= b_3 \cdot (-h_{xy} v_1 + v_2) &&= v_2 \cdot b_3 = 0\\
+b_3 \cdot b_3 &= b_3 \cdot (-\widetilde{h} v_1 - h_{yz} v_2 + v_3) &&= v_3 \cdot b_3 = 1
+\end{align}
+
+We can then go a step further and express them fully in terms of $v$.
+
+\begin{align}
+b_1 \cdot v_1 &= v_1 \cdot b_1 &&\Rightarrow v_1 \cdot v_1 = 1\\
+b_2 \cdot v_1 &= (-h_{xy} v_1 + v_2) \cdot v_1  &&\Rightarrow v_1 \cdot v_2 = h_{xy}\\
+b_2 \cdot v_2 &= (-h_{xy} v_1 + v_2) \cdot v_2 &&\Rightarrow  v_2 \cdot v_2 =1 + h_{xy}^2\\
+b_3 \cdot v_1 &= (-\widetilde{h} v_1 - h_{yz} v_2 + v_3) \cdot v_1 &&\Rightarrow v_1 \cdot v_3 = h_{xz} \\
+b_3 \cdot v_2 &= (-\widetilde{h} v_1 - h_{yz} v_2 + v_3) \cdot v_2 &&\Rightarrow v_2 \cdot v_3 = h_{xy} h_{xz} + h_{yz}\\
+b_3 \cdot v_3 &= (-\widetilde{h} v_1 - h_{yz} v_2 + v_3) \cdot v_3 &&\Rightarrow v_3 \cdot v_3 = 1 + h_{xz} + h_{yz}^2
+\end{align}
+
+These equations are much easier to deal with than the original orthogonality conditions. With these, we can see that
+
+\begin{align}
+\frac{(s_x r_{11})^2 + (s_y r_{21})^2 + (s_z r_{31})^2}{{s'_x}^2} &= 1\\
+\frac{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}}{s'_x s'_y} &= h_{xy}\\
+\frac{(s_x r_{12})^2 + (s_y r_{22})^2 + (s_z r_{32})^2}{{s'_y}^2} &= 1 + h_{xy}^2\\
+\frac{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}}{s'_x s'_z} &= h_{xz}\\
+\frac{s_x^2 r_{12}r_{13} + s_y^2 r_{22}r_{23} + s_z^2 r_{32}r_{33}}{s'_y s'_z} &= h_{xy}h_{xz} + h_{yz}\\
+\frac{(s_x r_{13})^2 + (s_y r_{23})^2 + (s_z r_{33})^2}{{s'_z}^2} &= 1 + h_{xz} + h^2_{yz}
+\end{align}
+
+We can now use these equations to solve for the six unknowns.
+\begin{align}
+s'_x &= \sqrt{(s_x r_{11})^2 + (s_y r_{21})^2 + (s_z r_{31})^2}\\
+h_{xy} &= \frac{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}}{s'_x s'_y}\\
+s'_y &= \sqrt{(s_x r_{12})^2 + (s_y r_{22})^2 + (s_z r_{32})^2 + \left(\frac{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}}{s'_x}\right)^2}\\
+h_{xz} &= \frac{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}}{s'_x s'_z}\\
+h_{yz} &= \frac{s_x^2 r_{12}r_{13} + s_y^2 r_{22}r_{23} + s_z^2 r_{32}r_{33}}{s'_y s'_z} - h_{xy}h_{xz}\\
+s'_z &= \sqrt{\begin{multlined}[t]
+(s_x r_{13})^2 + (s_y r_{23})^2 + (s_z r_{33})^2 - \left( \frac{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}}{s'_x}\right)^2\\
+- \Bigg( \frac{s_x^2 r_{12}r_{13} + s_y^2 r_{22}r_{23} + s_z^2 r_{32}r_{33}}{s'_y} \\
+- \frac{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}}{s'_x s'_y} \frac{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}}{s'_x}
+\Bigg)^2
+\end{multlined}}
+\end{align}
+
+From this, we obtain the conditions required for $h_{xy}$, $h_{xz}$, and $h_{yz}$ to be zero:
+
+\fi
+
+Orthogonality requires that
+\begin{align}
+{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}} = 0\\
+{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}} = 0\\
+{s_x^2 r_{12}r_{13} + s_y^2 r_{22}r_{23} + s_z^2 r_{32}r_{33}} = 0
+\end{align}
+
+These equations do not hold for arbitrary $r_{ij}$ and $s_i$, and therefore the $SR$ matrix cannot be decomposed as an $RS$ matrix.
+
+It is possible to perform a $QR$ decomposition on the matrix to obtain an orthogonal matrix and an upper triangular matrix. This upper triangular matrix is called the \textbf{shear transform}, and such a transform can be induced whenever a non-uniform scale is applied after a rotation.\\
+
+\noindent
+\textit{Lemma.}\textbf{ A product of a scale matrix and a permutation matrix can be decomposed to a product of the same permutation matrix and a different scale.}
 \begin{equation}
-\label{EQUATION::ShearV1V1Expanded} 
-\left(\frac{s_x}{s'_x} r_{11}\right)^2 + \left(\frac{s_y}{s'_x} r_{21}\right)^2 +\left(\frac{s_z}{s'_x} r_{31}\right)^2  = 1.
+SP = PS'
 \end{equation}
-This itself will be a useful result, but we can already just multiply through by ${s'_x}^2$ to solve for ${s'_x}^2$ as
+\noindent\textit{Proof.}
+A permutation matrix is a special case of a rotation matrix with the constraint that only one element of each row and column may be non-zero. Our conditions for decomposition are
+\begin{align}
+{s_x^2 r_{11}r_{12} + s_y^2 r_{21}r_{22} + s_z^2 r_{31}r_{32}} = 0\\
+{s_x^2 r_{11}r_{13} + s_y^2 r_{21}r_{23} + s_z^2 r_{31}r_{33}} = 0\\
+{s_x^2 r_{12}r_{13} + s_y^2 r_{22}r_{23} + s_z^2 r_{32}r_{33}} = 0
+\end{align}
+which can be seen to be satisfied by a permutation matrix by inspection, since each term is composed of products between two elements of the same columns. By the definition of a permutation matrix, at least one of the factors in each product is always zero, and therefore matrix can be decomposed as $PS'$. The elements of $S'$ are given by the other three orthogonality conditions:
+\begin{align}
+{s_x^2 r_{11}^2 + s_y^2 r_{21}^2 + s_z^2 r_{31}^2} = s'_x\\
+{s_x^2 r_{12}^2 + s_y^2 r_{22}^2 + s_z^2 r_{32}^2} = s'_y\\
+{s_x^2 r_{13}^2 + s_y^2 r_{23}^2 + s_z^2 r_{33}^2} = s'_z
+\end{align}
+where only one term in each equation will be non-zero. The resulting scale matrix is then a permutation of the elements of the original scale matrix.\\
+
+\noindent
+\textit{Lemma.}\textbf{ A product of two scale matrices is also a scale matrix.}
 \begin{equation}
-s'_x = \left(s_x r_{11}\right)^2 + \left(s_y r_{21}\right)^2 +\left(s_z r_{31}\right)^2.
+S_1 S_2 = S_3
 \end{equation}
 
-Next are equations (\ref{EQUATION::ShearV2V1}) and (\ref{EQUATION::ShearV2V2}). These feature the same two unknowns (excluding $s'_x$, which we now know) and we should expect to solve them simultaneously. We begin with (\ref{EQUATION::ShearV2V1}):
+\noindent\textit{Proof.}
 \begin{align}
-\begin{multlined}[b]
-r_{11}\frac{s_x}{s'_x} \left( -h_{xy} \frac{s_x}{s'_x} r_{11} + \frac{s_x}{s'_y} r_{12} \right) 
-+ r_{21}\frac{s_y}{s'_x} \left( -h_{xy} \frac{s_y}{s'_x} r_{21} + \frac{s_y}{s'_y} r_{22} \right) \\
-+ r_{31}\frac{s_z}{s'_x} \left( -h_{xy} \frac{s_z}{s'_x} r_{31} + \frac{s_z}{s'_y} r_{32} \right)
-\end{multlined} &= 0\\
-\label{EQUATION::ShearXYStep2} \begin{multlined}[b]
--h_{xy} \left( \underbrace{ \left(\frac{s_x}{s'_x}r_{11}\right)^2 +  \left(\frac{s_y}{s'_x}r_{21}\right)^2 +  \left(\frac{s_z}{s'_x}r_{31}\right)^2 }_{1} \right) + \\
-\left( \frac{s_x^2}{s'_x s'_y}r_{11}r_{12} + \frac{s_y^2}{s'_x s'_y}r_{21}r_{22} + \frac{s_z^2}{s'_x s'_y}r_{31}r_{32} \right)
-\end{multlined} &= 0\\
-\label{EQUATION::ShearXYResult} \Rightarrow h_{xy} =  \frac{s_x^2}{s'_x s'_y}r_{11}r_{12} + \frac{s_y^2}{s'_x s'_y}r_{21}r_{22} + \frac{s_z^2}{s'_x s'_y}r_{31}r_{32}
+M &= S_1 S_2 \\
+&=
+\begin{pmatrix}
+s_{x, 1} & 0 & 0 & 0\\
+0 & s_{y, 1} & 0 & 0\\
+0 & 0 & s_{z, 1} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+s_{x, 2} & 0 & 0 & 0\\
+0 & s_{y, 2} & 0 & 0\\
+0 & 0 & s_{z, 2} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&=
+\begin{pmatrix}
+s_{x, 1} s_{x, 2} & 0 & 0 & 0\\
+0 & s_{y, 1} s_{y, 2} & 0 & 0\\
+0 & 0 & s_{z, 1} s_{z, 2} & 0\\
+0 & 0 & 0 & 1
+\end{pmatrix}\\
+&= S_3
 \end{align}
-where in (\ref{EQUATION::ShearXYStep2}) we used (\ref{EQUATION::ShearV1V1Expanded}) to simplify the result. We have now identified $h_{xy}$, and move on to equation (\ref{EQUATION::ShearV2V2}):
-\begin{align}
--h_{xy}
-\end{align}
+
 
 \clearpage
 \subsubsection{Bone/Node Animations}
@@ -1558,7 +1681,7 @@ S_2 &= P_\mathrm{axis}^{-1} S_a P_\mathrm{axis}
 
 
 \subsubsection{Mesh Animations}
-A mesh will interact with the scene graph differently depending on whether it is weighted or unweighted. The unweighted case is the simplest: the entire mesh is transformed by the transform of the node it is attached to. The GFS animation equation for vertices in such a mesh is then
+In the GFS engine, a mesh will interact with the scene graph differently depending on whether it is weighted or unweighted. The unweighted case is the simplest: the entire mesh is transformed by the transform of the node it is attached to. The GFS animation equation for vertices in such a mesh is then
 \begin{equation}
 v'  = A_\mathrm{GFS} v,
 \end{equation}
@@ -1578,7 +1701,7 @@ where $i$ is a bone index, $w_i$ is the coupling weight between the bone and ver
 \begin{equation}
 v' = \left( \sum_i w_i A_i M_{\mathrm{BPMR}, i}^{-1} \right) v,
 \end{equation}
-where $M_{\mathrm{BPMR}}$ is a \textbf{M}esh-\textbf{R}elative \textbf{B}ind \textbf{P}ose matrix, defined as $M_{\mathrm{BPMR}}^{-1} = M_\mathrm{BP}^{-1} M_\mathrm{mesh}$. Note that even if the node a mesh is attached to in the GFS files is animated, this node animation does not factor into the vertex animation - only the original pose of the node (as baked into the bind pose matrices) and the weighted bones influence the final position of the vertex.
+where $M_{\mathrm{BPMR}}$ is a \textbf{M}esh-\textbf{R}elative \textbf{B}ind \textbf{P}ose matrix, defined as $M_{\mathrm{BPMR}}^{-1} = M_\mathrm{BP}^{-1} M_\mathrm{mesh}$. Note that even if the node a mesh is attached to in the GFS files is animated, this node animation does not factor into the vertex animation---only the original pose of the node (as baked into the bind pose matrices) and the weighted bones influence the final position of the vertex.
 
 To import this into Blender, we need to ``unbake" the mesh transformation matrices from the bind pose matrices. Two ways we can do this are:
 \begin{itemize}
@@ -1590,7 +1713,7 @@ The first of these is very simple to do:
 \begin{equation}
 v' = \left( \sum_i w_i A_i M_{\mathrm{BPMR}, i}^{-1} M_{\mathrm{mesh}}^{-1} \right)  M_{\mathrm{mesh}} v,
 \end{equation}
-but if the file contains node transforms for the mesh that are inconsistent with those used to build the bind pose matrices (\textit{i.e.} this file is incorrect) or the mesh transform cannot be decomposed to just a transformation, rotation, and scale, then this will not work.
+but if the file contains node transforms for the mesh that are inconsistent with those used to build the bind pose matrices (\textit{i.e.} the file is incorrect) or the mesh transform cannot be decomposed to just a transformation, rotation, and scale, then this will not work.
 
 The second of these methods gives us an animation equation that looks like
 \begin{equation}
