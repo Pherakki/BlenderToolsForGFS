@@ -94,7 +94,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
 
         # General bone
         bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
-        build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale})
+        build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale}, {})
     
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
@@ -110,12 +110,18 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
 # PRIVATE UTILITIES #
 #####################
 
-def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, transforms, transform_indices):
+def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, transforms, transform_indices, fcurve_bank):
     frames = transforms.keys()
     values = transforms.values()
     if len(frames) != 0:
         fcs = []
         for i, t_idx in enumerate(transform_indices):
+            key = (fcurve_name, i)
+            if key in fcurve_bank:
+                action.fcurves.remove(fcurve_bank[key])
+            
+            # if fcurve_name in action.fcurves:
+            #     action.fcurves.remove(action.fcurves[fcurve_name])
             fc = action.fcurves.new(fcurve_name, index=i)
             fc.keyframe_points.add(count=len(frames))
             fc.keyframe_points.foreach_set("co",
@@ -127,6 +133,7 @@ def create_fcurves(action, actiongroup, fcurve_name, interpolation_method, fps, 
             fc.group = actiongroup
             fc.lock = True
             fcs.append(fc)
+            fcurve_bank[key] = fc
         for fc in fcs:
             fc.update()
         for fc in fcs:
@@ -140,13 +147,13 @@ def build_object_fcurves(action, object, fps, positions, rotations, scales):
     # Create animations
     q_rotations = {k: Quaternion([q[3], q[0], q[1], q[2]]) for k, q in rotations  .items()}
     e_rotations = {k: q.to_euler()                         for k, q in q_rotations.items()}
-    create_fcurves(action, actiongroup, 'rotation_quaternion', "BEZIER", fps, q_rotations, [0, 1, 2, 3])
-    create_fcurves(action, actiongroup, 'rotation_euler',      "LINEAR", fps, e_rotations, [0, 1, 2]   )
-    create_fcurves(action, actiongroup, 'location',            "LINEAR", fps, positions,   [0, 1, 2]   )
-    create_fcurves(action, actiongroup, 'scale',               "LINEAR", fps, scales,      [0, 1, 2]   )
+    create_fcurves(action, actiongroup, 'rotation_quaternion', "BEZIER", fps, q_rotations, [0, 1, 2, 3], {})
+    create_fcurves(action, actiongroup, 'rotation_euler',      "LINEAR", fps, e_rotations, [0, 1, 2]   , {})
+    create_fcurves(action, actiongroup, 'location',            "LINEAR", fps, positions,   [0, 1, 2]   , {})
+    create_fcurves(action, actiongroup, 'scale',               "LINEAR", fps, scales,      [0, 1, 2]   , {})
 
 
-def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales):
+def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank):
     # Set up action data
     actiongroup = action.groups.new(bone_name)
     
@@ -175,14 +182,13 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
     b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
   
-
     # Create animations
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3])
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   )
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   )
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales):
+def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank):
     # Set up action data
     actiongroup       = action      .groups.new(bone_name)
     scale_actiongroup = scale_action.groups.new(bone_name)
@@ -213,9 +219,9 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
 
     # Create animations
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3])
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   )
-    create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   )
+    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
+    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
+    create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
     
     
 def build_track(action, armature, blend_type):
@@ -248,6 +254,7 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
     
     # Now import the animations
     unimported_node_animations = []
+    fcurve_bank = {}
     for track_idx, data_track in enumerate(anim.node_animations):
         if gfs_to_bpy_bone_map is None:
             bone_name = available_names.get(data_track.name)
@@ -268,9 +275,9 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
             continue
         
         if is_blend:
-            build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales)
+            build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank)
         else:
-            build_transformed_fcurves(action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales)
+            build_transformed_fcurves(action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank)
 
     if is_blend:
         if len(scale_action.fcurves):  
