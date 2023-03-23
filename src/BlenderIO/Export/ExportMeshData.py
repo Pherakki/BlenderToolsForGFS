@@ -540,6 +540,7 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     too_many_indices_verts = []
     missing_weight_verts = []
     missing_bone_names = set()
+    vertex_group_idx_to_name_map = {g.index: g.name for g in mesh_obj.vertex_groups}
     for vert_idx, linked_loops in vidx_to_lidxs.items():
         vertex = mesh.vertices[vert_idx]
         unique_ids = {i: [] for i in list(set(loop_idx_to_unique_key[ll] for ll in linked_loops))}
@@ -557,10 +558,11 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
             too_many_indices_verts.append(vert_idx)
             continue
         for grp in group_indices:
-            grp_bone_idx = get_bone_id(mesh_obj, bone_names, grp)
+            bone_name = vertex_group_idx_to_name_map[grp.group]
+            grp_bone_idx = bone_names.get(bone_name)
             if grp_bone_idx is None:
                 has_missing_weights = True
-                missing_bone_names.add(mesh_obj.vertex_groups[grp.group].name)
+                missing_bone_names.add(bone_name)
             else:
                 group_bone_ids[grp_idx] = grp_bone_idx
                 group_weights[grp_idx] = grp.weight
@@ -615,17 +617,6 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
         
     return exported_vertices, faces, gfs_vert_to_bpy_vert
 
-def get_all_nonempty_vertex_groups(mesh_obj):
-    nonempty_vgs = set()
-    for vertex in mesh_obj.data.vertices:
-        for group in vertex.groups:
-            #if group.weight > vweight_floor:
-           nonempty_vgs.add(group.group)
-    nonempty_vgs = sorted(list(nonempty_vgs))
-    nonempty_vgs = [mesh_obj.vertex_groups[idx] for idx in nonempty_vgs]
-
-    return nonempty_vgs
-
 
 def round_to_sigfigs(x, p):
     """
@@ -651,10 +642,3 @@ def fetch_tangent(obj, sigfigs):
     data = array.array('f', [0.0] * (len(obj) * dsize))
     obj.foreach_get("tangent", data)
     return [tuple(round_to_sigfigs(datum, sigfigs)) for datum in zip(*(iter(data),) * dsize)]
-
-
-def get_bone_id(mesh_obj, bone_names, grp):
-    group_idx = grp.group
-    bone_name = mesh_obj.vertex_groups[group_idx].name
-    bone_id = bone_names.get(bone_name)
-    return bone_id
