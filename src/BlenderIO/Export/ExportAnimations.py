@@ -87,19 +87,29 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
             animated_nodes.add(bname)
             node_anims[bname] = anim
         
+        if root_transform is not None:
+            bidx, bname, t, r, s = root_transform
+            root_anim = gfs_anim.add_node_animation(bidx, bname)
+            root_anim.positions = t
+            root_anim.rotations = r
+            animated_nodes.add(bname)
+        
         # Now get the scale track
         # The scale track needs to be separated since it's additive, not
         # multiplicative
         if action.GFSTOOLS_AnimationProperties.has_scale_action:
             scale_action = action.GFSTOOLS_AnimationProperties.blend_scale_action
             if scale_action is not None:
-                scale_transforms = get_action_data(scale_action, armature, is_blend)
+                scale_transforms, root_scale = get_action_data(scale_action, armature, is_blend)
                 
                 for (bidx, bname, _, _, s) in sorted(scale_transforms, key=lambda x: x[0]):
                     node_anim = node_anims.get(bname)
                     if node_anim is None:
                         node_anim = gfs_anim.add_node_animation(bidx, bname)
                     node_anim.scales = s
+                    
+                if root_transform is not None:
+                    root_anim.scales = root_scale[-1]
     else:
         for (bidx, bname, t, r, s) in sorted(node_transforms, key=lambda x: x[0]):
             anim = gfs_anim.add_node_animation(bidx, bname)
@@ -108,13 +118,13 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
             anim.scales    = s
             animated_nodes.add(bname)
         
-    if root_transform is not None:
-        bidx, bname, t, r, s = root_transform
-        anim = gfs_anim.add_node_animation(bidx, bname)
-        anim.positions = t
-        anim.rotations = r
-        anim.scales    = s
-        animated_nodes.add(bname)
+        if root_transform is not None:
+            bidx, bname, t, r, s = root_transform
+            anim = gfs_anim.add_node_animation(bidx, bname)
+            anim.positions = t
+            anim.rotations = r
+            anim.scales    = s
+            animated_nodes.add(bname)
     
     # Export extra data
     props = action.GFSTOOLS_AnimationProperties
@@ -166,7 +176,7 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
     bone_names = [b.name for b in gfs_obj.bones]
     for track in unimported_tracks.node_animations:
         if track.name not in animated_nodes:
-            if remap_track_id(track, bone_names, keep_unused_anims):
+            if remap_track_id(track, bone_names, keep_unused_anims, offset=1):
                 gfs_anim.node_animations.append(track)
     
     # Export unused material animations
@@ -211,7 +221,7 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
         gfs_anim.epls.append(epl_entry)
 
 
-def remap_track_id(track, names, keep_unused_anims):
+def remap_track_id(track, names, keep_unused_anims, offset=0):
     elem_idx = next((i for i, nm in enumerate(names) if track.name == nm), None)
     if elem_idx is None:
         if keep_unused_anims:
@@ -219,7 +229,7 @@ def remap_track_id(track, names, keep_unused_anims):
         else:
             return False
     else:
-        track.id = elem_idx
+        track.id = elem_idx + offset
     
     return True
 
@@ -271,6 +281,7 @@ def get_action_data(action, armature, is_blend):
             
             g_positions = {k: v.decompose()[0]     for k, v in g_positions.items()}
             g_rotations = {k: q.decompose()[1]     for k, q in g_rotations.items()}
+            g_rotations = {k: [q.x, q.y, q.z, q.w] for k, q in g_rotations.items()}
             g_scales    = {k: v.decompose()[2]     for k, v in g_scales.items()}
         else:
             # Extract animation data
@@ -291,21 +302,26 @@ def get_action_data(action, armature, is_blend):
             bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
             inv_bind_pose_rotation = bind_pose_rotation.inverted()
             inv_axis_conversion    = axis_conversion.inverted()
+            bptm = Matrix.Translation(bind_pose_translation)
             
-            g_positions = {k: bind_pose_rotation @ Matrix.Translation(Vector(v) - bind_pose_translation)      @ inv_bind_pose_rotation for k, v in positions.items()}
-            g_rotations = {k: bind_pose_rotation @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ inv_axis_conversion    for k, v in rotations.items()}
-            g_scales    = {k: axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ inv_axis_conversion    for k, v in scales.items()   }
+            g_positions = {k: (bind_pose_rotation @ Matrix.Translation(Vector(v))                              @ inv_bind_pose_rotation) + bptm for k, v in positions.items()}
+            g_rotations = {k: bind_pose_rotation  @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ inv_axis_conversion            for k, v in rotations.items()}
+            g_scales    = {k: axis_conversion     @ Matrix.Diagonal([*v, 1.])                                  @ inv_axis_conversion            for k, v in scales.items()   }
             
             g_positions = {k: v.decompose()[0]     for k, v in g_positions.items()}
             g_rotations = {k: q.decompose()[1]     for k, q in g_rotations.items()}
+            g_rotations = {k: [q.x, q.y, q.z, q.w] for k, q in g_rotations.items()}
             g_scales    = {k: v.decompose()[2]     for k, v in g_scales.items()}
         
         fps = 30
-        out.append([bone_names.index(bone_name), bone_name, 
+        out.append([bone_names.index(bone_name) + 1, bone_name, 
                     {(k-1)/fps : v for k, v in g_positions.items()}, 
                     {(k-1)/fps : v for k, v in g_rotations.items()}, 
                     {(k-1)/fps : v for k, v in g_scales.items()}])
-    
+        
+        if bone_name == "frost_dam":
+            print(g_rotations())
+
     root_animation = None
     if obj_transforms is not None:
         root_animation_buffer = {'rotation_quaternion': {},
@@ -317,6 +333,7 @@ def get_action_data(action, armature, is_blend):
         # Extract animation data
         positions = root_animation_buffer.get("location", {})
         rotations = root_animation_buffer.get("rotation_quaternion", {})
+        rotations = {k: [q.x, q.y, q.z, q.w] for k, q in rotations.items()}
         scales    = root_animation_buffer.get("scale", {})
     
         fps = 30
@@ -416,7 +433,7 @@ def get_used_animation_elements_in_group(group):
             if f_curve is None:
                 continue
             elements_used[curve_type] = True
-            bone_data[curve_type][curve_idx] = {k-1: v for k, v in [kfp.co for kfp in f_curve.keyframe_points]}
+            bone_data[curve_type][curve_idx] = {k: v for k, v in [kfp.co for kfp in f_curve.keyframe_points]}
 
     return elements_used, bone_data
 
@@ -531,10 +548,10 @@ def extract_clean_animation_data(group, curve_defaults, out_buffer, pose_object)
     if rotation_mode != "QUATERNION":
         out_buffer["rotation_quaternion"] = {
             k: convert_rotation_to_quaternion(None, v, rotation_mode) 
-            for k, v in out_buffer["rotation_euler"]
+            for k, v in out_buffer["rotation_euler"].items()
         }
     
-    if "rotation_quaternion" in out_buffer:
+    elif "rotation_quaternion" in out_buffer:
         out_buffer["rotation_quaternion"] = {
             k: [v[1], v[2], v[3], v[0]] 
             for k, v in out_buffer["rotation_quaternion"].items()
