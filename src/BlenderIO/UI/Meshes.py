@@ -2,6 +2,13 @@ import bpy
 from .HelpWindows import defineHelpWindow
 from .Node import makeNodePropertiesPanel
 
+
+def _draw_on_node(context, layout):
+    mesh = context.mesh
+    layout = layout
+    
+    layout.prop(mesh.GFSTOOLS_MeshNodeProperties, "override_name")
+
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
     bl_idname      = "OBJECT_PT_GFSToolsMeshAttributesPanel"
@@ -80,7 +87,8 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         lambda cls, context: (context.mesh is not None and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH") 
                              if context.active_object.parent is not None
                              else False,
-        parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel"
+        parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel",
+        predraw=_draw_on_node
     )        
     
     MeshHelpWindow = defineHelpWindow("Mesh", 

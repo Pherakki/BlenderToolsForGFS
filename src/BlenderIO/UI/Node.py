@@ -31,7 +31,6 @@ def makeNodePropertiesPanel(identifier, space_type, region_type, context, props_
             
             if predraw is not None:
                 predraw(context, layout)
-            layout.prop(props, "override_name")
             layout.prop(props, "unknown_float")
     
         @classmethod
