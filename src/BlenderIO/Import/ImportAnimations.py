@@ -250,8 +250,7 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
         for bpy_bone in armature.data.bones
     }
     root_name = armature.data.GFSTOOLS_ModelProperties.root_node_name
-    available_names[root_name] = root_name
-    
+
     # Now import the animations
     unimported_node_animations = []
     fcurve_bank = {}
