@@ -117,7 +117,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         if model_bin is not None:
             if model_bin.data.skinning_data.bone_count is not None:
                 if model_bin.data.skinning_data.bone_count > 256:
-                    errorlog.log_error_message("More than 256 vertex groups are used across the model. A maximum of 256 are supported. Reduce the number of vertex groups to enable export.")
+                    errorlog.log_error_message("More than 256 vertex groups are used across the model. A maximum of 256 are supported. Reduce the number of vertex groups to enable export. You can do this by checking the 'Permit Export as Unrigged' option for meshes with a single vertex group, parenting a mesh to another with the same transform, or by simplifying the model rigging")
         if len(errorlog.errors):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}

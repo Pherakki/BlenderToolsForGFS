@@ -31,6 +31,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         ctr.operator(self.MeshHelpWindow.bl_idname)
         
         # Bounding volumes
+        ctr.prop(mesh.GFSTOOLS_MeshProperties, "permit_unrigged_export")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_box")
         ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_sphere")
         

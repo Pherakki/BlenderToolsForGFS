@@ -8,6 +8,8 @@ GFSToolsMeshNodeProperties = make_node_props_class("GFSToolsMeshNodeProperties")
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     has_unknown_floats:  bpy.props.BoolProperty(name="Active")
     
+    permit_unrigged_export: bpy.props.BoolProperty(name="Permit Export as Unrigged", description="Allow the mesh to be exported as a bone child if all vertices are rigged to a single vertex group. This will lower the rigged bone count by 1 if no other mesh is rigged to that bone, freeing up more of the 256 rigging slots for use elsewhere. This may cause errors if the mesh node loads animation data", default=False)
+    
     unknown_0x12:    bpy.props.IntProperty(name="unknown 0x12")
     unknown_float_1: bpy.props.FloatProperty(name="unknown 1")
     unknown_float_2: bpy.props.FloatProperty(name="unknown 2")

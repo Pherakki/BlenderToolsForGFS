@@ -440,6 +440,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     else:
         vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
         vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
+        bpy_mesh_object.data.GFSTOOLS_MeshProperties.permit_unrigged_export = True
 
     # Assign normals
     if loop_data[0].normal is not None:

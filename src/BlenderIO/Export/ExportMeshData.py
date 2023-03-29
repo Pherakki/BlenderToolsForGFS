@@ -159,10 +159,12 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
                 for v in gm.vertices:
                     for idx, wgt in zip(v.indices, v.weights):
                         if wgt > 0:
-                            indices.add(idx)
+                            indices.add(idx)                    
             index_sets.append(indices)
+
         all_indices = set.union(*index_sets)
-        if len(all_indices) == 1:
+        mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
+        if len(all_indices) == 1 and mesh_props.permit_unrigged_export:
             # We can re-parent the node to this node and yeet the vertex
             # weights
             node_idx = list(all_indices)[0]
