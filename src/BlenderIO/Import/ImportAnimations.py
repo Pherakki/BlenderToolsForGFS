@@ -24,7 +24,7 @@ def import_animations(gfs, armature, filename, gfs_to_bpy_bone_map=None):
         action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_blend=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
     
         if anim.lookat_animations is not None:
-            import_lookat_animations(action.GFSTOOLS_AnimationProperties, armature, anim.lookat_animations, f"{filename}_{anim_idx}")
+            import_lookat_animations(action.GFSTOOLS_AnimationProperties, armature, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map)
 
         actions.append(action)
     
