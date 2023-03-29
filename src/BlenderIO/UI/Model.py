@@ -8,7 +8,7 @@ def _draw_on_node(context, layout):
     layout = layout
     
     layout.prop(armature.GFSTOOLS_ModelProperties, "root_node_name")
-    
+
 class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     bl_label       = "GFS Model"
     bl_idname      = "OBJECT_PT_GFSToolsModelDataPanel"

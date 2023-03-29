@@ -59,13 +59,20 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default=True
     )
     
+    throw_missing_weight_errors: bpy.props.BoolProperty(
+        name="Raise Error for Unrigged Vertices",
+        description="If attempting to export a rigged mesh, throw an error if any vertices do not have vertex weights instead of throwing a warning",
+        default=False
+    )
+    
     version: available_versions_property()
     
     def invoke(self, context, event):
         prefs = get_preferences()
         self.strip_missing_vertex_groups = prefs.strip_missing_vertex_groups
-        self.recalculate_tangents  = prefs.recalculate_tangents
-        self.version = prefs.version
+        self.recalculate_tangents        = prefs.recalculate_tangents
+        self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
+        self.version                     = prefs.version
         return super().invoke(context, event)
 
 
@@ -93,7 +100,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)

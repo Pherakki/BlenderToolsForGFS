@@ -43,6 +43,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default=True
     )
     
+    throw_missing_weight_errors: bpy.props.BoolProperty(
+        name="Raise Error for Unrigged Vertices",
+        description="Default setting for 'Raise Error for Unrigged Vertices' on export",
+        default=False
+    )
+    
     version: available_versions_property()
 
     
@@ -60,4 +66,5 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.label(text='Default Export settings:')
         export_col.prop(self, 'strip_missing_vertex_groups')
         export_col.prop(self, 'recalculate_tangents')
+        export_col.prop(self, 'throw_missing_weight_errors')
         export_col.prop(self, 'version')
