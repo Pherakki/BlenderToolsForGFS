@@ -119,9 +119,9 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         if len(errorlog.warnings):
             errorlog.digest_warnings(self.debug_mode)
             self.report({"INFO"}, "Import successful, with warnings.")
-        else:
+        elif not self.debug_mode:
             self.report({"INFO"}, "Import successful.")
-        
+            
         return {'FINISHED'}
     
     def execute(self, context):
@@ -213,7 +213,11 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         set_fps(self, context)
         
-        self.report({"INFO"}, "Import successful.")
+        if len(errorlog.warnings):
+            errorlog.digest_warnings(self.debug_mode)
+            self.report({"INFO"}, "Import successful, with warnings.")
+        elif not self.debug_mode:
+            self.report({"INFO"}, "Import successful.")
         
         return {'FINISHED'}
     
