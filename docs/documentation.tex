@@ -666,6 +666,7 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 \item Whether to export animations packed into the model.
 \item Whether to strip any vertex groups from the export that do not correspond to a bone in the armature. Leaving this option unticked means that undefined vertex groups will cause an error when attempting to export.
 \item Whether to recalculate tangents on export if a mesh needs to be exported with tangents. This can be useful if an imported model has incorrect tangent vectors, and if the Blender tangent calculator gives better results. This is active by default.
+\item Whether to throw an error us any vertices in a rigged mesh are unrigged. A warning will be displayed if this is turned off, and if it is turned on then the export will stop on the first mesh that raises this error and Blender will display all vertices that are unrigged.
 \item Which file version to export as.
 \end{itemize}
 \guideimage{images/export/export_gmd_properties.png}
