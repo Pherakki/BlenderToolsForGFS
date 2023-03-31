@@ -477,13 +477,13 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
     # Extract UVs
     UV_data = [[None for _ in range(nloops)]]*8
     if uv0_map is not None: UV_data[0] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv1_map is not None: UV_data[1] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv2_map is not None: UV_data[2] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv3_map is not None: UV_data[3] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv4_map is not None: UV_data[4] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv5_map is not None: UV_data[5] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv6_map is not None: UV_data[6] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv7_map is not None: UV_data[7] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
+    if uv1_map is not None: UV_data[1] = fetch_data(mesh.uv_layers[uv1_map].data, "uv", sigfigs+2)
+    if uv2_map is not None: UV_data[2] = fetch_data(mesh.uv_layers[uv2_map].data, "uv", sigfigs+2)
+    if uv3_map is not None: UV_data[3] = fetch_data(mesh.uv_layers[uv3_map].data, "uv", sigfigs+2)
+    if uv4_map is not None: UV_data[4] = fetch_data(mesh.uv_layers[uv4_map].data, "uv", sigfigs+2)
+    if uv5_map is not None: UV_data[5] = fetch_data(mesh.uv_layers[uv5_map].data, "uv", sigfigs+2)
+    if uv6_map is not None: UV_data[6] = fetch_data(mesh.uv_layers[uv6_map].data, "uv", sigfigs+2)
+    if uv7_map is not None: UV_data[7] = fetch_data(mesh.uv_layers[uv7_map].data, "uv", sigfigs+2)
     
     if len(UV_data):
         UV_data = [tuple(elems) for elems in zip(*UV_data)]
