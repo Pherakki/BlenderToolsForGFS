@@ -15,6 +15,14 @@ from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
 
 
+def decode_obj_name(obj_name, store_bytestring_on_obj, encoding="utf8"):
+    try:
+        return obj_name.string.decode(encoding, errors="replace")
+    except UnicodeDecodeError:
+        store_bytestring_on_obj(obj_name.string)
+        return obj_name.string.decode(encoding, errors="replace")
+
+
 class VertexAttributeTracker:
     __slots__ = ("normals", "tangents", "binormals", "color0s", "color1s")
     
