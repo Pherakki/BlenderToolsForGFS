@@ -49,6 +49,17 @@ All data from the GFS or GAP file should be preserved from import to export, but
 - EPL data is not displayed.
 - All animations other than Node/Bone animations are not displayed.
 
+## Known Bugs
+- Names not decodable as UTF-8 will cause import errors. Since all vanilla models use UTF-8, this bug can only be triggered by edited files.
+- Meshes rigged or attached to the root bone will import and export incorrectly.
+- The following vanilla P5R models will fail to re-export:
+    - MODEL/CHARACTER/0006/C0006_103_00.GMD
+    - MODEL/CHARACTER/5905/C5905_001_00.GMD
+    - MODEL/FIELD_TEX/OBJECT/M051_040.GMD
+    - MODEL/FIELD_TEX/OBJECT/M062_078.GMD
+    - MODEL/FIELD_TEX/OBJECT/M062_080.GMD
+    - MODEL/FIELD_TEX/OBJECT/M062_081.GMD
+
 ## Future Development
 The highest-priority features are, in order of importance:
 1) A custom Material Node that faithfully reproduces the material rendering.
