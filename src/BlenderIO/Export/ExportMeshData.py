@@ -5,7 +5,7 @@ from mathutils import Matrix
 import numpy as np
 
 from ..WarningSystem.Warning import ReportableError
-from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup, BlenderBoneToMayaBone, convert_YDirBone_to_XDirBone
+from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup, BlenderBoneToMayaBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup
 from ..Utils.UVMapManagement import make_uv_map_name, is_valid_uv_map, get_uv_idx_from_name
 from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
@@ -147,7 +147,11 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
             # We can re-parent the node to this node and yeet the vertex
             # weights
             node_idx = list(all_indices)[0]
-            parent_relative_bind_pose_matrix = (convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local).inverted() @ bpy_mesh_object.matrix_local)
+            if node_idx == 0:
+                parent_matrix = convert_Yup_to_Zup(Matrix.Identity(4))
+            else:
+                parent_matrix = convert_YDirBone_to_XDirBone(armature.data.bones[gfs.bones[node_idx].name].matrix_local)
+            parent_relative_bind_pose_matrix = parent_matrix.inverted() @ bpy_mesh_object.matrix_local
 
             for gm in gfs_meshes:
                 for v in gm.vertices:
