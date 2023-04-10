@@ -1,7 +1,7 @@
 import bpy
 
 from .Node import makeNodePropertiesPanel
-
+from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
     
 def _draw_on_node(context, layout):
     armature = context.armature
@@ -35,10 +35,12 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.NodePropertiesPanel)
+        bpy.utils.register_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
         
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
+        bpy.utils.unregister_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
     
     NodePropertiesPanel = makeNodePropertiesPanel(
         "ArmatureNode", 
