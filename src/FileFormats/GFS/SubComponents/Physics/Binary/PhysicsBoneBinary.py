@@ -31,7 +31,7 @@ class PhysicsBoneBinary(Serializable):
             rw.rw_obj(self.name, version)
         else:
             # Appears to require a scale
-            self.unknown_0x14 = rw.rw_int16s(self.unknown_0x14, 6) # Should be float16: CHARACTER/0009/C0009_173_00.GMD has a value of \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff though
+            self.unknown_0x14 = rw.rw_float16s(self.unknown_0x14, 6) # Should be float16: CHARACTER/0009/C0009_173_00.GMD has a value of \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff though
     
     def rw_unknowns(self, rw, version):
         if version > 0x1104130:

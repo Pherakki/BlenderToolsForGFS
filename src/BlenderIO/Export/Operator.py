@@ -112,7 +112,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
-        export_physics(gfs, selected_model)
+        export_physics(gfs, selected_model, errorlog)
         export_0x000100F8(gfs, selected_model)
         export_epls(gfs, selected_model, bpy_node_meshes, errorlog, self.do_strip_epls)
         if self.pack_animations:

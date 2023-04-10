@@ -11,3 +11,7 @@ def lock_obj_transforms(obj):
     obj.lock_scale[0]    = True
     obj.lock_scale[1]    = True
     obj.lock_scale[2]    = True
+
+
+def get_model_props(context):
+    return context.armature.GFSTOOLS_ModelProperties
