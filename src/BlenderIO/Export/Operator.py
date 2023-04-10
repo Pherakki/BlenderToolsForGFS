@@ -24,6 +24,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gfs'
     bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
     bl_options = {'REGISTER', 'UNDO'}
+    
+    
+    debug_mode: bpy.props.BoolProperty(
+        default=False,
+        options={'HIDDEN'},
+    )
+    
     filename_ext: bpy.props.EnumProperty(
         items=[
             ('.GMD', '.GMD', ''),
@@ -42,9 +49,10 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'},
     )
     
-    debug_mode: bpy.props.BoolProperty(
-        default=False,
-        options={'HIDDEN'},
+    do_strip_epls: bpy.props.BoolProperty(
+        name="Strip EPLs",
+        description="Do not export EPL data from the hidden GFS properties of the models. If you don't know what that means, keep this option as false",
+        default=False
     )
     
     strip_missing_vertex_groups: bpy.props.BoolProperty(
@@ -106,7 +114,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_cameras(gfs, selected_model, errorlog)
         export_physics(gfs, selected_model)
         export_0x000100F8(gfs, selected_model)
-        export_epls(gfs, selected_model, bpy_node_meshes, errorlog)
+        export_epls(gfs, selected_model, bpy_node_meshes, errorlog, self.do_strip_epls)
         if self.pack_animations:
             export_animations(gfs, selected_model, keep_unused_anims=False)
         

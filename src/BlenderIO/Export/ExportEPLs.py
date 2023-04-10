@@ -8,7 +8,10 @@ from ...serialization.BinaryTargets import Reader
 from ..WarningSystem.Warning import ReportableError
 
 
-def export_epls(gfs, armature, bpy_node_meshes, errorlog):
+def export_epls(gfs, armature, bpy_node_meshes, errorlog, do_strip_epls):
+    if do_strip_epls:
+        return
+    
     # Export root node epls
     root_props = armature.data.GFSTOOLS_NodeProperties
 
