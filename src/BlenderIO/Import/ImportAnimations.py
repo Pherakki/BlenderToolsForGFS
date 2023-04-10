@@ -1,4 +1,5 @@
 import io
+import math
 
 import bpy
 from mathutils import Matrix, Quaternion, Vector
@@ -174,13 +175,17 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     inv_bind_pose_rotation = bind_pose_rotation.inverted()
     inv_axis_conversion    = axis_conversion.inverted()
     
+    q_rotations = {k: Quaternion([v[3], v[0], v[1], v[2]]) for k, v in rotations.items()}
+    
     b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(Vector(v) - bind_pose_translation)      @ bind_pose_rotation for k, v in positions.items()}
-    b_rotations = {k: inv_bind_pose_rotation @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ axis_conversion    for k, v in rotations.items()}
+    b_rotations = {k: inv_bind_pose_rotation @ v.to_matrix().to_4x4()                                     @ axis_conversion    for k, v in q_rotations.items()}
     b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
     
-    b_positions = {k: v.decompose()[0] for k, v in b_positions.items()}
-    b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
-    b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
+    b_positions = {k: v.to_translation() for k, v in b_positions.items()}
+    b_rotations = {k: q.to_quaternion( ) for k, q in b_rotations.items()}
+    b_scales    = {k: v.to_scale()       for k, v in b_scales   .items()}
+  
+    b_rotations = fix_quaternion_signs(q_rotations, b_rotations)
   
     # Create animations
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
@@ -210,6 +215,8 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     inv_bind_pose_rotation = bind_pose_rotation.inverted()
     inv_axis_conversion    = axis_conversion.inverted()
     
+    q_rotations = {k: Quaternion([v[3], v[0], v[1], v[2]]) for k, v in rotations.items()}
+    
     b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(v)                                      @ bind_pose_rotation for k, v in positions.items()}
     b_rotations = {k: inv_axis_conversion    @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ axis_conversion    for k, v in rotations.items()}
     b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
@@ -217,6 +224,8 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     b_positions = {k: v.decompose()[0] for k, v in b_positions.items()}
     b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
     b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
+
+    b_rotations = fix_quaternion_signs(q_rotations, b_rotations)
 
     # Create animations
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
@@ -384,3 +393,24 @@ def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_
     
 # def import_object_transforms(action, position, rotation, scale):
     
+def fix_quaternion_signs(q_rotations, b_rotations):
+    if len(b_rotations) <= 1:
+        return b_rotations
+    # Fix quaternion signs
+    # The furthest two quaternions can be apart is 360 degrees, i.e. q and -q
+    # We will detect if a quaternion has inadvertently flipped sign by
+    # seeing if neighbouring quaternions are less than or greater than 180
+    # degrees apart.
+    # If this measurement is different before and after transforming the
+    # quaternions, then the quaternion has flipped signs and needs correction.
+    keys = q_rotations.keys()
+    q_rotations = list(q_rotations.values())
+    b_rotations = list(b_rotations.values())
+    q_distances = [((q1.inverted() @ q2).angle < math.pi) for q1, q2 in zip(q_rotations, q_rotations[1:])]
+    b_distances = [((q1.inverted() @ q2).angle < math.pi) for q1, q2 in zip(b_rotations, b_rotations[1:])]
+    differences = [-2*(b1 ^ b2) + 1 for b1, b2 in zip(q_distances, b_distances)]
+    flip_signs = [1]
+    for i in range(len(differences)):
+        flip_signs.append(differences[i]*flip_signs[i])
+    
+    return {k: sgn*v for (k, v, sgn) in zip(keys, b_rotations, flip_signs)}
