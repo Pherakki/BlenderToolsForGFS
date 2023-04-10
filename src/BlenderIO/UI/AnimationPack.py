@@ -74,3 +74,11 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         "- 'Unknown Flags' are unknown. Only Flag 3 appears to be used and may do something.\n"\
         "- 'LookAt Anims' are a set of animations for the four directions the character can look in.\n"\
     )
+            
+    @classmethod
+    def register(cls):
+        bpy.utils.register_class(cls.AnimationPackHelpWindow)
+    
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.AnimationPackHelpWindow)
