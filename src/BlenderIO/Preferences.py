@@ -2,7 +2,7 @@ import os
 
 import bpy
 
-from .Data import get_package_name, available_versions_property, bone_pose_enum_options
+from .Data import get_package_name, available_versions_property, bone_pose_enum_options, too_many_vertices_policy_options
 
     
 def get_preferences():
@@ -47,6 +47,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
         name="Raise Error for Unrigged Vertices",
         description="Default setting for 'Raise Error for Unrigged Vertices' on export",
         default=False
+    )
+    
+    too_many_vertices_policy: bpy.props.EnumProperty(
+        items=too_many_vertices_policy_options(),
+        name=">6192 Vertices",
+        description="Default setting for '>6192 Vertices' on export",
+        default="WARN"
     )
     
     version: available_versions_property()

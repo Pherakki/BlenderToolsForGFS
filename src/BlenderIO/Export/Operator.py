@@ -5,7 +5,7 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
-from ..Data import available_versions_property
+from ..Data import available_versions_property, too_many_vertices_policy_options
 from ..Preferences import get_preferences
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
@@ -73,6 +73,14 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default=False
     )
     
+    
+    too_many_vertices_policy: bpy.props.EnumProperty(
+        items=too_many_vertices_policy_options(),
+        name=">6192 Vertices per Mesh",
+        description="Decide the export behavior in the event of a mesh being split into more than 6192 vertices for export",
+        default="WARN"
+    )
+    
     version: available_versions_property()
     
     def invoke(self, context, event):
@@ -80,6 +88,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.strip_missing_vertex_groups = prefs.strip_missing_vertex_groups
         self.recalculate_tangents        = prefs.recalculate_tangents
         self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
+        self.too_many_vertices_policy    = prefs.too_many_vertices_policy
         self.version                     = prefs.version
         return super().invoke(context, event)
 
@@ -108,7 +117,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)

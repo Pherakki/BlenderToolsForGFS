@@ -55,3 +55,10 @@ def bone_pose_enum_options():
         ("bindpose", "Reconstruct",         "Reconstruct the bind pose"),
         ("restpose", "Scaleless Rest Pose", "Define the bind pose as the rest pose, without scales. As a side-effect, this bakes the mesh transforms into the vertices"),    
     ]
+
+def too_many_vertices_policy_options():
+    return [
+            ('IGNORE', 'Ignore',      ''),
+            ('WARN',   'Warn',        ''),
+            ("ERROR",  'Throw Error', '')
+    ]

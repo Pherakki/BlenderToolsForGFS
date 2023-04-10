@@ -11,6 +11,7 @@ from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 
+VERTEX_LIMIT = 6192
 
 
 class DisplayableVerticesError(ReportableError):
@@ -107,10 +108,31 @@ class PartiallyUnriggedMeshError(DisplayableVerticesError):
         super().__init__(msg, mesh, vertex_indices)
 
 
-def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors):
+class TooManyVerticesError(ReportableError):
+    __slots__ = ("meshes",)
+    
+    HAS_DISPLAYABLE_ERROR = True
+    
+    def __init__(self, meshes):
+        vtx_limit = VERTEX_LIMIT
+        msg = f"{len(meshes)} meshes need to be split into more than {vtx_limit} vertices. These have been selected for you"
+        super().__init__(msg)
+        self.meshes = meshes
+        
+    def showErrorData(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        for mesh in self.meshes:
+            mesh.select_set = True
+        
+    def hideErrorData(self):
+        pass
+        
+
+def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy):
     meshes = [obj for obj in armature.children if obj.type == "MESH"]
     material_names = set()
     out = []
+    bad_meshes = []
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
         out.append((bpy_mesh_object.data, node_id))
@@ -118,9 +140,16 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         # Convert bpy meshes -> gfs meshes
         gfs_meshes = []
         gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors))
+        
+        if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
+            bad_meshes.append(bpy_mesh_object)
+
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
             gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors))
+
+            if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
+                bad_meshes.append(bpy_submesh_object)
         
         # Now create the parent node
         parent_idx = 0
@@ -168,6 +197,16 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
         for prop in node_props.properties:
             gfs_node.add_property(*prop.extract_data(prop))
+    
+    if len(bad_meshes):
+        if too_many_vertices_policy == "IGNORE":
+            pass
+        elif too_many_vertices_policy == "WARN":
+            errorlog.log_warning_message(f"{len(bad_meshes)} meshes need to be split into more than {VERTEX_LIMIT} vertices for export. This might cause issues and it is recommended to split these meshes into smaller meshes. The affected meshes are {', '.join([m.name for m in bad_meshes])}")
+        elif too_many_vertices_policy == "ERROR":
+            errorlog.log_error(TooManyVerticesError(bad_meshes))
+        else:
+            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: TOO_MANY_VERTICES POLICY '{too_many_vertices_policy}' NOT DEFINED")
     
     return sorted(material_names), out
 
