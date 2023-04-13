@@ -6,7 +6,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
-from ..Utils.Maths import transform_node_animations, convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup, convert_Zup_to_Yup
+from ..Utils.Maths import convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup, convert_Zup_to_Yup
 from .ImportProperties import import_properties
 
 
