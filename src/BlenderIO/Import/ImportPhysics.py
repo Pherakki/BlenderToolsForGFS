@@ -1,3 +1,5 @@
+from ..Utils.PhysicsGen import make_collider
+
 def import_physics(gfs, bpy_obj):
     if gfs.physics_data is not None:
         props = bpy_obj.data.GFSTOOLS_ModelProperties.physics
@@ -22,16 +24,15 @@ def import_physics(gfs, bpy_obj):
                 b_bone.nameless_data = bone.unknown_0x14
             
         for cldr in gfs_phys.colliders:
-            b_cldr = props.colliders.add()
-            b_cldr.has_name = cldr.has_name
-            b_cldr.name = cldr.name.string if cldr.name.string is not None else ""
-            b_cldr.dtype = "Sphere" if cldr.collider_type == 0 else "Capsule"
-            b_cldr.radius = cldr.capsule_radius
-            b_cldr.height = cldr.capsule_height if cldr.capsule_height is not None else 0.
-            b_cldr.r1 = cldr.unknown_0x0A[ 0: 4]
-            b_cldr.r2 = cldr.unknown_0x0A[ 4: 8]
-            b_cldr.r3 = cldr.unknown_0x0A[ 8:12]
-            b_cldr.r4 = cldr.unknown_0x0A[12:16]
+            # Create collider meshes
+            c = make_collider(cldr.has_name,
+                             "Sphere" if cldr.collider_type == 0 else "Capsule",
+                              cldr.capsule_height/2 if cldr.capsule_height is not None else 0.,
+                              cldr.capsule_radius,
+                              cldr.unknown_0x0A,
+                              cldr.name.string,
+                              bpy_obj)
+            c.hide_set(True)
         
         for link in gfs_phys.physics_bone_links:
             b_link = props.links.add()

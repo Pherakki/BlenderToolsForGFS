@@ -14,6 +14,11 @@ boneY_to_boneX_matrix = Matrix([[ 0.,  1.,  0.,  0.],
                                 [ 0.,  0.,  1.,  0.],
                                 [ 0.,  0.,  0.,  1.]])
 
+colY_to_colX_matrix = Matrix([[ 1.,  0.,  0.,  0.],
+                              [ 0.,  0., -1.,  0.],
+                              [ 0.,  1.,  0.,  0.],
+                              [ 0.,  0.,  0.,  1.]])
+
 # boneY_to_boneX_matrix = Matrix.Identity(4)
 # upY_to_upZ_matrix = Matrix.Identity(4)
 

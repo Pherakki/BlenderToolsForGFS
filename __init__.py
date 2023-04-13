@@ -34,7 +34,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Nodes         import BlobProperty
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsBoneProperties
-    from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsColliderProperties
+    from .src.BlenderIO.Properties.Physics       import GFSToolsColliderProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsLinkProperties
     from .src.BlenderIO.Properties.Scene         import GFSToolsSceneProperties
     from .src.BlenderIO.Properties.Textures      import GFSToolsImageProperties
@@ -58,6 +58,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialVertexAttributePanel
     from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
+    from .src.BlenderIO.UI.Physics       import OBJECT_PT_GFSToolsColliderPanel
     from .src.BlenderIO.UI.RegisterWindow import RegisterWindow
     from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
     from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
@@ -76,7 +77,6 @@ def init_bpy():
         RegisterWindow,
         OpenDocumentation,
         GFSToolsPhysicsBoneProperties,
-        GFSToolsPhysicsColliderProperties,
         GFSToolsPhysicsLinkProperties,
         GFSToolsPhysicsProperties,
         OBJECT_PT_GFSToolsAnimationPanel,
@@ -84,6 +84,7 @@ def init_bpy():
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,
         OBJECT_PT_GFSToolsCameraAttributesPanel,
+        OBJECT_PT_GFSToolsColliderPanel,
         OBJECT_UL_GFSToolsGenericPropertyUIList,
         OBJECT_PT_GFSToolsLightAttributesPanel,
         OBJECT_PT_GFSToolsMaterialPanel,
@@ -115,6 +116,7 @@ def init_bpy():
         (bpy.types.Image,    "GFSTOOLS_ImageProperties",           GFSToolsImageProperties          ),
         (bpy.types.Light,    "GFSTOOLS_LightProperties",           GFSToolsLightProperties          ),
         (bpy.types.Material, "GFSTOOLS_MaterialProperties",        GFSToolsMaterialProperties       ),
+        (bpy.types.Mesh,     "GFSTOOLS_ColliderProperties",        GFSToolsColliderProperties       ),
         (bpy.types.Mesh,     "GFSTOOLS_MeshProperties",            GFSToolsMeshProperties           ),
         (bpy.types.Mesh,     "GFSTOOLS_NodeProperties",            GFSToolsMeshNodeProperties       ),
         (bpy.types.Node,     "GFSTOOLS_TextureRefPanelProperties", GFSToolsTextureRefPanelProperties),

@@ -5,6 +5,7 @@ from ...FileFormats.GFS.SubComponents.Physics.Binary.ContainerPayload import Phy
 from ...FileFormats.GFS.SubComponents.Physics.Binary.PhysicsBoneBinary import PhysicsBoneBinary
 from ...FileFormats.GFS.SubComponents.Physics.Binary.ColliderBinary import ColliderBinary
 from ...FileFormats.GFS.SubComponents.Physics.Binary.BoneLinkBinary import PhysicsBoneLinkBinary
+from ..Utils.Maths import upY_to_upZ_matrix, boneY_to_boneX_matrix, colY_to_colX_matrix
 
 
 def export_physics(gfs, bpy_obj, errorlog):
@@ -34,15 +35,30 @@ def export_physics(gfs, bpy_obj, errorlog):
         physics.physics_bones.append(bone)
     physics.physics_bone_count = len(physics.physics_bones)
     
-    for b_cldr in props.colliders:
-        cldr = ColliderBinary()
-        cldr.has_name = b_cldr.has_name
-        cldr.name = cldr.name.from_name(b_cldr.name)
-        cldr.collider_type = 0 if b_cldr.dtype == "Sphere" else 1
-        cldr.capsule_radius = b_cldr.radius
-        cldr.capsule_height = b_cldr.height
-        cldr.unknown_0x0A = [*b_cldr.r1, *b_cldr.r2, *b_cldr.r3, *b_cldr.r4]
-        physics.colliders.append(cldr)
+    for obj in bpy_obj.children:
+        if obj.type == "MESH":
+            if obj.data.GFSTOOLS_MeshProperties.is_collider():
+                col_props = obj.data.GFSTOOLS_ColliderProperties
+                cldr = ColliderBinary()
+                if obj.parent_type == "BONE" and obj.parent_bone != '':
+                    has_name = True
+                    bone_name = obj.parent_bone
+                    parent_matrix = bpy_obj.matrix_world @ bpy_obj.data.bones[bone_name].matrix_local @ boneY_to_boneX_matrix.inverted()
+                else:
+                    has_name = not col_props.detached
+                    bone_name = gfs.bones[0].name
+                    parent_matrix = upY_to_upZ_matrix @ bpy_obj.matrix_world
+                
+                cldr.has_name = has_name
+                cldr.name = cldr.name.from_name(bone_name)
+                cldr.collider_type = 0 if col_props.dtype == "Sphere" else 1
+                cldr.capsule_radius = col_props.radius*max(obj.scale)
+                cldr.capsule_height = col_props.height*max(obj.scale)*2
+                
+                ibpm = (parent_matrix.inverted() @ obj.matrix_world @ colY_to_colX_matrix.inverted()).transposed()
+                cldr.unknown_0x0A = [*ibpm[0], *ibpm[1], *ibpm[2], *ibpm[3]]
+                
+                physics.colliders.append(cldr)
     physics.collider_count = len(physics.colliders)
     
     for i, b_link in enumerate(props.links):

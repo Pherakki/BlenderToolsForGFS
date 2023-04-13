@@ -19,7 +19,10 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     
     @classmethod
     def poll(cls, context):
-        return context.mesh is not None
+        if context.mesh is not None:
+            return context.mesh.GFSTOOLS_MeshProperties.is_mesh()
+        
+        return False
 
     def draw(self, context):
         mesh = context.mesh
@@ -85,8 +88,8 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         "WINDOW",
         "data", 
         lambda context: context.mesh.GFSTOOLS_NodeProperties,
-        lambda cls, context: (context.mesh is not None and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH") 
-                             if context.active_object.parent is not None
+        lambda cls, context: (context.mesh.GFSTOOLS_MeshProperties.is_mesh() and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH") 
+                             if context.mesh is not None
                              else False,
         parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel",
         predraw=_draw_on_node
@@ -110,7 +113,9 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         
         @classmethod
         def poll(self, context):
-            return context.mesh is not None
+            if context.mesh is not None:
+                return context.mesh.GFSTOOLS_MeshProperties.is_mesh()
+            return False
     
         def draw_header(self, context):
             mesh = context.mesh
