@@ -62,3 +62,10 @@ def too_many_vertices_policy_options():
             ('WARN',   'Warn',        ''),
             ("ERROR",  'Throw Error', '')
     ]
+
+def multiple_materials_policy_options():
+    return [
+            ('WARN',      'Warn',        'Issue a warning if a mesh contains more than one material'),
+            ("ERROR",     'Throw Error', 'Prevent export is a mesh contains more than one material'),
+            ('AUTOSPLIT', 'Auto-Split',  'Automatically split a mesh into submeshes, where each submesh has a single material')
+    ]

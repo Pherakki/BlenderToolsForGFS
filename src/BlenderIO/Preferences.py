@@ -2,7 +2,11 @@ import os
 
 import bpy
 
-from .Data import get_package_name, available_versions_property, bone_pose_enum_options, too_many_vertices_policy_options
+from .Data import get_package_name
+from .Data import available_versions_property
+from .Data import bone_pose_enum_options
+from .Data import too_many_vertices_policy_options
+from .Data import multiple_materials_policy_options
 
     
 def get_preferences():
@@ -56,6 +60,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="WARN"
     )
     
+    # multiple_materials_policy: bpy.props.EnumProperty(
+    #     items=multiple_materials_policy_options(),
+    #     name="Multiple Materials per Mesh",
+    #     description="Default setting for 'Multiple Materials per Mesh' on export",
+    #     default="WARN"
+    # )
+    
     version: available_versions_property()
 
     
@@ -74,4 +85,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'strip_missing_vertex_groups')
         export_col.prop(self, 'recalculate_tangents')
         export_col.prop(self, 'throw_missing_weight_errors')
+        export_col.prop(self, 'too_many_vertices_policy')
+        # export_col.prop(self, 'multiple_materials_policy')
         export_col.prop(self, 'version')

@@ -89,6 +89,24 @@ class NonTriangularFacesError(ReportableError):
             bpy.context.view_layer.objects.active = self.prev_obj
         
 
+class DisplayableMeshesError(ReportableError):
+    __slots__ = ("meshes",)
+    
+    HAS_DISPLAYABLE_ERROR = True
+    
+    def __init__(self, msg, meshes):
+        super().__init__(msg)
+        self.meshes = meshes
+        
+    def showErrorData(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        for mesh in self.meshes:
+            mesh.select_set(True)
+        
+    def hideErrorData(self):
+        pass
+        
+    
 class MissingVertexGroupsError(DisplayableVerticesError):
     def __init__(self, mesh, vertex_indices, bone_names):
         newline = '\n'
@@ -108,41 +126,45 @@ class PartiallyUnriggedMeshError(DisplayableVerticesError):
         super().__init__(msg, mesh, vertex_indices)
 
 
-class TooManyVerticesError(ReportableError):
-    __slots__ = ("meshes",)
-    
-    HAS_DISPLAYABLE_ERROR = True
-    
+class TooManyVerticesError(DisplayableMeshesError):
     def __init__(self, meshes):
         vtx_limit = VERTEX_LIMIT
         msg = f"{len(meshes)} meshes need to be split into more than {vtx_limit} vertices. These have been selected for you"
-        super().__init__(msg)
-        self.meshes = meshes
-        
-    def showErrorData(self):
-        bpy.ops.object.select_all(action='DESELECT')
-        for mesh in self.meshes:
-            mesh.select_set = True
-        
-    def hideErrorData(self):
-        pass
-        
+        super().__init__(msg, meshes)
 
-def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy):
-    meshes = [obj for obj in armature.children if obj.type == "MESH"]
+
+class MultipleMaterialsError(DisplayableMeshesError):
+    def __init__(self, meshes):
+        msg = f"{len(meshes)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. The affected meshes have been selected for you"
+        super().__init__(msg, meshes)
+
+        
+def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy, multiple_materials_policy):
+    # Find meshes
+    meshes = []
+    for obj in armature.children:
+        if obj.type == "MESH":
+            if obj.data.GFSTOOLS_MeshProperties.is_mesh():
+                meshes.append(obj)
+    
     material_names = set()
     out = []
     bad_meshes = []
+    multiple_materials_meshes = []
     for bpy_mesh_object in meshes:
         node_id = len(gfs.bones)
         out.append((bpy_mesh_object.data, node_id))
 
         # Convert bpy meshes -> gfs meshes
+        # This should now be able to return a LIST of meshes...
         gfs_meshes = []
         gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors))
         
         if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
             bad_meshes.append(bpy_mesh_object)
+            
+        if len(bpy_mesh_object.data.materials) > 1:
+            multiple_materials_meshes.append(bpy_mesh_object)
 
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
@@ -150,6 +172,8 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
 
             if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
                 bad_meshes.append(bpy_submesh_object)
+            if len(bpy_submesh_object.data.materials) > 1:
+                multiple_materials_meshes.append(bpy_submesh_object)
         
         # Now create the parent node
         parent_idx = 0
@@ -208,6 +232,9 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         else:
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: TOO_MANY_VERTICES POLICY '{too_many_vertices_policy}' NOT DEFINED")
     
+    if len(multiple_materials_meshes):
+        errorlog.log_error(MultipleMaterialsError(multiple_materials_meshes))
+    
     return sorted(material_names), out
 
 
@@ -244,7 +271,8 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
         out.append(position_deltas)
         
     return out
-    
+
+
 def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}

@@ -81,6 +81,15 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default="WARN"
     )
     
+    # multiple_materials_policy: bpy.props.EnumProperty(
+    #     items=multiple_materials_policy_options(),
+    #     name="Multiple Materials per Mesh",
+    #     description="Decide the export behavior in the event of a mesh containing more than a single material",
+    #     default="WARN"
+    # )
+    
+    multiple_materials_policy = None  # Placeholder to avoid duplicating work later
+    
     version: available_versions_property()
     
     def invoke(self, context, event):
@@ -89,6 +98,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.recalculate_tangents        = prefs.recalculate_tangents
         self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
         self.too_many_vertices_policy    = prefs.too_many_vertices_policy
+        #self.multiple_materials_policy   = prefs.multiple_materials_policy
         self.version                     = prefs.version
         return super().invoke(context, event)
 
@@ -117,7 +127,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
