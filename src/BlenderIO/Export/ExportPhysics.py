@@ -23,6 +23,7 @@ def export_physics(gfs, bpy_obj, errorlog):
     physics.unknown_0x0C = props.unknown_0x0C
     physics.unknown_0x10 = props.unknown_0x10
     
+    # Export bone chains
     for b_bone in props.bones:
         bone = PhysicsBoneBinary()
         bone.has_name = b_bone.has_name
@@ -35,6 +36,27 @@ def export_physics(gfs, bpy_obj, errorlog):
         physics.physics_bones.append(bone)
     physics.physics_bone_count = len(physics.physics_bones)
     
+    for i, b_link in enumerate(props.links):
+        link = PhysicsBoneLinkBinary()
+        link.parent_physics_bone = b_link.parent
+        link.child_physics_bone  = b_link.child
+        link.mass                = b_link.mass
+        link.unknown_0x04        = b_link.unknown_0x04
+        link.radius              = b_link.radius
+        physics.physics_bone_links.append(link)
+        
+        if link.parent_physics_bone == -1:
+            errorlog.log_error_message(f"Armature '{bpy_obj.name}' has a parent bone index of -1 on physics link {i}. Either remove this link from the GFS Physics or set the index to a valid physics bone index")
+        if link.child_physics_bone == -1:
+            errorlog.log_error_message(f"Armature '{bpy_obj.name}' has a child bone index of -1 on physics link {i}. Either remove this link from the GFS Physics or set the index to a valid physics bone index")
+        
+        if link.parent_physics_bone >= physics.physics_bone_count:
+            errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has a parent bone index that exceeds the total number of physics bones ({physics.physics_bone_count}) on physics link {i}")
+        if link.child_physics_bone >= physics.physics_bone_count:
+            errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has a child bone index that exceeds the total number of physics bones ({physics.physics_bone_count}) on physics link {i}")
+    physics.physics_bone_link_count = len(physics.physics_bone_links)
+
+    # Export colliders
     for obj in bpy_obj.children:
         if obj.type == "MESH":
             if obj.data.GFSTOOLS_MeshProperties.is_collider():
@@ -60,26 +82,6 @@ def export_physics(gfs, bpy_obj, errorlog):
                 
                 physics.colliders.append(cldr)
     physics.collider_count = len(physics.colliders)
-    
-    for i, b_link in enumerate(props.links):
-        link = PhysicsBoneLinkBinary()
-        link.parent_physics_bone = b_link.parent
-        link.child_physics_bone  = b_link.child
-        link.mass                = b_link.mass
-        link.unknown_0x04        = b_link.unknown_0x04
-        link.radius              = b_link.radius
-        physics.physics_bone_links.append(link)
-        
-        if link.parent_physics_bone == -1:
-            errorlog.log_error_message(f"Armature '{bpy_obj.name}' has a parent bone index of -1 on physics link {i}. Either remove this link from the GFS Physics or set the index to a valid physics bone index")
-        if link.child_physics_bone == -1:
-            errorlog.log_error_message(f"Armature '{bpy_obj.name}' has a child bone index of -1 on physics link {i}. Either remove this link from the GFS Physics or set the index to a valid physics bone index")
-        
-        if link.parent_physics_bone >= physics.physics_bone_count:
-            errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has a parent bone index that exceeds the total number of physics bones ({physics.physics_bone_count}) on physics link {i}")
-        if link.child_physics_bone >= physics.physics_bone_count:
-            errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has a child bone index that exceeds the total number of physics bones ({physics.physics_bone_count}) on physics link {i}")
-    physics.physics_bone_link_count = len(physics.physics_bone_links)
 
     # Remove physics bones for which the bone no longer exists
     for i, pbone in reversed(list(enumerate(physics.physics_bones))):
