@@ -66,6 +66,12 @@ def too_many_vertices_policy_options():
 def multiple_materials_policy_options():
     return [
             ('WARN',      'Warn',        'Issue a warning if a mesh contains more than one material'),
-            ("ERROR",     'Throw Error', 'Prevent export is a mesh contains more than one material'),
+            ("ERROR",     'Throw Error', 'Prevent export if a mesh contains more than one material'),
             ('AUTOSPLIT', 'Auto-Split',  'Automatically split a mesh into submeshes, where each submesh has a single material')
+    ]
+
+def missing_uv_maps_policy_options():
+    return [
+            ('WARN',      'Warn',        'Issue a warning if a mesh has missing UV maps, and replace them with blank maps'),
+            ("ERROR",     'Throw Error', 'Prevent export if a mesh has missing UV maps')
     ]

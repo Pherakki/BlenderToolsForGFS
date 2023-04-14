@@ -138,8 +138,25 @@ class MultipleMaterialsError(DisplayableMeshesError):
         msg = f"{len(meshes)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. The affected meshes have been selected for you"
         super().__init__(msg, meshes)
 
+
+class MissingUVMapsError(ReportableError):
+    __slots__ = ("mesh", "mapname")
+    
+    def __init__(self, mesh, mapname):
+        msg = f"Mesh '{mesh.name}' uses a material that requires UV map '{mapname}', but the mesh does not contain this map"
+        super().__init__(msg)
+        self.mesh = mesh
+        self.mapname = mapname
         
-def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy, multiple_materials_policy):
+    def showErrorData(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        self.mesh.select_set(True)
+        
+    def hideErrorData(self):
+        self.mesh.select_set(False)
+
+
+def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy, multiple_materials_policy, missing_uv_maps_policy):
     # Find meshes
     meshes = []
     for obj in armature.children:
@@ -158,7 +175,7 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         # Convert bpy meshes -> gfs meshes
         # This should now be able to return a LIST of meshes...
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
         
         if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
             bad_meshes.append(bpy_mesh_object)
@@ -168,7 +185,7 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
 
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
         for bpy_submesh_object in attached_meshes:
-            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors))
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
 
             if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
                 bad_meshes.append(bpy_submesh_object)
@@ -186,15 +203,20 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         # to
         index_sets = []
         for gm in gfs_meshes:
-            indices = set()
-            if gm.vertices[0].indices is not None:
-                for v in gm.vertices:
-                    for idx, wgt in zip(v.indices, v.weights):
-                        if wgt > 0:
-                            indices.add(idx)                    
-            index_sets.append(indices)
+            if len(gm.vertices):
+                indices = set()
+                if gm.vertices[0].indices is not None:
+                    for v in gm.vertices:
+                        for idx, wgt in zip(v.indices, v.weights):
+                            if wgt > 0:
+                                indices.add(idx)                    
+                index_sets.append(indices)
 
-        all_indices = set.union(*index_sets)
+        if len(index_sets):
+            all_indices = set.union(*index_sets)
+        else:
+            all_indices = set()
+        
         mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
         if len(all_indices) == 1 and mesh_props.permit_unrigged_export:
             # We can re-parent the node to this node and yeet the vertex
@@ -230,10 +252,21 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         elif too_many_vertices_policy == "ERROR":
             errorlog.log_error(TooManyVerticesError(bad_meshes))
         else:
-            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: TOO_MANY_VERTICES POLICY '{too_many_vertices_policy}' NOT DEFINED")
+            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: TOO_MANY_VERTICES_POLICY '{too_many_vertices_policy}' NOT DEFINED")
     
     if len(multiple_materials_meshes):
         errorlog.log_error(MultipleMaterialsError(multiple_materials_meshes))
+    
+    export_box = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
+    export_sph = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
+    if export_box or export_sph:
+        has_nonempty_meshes = sum([len(mesh.vertices) > 0 for mesh in gfs.meshes]) > 0
+        gfs.keep_bounding_box    = (export_box and has_nonempty_meshes)
+        gfs.keep_bounding_sphere = (export_sph and has_nonempty_meshes)
+        if export_box and not has_nonempty_meshes:
+            errorlog.log_warning_message("Model is marked for bounding box export, but no non-empty meshes were found for the model. Exporting without a bounding box")
+        if export_sph and not has_nonempty_meshes:
+            errorlog.log_warning_message("Model is marked for bounding sphere export, but no non-empty meshes were found for the model. Exporting without a bounding sphere")
     
     return sorted(material_names), out
 
@@ -273,10 +306,10 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
     return out
 
 
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors)
+    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy)
     
     # Check if any of the mesh data is invalid... we'll accumulate these
     # into an error report for the user.
@@ -301,8 +334,8 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
                         mesh_props.unknown_0x12, 
                         mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
                         mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
-                        mesh_props.export_bounding_box, 
-                        mesh_props.export_bounding_sphere)
+                        mesh_props.export_bounding_box if len(vertices) else False, 
+                        mesh_props.export_bounding_sphere if len(vertices) else False)
     
     # Export flags we can't currently deduce from Blender data...
     # We might be able to represent some of these flags within Blender itself
@@ -343,7 +376,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
 #####################
 # PRIVATE FUNCTIONS #
 #####################
-def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors):
+def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy):
     # Switch to input variables
     vweight_floor = 0
     
@@ -364,7 +397,7 @@ def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, rec
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors)
+    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy)
     
     return export_verts, export_faces, gfs_vert_to_bpy_vert
 
@@ -448,7 +481,7 @@ def get_tex_idx(nodes, node_name, default_map):
     return tex_idx, uv_map_name
 
 
-def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors):
+def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy):
     mesh = mesh_obj.data
     
     # Figure out what vertex attributes to export 
@@ -547,14 +580,14 @@ def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, 
 
     # Extract UVs
     UV_data = [[None for _ in range(nloops)]]*8
-    if uv0_map is not None: UV_data[0] = fetch_data(mesh.uv_layers[uv0_map].data, "uv", sigfigs+2)
-    if uv1_map is not None: UV_data[1] = fetch_data(mesh.uv_layers[uv1_map].data, "uv", sigfigs+2)
-    if uv2_map is not None: UV_data[2] = fetch_data(mesh.uv_layers[uv2_map].data, "uv", sigfigs+2)
-    if uv3_map is not None: UV_data[3] = fetch_data(mesh.uv_layers[uv3_map].data, "uv", sigfigs+2)
-    if uv4_map is not None: UV_data[4] = fetch_data(mesh.uv_layers[uv4_map].data, "uv", sigfigs+2)
-    if uv5_map is not None: UV_data[5] = fetch_data(mesh.uv_layers[uv5_map].data, "uv", sigfigs+2)
-    if uv6_map is not None: UV_data[6] = fetch_data(mesh.uv_layers[uv6_map].data, "uv", sigfigs+2)
-    if uv7_map is not None: UV_data[7] = fetch_data(mesh.uv_layers[uv7_map].data, "uv", sigfigs+2)
+    if uv0_map is not None: UV_data[0] = fetch_uv(mesh_obj, uv0_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv1_map is not None: UV_data[1] = fetch_uv(mesh_obj, uv1_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv2_map is not None: UV_data[2] = fetch_uv(mesh_obj, uv2_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv3_map is not None: UV_data[3] = fetch_uv(mesh_obj, uv3_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv4_map is not None: UV_data[4] = fetch_uv(mesh_obj, uv4_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv5_map is not None: UV_data[5] = fetch_uv(mesh_obj, uv5_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv6_map is not None: UV_data[6] = fetch_uv(mesh_obj, uv6_map, sigfigs+2, errorlog, missing_uv_maps_policy)
+    if uv7_map is not None: UV_data[7] = fetch_uv(mesh_obj, uv7_map, sigfigs+2, errorlog, missing_uv_maps_policy)
     
     if len(UV_data):
         UV_data = [tuple(elems) for elems in zip(*UV_data)]
@@ -694,6 +727,9 @@ def round_to_sigfigs(x, p):
     mags = 10 ** (p - 1 - np.floor(np.log10(x_positive)))
     return np.round(x * mags) / mags
 
+def make_blank(count, shape):
+    elem = tuple([0.0 for _ in range(shape)])
+    return [elem for _ in range(count)]
 
 def fetch_data(obj, element, sigfigs):
     dsize = len(getattr(obj[0], element))
@@ -707,3 +743,18 @@ def fetch_tangent(obj, sigfigs):
     data = array.array('f', [0.0] * (len(obj) * dsize))
     obj.foreach_get("tangent", data)
     return [tuple(round_to_sigfigs(datum, sigfigs)) for datum in zip(*(iter(data),) * dsize)]
+
+def fetch_uv(mesh_obj, map_name, sigfigs, errorlog, missing_uv_maps_policy):
+    mesh = mesh_obj.data
+    
+    if map_name in mesh.uv_layers:
+        return fetch_data(mesh.uv_layers[map_name].data, "uv", sigfigs)
+    else:
+        if missing_uv_maps_policy == "WARN":
+            errorlog.log_warning_message(f"Mesh '{mesh.name}' uses a material that requires UV map '{map_name}', but the mesh does not contain this map. A blank UV map has been generated")
+        elif missing_uv_maps_policy == "ERROR":
+            errorlog.log_error(MissingUVMapsError(mesh_obj, map_name))
+        else:
+            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MISSING_UV_MAP_POLICY '{missing_uv_maps_policy}' NOT DEFINED")
+        
+        return make_blank(len(mesh.loops), 2)

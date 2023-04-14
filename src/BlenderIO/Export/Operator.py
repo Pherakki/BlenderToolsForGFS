@@ -5,8 +5,9 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
-from ..Data import available_versions_property, too_many_vertices_policy_options
+from ..Data import available_versions_property, too_many_vertices_policy_options, missing_uv_maps_policy_options
 from ..Preferences import get_preferences
+from ..Utils.Operator import get_op_idname
 from .ExportNodes import export_node_tree
 from .ExportMeshData import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
@@ -24,6 +25,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gfs'
     bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
     bl_options = {'REGISTER', 'UNDO'}
+    internal_idname = ''
     
     
     debug_mode: bpy.props.BoolProperty(
@@ -39,15 +41,16 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'}
     )
 
+    filter_glob: bpy.props.StringProperty(
+        default="*.GMD;*.GFS",
+        options={'HIDDEN'},
+    )
+    
     pack_animations: bpy.props.BoolProperty(
         name="Pack Animations into Model",
         default=False
     )
 
-    filter_glob: bpy.props.StringProperty(
-        default="*.GMD;*.GFS",
-        options={'HIDDEN'},
-    )
     
     do_strip_epls: bpy.props.BoolProperty(
         name="Strip EPLs",
@@ -73,7 +76,6 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default=False
     )
     
-    
     too_many_vertices_policy: bpy.props.EnumProperty(
         items=too_many_vertices_policy_options(),
         name=">6192 Vertices per Mesh",
@@ -90,6 +92,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     multiple_materials_policy = None  # Placeholder to avoid duplicating work later
     
+    missing_uv_maps_policy: bpy.props.EnumProperty(
+        items=missing_uv_maps_policy_options(),
+        name="Missing UV Maps",
+        description="Decide the export behavior in the event of a mesh not having a UV map required by the material",
+        default="WARN"
+    )
+    
     version: available_versions_property()
     
     def invoke(self, context, event):
@@ -99,6 +108,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
         self.too_many_vertices_policy    = prefs.too_many_vertices_policy
         #self.multiple_materials_policy   = prefs.multiple_materials_policy
+        self.missing_uv_maps_policy      = prefs.missing_uv_maps_policy
         self.version                     = prefs.version
         return super().invoke(context, event)
 
@@ -127,7 +137,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
@@ -168,8 +178,83 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     def execute(self, context):
         return self.export_file(context, self.filepath)
+    
+    def draw(self, context):
+        pass
+
+    @classmethod
+    def register(cls):
+        cls.internal_idname = get_op_idname(cls)
+        
+        bpy.utils.register_class(CUSTOM_PT_GFSModelExportSettings)
+        bpy.utils.register_class(CUSTOM_PT_GFSMeshExportSettings)
+        
+    @classmethod
+    def unegister(cls):
+        bpy.utils.unregister_class(CUSTOM_PT_GFSModelExportSettings)
+        bpy.utils.unregister_class(CUSTOM_PT_GFSMeshExportSettings)
 
 
+class CUSTOM_PT_GFSModelExportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Model Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ExportGFS.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator, 'version')
+        layout.prop(operator, 'pack_animations')
+        layout.prop(operator, 'do_strip_epls')
+
+class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Mesh Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ExportGFS.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator, 'strip_missing_vertex_groups')
+        layout.prop(operator, 'recalculate_tangents')
+        layout.prop(operator, 'throw_missing_weight_errors')
+        layout.prop(operator, 'too_many_vertices_policy')
+        #layout.prop(operator, 'multiple_materials_policy')
+        layout.prop(operator, 'missing_uv_maps_policy')
+
+    
 class ExportGAP(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gap'
     bl_label = 'Persona 5 Royal - PC (.GAP)'
@@ -241,6 +326,45 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         return self.export_file(context, self.filepath)
     
+    def draw(self, context):
+        pass
+    
+    @classmethod
+    def register(cls):
+        cls.internal_idname = get_op_idname(cls)
+        bpy.utils.register_class(CUSTOM_PT_GFSAnimExportSettings)
+        
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(CUSTOM_PT_GFSAnimExportSettings)
+    
+
+class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Anim Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ExportGAP.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator, 'version')
+
 
 def find_selected_model(errorlog):
     try:
