@@ -13,11 +13,24 @@ basis_vector_lookup_table = {
 _valid_axis_set = set(('X', 'Y', 'Z'))
 
 class ModelTransforms:
-    def __init__(self):
-        self._world_rotation                = Matrix.Identity(4)
-        self._bone_axis_permutation         = Matrix.Identity(4)
-        self._world_rotation_inverse        = Matrix.Identity(4)
-        self._bone_axis_permutation_inverse = Matrix.Identity(4)
+    def __init__(self, world_axis=None, bone_axis=None):
+        self.world_axis_rotation = self._construct_rotation_matrix(world_axis)
+        
+        self.bone_axis_permutation = self._construct_rotation_matrix(bone_axis)
+
+    def _construct_rotation_matrix(self, initializer):
+        if initializer is None:
+            return Matrix.Identity(4)
+        elif hasattr(initializer, "__iter__") and hasattr(initializer, '__len__'):
+            if all(isinstance(e, str) for e in initializer):
+                if len(initializer) == 3:
+                    return self.create_axis_permutation(*initializer)
+                else:
+                    raise ValueError(f"Received an axis permutation string of length {len(initializer)}, expected length 3")
+            else:
+                return Matrix(initializer)
+        else:
+            return Matrix(initializer)
 
     @staticmethod
     def create_axis_permutation(right, up, forwards):
