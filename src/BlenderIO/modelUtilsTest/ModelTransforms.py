@@ -13,9 +13,11 @@ basis_vector_lookup_table = {
 _valid_axis_set = set(('X', 'Y', 'Z'))
 
 class ModelTransforms:
+    __slots__ = ("_world_rotation", "_world_rotation_inverse",
+                 "_bone_axis_permutation", "_bone_axis_permutation_inverse")
+    
     def __init__(self, world_axis=None, bone_axis=None):
-        self.world_axis_rotation = self._construct_rotation_matrix(world_axis)
-        
+        self.world_axis_rotation   = self._construct_rotation_matrix(world_axis)
         self.bone_axis_permutation = self._construct_rotation_matrix(bone_axis)
 
     def _construct_rotation_matrix(self, initializer):
