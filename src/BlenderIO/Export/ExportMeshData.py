@@ -418,10 +418,10 @@ def generate_loop_to_face_map(mesh):
 
 def pack_colour(colour):
     # RGBA -> ARGB
-    return tuple([max(int(colour[3]*255), 255), 
-                  max(int(colour[0]*255), 255), 
-                  max(int(colour[1]*255), 255),
-                  max(int(colour[2]*255), 255)])
+    return tuple([int(max(min(round(colour[3]*255, 0), 255), 0)),
+                  int(max(min(round(colour[0]*255, 0), 255), 0)), 
+                  int(max(min(round(colour[1]*255, 0), 255), 0)),
+                  int(max(min(round(colour[2]*255, 0), 255), 0))])
 
 def extract_colours(bpy_mesh, map_name):
     # Blender 3.2+ 
