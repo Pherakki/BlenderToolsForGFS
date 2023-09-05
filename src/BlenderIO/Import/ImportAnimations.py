@@ -9,6 +9,11 @@ from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from ..Utils.Maths import convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup, convert_Zup_to_Yup
 from .ImportProperties import import_properties
 
+from ..Globals import blenderModelSupportUtils
+from ..Globals import GFS_MODEL_TRANSFORMS
+from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
+from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
+from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
 
 ######################
 # EXPORTED FUNCTIONS #
@@ -159,35 +164,19 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     actiongroup = action.groups.new(bone_name)
     
     # Get the matrices required to convert animations from GFS -> Blender
-    axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
     bpy_bone = armature.data.bones[bone_name]
-    if bpy_bone.parent is not None:
-        local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
-    else:
-        local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
-        
-    # Transform the GFS data to Blender equivalents
-    # See section "Technical Details" of the documentation for an explanation
-    # of the maths.
-    # This can DEFINITELY be made more efficient if it's a bottleneck
-    bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
-    bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
-    inv_bind_pose_rotation = bind_pose_rotation.inverted()
-    inv_axis_conversion    = axis_conversion.inverted()
     
     q_rotations = {k: Quaternion([v[3], v[0], v[1], v[2]]) for k, v in rotations.items()}
     
-    b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(Vector(v) - bind_pose_translation)      @ bind_pose_rotation for k, v in positions.items()}
-    b_rotations = {k: inv_bind_pose_rotation @ v.to_matrix().to_4x4()                                     @ axis_conversion    for k, v in q_rotations.items()}
-    b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
+    b_positions, b_rotations, b_scales = parent_to_bind(bpy_bone, positions.values(), q_rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
+    b_positions = {k: v for k, v in zip(positions.keys(), b_positions)}
+    b_rotations = {k: v for k, v in zip(rotations.keys(), b_rotations)}
+    b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
     
-    b_positions = {k: v.to_translation() for k, v in b_positions.items()}
-    b_rotations = {k: q.to_quaternion( ) for k, q in b_rotations.items()}
-    b_scales    = {k: v.to_scale()       for k, v in b_scales   .items()}
-  
-    b_rotations = fix_quaternion_signs(q_rotations, b_rotations)
-  
+    # b_rotations = {k: v for k, v in zip(q_quaternions.keys(), fix_quaternion_signs(q_rotations.values(), b_rotations.values())}
+    
     # Create animations
+    # This typically takes up ~90% of execution time
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
@@ -199,48 +188,23 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     scale_actiongroup = scale_action.groups.new(bone_name)
 
     # Get the matrices required to convert animations from GFS -> Blender
-    axis_conversion = convert_XDirBone_to_YDirBone(Matrix.Identity(4))
     bpy_bone = armature.data.bones[bone_name]
-    if bpy_bone.parent is not None:
-        local_bind_matrix = axis_conversion @ bpy_bone.parent.matrix_local.inverted() @ bpy_bone.matrix_local
-    else:
-        local_bind_matrix = convert_Zup_to_Yup(bpy_bone.matrix_local)
-        
-    # Transform the GFS data to Blender equivalents
-    # See section "Technical Details" of the documentation for an explanation
-    # of the maths.
-    # This can DEFINITELY be made more efficient if it's a bottleneck
-    bind_pose_translation, bind_pose_quaternion, _ = local_bind_matrix.decompose()
-    bind_pose_rotation     = bind_pose_quaternion.to_matrix().to_4x4()
-    inv_bind_pose_rotation = bind_pose_rotation.inverted()
-    inv_axis_conversion    = axis_conversion.inverted()
     
     q_rotations = {k: Quaternion([v[3], v[0], v[1], v[2]]) for k, v in rotations.items()}
-    
-    b_positions = {k: inv_bind_pose_rotation @ Matrix.Translation(v)                                      @ bind_pose_rotation for k, v in positions.items()}
-    b_rotations = {k: inv_axis_conversion    @ Quaternion([v[3], v[0], v[1], v[2]]).to_matrix().to_4x4()  @ axis_conversion    for k, v in rotations.items()}
-    b_scales    = {k: inv_axis_conversion    @ Matrix.Diagonal([*v, 1.])                                  @ axis_conversion    for k, v in scales.items()   }
-    
-    b_positions = {k: v.decompose()[0] for k, v in b_positions.items()}
-    b_rotations = {k: q.decompose()[1] for k, q in b_rotations.items()}
-    b_scales    = {k: v.decompose()[2] for k, v in b_scales.items()}
 
-    b_rotations = fix_quaternion_signs(q_rotations, b_rotations)
-
+    b_positions, b_rotations, b_scales = parent_to_bind(bpy_bone, positions.values(), q_rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
+    b_positions = {k: v for k, v in zip(positions.keys(), b_positions)}
+    b_rotations = {k: v for k, v in zip(rotations.keys(), b_rotations)}
+    b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
+    
+    # b_rotations = {k: v for k, v in zip(q_quaternions.keys(), fix_quaternion_signs(q_rotations.values(), b_rotations.values())}
+    
     # Create animations
+    # This typically takes up ~90% of execution time
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
-    
-    
-def build_track(action, armature, blend_type):
-    armature.animation_data.action = action
-    track = armature.animation_data.nla_tracks.new()
-    track.name = action.name
-    track.mute = True
-    strip = track.strips.new(action.name, 1, action)
-    strip.blend_type = blend_type
-    armature.animation_data.action = None
+
     
 def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None):
     action = bpy.data.actions.new(track_name)
@@ -289,13 +253,13 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
 
     if is_blend:
         if len(scale_action.fcurves):  
-            build_track(scale_action, armature, "ADD")
+            create_nla_track(scale_action, armature, "ADD")
             action.GFSTOOLS_AnimationProperties.has_scale_action   = True
             action.GFSTOOLS_AnimationProperties.blend_scale_action = scale_action
         else:
             scale_action.user_clear()
             bpy.data.actions.remove(scale_action)
-    build_track(action, armature, "COMBINE" if is_blend else "REPLACE")
+    create_nla_track(action, armature, "COMBINE" if is_blend else "REPLACE")
     
     # Put extra common data on
     props = action.GFSTOOLS_AnimationProperties
@@ -390,27 +354,4 @@ def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_
     props.lookat_left_factor  = lookat_animations.left_factor
     props.lookat_up_factor    = lookat_animations.up_factor
     props.lookat_down_factor  = lookat_animations.down_factor
-    
-# def import_object_transforms(action, position, rotation, scale):
-    
-def fix_quaternion_signs(q_rotations, b_rotations):
-    if len(b_rotations) <= 1:
-        return b_rotations
-    # Fix quaternion signs
-    # The furthest two quaternions can be apart is 360 degrees, i.e. q and -q
-    # We will detect if a quaternion has inadvertently flipped sign by
-    # seeing if neighbouring quaternions are less than or greater than 180
-    # degrees apart.
-    # If this measurement is different before and after transforming the
-    # quaternions, then the quaternion has flipped signs and needs correction.
-    keys = q_rotations.keys()
-    q_rotations = list(q_rotations.values())
-    b_rotations = list(b_rotations.values())
-    q_distances = [((q1.inverted() @ q2).angle < math.pi) for q1, q2 in zip(q_rotations, q_rotations[1:])]
-    b_distances = [((q1.inverted() @ q2).angle < math.pi) for q1, q2 in zip(b_rotations, b_rotations[1:])]
-    differences = [-2*(b1 ^ b2) + 1 for b1, b2 in zip(q_distances, b_distances)]
-    flip_signs = [1]
-    for i in range(len(differences)):
-        flip_signs.append(differences[i]*flip_signs[i])
-    
-    return {k: sgn*v for (k, v, sgn) in zip(keys, b_rotations, flip_signs)}
+
