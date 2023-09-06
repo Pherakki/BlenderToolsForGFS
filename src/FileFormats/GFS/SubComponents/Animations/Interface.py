@@ -443,9 +443,12 @@ class AnimationInterface:
         binary.controllers.data.extend([a.to_controller() for a in self.morph_animations   ]) # Then... ??
         binary.controllers.data.extend([a.to_controller() for a in self.unknown_animations ])
         binary.controllers.count     = len(binary.controllers.data)
-        track_frames = [track.frames[-1] for ctlr in binary.controllers for track in ctlr.tracks]
-        if len(track_frames):
-            binary.duration = max(track_frames) - min(track_frames) # Might this be calculated from a subset of anims?
+        
+        tracks = [track for ctlr in binary.controllers for track in ctlr.tracks]
+        if len(tracks):
+            st_track_frames = [track.frames[ 0] for track in tracks]
+            ed_track_frames = [track.frames[-1] for track in tracks]
+            binary.duration = max(ed_track_frames) - min(st_track_frames)
         else:
             binary.duration = 0
         
