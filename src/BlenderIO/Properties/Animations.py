@@ -82,6 +82,10 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
     flag_26: bpy.props.BoolProperty(name="Unknown Flag 26 (Unused?)", default=False)
     flag_27: bpy.props.BoolProperty(name="Unknown Flag 27 (Unused?)", default=False)
     
+    export_bounding_box: bpy.props.BoolProperty(name="Export Bounding Box", default=False)
+    bounding_box_min:    bpy.props.FloatVectorProperty(name="Bounding Box Min", size=3, default=(0, 0, 0))
+    bounding_box_max:    bpy.props.FloatVectorProperty(name="Bounding Box Max", size=3, default=(0, 0, 0))
+    
     unimported_tracks: bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
     
     # Only for Normal animations

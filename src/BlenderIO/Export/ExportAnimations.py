@@ -204,6 +204,11 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
     # frame times in Blender sadly
     gfs_anim.speed = None
     
+    # Create bounding box if required
+    if props.export_bounding_box:
+        gfs_anim.bounding_box_max_dims = props.bounding_box_max
+        gfs_anim.bounding_box_min_dims = props.bounding_box_min
+    
     # Export the custom properties
     for prop in props.properties:
         gfs_anim.add_property(*prop.extract_data(prop))

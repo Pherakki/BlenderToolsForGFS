@@ -29,6 +29,10 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         
         layout.prop(props, "autocorrect_action")
         layout.prop(props, "category")
+        layout.prop(props, "export_bounding_box")
+        if props.export_bounding_box:
+            layout.prop(props, "bounding_box_max")
+            layout.prop(props, "bounding_box_min")
         
         layout.prop(props, "flag_0")
         layout.prop(props, "flag_1")

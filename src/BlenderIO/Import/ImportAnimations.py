@@ -290,6 +290,13 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
     props.flag_26 = anim.flag_26
     props.flag_27 = anim.flag_27
     
+    if anim.bounding_box_max_dims is not None:
+        props.export_bounding_box = True
+        props.bounding_box_max = anim.bounding_box_max_dims
+        props.bounding_box_min = anim.bounding_box_min_dims
+    else:
+        props.export_bounding_box = False
+    
     if is_blend:
         props.category = "BLEND"
     else:
