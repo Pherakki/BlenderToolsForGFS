@@ -2,6 +2,31 @@ import bpy
 
 from .GFSProperties import GFSToolsGenericProperty
 from .Nodes import BlobProperty
+from ..modelUtilsTest.Mesh.Prebuilts import make_cuboid
+from ..Utils.PhysicsGen import get_col_material
+
+
+def update_bounding_box_mesh(props, context):
+    mesh_name = props.bounding_box_name()
+    if mesh_name not in bpy.data.objects:
+        return
+    
+    bpy_mesh_object = bpy.data.objects[mesh_name]
+    bpy_mesh = bpy_mesh_object.data
+            
+    dims = [mx - mn for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
+    ctr = [(mx + mn)/2 for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
+
+    bpy_mesh_object.lock_location[0] = False
+    bpy_mesh_object.lock_location[1] = False
+    bpy_mesh_object.lock_location[2] = False
+    bpy_mesh_object.location = ctr
+    bpy_mesh_object.lock_location[0] = True
+    bpy_mesh_object.lock_location[1] = True
+    bpy_mesh_object.lock_location[2] = True
+    
+    bpy_mesh.clear_geometry()
+    bpy_mesh.from_pydata(*make_cuboid(*dims, [1, 1, 1]))
 
 
 def update_category(self, context):
@@ -37,6 +62,44 @@ def poll_lookat_action(self, action):
     
 
 class GFSToolsAnimationProperties(bpy.types.PropertyGroup):   
+    def bounding_box_name(self):
+        return f".GFS_{self.id_data.name}"
+    
+    def generate_bounding_box(self):
+        props = self
+        
+        dims = [mx - mn for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
+        ctr = [(mx + mn)/2 for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
+        
+        nm = self.bounding_box_name()
+        bpy_mesh = bpy.data.meshes.new(nm)
+        bpy_mesh.from_pydata(*make_cuboid(*dims, [1, 1, 1]))
+        bpy_mesh_object = bpy.data.objects.new(nm, bpy_mesh)
+        bpy.context.collection.objects.link(bpy_mesh_object)
+        bpy_mesh_object.location = ctr
+        
+        bpy_mesh_object.lock_location[0] = True
+        bpy_mesh_object.lock_location[1] = True
+        bpy_mesh_object.lock_location[2] = True
+        
+        bpy_mesh_object.lock_rotation[0] = True
+        bpy_mesh_object.lock_rotation[1] = True
+        bpy_mesh_object.lock_rotation[2] = True
+        bpy_mesh_object.lock_rotation_w  = True
+        
+        bpy_mesh_object.lock_scale[0]    = True
+        bpy_mesh_object.lock_scale[1]    = True
+        bpy_mesh_object.lock_scale[2]    = True
+        
+        bpy_mesh_object.active_material = get_col_material()
+        
+    
+    def remove_bounding_box(self):
+        objs = bpy.data.objects
+        nm = self.bounding_box_name()
+        if nm in objs:
+            objs.remove(objs[nm], do_unlink=True)
+    
     autocorrect_action: bpy.props.BoolProperty(name="Auto-correct Actions", 
                                                description="Automatically set the keyframe interpolation and strip blending that will show how the animations looks in-game when selecting a category for the animation",
                                                default=False)
@@ -83,8 +146,8 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
     flag_27: bpy.props.BoolProperty(name="Unknown Flag 27 (Unused?)", default=False)
     
     export_bounding_box: bpy.props.BoolProperty(name="Export Bounding Box", default=False)
-    bounding_box_min:    bpy.props.FloatVectorProperty(name="Bounding Box Min", size=3, default=(0, 0, 0))
-    bounding_box_max:    bpy.props.FloatVectorProperty(name="Bounding Box Max", size=3, default=(0, 0, 0))
+    bounding_box_min:    bpy.props.FloatVectorProperty(name="Bounding Box Min", size=3, default=(0, 0, 0), update=update_bounding_box_mesh)
+    bounding_box_max:    bpy.props.FloatVectorProperty(name="Bounding Box Max", size=3, default=(0, 0, 0), update=update_bounding_box_mesh)
     
     unimported_tracks: bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
     

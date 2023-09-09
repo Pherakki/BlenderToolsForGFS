@@ -3,6 +3,19 @@ from .HelpWindows import defineHelpWindow
 from .GFSProperties import makeCustomPropertiesPanel
 
 
+class GenerateMesh(bpy.types.Operator):
+    bl_idname = "gfstools.genanimboundingbox"
+    bl_label  = "Show"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        action = context.active_nla_strip.action
+        props = action.GFSTOOLS_AnimationProperties
+        props.generate_bounding_box()
+        return {'FINISHED'}
+
+_LAST_ACTION = None
+
 class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     bl_label       = "GFS Animation"
     bl_idname      = "OBJECT_PT_GFSToolsAnimationPanel"
@@ -10,12 +23,23 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category    = "Strip"
     
+    
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
+        global _LAST_ACTION
         if context.active_nla_strip is None:
+            if _LAST_ACTION is not None:
+                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
             return False
         elif context.active_nla_strip.action is None:
+            if _LAST_ACTION is not None:
+                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
             return False
+        
+        if _LAST_ACTION is not None:
+            if context.active_nla_strip.action.name != _LAST_ACTION.name:
+                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
+        _LAST_ACTION = context.active_nla_strip.action
         return True
 
     def draw(self, context):
@@ -33,6 +57,7 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         if props.export_bounding_box:
             layout.prop(props, "bounding_box_max")
             layout.prop(props, "bounding_box_min")
+            layout.operator(GenerateMesh.bl_idname)
         
         layout.prop(props, "flag_0")
         layout.prop(props, "flag_1")
@@ -93,10 +118,12 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.AnimationHelpWindow)
+        bpy.utils.register_class(GenerateMesh)
         
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.AnimationHelpWindow)
+        bpy.utils.unregister_class(GenerateMesh)
 
 
 OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(
