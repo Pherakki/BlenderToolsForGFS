@@ -14,7 +14,6 @@ class GenerateMesh(bpy.types.Operator):
         props.generate_bounding_box()
         return {'FINISHED'}
 
-_LAST_ACTION = None
 
 class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     bl_label       = "GFS Animation"
@@ -26,20 +25,11 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     
     @classmethod
     def poll(cls, context):
-        global _LAST_ACTION
         if context.active_nla_strip is None:
-            if _LAST_ACTION is not None:
-                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
             return False
         elif context.active_nla_strip.action is None:
-            if _LAST_ACTION is not None:
-                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
             return False
         
-        if _LAST_ACTION is not None:
-            if context.active_nla_strip.action.name != _LAST_ACTION.name:
-                _LAST_ACTION.GFSTOOLS_AnimationProperties.remove_bounding_box()
-        _LAST_ACTION = context.active_nla_strip.action
         return True
 
     def draw(self, context):
