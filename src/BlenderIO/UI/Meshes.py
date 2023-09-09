@@ -7,7 +7,7 @@ def _draw_on_node(context, layout):
     mesh = context.mesh
     layout = layout
     
-    layout.prop(mesh.GFSTOOLS_MeshNodeProperties, "override_name")
+    layout.prop(mesh.GFSTOOLS_NodeProperties, "override_name")
 
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
