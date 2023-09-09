@@ -11,7 +11,11 @@ class GenerateMesh(bpy.types.Operator):
     def execute(self, context):
         action = context.active_nla_strip.action
         props = action.GFSTOOLS_AnimationProperties
-        props.generate_bounding_box()
+        
+        if props.is_bounding_box_alive():
+            props.remove_bounding_box()
+        else:
+            props.generate_bounding_box()
         return {'FINISHED'}
 
 
@@ -47,7 +51,7 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         if props.export_bounding_box:
             layout.prop(props, "bounding_box_max")
             layout.prop(props, "bounding_box_min")
-            layout.operator(GenerateMesh.bl_idname)
+            layout.operator(GenerateMesh.bl_idname, text="Hide" if props.is_bounding_box_alive() else "Show")
         
         layout.prop(props, "flag_0")
         layout.prop(props, "flag_1")

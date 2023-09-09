@@ -6,12 +6,10 @@ from ..modelUtilsTest.Mesh.Prebuilts import make_cuboid
 from ..Utils.PhysicsGen import get_col_material
 
 
-def update_bounding_box_mesh(props, context):
-    mesh_name = props.bounding_box_name()
-    if mesh_name not in bpy.data.objects:
+def update_bounding_box_mesh(props, context):    
+    bpy_mesh_object = props.bounding_box_obj
+    if bpy_mesh_object is None:
         return
-    
-    bpy_mesh_object = bpy.data.objects[mesh_name]
     bpy_mesh = bpy_mesh_object.data
             
     dims = [mx - mn for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
@@ -62,19 +60,32 @@ def poll_lookat_action(self, action):
     
 
 class GFSToolsAnimationProperties(bpy.types.PropertyGroup):   
-    def bounding_box_name(self):
-        return f".GFS_{self.id_data.name}"
+    def is_bounding_box_alive(self):
+        if self.bounding_box_obj is None:
+            return False
+        else:
+            try:
+                links = self.bounding_box_obj.users_collection
+                if not len(links):
+                    return False
+            except ReferenceError:
+                return False
+            
+            return True
     
     def generate_bounding_box(self):
         props = self
+        props.remove_bounding_box()
         
         dims = [mx - mn for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
         ctr = [(mx + mn)/2 for mx, mn in zip(props.bounding_box_max, props.bounding_box_min)]
         
-        nm = self.bounding_box_name()
+        nm = f".GFS_{self.id_data.name}"
         bpy_mesh = bpy.data.meshes.new(nm)
         bpy_mesh.from_pydata(*make_cuboid(*dims, [1, 1, 1]))
         bpy_mesh_object = bpy.data.objects.new(nm, bpy_mesh)
+        props.bounding_box_obj = bpy_mesh_object
+        
         bpy.context.collection.objects.link(bpy_mesh_object)
         bpy_mesh_object.location = ctr
         
@@ -95,11 +106,17 @@ class GFSToolsAnimationProperties(bpy.types.PropertyGroup):
         
     
     def remove_bounding_box(self):
-        objs = bpy.data.objects
-        nm = self.bounding_box_name()
-        if nm in objs:
-            objs.remove(objs[nm], do_unlink=True)
-    
+        if self.bounding_box_obj is None:
+            return
+        else:
+            try:
+                bpy.data.objects.remove(self.bounding_box_obj, do_unlink=True)
+            except ReferenceError:
+                pass
+            
+            self.bounding_box_obj = None
+
+    bounding_box_obj:   bpy.props.PointerProperty(type=bpy.types.Object)
     autocorrect_action: bpy.props.BoolProperty(name="Auto-correct Actions", 
                                                description="Automatically set the keyframe interpolation and strip blending that will show how the animations looks in-game when selecting a category for the animation",
                                                default=False)
