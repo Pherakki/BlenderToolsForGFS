@@ -3,6 +3,7 @@ import math
 
 import bpy
 from mathutils import Matrix, Quaternion, Vector
+import numpy as np
 
 from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
@@ -14,6 +15,7 @@ from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
 from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
+
 
 ######################
 # EXPORTED FUNCTIONS #
@@ -292,8 +294,12 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
     
     if anim.bounding_box_max_dims is not None:
         props.export_bounding_box = True
-        props.bounding_box_max = anim.bounding_box_max_dims
-        props.bounding_box_min = anim.bounding_box_min_dims
+        
+        # Assumes the world axis rotation is a permutation matrix, which it is
+        dims = np.array([anim.bounding_box_max_dims, anim.bounding_box_min_dims])
+        dims = dims @ np.array(GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy())
+        props.bounding_box_max = np.max(dims, axis=0)
+        props.bounding_box_min = np.min(dims, axis=0)        
     else:
         props.export_bounding_box = False
     

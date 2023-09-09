@@ -1,5 +1,6 @@
 import io
 
+import numpy as np
 from ...serialization.BinaryTargets import Reader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
 from ...FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import EPLEntry
@@ -206,8 +207,10 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
     
     # Create bounding box if required
     if props.export_bounding_box:
-        gfs_anim.bounding_box_max_dims = props.bounding_box_max
-        gfs_anim.bounding_box_min_dims = props.bounding_box_min
+        dims = np.array([props.bounding_box_max, props.bounding_box_min])
+        dims = dims @ np.array(GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy())
+        gfs_anim.bounding_box_max_dims = np.max(dims, axis=0)
+        gfs_anim.bounding_box_min_dims = np.min(dims, axis=0)
     
     # Export the custom properties
     for prop in props.properties:
