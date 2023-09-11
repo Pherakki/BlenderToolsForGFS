@@ -1,4 +1,5 @@
 import array
+from collections import defaultdict
 
 import bpy
 from mathutils import Matrix
@@ -10,6 +11,7 @@ from ..Utils.UVMapManagement import make_uv_map_name, is_valid_uv_map, get_uv_id
 from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get_color_idx_from_name
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
+from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
 
 VERTEX_LIMIT = 6192
 
@@ -156,7 +158,62 @@ class MissingUVMapsError(ReportableError):
         self.mesh.select_set(False)
 
 
+def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, multiple_materials_policy):
+    bpy_mesh = bpy_mesh_object.data
+    
+    index_counts = defaultdict(lambda: 0)
+    for poly in bpy_mesh.polygons:
+        index_counts[poly.material_index] += 1
+    
+    if len(index_counts) > 1:
+        multiple_materials_meshes.append(bpy_mesh_object)
+        
+        if multiple_materials_policy == "AUTOSPLIT_DESTRUCTIVE":
+            old_obj  = get_active_obj()
+            old_mode = bpy_mesh_object.mode
+            set_active_obj(bpy_mesh_object)
+            
+            mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
+            node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
+            
+            try:
+                # Split the mesh and find out which meshes are new
+                existing_objs = set(o.name for o in bpy.data.objects)
+                set_mode("EDIT")
+                bpy.ops.mesh.separate(type='MATERIAL')
+                set_mode("OBJECT")
+                new_objs = set(o.name for o in bpy.data.objects) - existing_objs
+                
+                # Parent the newly-created meshes under the original mesh
+                parent_obj = bpy_mesh_object
+                while parent_obj.parent.type != "ARMATURE":
+                    parent_obj = parent_obj.parent
+                    if parent_obj is None:
+                        raise ValueError(f"CRITICAL INTERNAL ERROR: Mesh '{bpy_mesh_object}' is not a descendant of an armature")
+                
+                for obj_name in sorted(new_objs):
+                    obj = bpy.data.objects[obj_name]
+                    obj.parent = parent_obj
+                    obj.location            = (0, 0, 0)
+                    obj.rotation_quaternion = (1, 0, 0, 0)
+                    obj.rotation_euler      = (0, 0, 0)
+                    obj.rotation_axis_angle = (0, 0, 1, 0)
+                    obj.scale               = (1, 1, 1)
+                
+                return 0
+            finally:
+                set_mode(old_mode)
+                set_active_obj(old_obj)
+        else:
+            # Return material index with most polygons
+            return max(index_counts, key=index_counts.get)
+    return 0
+
+
 def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy, multiple_materials_policy, missing_uv_maps_policy):
+    # Note to self: this function is complete dogshit
+    # This really needs to be cleaned up, it's disgusting to look at
+    
     # Find meshes
     meshes = []
     for obj in armature.children:
@@ -169,29 +226,34 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
     bad_meshes = []
     multiple_materials_meshes = []
     for bpy_mesh_object in meshes:
+        material_index = validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, multiple_materials_policy)
+        
         node_id = len(gfs.bones)
         out.append((bpy_mesh_object.data, node_id))
 
         # Convert bpy meshes -> gfs meshes
         # This should now be able to return a LIST of meshes...
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
         
         if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
             bad_meshes.append(bpy_mesh_object)
-            
-        if len(bpy_mesh_object.data.materials) > 1:
-            multiple_materials_meshes.append(bpy_mesh_object)
 
         attached_meshes =  [obj for obj in bpy_mesh_object.children if obj.type == "MESH"]
+        
+        existing_meshes = set(o.name for o in bpy.data.objects)
         for bpy_submesh_object in attached_meshes:
-            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
+            material_index = validate_mesh_materials(bpy_submesh_object, multiple_materials_meshes, multiple_materials_policy)
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
 
             if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
                 bad_meshes.append(bpy_submesh_object)
-            if len(bpy_submesh_object.data.materials) > 1:
-                multiple_materials_meshes.append(bpy_submesh_object)
         
+        # Also do any meshes generated by the material-split policy
+        new_meshes = set(o.name for o in bpy.data.objects) - existing_meshes
+        for bpy_mesh_object in sorted(new_meshes):
+            gfs_meshes.append(create_mesh(gfs, bpy_submesh_object, armature, node_id, material_names, 0, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy))
+
         # Now create the parent node
         parent_idx = 0
         bind_pose_matrix = convert_Zup_to_Yup(bpy_mesh_object.matrix_local)
@@ -255,7 +317,16 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: TOO_MANY_VERTICES_POLICY '{too_many_vertices_policy}' NOT DEFINED")
     
     if len(multiple_materials_meshes):
-        errorlog.log_error(MultipleMaterialsError(multiple_materials_meshes))
+        if multiple_materials_policy == "WARN":
+            newline = '\n'
+            errorlog.log_warning_message(f"The following meshes have more than one material. They have been exported with whichever material is used by the most faces per mesh.\n{newline.join([o.name for o in multiple_materials_meshes])}")
+        elif multiple_materials_policy == "ERROR":    
+            errorlog.log_error(MultipleMaterialsError(multiple_materials_meshes))
+        elif multiple_materials_policy == "AUTOSPLIT_DESTRUCTIVE":
+            newline = '\n'
+            errorlog.log_warning_message(f"The following meshes contained more than one material and were split into multiple meshes within Blender:\n{newline.join([o.name for o in multiple_materials_meshes])}")
+        else:
+            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
     export_box = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
     export_sph = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
@@ -306,7 +377,7 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
     return out
 
 
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy):
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
     vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy)
@@ -326,9 +397,10 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
     # Now convert mesh to GFS structs... don't worry if it contains invalid data,
     # we're going to throw an exception at the end of export if any of the meshes
     # were flagged as invalid by the errorlog.
+    material_name = bpy_mesh_object.data.materials[material_index].name if len(bpy_mesh_object.data.materials) else None
     mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
     mesh = gfs.add_mesh(node_id, vertices, 
-                        bpy_mesh_object.active_material.name if bpy_mesh_object.active_material is not None else None, 
+                        material_name,
                         [fidx for face in indices for fidx in face], 
                         extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert),
                         mesh_props.unknown_0x12, 
@@ -368,8 +440,8 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, error
     
     # Finally log the name of the material so we can pass it on to the material
     # exporter in a different function
-    if bpy_mesh_object.active_material is not None:
-        export_materials.add(bpy_mesh_object.active_material.name)
+    if material_name is not None:
+        export_materials.add(material_name)
     
     return mesh
 

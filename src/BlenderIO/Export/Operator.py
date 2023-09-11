@@ -5,7 +5,10 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
-from ..Data import available_versions_property, too_many_vertices_policy_options, missing_uv_maps_policy_options
+from ..Data import available_versions_property
+from ..Data import too_many_vertices_policy_options
+from ..Data import missing_uv_maps_policy_options
+from ..Data import multiple_materials_policy_options
 from ..Preferences import get_preferences
 from ..Utils.Operator import get_op_idname
 from .ExportNodes import export_node_tree
@@ -83,14 +86,12 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default="WARN"
     )
     
-    # multiple_materials_policy: bpy.props.EnumProperty(
-    #     items=multiple_materials_policy_options(),
-    #     name="Multiple Materials per Mesh",
-    #     description="Decide the export behavior in the event of a mesh containing more than a single material",
-    #     default="WARN"
-    # )
-    
-    multiple_materials_policy = None  # Placeholder to avoid duplicating work later
+    multiple_materials_policy: bpy.props.EnumProperty(
+        items=multiple_materials_policy_options(),
+        name="Multiple Materials per Mesh",
+        description="Decide the export behavior in the event of a mesh containing more than a single material",
+        default="WARN"
+    )
     
     missing_uv_maps_policy: bpy.props.EnumProperty(
         items=missing_uv_maps_policy_options(),
@@ -107,7 +108,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.recalculate_tangents        = prefs.recalculate_tangents
         self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
         self.too_many_vertices_policy    = prefs.too_many_vertices_policy
-        #self.multiple_materials_policy   = prefs.multiple_materials_policy
+        self.multiple_materials_policy   = prefs.multiple_materials_policy
         self.missing_uv_maps_policy      = prefs.missing_uv_maps_policy
         self.version                     = prefs.version
         return super().invoke(context, event)
@@ -251,7 +252,7 @@ class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
         layout.prop(operator, 'recalculate_tangents')
         layout.prop(operator, 'throw_missing_weight_errors')
         layout.prop(operator, 'too_many_vertices_policy')
-        #layout.prop(operator, 'multiple_materials_policy')
+        layout.prop(operator, 'multiple_materials_policy')
         layout.prop(operator, 'missing_uv_maps_policy')
 
     

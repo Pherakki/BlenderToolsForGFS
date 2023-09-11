@@ -61,12 +61,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="WARN"
     )
     
-    # multiple_materials_policy: bpy.props.EnumProperty(
-    #     items=multiple_materials_policy_options(),
-    #     name="Multiple Materials per Mesh",
-    #     description="Default setting for 'Multiple Materials per Mesh' on export",
-    #     default="WARN"
-    # )
+    multiple_materials_policy: bpy.props.EnumProperty(
+        items=multiple_materials_policy_options(),
+        name="Multiple Materials per Mesh",
+        description="Default setting for 'Multiple Materials per Mesh' on export",
+        default="WARN"
+    )
         
     missing_uv_maps_policy: bpy.props.EnumProperty(
         items=missing_uv_maps_policy_options(),
@@ -94,6 +94,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'recalculate_tangents')
         export_col.prop(self, 'throw_missing_weight_errors')
         export_col.prop(self, 'too_many_vertices_policy')
-        # export_col.prop(self, 'multiple_materials_policy')
+        export_col.prop(self, 'multiple_materials_policy')
         export_col.prop(self, 'missing_uv_maps_policy')
         export_col.prop(self, 'version')

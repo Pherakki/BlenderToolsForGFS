@@ -65,9 +65,9 @@ def too_many_vertices_policy_options():
 
 def multiple_materials_policy_options():
     return [
-            ('WARN',      'Warn',        'Issue a warning if a mesh contains more than one material'),
-            ("ERROR",     'Throw Error', 'Prevent export if a mesh contains more than one material'),
-            ('AUTOSPLIT', 'Auto-Split',  'Automatically split a mesh into submeshes, where each submesh has a single material')
+            ('WARN',                  'Warn',                      'Issue a warning if a mesh contains more than one material. The material with the most faces using it will be exported'),
+            ("ERROR",                 'Throw Error',               'Prevent export if a mesh contains more than one material'),
+            ('AUTOSPLIT_DESTRUCTIVE', 'Auto-Split (Destructive)',  'Automatically split the Blender mesh into submeshes before export, where each submesh has a single material')
     ]
 
 def missing_uv_maps_policy_options():
