@@ -137,7 +137,7 @@ class TooManyVerticesError(DisplayableMeshesError):
 
 class MultipleMaterialsError(DisplayableMeshesError):
     def __init__(self, meshes):
-        msg = f"{len(meshes)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. The affected meshes have been selected for you"
+        msg = f"{len(meshes)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. You can ignore this error or auto-split meshes on export from the Export menu and in the Addon Preferences. The affected meshes have been selected for you"
         super().__init__(msg, meshes)
 
 
@@ -319,12 +319,12 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
     if len(multiple_materials_meshes):
         if multiple_materials_policy == "WARN":
             newline = '\n'
-            errorlog.log_warning_message(f"The following meshes have more than one material. They have been exported with whichever material is used by the most faces per mesh.\n{newline.join([o.name for o in multiple_materials_meshes])}")
+            errorlog.log_warning_message(f"The following meshes have more than one material. They have been exported with whichever material is used by the most faces per mesh.\n{newline.join([o.name for o in multiple_materials_meshes])}\nYou can change this behaviour from the Export menu and in the Addon Preferences")
         elif multiple_materials_policy == "ERROR":    
             errorlog.log_error(MultipleMaterialsError(multiple_materials_meshes))
         elif multiple_materials_policy == "AUTOSPLIT_DESTRUCTIVE":
             newline = '\n'
-            errorlog.log_warning_message(f"The following meshes contained more than one material and were split into multiple meshes within Blender:\n{newline.join([o.name for o in multiple_materials_meshes])}")
+            errorlog.log_warning_message(f"The following meshes contained more than one material and were split into multiple meshes within Blender:\n{newline.join([o.name for o in multiple_materials_meshes])}\nYou can change this behaviour from the Export menu and in the Addon Preferences")
         else:
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
