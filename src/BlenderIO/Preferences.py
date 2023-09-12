@@ -29,6 +29,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default=True
     )
     
+    set_clip: bpy.props.BoolProperty(
+        name="Set Maximum Clip to 1000000",
+        description="Default setting for 'Set P5R Screen Clip' on import",
+        default=True
+    )
+    
     bone_pose: bpy.props.EnumProperty(
         name="Bind Pose",
         description="Default setting for 'Bind Pose' on import",
@@ -86,6 +92,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         import_col.label(text='Default Import settings:')
         import_col.prop(self, 'merge_vertices')
         import_col.prop(self, 'set_fps')
+        import_col.prop(self, 'set_clip')
         import_col.prop(self, 'bone_pose')
         
         export_col = io_row.column()

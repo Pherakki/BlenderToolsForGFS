@@ -22,6 +22,14 @@ def set_fps(self, context):
     if self.set_fps:
         context.scene.render.fps = 30
 
+def set_clip(self, context):
+    if self.set_clip:
+        for a in context.screen.areas:
+            if a.type == 'VIEW_3D':
+                for s in a.spaces:
+                    if s.type == 'VIEW_3D':
+                        s.clip_end = 1000000
+
 def define_set_fps():
     return bpy.props.BoolProperty(
         name="Set Blender Scene FPS to 30",
@@ -49,6 +57,10 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     set_fps: define_set_fps()
     
+    set_clip: bpy.props.BoolProperty(name="Set P5R Screen Clip",
+                                     description="Set Blender's maximum render distance to 1000000, so that most Persona 5 model rendering is not culled",
+                                     default=True)
+    
     merge_vertices: bpy.props.BoolProperty(
         name="Merge Vertices",
         description="Merge vertices with the same position data such that "\
@@ -70,6 +82,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     def invoke(self, context, event):
         prefs = get_preferences()
         self.set_fps        = prefs.set_fps
+        self.set_clip       = prefs.set_clip
         self.merge_vertices = prefs.merge_vertices
         self.bone_pose      = prefs.bone_pose
         return super().invoke(context, event)
@@ -114,6 +127,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map)
         
         set_fps(self, context)
+        set_clip(self, context)
         
         # Report any warnings that were logged
         if len(errorlog.warnings):
