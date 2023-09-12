@@ -26,7 +26,7 @@ def define_set_fps():
     return bpy.props.BoolProperty(
         name="Set Blender Scene FPS to 30",
         description="Set the animation framerate of the current scene to 30, so that imported animations display at the correct speed",
-        default=False
+        default=True
     )
 
 

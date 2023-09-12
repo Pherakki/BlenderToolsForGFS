@@ -26,7 +26,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     set_fps: bpy.props.BoolProperty(
         name="Set FPS to 30",
         description="Default setting for 'Set FPS to 30' on import",
-        default=False
+        default=True
     )
     
     bone_pose: bpy.props.EnumProperty(
