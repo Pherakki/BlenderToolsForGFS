@@ -95,8 +95,7 @@ def get_col_material():
     if COLLIDER_MATERIAL_NAME not in bpy.data.materials:
         col_mat = bpy.data.materials.new(COLLIDER_MATERIAL_NAME)
         remake_col_nodetree(col_mat)
-    else:
-        return bpy.data.materials[COLLIDER_MATERIAL_NAME]
+    return bpy.data.materials[COLLIDER_MATERIAL_NAME]
 
 def repair_col_material():
     if COLLIDER_MATERIAL_NAME not in bpy.data.materials:
