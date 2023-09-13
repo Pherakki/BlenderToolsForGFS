@@ -13,7 +13,7 @@ from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
-from ..modelUtilsTest.Mesh.Export.Attributes import get_colors
+#from ..modelUtilsTest.Mesh.Export.Attributes import get_colors
 
 VERTEX_LIMIT = 6192
 
