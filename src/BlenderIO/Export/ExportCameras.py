@@ -36,7 +36,7 @@ def export_cameras(gfs, armature, errorlog):
                        [elem for row in view_matrix for elem in row],
                        bpy_camera_object.data.clip_start,
                        bpy_camera_object.data.clip_end,
-                       bpy_camera_object.data.lens,
+                       bpy_camera_object.data.angle,
                        props.aspect_ratio,
                        props.unknown_0x50)
         

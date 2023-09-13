@@ -723,7 +723,7 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     bpy_camera.clip_start = camera.binary.zNear
     bpy_camera.clip_end   = camera.binary.zFar
     bpy_camera.lens_unit  = "FOV"
-    bpy_camera.lens       = camera.binary.fov # Need to compare with camera sensor
+    bpy_camera.angle      = camera.binary.fov # Need to compare with camera sensor
     
     # Custom properties
     bpy_camera.GFSTOOLS_CameraProperties.aspect_ratio = camera.binary.aspect_ratio # Can hook into Blender scene callback
