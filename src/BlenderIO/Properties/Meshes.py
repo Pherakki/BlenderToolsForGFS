@@ -48,9 +48,11 @@ class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     dtype: bpy.props.EnumProperty(items=[("MESH", "Mesh", ""),
                                          ("COLLIDER", "Collider", "")],
                                   default="MESH")
+    is_dummy: bpy.props.BoolProperty(default=False)
     
     def is_mesh(self):
-        return self.dtype == "MESH"
+        return self.dtype == "MESH" and not self.is_dummy
     
     def is_collider(self):
-        return self.dtype == "COLLIDER"
+        return self.dtype == "COLLIDER" and not self.is_dummy
+    
