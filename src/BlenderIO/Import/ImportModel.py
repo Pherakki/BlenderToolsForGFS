@@ -3,9 +3,11 @@ import math
 
 import bpy
 from mathutils import Matrix, Vector, Quaternion
+import numpy as np
 
 from ...FileFormats.GFS import GFSBinary
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode import NodeInterface
+from ..Globals import GFS_MODEL_TRANSFORMS
 from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup, decomposableToTRS
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
@@ -13,6 +15,7 @@ from ..Utils.UVMapManagement import make_color_map_name
 from .Utils.BoneConstruction import construct_bone, resize_bone_length
 from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
+
 
 
 def decode_obj_name(obj_name, store_bytestring_on_obj, encoding="utf8"):
@@ -158,11 +161,19 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
     
-    main_armature.data.GFSTOOLS_ModelProperties.root_node_name         = gfs.bones[0].name if len(gfs.bones) else ""
-    main_armature.data.GFSTOOLS_ModelProperties.has_external_emt       = gfs.data_0x000100F8 is not None
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = gfs.keep_bounding_box
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.keep_bounding_sphere
-    main_armature.data.GFSTOOLS_ModelProperties.flag_3                 = gfs.flag_3
+    main_armature.data.GFSTOOLS_ModelProperties.flag_3           = gfs.flag_3
+    main_armature.data.GFSTOOLS_ModelProperties.root_node_name   = gfs.bones[0].name if len(gfs.bones) else ""
+    main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
+    
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = gfs.bounding_box_max_dims is not None
+    if gfs.bounding_box_max_dims is not None:
+        main_armature.data.GFSTOOLS_ModelProperties.bounding_box_max       = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        main_armature.data.GFSTOOLS_ModelProperties.bounding_box_min       = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.bounding_sphere_centre is not None
+    if gfs.bounding_sphere_centre is not None:
+        main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_centre = np.array(gfs.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_radius = gfs.bounding_sphere_radius
+    
     main_armature.rotation_mode = 'XYZ'
     
     bpy.ops.object.mode_set(mode='EDIT')

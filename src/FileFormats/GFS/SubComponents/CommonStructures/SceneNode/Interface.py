@@ -202,6 +202,11 @@ class MeshInterface:
         self.keep_bounding_box = None
         self.keep_bounding_sphere = None
         
+        self.bounding_box_max_dims = None
+        self.bounding_box_min_dims = None
+        self.bounding_sphere_centre = None
+        self.bounding_sphere_radius = None
+        
     
     @classmethod
     def from_binary(cls, node_idx, binary):
@@ -252,6 +257,11 @@ class MeshInterface:
         instance.unknown_0x12    = binary.unknown_0x12
         instance.unknown_float_1 = binary.unknown_float_1
         instance.unknown_float_2 = binary.unknown_float_2
+        
+        instance.bounding_box_max_dims = binary.bounding_box_max_dims
+        instance.bounding_box_min_dims = binary.bounding_box_min_dims
+        instance.bounding_sphere_centre = binary.bounding_sphere_centre
+        instance.bounding_sphere_radius = binary.bounding_sphere_radius
         
         return instance
         

@@ -17,8 +17,11 @@ from .SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasPa
 
 class GFSInterface:
     def __init__(self):
-        self.keep_bounding_box = False
-        self.keep_bounding_sphere = False
+        self.bounding_box_max_dims = None
+        self.bounding_box_min_dims = None
+        self.bounding_sphere_centre = None
+        self.bounding_sphere_radius = None
+        
         self.flag_3 = False
         self.meshes = []
         self.cameras = []
@@ -88,13 +91,15 @@ class GFSInterface:
             elif ctr.type == 0x000100FB:
                 instance.materials = [MaterialInterface.from_binary(mb) for mb in ctr.data]
             elif ctr.type == 0x00010003:
-                instance.bones,             \
-                instance.meshes,            \
-                instance.cameras,           \
-                instance.lights,            \
-                instance.epls,              \
-                instance.keep_bounding_box, \
-                instance.keep_bounding_sphere,\
+                instance.bones,                 \
+                instance.meshes,                \
+                instance.cameras,               \
+                instance.lights,                \
+                instance.epls,                  \
+                instance.bounding_box_min_dims, \
+                instance.bounding_box_max_dims, \
+                instance.bounding_sphere_centre,\
+                instance.bounding_sphere_radius,\
                 instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data, warnings)
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
@@ -199,7 +204,7 @@ class GFSInterface:
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.flag_3, copy_verts=duplicate_data)
+            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.bounding_box_min_dims, self.bounding_box_max_dims, self.bounding_sphere_centre, self.bounding_sphere_radius, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset

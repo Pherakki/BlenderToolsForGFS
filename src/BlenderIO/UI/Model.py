@@ -2,7 +2,8 @@ import bpy
 
 from .Node import makeNodePropertiesPanel
 from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
-    
+from ..modelUtilsTest.UI.Layout import indent
+
 def _draw_on_node(context, layout):
     armature = context.armature
     layout = layout
@@ -28,9 +29,30 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         ctr = layout.column()
         
         ctr.prop(armature.GFSTOOLS_ModelProperties, "has_external_emt")
-        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_box")
-        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_sphere")
         ctr.prop(armature.GFSTOOLS_ModelProperties, "flag_3")
+        
+        # Bounding box
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_box")
+        if armature.GFSTOOLS_ModelProperties.export_bounding_box:
+            col = indent(ctr)
+            
+            row = col.row()
+            row.prop(armature.GFSTOOLS_ModelProperties, "bounding_box_min")
+            row = col.row()
+            row.prop(armature.GFSTOOLS_ModelProperties, "bounding_box_max")
+            armature.GFSTOOLS_ModelProperties.bounding_box_mesh.draw_operator(col)
+        
+        # Bounding sphere
+        ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_sphere")
+        if armature.GFSTOOLS_ModelProperties.export_bounding_sphere:
+            col = indent(ctr)
+            
+            row = col.row()
+            row.prop(armature.GFSTOOLS_ModelProperties, "bounding_sphere_centre")
+            row = col.row()
+            row.prop(armature.GFSTOOLS_ModelProperties, "bounding_sphere_radius")
+            armature.GFSTOOLS_ModelProperties.bounding_sphere_mesh.draw_operator(col)
+        
     
     @classmethod
     def register(cls):

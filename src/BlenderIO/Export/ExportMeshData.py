@@ -5,6 +5,7 @@ import bpy
 from mathutils import Matrix
 import numpy as np
 
+from ..Globals import GFS_MODEL_TRANSFORMS
 from ..WarningSystem.Warning import ReportableError
 from ..Utils.Maths import convert_rotation_to_quaternion, convert_Zup_to_Yup, BlenderBoneToMayaBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup
 from ..Utils.UVMapManagement import make_uv_map_name, is_valid_uv_map, get_uv_idx_from_name
@@ -12,6 +13,7 @@ from ..Utils.UVMapManagement import make_color_map_name, is_valid_color_map, get
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary, VertexAttributes
 
 from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
+from ..modelUtilsTest.Mesh.Export.Attributes import get_colors
 
 VERTEX_LIMIT = 6192
 
@@ -328,17 +330,18 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         else:
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
-    export_box = armature.data.GFSTOOLS_ModelProperties.export_bounding_box
-    export_sph = armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere
-    if export_box or export_sph:
-        has_nonempty_meshes = sum([len(mesh.vertices) > 0 for mesh in gfs.meshes]) > 0
-        gfs.keep_bounding_box    = (export_box and has_nonempty_meshes)
-        gfs.keep_bounding_sphere = (export_sph and has_nonempty_meshes)
-        if export_box and not has_nonempty_meshes:
-            errorlog.log_warning_message("Model is marked for bounding box export, but no non-empty meshes were found for the model. Exporting without a bounding box")
-        if export_sph and not has_nonempty_meshes:
-            errorlog.log_warning_message("Model is marked for bounding sphere export, but no non-empty meshes were found for the model. Exporting without a bounding sphere")
+    aprops     = armature.data.GFSTOOLS_ModelProperties
+    export_box = aprops.export_bounding_box
+    export_sph = aprops.export_bounding_sphere
     
+    if export_box:
+        gfs.bounding_box_max_dims = np.array(aprops.bounding_box_max) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.bounding_box_min_dims = np.array(aprops.bounding_box_min) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+    if export_sph:
+        gfs.bounding_sphere_centre = np.array(aprops.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.bounding_sphere_radius = aprops.bounding_sphere_radius
+
+
     return sorted(material_names), out
 
 
