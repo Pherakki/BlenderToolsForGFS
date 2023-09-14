@@ -384,7 +384,9 @@ class MeshInterface:
                 if self.keep_bounding_box:
                     binary.bounding_box_max_dims = max_dims
                     binary.bounding_box_min_dims = min_dims
-                centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
+                    
+                # This isn't *exactly* right, but close enough in most cases
+                centre = [sum(v.position[i] for v in binary.vertices)/len(binary.vertices) for i in range(3)]
                 radius = 0.
                 for v in self.vertices:
                     pos = v.position
