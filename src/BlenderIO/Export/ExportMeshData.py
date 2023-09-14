@@ -2,7 +2,7 @@ import array
 from collections import defaultdict
 
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Quaternion
 import numpy as np
 
 from ..Globals import GFS_MODEL_TRANSFORMS
@@ -16,6 +16,43 @@ from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get
 #from ..modelUtilsTest.Mesh.Export.Attributes import get_colors
 
 VERTEX_LIMIT = 6192
+
+
+
+def make_bounding_box(gfs):
+    # Should call an internal method here...
+    verts = []
+    matrices = np.empty((len(gfs.bones), 4, 4))
+    for i, bone in enumerate(gfs.bones):
+        matrix = np.eye(4)
+        q = bone.rotation
+        matrix[:3, :3] = np.array(Quaternion([q[3], q[0], q[1], q[2]]).to_matrix())
+        matrix = matrix @ np.diag([*bone.scale, 1.])
+        matrix[:3, 3] = bone.position
+        print(matrix)
+        
+        if bone.parent_idx > -1:
+            matrices[i] = matrices[bone.parent_idx] @ matrix
+        else:
+            matrices[i] = matrix
+            
+        verts.append(matrices[i][:3, 3])
+    
+    mesh_verts = []
+    for mesh in gfs.meshes:
+        if not mesh.keep_bounding_box:
+            continue
+        matrix = matrices[mesh.node]
+        max_dims = np.max([v.position for v in mesh.vertices], axis=0)
+        min_dims = np.min([v.position for v in mesh.vertices], axis=0)
+        
+        mesh_verts.append((matrix @ np.array([*max_dims, 1.]))[:3])
+        mesh_verts.append((matrix @ np.array([*min_dims, 1.]))[:3])
+        
+    max_dims = np.max([*verts, *mesh_verts], axis=0)
+    min_dims = np.min([*verts, *mesh_verts], axis=0)
+
+    return min_dims, max_dims, np.mean(mesh_verts, axis=0)
 
 
 class DisplayableVerticesError(ReportableError):
@@ -331,16 +368,21 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
     aprops     = armature.data.GFSTOOLS_ModelProperties
-    export_box = aprops.export_bounding_box
-    export_sph = aprops.export_bounding_sphere
-    
-    if export_box:
+
+    if aprops.export_bounding_box == "MANUAL":
         gfs.bounding_box_max_dims = np.array(aprops.bounding_box_max) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
         gfs.bounding_box_min_dims = np.array(aprops.bounding_box_min) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-    if export_sph:
+    elif aprops.export_bounding_box == "AUTO":
+        gfs.bounding_box_min_dims, gfs.bounding_box_max_dims, _ = make_bounding_box(gfs)
+        
+    if aprops.export_bounding_sphere == "MANUAL":
         gfs.bounding_sphere_centre = np.array(aprops.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
         gfs.bounding_sphere_radius = aprops.bounding_sphere_radius
-
+    elif aprops.export_bounding_sphere == "AUTO":
+        b_min, b_max, centre = make_bounding_box(gfs)
+        
+        gfs.bounding_sphere_centre = centre
+        gfs.bounding_sphere_radius = max([np.linalg.norm(centre - b_min), np.linalg.norm(centre - b_max)])
 
     return sorted(material_names), out
 

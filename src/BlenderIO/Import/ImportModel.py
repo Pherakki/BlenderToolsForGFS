@@ -165,11 +165,11 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     main_armature.data.GFSTOOLS_ModelProperties.root_node_name   = gfs.bones[0].name if len(gfs.bones) else ""
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
     
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = gfs.bounding_box_max_dims is not None
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = "AUTO" if (gfs.bounding_box_max_dims is not None) else "NONE"
     if gfs.bounding_box_max_dims is not None:
         main_armature.data.GFSTOOLS_ModelProperties.bounding_box_max       = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
         main_armature.data.GFSTOOLS_ModelProperties.bounding_box_min       = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = gfs.bounding_sphere_centre is not None
+    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = "AUTO" if (gfs.bounding_sphere_centre is not None) else "NONE"
     if gfs.bounding_sphere_centre is not None:
         main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_centre = np.array(gfs.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
         main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_radius = gfs.bounding_sphere_radius

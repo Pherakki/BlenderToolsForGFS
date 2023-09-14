@@ -46,7 +46,10 @@ GFSToolsModelNodeProperties = make_node_props_class("GFSToolsModelNodeProperties
 
 class GFSToolsModelProperties(bpy.types.PropertyGroup):
     # Bounding box
-    export_bounding_box: bpy.props.BoolProperty(name="Export Bounding Box", default=True)
+    export_bounding_box: bpy.props.EnumProperty(items=[("NONE",   "None",   "Do not export a bounding box"),
+                                                       ("MANUAL", "Manual", "Manually create bounding box"),
+                                                       ("AUTO",   "Auto",   "Auto-calculate a bounding box on export")],
+                                                name="Bounding Box", default="AUTO")
     bounding_box_mesh: bpy.props.PointerProperty(type=ModelBoundingBox)
     bounding_box_min:  bpy.props.FloatVectorProperty(name="Bounding Box Min", 
                                                      size=3,
@@ -58,7 +61,10 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
                                                      update=lambda self, ctx: ModelBoundingBox.update(self, ctx, self.bounding_box_mesh))
     
     # Bounding sphere
-    export_bounding_sphere: bpy.props.BoolProperty(name="Export Bounding Sphere", default=True)
+    export_bounding_sphere: bpy.props.EnumProperty(items=[("NONE",   "None",   "Do not export a bounding box"),
+                                                          ("MANUAL", "Manual", "Manually create bounding box"),
+                                                          ("AUTO",   "Auto",   "Auto-calculate a bounding box on export")],
+                                                   name="Bounding Sphere", default="AUTO")
     bounding_sphere_mesh:   bpy.props.PointerProperty(type=ModelBoundingSphere)
     bounding_sphere_centre: bpy.props.FloatVectorProperty(name="Bounding Sphere Centre", 
                                                           size=3,

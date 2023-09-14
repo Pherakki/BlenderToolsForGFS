@@ -33,7 +33,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         # Bounding box
         ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_box")
-        if armature.GFSTOOLS_ModelProperties.export_bounding_box:
+        if armature.GFSTOOLS_ModelProperties.export_bounding_box == "MANUAL":
             col = indent(ctr)
             
             row = col.row()
@@ -44,7 +44,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         # Bounding sphere
         ctr.prop(armature.GFSTOOLS_ModelProperties, "export_bounding_sphere")
-        if armature.GFSTOOLS_ModelProperties.export_bounding_sphere:
+        if armature.GFSTOOLS_ModelProperties.export_bounding_sphere == "MANUAL":
             col = indent(ctr)
             
             row = col.row()
