@@ -29,7 +29,6 @@ def make_bounding_box(gfs):
         matrix[:3, :3] = np.array(Quaternion([q[3], q[0], q[1], q[2]]).to_matrix())
         matrix = matrix @ np.diag([*bone.scale, 1.])
         matrix[:3, 3] = bone.position
-        print(matrix)
         
         if bone.parent_idx > -1:
             matrices[i] = matrices[bone.parent_idx] @ matrix
