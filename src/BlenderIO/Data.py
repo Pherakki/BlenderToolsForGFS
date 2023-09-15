@@ -75,3 +75,9 @@ def missing_uv_maps_policy_options():
             ('WARN',      'Warn',        'Issue a warning if a mesh has missing UV maps, and replace them with blank maps'),
             ("ERROR",     'Throw Error', 'Prevent export if a mesh has missing UV maps')
     ]
+
+def triangulate_mesh_policy_options():
+    return [
+            ("ERROR",                   'Throw Error',               'Prevent export if a mesh has non-triangular faces'),
+            ("TRIANGULATE_DESTRUCTIVE", "Triangulate (Destructive)", "Triangulate Blender meshes before export")
+    ]

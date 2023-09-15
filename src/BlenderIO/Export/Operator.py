@@ -9,6 +9,7 @@ from ..Data import available_versions_property
 from ..Data import too_many_vertices_policy_options
 from ..Data import missing_uv_maps_policy_options
 from ..Data import multiple_materials_policy_options
+from ..Data import triangulate_mesh_policy_options
 from ..Preferences import get_preferences
 from ..Utils.Operator import get_op_idname
 from .ExportNodes import export_node_tree
@@ -100,6 +101,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default="WARN"
     )
     
+    triangulate_mesh_policy: bpy.props.EnumProperty(
+        items=triangulate_mesh_policy_options(),
+        name="Triangulate Meshes",
+        description="Decide the export behavior in the event of a mesh having any non-triangular faces",
+        default="ERROR"
+    )
+    
     version: available_versions_property()
     
     def invoke(self, context, event):
@@ -110,6 +118,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.too_many_vertices_policy    = prefs.too_many_vertices_policy
         self.multiple_materials_policy   = prefs.multiple_materials_policy
         self.missing_uv_maps_policy      = prefs.missing_uv_maps_policy
+        self.triangulate_mesh_policy     = prefs.triangulate_mesh_policy
         self.version                     = prefs.version
         return super().invoke(context, event)
 
@@ -138,7 +147,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy, triangulate_mesh_policy=self.triangulate_mesh_policy)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
@@ -254,6 +263,7 @@ class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
         layout.prop(operator, 'too_many_vertices_policy')
         layout.prop(operator, 'multiple_materials_policy')
         layout.prop(operator, 'missing_uv_maps_policy')
+        layout.prop(operator, 'triangulate_mesh_policy')
 
     
 class ExportGAP(bpy.types.Operator, ExportHelper):

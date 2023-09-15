@@ -8,6 +8,7 @@ from .Data import bone_pose_enum_options
 from .Data import too_many_vertices_policy_options
 from .Data import multiple_materials_policy_options
 from .Data import missing_uv_maps_policy_options
+from .Data import triangulate_mesh_policy_options
 
     
 def get_preferences():
@@ -81,6 +82,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="WARN"
     )
     
+    triangulate_mesh_policy: bpy.props.EnumProperty(
+        items=triangulate_mesh_policy_options(),
+        name="Triangulate Meshes",
+        description="Default setting for 'Triangulate Meshes' on export",
+        default="ERROR")
+    
     version: available_versions_property()
 
     
@@ -103,4 +110,5 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'too_many_vertices_policy')
         export_col.prop(self, 'multiple_materials_policy')
         export_col.prop(self, 'missing_uv_maps_policy')
+        export_col.prop(self, 'triangulate_mesh_policy')
         export_col.prop(self, 'version')
