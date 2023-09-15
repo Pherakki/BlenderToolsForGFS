@@ -7,6 +7,7 @@ import numpy as np
 from ...FileFormats.GFS import GFSInterface
 from ..Data import available_versions_property
 from ..Data import too_many_vertices_policy_options
+from ..Data import too_many_vertex_groups_policy_options
 from ..Data import missing_uv_maps_policy_options
 from ..Data import multiple_materials_policy_options
 from ..Data import triangulate_mesh_policy_options
@@ -87,6 +88,13 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         default="WARN"
     )
     
+    too_many_vertex_groups_policy: bpy.props.EnumProperty(
+        items=too_many_vertex_groups_policy_options(),
+        name="Vertex Group Limits",
+        description="Decide the export behavior in the event of a mesh having vertices belonging to more than 4 vertex groups",
+        default="ERROR"
+    )
+    
     multiple_materials_policy: bpy.props.EnumProperty(
         items=multiple_materials_policy_options(),
         name="Multiple Materials per Mesh",
@@ -112,14 +120,15 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.strip_missing_vertex_groups = prefs.strip_missing_vertex_groups
-        self.recalculate_tangents        = prefs.recalculate_tangents
-        self.throw_missing_weight_errors = prefs.throw_missing_weight_errors
-        self.too_many_vertices_policy    = prefs.too_many_vertices_policy
-        self.multiple_materials_policy   = prefs.multiple_materials_policy
-        self.missing_uv_maps_policy      = prefs.missing_uv_maps_policy
-        self.triangulate_mesh_policy     = prefs.triangulate_mesh_policy
-        self.version                     = prefs.version
+        self.strip_missing_vertex_groups   = prefs.strip_missing_vertex_groups
+        self.recalculate_tangents          = prefs.recalculate_tangents
+        self.throw_missing_weight_errors   = prefs.throw_missing_weight_errors
+        self.too_many_vertices_policy      = prefs.too_many_vertices_policy
+        self.too_many_vertex_groups_policy = prefs.too_many_vertex_groups_policy
+        self.multiple_materials_policy     = prefs.multiple_materials_policy
+        self.missing_uv_maps_policy        = prefs.missing_uv_maps_policy
+        self.triangulate_mesh_policy       = prefs.triangulate_mesh_policy
+        self.version                       = prefs.version
         return super().invoke(context, event)
 
 
@@ -147,7 +156,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
         export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy, triangulate_mesh_policy=self.triangulate_mesh_policy)
+        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy, triangulate_mesh_policy=self.triangulate_mesh_policy, too_many_vertex_groups_policy=self.too_many_vertex_groups_policy)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
@@ -261,6 +270,7 @@ class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
         layout.prop(operator, 'recalculate_tangents')
         layout.prop(operator, 'throw_missing_weight_errors')
         layout.prop(operator, 'too_many_vertices_policy')
+        layout.prop(operator, 'too_many_vertex_groups_policy')
         layout.prop(operator, 'multiple_materials_policy')
         layout.prop(operator, 'missing_uv_maps_policy')
         layout.prop(operator, 'triangulate_mesh_policy')

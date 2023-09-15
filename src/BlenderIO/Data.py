@@ -63,6 +63,12 @@ def too_many_vertices_policy_options():
             ("ERROR",  'Throw Error', '')
     ]
 
+def too_many_vertex_groups_policy_options():
+    return [
+            ('WARN',   'Warn',        'Issue a warning if there are vertices with more than 4 vertex groups, and automatically strip the least influential groups'),
+            ("ERROR",  'Throw Error', 'Throw an error and show the vertices which have more than 4 vertex groups')
+    ]
+
 def multiple_materials_policy_options():
     return [
             ('WARN',                  'Warn',                      'Issue a warning if a mesh contains more than one material. The material with the most faces using it will be exported'),

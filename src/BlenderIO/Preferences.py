@@ -6,6 +6,7 @@ from .Data import get_package_name
 from .Data import available_versions_property
 from .Data import bone_pose_enum_options
 from .Data import too_many_vertices_policy_options
+from .Data import too_many_vertex_groups_policy_options
 from .Data import multiple_materials_policy_options
 from .Data import missing_uv_maps_policy_options
 from .Data import triangulate_mesh_policy_options
@@ -68,6 +69,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="WARN"
     )
     
+    too_many_vertex_groups_policy: bpy.props.EnumProperty(
+        items=too_many_vertex_groups_policy_options(),
+        name="Vertex Group Limits",
+        description="Default setting for 'Vertex Group Limits' on export",
+        default="ERROR"
+    )
+    
     multiple_materials_policy: bpy.props.EnumProperty(
         items=multiple_materials_policy_options(),
         name="Multiple Materials per Mesh",
@@ -108,6 +116,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'recalculate_tangents')
         export_col.prop(self, 'throw_missing_weight_errors')
         export_col.prop(self, 'too_many_vertices_policy')
+        export_col.prop(self, 'too_many_vertex_groups_policy')
         export_col.prop(self, 'multiple_materials_policy')
         export_col.prop(self, 'missing_uv_maps_policy')
         export_col.prop(self, 'triangulate_mesh_policy')
