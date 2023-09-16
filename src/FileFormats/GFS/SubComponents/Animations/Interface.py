@@ -686,7 +686,19 @@ class NodeAnimation:
                         frames,\
                         kf_values = construct_frames((self.unknown_floats, lerp))
                     else:
-                        raise NotImplementedError
+                        kf_type = NodeTRS
+                        
+                        if has_trans: p = self.positions
+                        else:         p = {0: [0, 0, 0]}
+                        if has_rot:   r = self.rotations
+                        else:         r = {0: [0, 0, 0, 1]}
+                        if has_scale: s = self.scales
+                        else:         s = {0: [1, 1, 1]}
+                        
+                        frames,\
+                        kf_values = construct_frames((p, lerp),
+                                                     (r, slerp),
+                                                     (s, lerp))
          
                 track_binary = AnimationTrackBinary()
                 track_binary.frames = frames
