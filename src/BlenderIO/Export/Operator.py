@@ -213,7 +213,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         bpy.utils.register_class(CUSTOM_PT_GFSMeshExportSettings)
         
     @classmethod
-    def unegister(cls):
+    def unregister(cls):
         bpy.utils.unregister_class(CUSTOM_PT_GFSModelExportSettings)
         bpy.utils.unregister_class(CUSTOM_PT_GFSMeshExportSettings)
 
@@ -299,14 +299,12 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     
     filename_ext = ".GAP"
     
-    version: available_versions_property()
     policies: bpy.props.PointerProperty(type=ExportPolicies)
     
     def invoke(self, context, event):
         prefs = get_preferences()
         self.policies.version = prefs.version
         return super().invoke(context, event)
-
 
     @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
@@ -390,6 +388,7 @@ class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
 
         sfile = context.space_data
         operator = sfile.active_operator
+        policies = operator.policies
 
         layout.prop(policies, 'version')
 

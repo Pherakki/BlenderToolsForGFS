@@ -530,6 +530,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     if is_rigged:
         transform = rest_transform
     else:
+        transform = bind_transform
 
     # Set transform
     if not decomposableToTRS(transform):

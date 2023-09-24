@@ -191,6 +191,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     def invoke(self, context, event):
         prefs = get_preferences()
         self.policies.set_fps  = prefs.set_fps
+        self.policies.set_clip = prefs.set_clip
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -247,6 +248,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         errorlog.digest_warnings(self.debug_mode)
         
         set_fps(self, context)
+        set_clip(self, context)
         
         if len(errorlog.warnings):
             errorlog.digest_warnings(self.debug_mode)
