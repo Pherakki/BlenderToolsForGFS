@@ -9,6 +9,21 @@ def _draw_on_node(context, layout):
     
     layout.prop(mesh.GFSTOOLS_NodeProperties, "override_name")
 
+
+def get_node_props(context):
+    bpy_object = context.active_object
+    oprops = bpy_object.GFSTOOLS_ObjectProperties
+    if oprops.requires_new_node():
+        return context.mesh.GFSTOOLS_NodeProperties
+    else:
+        bone_name = bpy_object.vertex_groups[0].name
+        bpy_armature_object = context.active_object.parent
+        bones = bpy_armature_object.data.bones
+        if    oprops.is_rigged(): bone_name = oprops.node
+        else:                     bone_name = bpy_object.vertex_groups[0].name
+        return bones[bone_name].GFSTOOLS_NodeProperties
+
+
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
     bl_idname      = "OBJECT_PT_GFSToolsMeshAttributesPanel"
@@ -25,7 +40,11 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         return False
 
     def draw(self, context):
-        mesh = context.mesh
+        bpy_mesh_object = context.active_object
+        bpy_mesh        = context.mesh
+        oprops          = bpy_mesh_object.GFSTOOLS_ObjectProperties
+        mprops          = bpy_mesh.GFSTOOLS_MeshProperties
+        
         layout = self.layout
         
         ctr = layout.column()
@@ -34,38 +53,38 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         ctr.operator(self.MeshHelpWindow.bl_idname)
         
         # Bounding volumes
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "permit_unrigged_export")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_box")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "export_bounding_sphere")
+        ctr.prop(mprops, "permit_unrigged_export") # Needs to go
+        mprops.bounding_box.draw(ctr)
+        mprops.bounding_sphere.draw(ctr)
         
         # Flags
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_5")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_7")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_8")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_9")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_10")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_11")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_13")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_14")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_15")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_16")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_17")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_18")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_19")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_20")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_21")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_22")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_23")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_24")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_25")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_26")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_27")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_28")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_29")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_30")
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "flag_31")
+        ctr.prop(mprops, "flag_5")
+        ctr.prop(mprops, "flag_7")
+        ctr.prop(mprops, "flag_8")
+        ctr.prop(mprops, "flag_9")
+        ctr.prop(mprops, "flag_10")
+        ctr.prop(mprops, "flag_11")
+        ctr.prop(mprops, "flag_13")
+        ctr.prop(mprops, "flag_14")
+        ctr.prop(mprops, "flag_15")
+        ctr.prop(mprops, "flag_16")
+        ctr.prop(mprops, "flag_17")
+        ctr.prop(mprops, "flag_18")
+        ctr.prop(mprops, "flag_19")
+        ctr.prop(mprops, "flag_20")
+        ctr.prop(mprops, "flag_21")
+        ctr.prop(mprops, "flag_22")
+        ctr.prop(mprops, "flag_23")
+        ctr.prop(mprops, "flag_24")
+        ctr.prop(mprops, "flag_25")
+        ctr.prop(mprops, "flag_26")
+        ctr.prop(mprops, "flag_27")
+        ctr.prop(mprops, "flag_28")
+        ctr.prop(mprops, "flag_29")
+        ctr.prop(mprops, "flag_30")
+        ctr.prop(mprops, "flag_31")
 
-        ctr.prop(mesh.GFSTOOLS_MeshProperties, "unknown_0x12")
+        ctr.prop(mprops, "unknown_0x12")
 
     @classmethod
     def register(cls):
