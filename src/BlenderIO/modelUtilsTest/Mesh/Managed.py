@@ -1,25 +1,40 @@
 import bpy
 
 
-def define_managed_mesh(make_name, update_mesh, get_props, operator_id):
-    class ShowHideOperator(bpy.types.Operator):
-        bl_idname = operator_id
-        bl_label = "Show"
-        bl_options = {'REGISTER', 'UNDO'}
-        
-        def execute(self, context):
-            props = get_props(context)
-            if props.is_alive(): props.remove()
-            else:                props.generate(context)
-            return {'FINISHED'}
+def define_managed_mesh(make_name, update_mesh, get_props=None, operator_id=None, calculate=None, calculate_id=None):
+    has_operator  = get_props is not None and operator_id is not None
+    has_calculate = calculate is not None and calculate_id is not None
     
+    if has_operator:
+        class ShowHideOperator(bpy.types.Operator):
+            bl_idname = operator_id
+            bl_label = "Show"
+            bl_options = {'REGISTER', 'UNDO'}
+            
+            def execute(self, context):
+                props = get_props(context)
+                if props.is_alive(): props.remove()
+                else:                props.generate(context)
+                return {'FINISHED'}
+
+    if has_calculate:
+        class CalculateOperator(bpy.types.Operator):
+            bl_idname = calculate_id
+            bl_label = "Calculate"
+            bl_options = {'REGISTER', 'UNDO'}
+            
+            def execute(self, context):
+                calculate(context)
+                return {'FINISHED'}
+        
     
     class ManagedMesh(bpy.types.PropertyGroup):
         ref: bpy.props.PointerProperty(type=bpy.types.Object)
     
         def draw_operator(self, layout):
             is_alive = self.is_alive()
-            layout.operator(ShowHideOperator.bl_idname, text="Hide" if is_alive else "Show")
+            if has_operator:  layout.operator(ShowHideOperator.bl_idname, text="Hide" if is_alive else "Show")
+            if has_calculate: layout.operator(CalculateOperator.bl_idname)
     
         def is_alive(self):
             if self.ref is None:
@@ -95,7 +110,6 @@ def define_managed_mesh(make_name, update_mesh, get_props, operator_id):
                 
                 bpy_mesh_object.data.clear_geometry()
                 update_mesh(self.id_data, context, bpy_mesh_object)
-                bpy_mesh_object.active_material = get_col_material()
             finally:
                 bpy_mesh_object.lock_location[0] = True
                 bpy_mesh_object.lock_location[1] = True
@@ -112,11 +126,12 @@ def define_managed_mesh(make_name, update_mesh, get_props, operator_id):
         
         @classmethod
         def register(cls):
-            bpy.utils.register_class(ShowHideOperator)
+            if has_operator:  bpy.utils.register_class(ShowHideOperator)
+            if has_calculate: bpy.utils.register_class(CalculateOperator)
             
         @classmethod
         def unregister(cls):
-            bpy.utils.unregister_class(ShowHideOperator)
-    
+            if has_operator:  bpy.utils.unregister_class(ShowHideOperator)
+            if has_calculate: bpy.utils.unregister_class(CalculateOperator)
     
     return ManagedMesh

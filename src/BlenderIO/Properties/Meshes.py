@@ -1,5 +1,65 @@
 import bpy
+from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import MeshBinary
+from ..modelUtilsTest.Mesh.Managed import define_managed_mesh
+from ..Utils.BoundingVolumes import update_box
+from ..Utils.BoundingVolumes import update_sphere
+from .BoundingVolumes import define_bounding_box
+from .BoundingVolumes import define_bounding_sphere
 from .Nodes import make_node_props_class
+    
+
+def get_box_props(context):
+    return context.active_object.data.GFSTOOLS_MeshProperties.bounding_box.mesh
+
+
+def calculate_box(context):
+    bpy_mesh_object = context.active_object
+    bpy_mesh = bpy_mesh_object.data
+    
+    class Vertex:
+        __slots__ = ("position",)
+        
+        def __init__(self, p):
+            self.position = p
+    
+    class MeshWrapper:
+        def __init__(self, bpy_mesh):
+            self.vertices = [Vertex(p.co) for p in bpy_mesh.vertices]
+    
+    mesh_wrapper = MeshWrapper(bpy_mesh)
+    
+    boxprops = bpy_mesh.GFSTOOLS_MeshProperties.bounding_box
+    boxprops.min_dims, boxprops.max_dims = MeshBinary.calc_bounding_box(mesh_wrapper)
+
+
+def get_sphere_props(context):
+    return context.active_object.data.GFSTOOLS_MeshProperties.bounding_sphere.mesh
+
+
+def calculate_sphere(context):
+    bpy_mesh_object = context.active_object
+    bpy_mesh = bpy_mesh_object.data
+    
+    class Vertex:
+        __slots__ = ("position",)
+        
+        def __init__(self, p):
+            self.position = p
+    
+    class MeshWrapper:
+        def __init__(self, bpy_mesh):
+            self.vertices = [Vertex(p.co) for p in bpy_mesh.vertices]
+    
+    mesh_wrapper = MeshWrapper(bpy_mesh)
+    
+    sphprops = bpy_mesh.GFSTOOLS_MeshProperties.bounding_sphere
+    sphprops.center, sphprops.radius = MeshBinary.calc_bounding_sphere(mesh_wrapper)
+
+
+MeshBoundingBox    = define_managed_mesh(lambda mesh: f".GFSTOOLS_{mesh.name}Box",    lambda mesh, ctx, obj: update_box   (mesh.GFSTOOLS_MeshProperties.bounding_box,    ctx, obj), get_box_props,    "gfstools.showmeshboundingbox"   , calculate_box,    "gfstools.calcmeshboundingbox"   )
+MeshBoundingSphere = define_managed_mesh(lambda mesh: f".GFSTOOLS_{mesh.name}Sphere", lambda mesh, ctx, obj: update_sphere(mesh.GFSTOOLS_MeshProperties.bounding_sphere, ctx, obj), get_sphere_props, "gfstools.showmeshboundingsphere", calculate_sphere, "gfstools.calcmeshboundingsphere")
+MeshBoundingBoxProps    = define_bounding_box   (MeshBoundingBox)
+MeshBoundingSphereProps = define_bounding_sphere(MeshBoundingSphere)
 
 
 GFSToolsMeshNodeProperties = make_node_props_class("GFSToolsMeshNodeProperties")
@@ -7,16 +67,16 @@ GFSToolsMeshNodeProperties = make_node_props_class("GFSToolsMeshNodeProperties")
 
 class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     # Binary properties
-    has_unknown_floats:  bpy.props.BoolProperty(name="Active")
+    has_unknown_floats:  bpy.props.BoolProperty(name="Has Unknown Floats")
     
-    permit_unrigged_export: bpy.props.BoolProperty(name="Permit Export as Unrigged", description="Allow the mesh to be exported as a bone child if all vertices are rigged to a single vertex group. This will lower the rigged bone count by 1 if no other mesh is rigged to that bone, freeing up more of the 256 rigging slots for use elsewhere. This may cause errors if the mesh node loads animation data", default=False)
+    permit_unrigged_export: bpy.props.BoolProperty(name="Permit Export as Unrigged", description="Allow the mesh to be exported as an unrigged mesh if all vertices are rigged to one or zero vertex groups. This will lower the rigged bone count by 1 if no other mesh is rigged to that bone, freeing up more of the 256 rigging slots for use elsewhere", default=True)
     
     unknown_0x12:    bpy.props.IntProperty(name="unknown 0x12")
-    unknown_float_1: bpy.props.FloatProperty(name="unknown 1")
-    unknown_float_2: bpy.props.FloatProperty(name="unknown 2")
+    unknown_float_1: bpy.props.FloatProperty(name="Unknown Float 1")
+    unknown_float_2: bpy.props.FloatProperty(name="Unknown Float 2")
     
-    export_bounding_box:    bpy.props.BoolProperty(name="Export Bounding Box",    default=True)
-    export_bounding_sphere: bpy.props.BoolProperty(name="Export Bounding Sphere", default=True)
+    bounding_box:    bpy.props.PointerProperty(type=MeshBoundingBoxProps)
+    bounding_sphere: bpy.props.PointerProperty(type=MeshBoundingSphereProps)
     
     flag_5:  bpy.props.BoolProperty(name="Unknown Flag 5", default=False)
     flag_7:  bpy.props.BoolProperty(name="Unknown Flag 7", default=True)
@@ -55,4 +115,3 @@ class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     
     def is_collider(self):
         return self.dtype == "COLLIDER" and not self.is_dummy
-    

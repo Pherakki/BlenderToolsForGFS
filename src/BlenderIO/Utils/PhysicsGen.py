@@ -155,10 +155,10 @@ def make_collider(has_name, dtype, height, radius, ibpm, parent_bone, armature):
     bone = armature.data.bones.get(parent_bone)
     if bone is None:
         parent_matrix = upY_to_upZ_matrix @ armature.matrix_world    
-        collider_name = f"Collider_{armature.name}"
+        collider_name = f".Collider_{armature.name}"
     else:
         parent_matrix = armature.matrix_world @ bone.matrix_local @ boneY_to_boneX_matrix.inverted()
-        collider_name = f"Collider_{parent_bone}_{armature.name}"
+        collider_name = f".Collider_{parent_bone}_{armature.name}"
         
     remake_col_material()
     

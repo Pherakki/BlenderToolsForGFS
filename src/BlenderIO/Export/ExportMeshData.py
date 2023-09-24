@@ -354,17 +354,18 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
     aprops     = armature.data.GFSTOOLS_ModelProperties
-
-    if aprops.export_bounding_box == "MANUAL":
-        gfs.bounding_box_max_dims = np.array(aprops.bounding_box_max) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        gfs.bounding_box_min_dims = np.array(aprops.bounding_box_min) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-    elif aprops.export_bounding_box == "AUTO":
+    boxprops = aprops.bounding_box
+    if boxprops.export_policy == "MANUAL":
+        gfs.bounding_box_max_dims = np.array(boxprops.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.bounding_box_min_dims = np.array(boxprops.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+    elif boxprops.export_policy == "AUTO":
         gfs.bounding_box_min_dims, gfs.bounding_box_max_dims, _ = make_bounding_box(gfs)
         
-    if aprops.export_bounding_sphere == "MANUAL":
-        gfs.bounding_sphere_centre = np.array(aprops.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        gfs.bounding_sphere_radius = aprops.bounding_sphere_radius
-    elif aprops.export_bounding_sphere == "AUTO":
+    sphprops = aprops.bounding_sphere
+    if sphprops.export_policy == "MANUAL":
+        gfs.bounding_sphere_centre = np.array(sphprops.center) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.bounding_sphere_radius = sphprops.radius
+    elif sphprops.export_policy == "AUTO":
         b_min, b_max, centre = make_bounding_box(gfs)
         
         gfs.bounding_sphere_centre = centre
@@ -443,15 +444,30 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     # were flagged as invalid by the errorlog.
     material_name = bpy_mesh_object.data.materials[material_index].name if len(bpy_mesh_object.data.materials) else None
     mesh_props = bpy_mesh_object.data.GFSTOOLS_MeshProperties
-    mesh = gfs.add_mesh(node_id, vertices, 
-                        material_name,
-                        [fidx for face in indices for fidx in face], 
-                        extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert),
-                        mesh_props.unknown_0x12, 
-                        mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
-                        mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
-                        mesh_props.export_bounding_box if len(vertices) else False, 
-                        mesh_props.export_bounding_sphere if len(vertices) else False)
+    bbox = mesh_props.bounding_box
+    bsph = mesh_props.bounding_sphere
+    gfs_mesh = gfs.add_mesh(node_id, vertices, 
+                            material_name,
+                            [fidx for face in indices for fidx in face], 
+                            extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert),
+                            mesh_props.unknown_0x12, 
+                            mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
+                            mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
+                            bbox.export_policy != "NONE" if len(vertices) else False, 
+                            bsph.export_policy != "NONE" if len(vertices) else False)
+    
+    if bbox.export_policy == "MANUAL":
+        obox = gfs_mesh.overrides.bounding_box
+        obox.enabled = True
+        obox.min_dims = np.array(bbox.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        obox.max_dims = np.array(bbox.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+    
+    if bsph.export_policy == "MANUAL":
+        osph = gfs_mesh.overrides.bounding_sphere
+        osph.enabled = True
+        osph.min_dims = np.array(bsph.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        osph.max_dims = np.array(bsph.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+    
     
     # Export flags we can't currently deduce from Blender data...
     # We might be able to represent some of these flags within Blender itself

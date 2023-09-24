@@ -158,7 +158,36 @@ class NodeInterface:
         prop.data = data
         self.properties.append(prop)
         return prop
+
+
+class BoundingBoxOverride:
+    def __init__(self):
+        self.enabled = False
+        self.min_dims = [0, 0, 0]
+        self.max_dims = [0, 0, 0]
+
+
+class BoundingSphereOverride:
+    def __init__(self):
+        self.enabled = False
+        self.min_dims = [0, 0, 0]
+        self.max_dims = [0, 0, 0]
+
+
+class MeshOverrides:
+    def __init__(self):
+        self._bounding_box    = BoundingBoxOverride()
+        self._bounding_sphere = BoundingSphereOverride()
     
+    @property
+    def bounding_box(self):
+        return self._bounding_box
+    
+    @property
+    def bounding_sphere(self):
+        return self._bounding_sphere
+
+
 class MeshInterface:
     def __init__(self):
         self.node    = None
@@ -197,16 +226,16 @@ class MeshInterface:
         self.unknown_float_1 = None
         self.unknown_float_2 = None
         
+        self._overrides = MeshOverrides()
+        
         # THINGS THAT COULD BE REMOVABLE
         self.index_type = None
         self.keep_bounding_box = None
         self.keep_bounding_sphere = None
         
-        self.bounding_box_max_dims = None
-        self.bounding_box_min_dims = None
-        self.bounding_sphere_centre = None
-        self.bounding_sphere_radius = None
-        
+    @property
+    def overrides(self):
+        return self._overrides
     
     @classmethod
     def from_binary(cls, node_idx, binary):
@@ -258,10 +287,10 @@ class MeshInterface:
         instance.unknown_float_1 = binary.unknown_float_1
         instance.unknown_float_2 = binary.unknown_float_2
         
-        instance.bounding_box_max_dims = binary.bounding_box_max_dims
-        instance.bounding_box_min_dims = binary.bounding_box_min_dims
-        instance.bounding_sphere_centre = binary.bounding_sphere_centre
-        instance.bounding_sphere_radius = binary.bounding_sphere_radius
+        instance.overrides.bounding_box.max_dims  = binary.bounding_box_max_dims
+        instance.overrides.bounding_box.min_dims  = binary.bounding_box_min_dims
+        instance.overrides.bounding_sphere.center = binary.bounding_sphere_centre
+        instance.overrides.bounding_sphere.radius = binary.bounding_sphere_radius
         
         return instance
         
@@ -368,37 +397,37 @@ class MeshInterface:
         ####################
         # BOUNDING VOLUMES #
         ####################
-        if self.keep_bounding_sphere:
-            if binary.vertex_format.has_positions:
-                # This is WRONG but I can't get an iterative Welzl algorithm
-                # working
-                max_dims = [*self.vertices[0].position]
-                min_dims = [*self.vertices[0].position]
-                        
-                for v in self.vertices:
-                    pos = v.position
-                    for i in range(3):
-                        max_dims[i] = max(max_dims[i], pos[i])
-                        min_dims[i] = min(min_dims[i], pos[i])
-                
-                if self.keep_bounding_box:
-                    binary.bounding_box_max_dims = max_dims
-                    binary.bounding_box_min_dims = min_dims
-                    
-                # This isn't *exactly* right, but close enough in most cases
-                centre = [sum(v.position[i] for v in binary.vertices)/len(binary.vertices) for i in range(3)]
-                radius = 0.
-                for v in self.vertices:
-                    pos = v.position
-                    dist = (p-c for p, c in zip(pos, centre))
-                    radius = max(sum(d*d for d in dist), radius)
-                binary.bounding_sphere_centre = centre
-                binary.bounding_sphere_radius = radius
+        if self.keep_bounding_box:
+            box = self.overrides.bounding_box
+            if box.enabled:
+                binary.bounding_box_min_dims = box.min_dims
+                binary.bounding_box_max_dims = box.max_dims
             else:
-                raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
+                if binary.vertex_format.has_positions:
+                    binary.autocalc_bounding_box()
+                else:
+                    raise ValueError("Mesh is marked for bounding box export, but has no vertex position data")
+        
+        if self.keep_bounding_sphere:
+            sph = self.overrides.bounding_sphere
+            if sph.enabled:
+                binary.bounding_sphere_centre = sph.center
+                binary.bounding_sphere_radius = sph.radius
+            else:
+                if binary.vertex_format.has_positions:
+                    binary.autocalc_bounding_sphere()
+                else:
+                    raise ValueError("Mesh is marked for bounding sphere export, but has no vertex position data")
         
         return binary
     
+    def calc_bounding_box(self):
+        return MeshBinary.calc_bounding_box(self)
+    
+    def calc_bounding_sphere(self):
+        return MeshBinary.calc_bounding_sphere(self)
+
+
 class CameraInterface:
     def __init__(self):
         self.node   = None

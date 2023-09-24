@@ -146,7 +146,6 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
     return bpy_nodes, bone_transforms, [Matrix.Identity(4) for b in bone_transforms], gfs_to_bpy_bone_map, skewed_bpm_nodes
 
 
-
 def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, filepath):
     """
     This is a really bad function. It's way too long - it needs to be split
@@ -165,14 +164,17 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     main_armature.data.GFSTOOLS_ModelProperties.root_node_name   = gfs.bones[0].name if len(gfs.bones) else ""
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
     
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_box    = "AUTO" if (gfs.bounding_box_max_dims is not None) else "NONE"
+    boxprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_box
+    boxprops.export_policy = "AUTO" if (gfs.bounding_box_max_dims is not None) else "NONE"
     if gfs.bounding_box_max_dims is not None:
-        main_armature.data.GFSTOOLS_ModelProperties.bounding_box_max       = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        main_armature.data.GFSTOOLS_ModelProperties.bounding_box_min       = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-    main_armature.data.GFSTOOLS_ModelProperties.export_bounding_sphere = "AUTO" if (gfs.bounding_sphere_centre is not None) else "NONE"
+        boxprops.max_dims = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        boxprops.min_dims = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        
+    sphprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere
+    sphprops.export_policy = "AUTO" if (gfs.bounding_sphere_centre is not None) else "NONE"
     if gfs.bounding_sphere_centre is not None:
-        main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_centre = np.array(gfs.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere_radius = gfs.bounding_sphere_radius
+        sphprops.center = np.array(gfs.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        sphprops.radius = gfs.bounding_sphere_radius
     
     main_armature.rotation_mode = 'XYZ'
     
@@ -503,8 +505,21 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
         mprops.unknown_float_1  = mesh.unknown_float_1
         mprops.unknown_float_2  = mesh.unknown_float_2
     
-    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_box    = mesh.keep_bounding_box
-    bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere
+    # Bounding box
+    if mesh.keep_bounding_box:
+        mprops.bounding_box.export_policy = "AUTO"
+        mprops.bounding_box.min_dims = np.array(mesh.overrides.bounding_box.min_dims)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy() 
+        mprops.bounding_box.max_dims = np.array(mesh.overrides.bounding_box.max_dims)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+    else:
+        mprops.bounding_box.export_policy = "NONE"
+    
+    # Bounding sphere
+    if mesh.keep_bounding_sphere:
+        mprops.bounding_sphere.export_policy = "AUTO"
+        mprops.bounding_sphere.center = np.array(mesh.overrides.bounding_sphere.center)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy() 
+        mprops.bounding_sphere.radius = mesh.overrides.bounding_sphere.radius
+    else:
+        mprops.bounding_sphere.export_policy = "NONE"
     
     bpy.context.view_layer.objects.active = prev_obj
 
@@ -516,78 +531,6 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
         transform = rest_transform
     else:
 
-def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, transform):
-    # # Bounding box
-    # bbox_verts = []
-    # mx = mesh.bounding_box_max_dims
-    # mn = mesh.bounding_box_min_dims
-    # bbox_verts = [
-    #     [mx[0], mx[1], mx[2]],
-    #     [mx[0], mx[1], mn[2]],
-    #     [mx[0], mn[1], mx[2]],
-    #     [mx[0], mn[1], mn[2]],
-    #     [mn[0], mn[1], mn[2]],
-    #     [mn[0], mn[1], mx[2]],
-    #     [mn[0], mx[1], mn[2]],
-    #     [mn[0], mx[1], mx[2]]
-    # ]
-    # bbox_indices = [
-    #     [0, 1, 2],
-    #     [1, 3, 2],
-    #     [3, 1, 4],
-    #     [1, 6, 4],
-    #     [4, 5, 6],
-    #     [5, 7, 6],
-    #     [1, 0, 6],
-    #     [0, 7, 6],
-    #     [2, 0, 5],
-    #     [0, 5, 7],
-    #     [2, 3, 5],
-    #     [3, 4, 5]
-    # ]
-    # bpy_bbox = bpy.data.meshes.new(name=meshobj_name + "_bbox")
-    # bpy_bbox_object = bpy.data.objects.new(meshobj_name + "_bbox", bpy_bbox)
-    
-    # bpy.context.view_layer.objects.active = bpy_bbox_object
-    # bpy_bbox_object.data.from_pydata(bbox_verts, [], bbox_indices)
-    # bpy.context.collection.objects.link(bpy_bbox_object)
-    
-    # constraint = bpy_bbox_object.constraints.new("CHILD_OF")
-    # constraint.target = armature
-    # constraint.subtarget = bpy_bone.name
-    
-    # # Bounding sphere
-    # # Create an empty mesh and the object.
-    # bpy_bsph = bpy.data.meshes.new(meshobj_name + "_bsphere")
-    # bpy_bsph_object = bpy.data.objects.new(meshobj_name + "_bsphere", bpy_bsph)
-    
-    # # Add the object into the scene.
-    # bpy.context.collection.objects.link(bpy_bsph_object)
-    
-    # # Select the newly created object
-    # bpy.context.view_layer.objects.active = bpy_bsph_object
-    # bpy_bsph_object.select_set(True)
-    
-    # # Construct the bmesh sphere and assign it to the blender mesh.
-    # bm = bmesh.new()
-    # bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, diameter=mesh.bounding_sphere_radius/2)
-    # bm.to_mesh(bpy_bsph)
-    # bm.free()
-    
-    # transform = Matrix([
-    #     [1., 0., 0., mesh.bounding_sphere_centre[0]],
-    #     [0., 1., 0., mesh.bounding_sphere_centre[1]],
-    #     [0., 0., 1., mesh.bounding_sphere_centre[2]],
-    #     [0., 0., 0., 1]
-    # ])
-    # bpy_bsph.transform(transform)
-    
-    # bpy.ops.object.shade_smooth()
-    # bpy_bsph_object.select_set(False)
-        
-    # constraint = bpy_bsph_object.constraints.new("CHILD_OF")
-    # constraint.target = armature
-    # constraint.subtarget = bpy_bone.name
     # Set transform
     if not decomposableToTRS(transform):
         errorlog.log_warning_message(f"Mesh '{mesh_name}' has a skewed world transform. This means that non-uniform scales are present in the non-leaf nodes used to position the mesh. This is not possible to represent in Blender, and you should expect this mesh to have an incorrect rotation and scale.")
@@ -600,8 +543,6 @@ def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, tran
     bpy_mesh_object.rotation_euler = quat.to_euler('XYZ')
     bpy_mesh_object.scale = scale
     
-    pass
-        
     oprops.node = parent_node_name
     
 
@@ -610,9 +551,8 @@ def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, tran
 
 def create_uv_map_if_exists(bpy_mesh, name, texcoords):
     if texcoords[0] is not None:
-        uv_layer = bpy_mesh.uv_layers.new(name=name, do_init=True)
-        for loop_idx, loop in enumerate(bpy_mesh.loops):
-            uv_layer.data[loop_idx].uv = texcoords[loop_idx]
+        create_uv_map(bpy_mesh, name, texcoords)
+
 
 def unpack_colour(colour):
     # ARGB -> RGBA

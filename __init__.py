@@ -29,11 +29,17 @@ def init_bpy():
     from .src.BlenderIO.Properties.Lights        import GFSToolsLightProperties
     from .src.BlenderIO.Properties.Materials     import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials     import GFSToolsMaterialProperties
+    from .src.BlenderIO.Properties.Meshes        import MeshBoundingBox
+    from .src.BlenderIO.Properties.Meshes        import MeshBoundingSphere
+    from .src.BlenderIO.Properties.Meshes        import MeshBoundingBoxProps
+    from .src.BlenderIO.Properties.Meshes        import MeshBoundingSphereProps
     from .src.BlenderIO.Properties.Meshes        import GFSToolsMeshProperties, GFSToolsMeshNodeProperties
     from .src.BlenderIO.Properties.Model         import GFSToolsModelProperties
     from .src.BlenderIO.Properties.Model         import GFSToolsModelNodeProperties
     from .src.BlenderIO.Properties.Model         import ModelBoundingBox
     from .src.BlenderIO.Properties.Model         import ModelBoundingSphere
+    from .src.BlenderIO.Properties.Model         import ModelBoundingBoxProps
+    from .src.BlenderIO.Properties.Model         import ModelBoundingSphereProps
     from .src.BlenderIO.Properties.Nodes         import BlobProperty
     from .src.BlenderIO.Properties.Object        import GFSToolsObjectProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsProperties
@@ -83,7 +89,13 @@ def init_bpy():
         RegisterWindow,
         OpenDocumentation,
         ModelBoundingBox,
+        ModelBoundingBoxProps,
         ModelBoundingSphere,
+        ModelBoundingSphereProps,
+        MeshBoundingBox,
+        MeshBoundingBoxProps,
+        MeshBoundingSphere,
+        MeshBoundingSphereProps,
         GFSToolsPhysicsBoneProperties,
         GFSToolsPhysicsLinkProperties,
         GFSToolsPhysicsProperties,

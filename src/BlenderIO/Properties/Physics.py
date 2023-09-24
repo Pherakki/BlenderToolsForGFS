@@ -1,5 +1,60 @@
 import bpy
 from ..Utils.PhysicsGen import rebuild_collider
+from ..Utils.PhysicsGen import make_collider
+
+def radius_getter(self):
+    return self["radius"]
+
+
+def radius_setter(self, value):
+    self["radius"] = value
+    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
+
+
+def height_getter(self):
+    return self["height"]
+
+
+def height_setter(self, value):
+    self["height"] = value
+    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
+
+
+def collider_update(self, context):
+    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
+
+
+collider_types = [("Sphere", "Sphere", "A sphere collider"), ("Capsule", "Capsule", "A capsule collider")]
+
+
+class GFSToolsColliderProperties(bpy.types.PropertyGroup):
+    detached: bpy.props.BoolProperty(name="Detached", description="Export the collider as 'detached' rather than attached to the root bone, if available", default=False)
+    dtype: bpy.props.EnumProperty(items=collider_types, name="Type", default="Sphere", update=collider_update)
+    radius: bpy.props.FloatProperty(name="Radius", default=1., get=radius_getter, set=radius_setter)
+    height: bpy.props.FloatProperty(name="Height", default=0., get=height_getter, set=height_setter)
+
+
+class GFSToolsBackendColliderProperties(bpy.types.PropertyGroup):
+    detached: bpy.props.BoolProperty(name="Detached", default=False)
+    bone:     bpy.props.StringProperty()
+    dtype:    bpy.props.EnumProperty(items=collider_types, name="Type", default="Sphere")
+    radius:   bpy.props.FloatProperty(name="Radius", default=1)
+    height:   bpy.props.FloatProperty(name="Height", default=0.)
+    ibpm_0:   bpy.props.FloatVectorProperty(size=4, default=(1., 0., 0., 0.))
+    ibpm_1:   bpy.props.FloatVectorProperty(size=4, default=(0., 1., 0., 0.))
+    ibpm_2:   bpy.props.FloatVectorProperty(size=4, default=(0., 0., 1., 0.))
+    ibpm_3:   bpy.props.FloatVectorProperty(size=4, default=(0., 0., 0., 1.))
+    
+    def create_mesh(self, context):
+        bpy_armature_object = context.active_object
+        
+        make_collider(self.detached,
+                      self.dtype,
+                      self.height,
+                      self.radius,
+                      [*self.ibpm_0, *self.ibpm_1, *self.ibpm_2, *self.ibpm_3],
+                      self.bone,
+                      bpy_armature_object)
 
 
 class GFSToolsPhysicsBoneProperties(bpy.types.PropertyGroup):
@@ -33,37 +88,11 @@ class GFSToolsPhysicsProperties(bpy.types.PropertyGroup):
     
     active_bone_idx: bpy.props.IntProperty(options={'HIDDEN'}, default=0)
     active_link_idx: bpy.props.IntProperty(options={'HIDDEN'}, default=0)
+    colliders:       bpy.props.CollectionProperty(type=GFSToolsBackendColliderProperties, name="Colliders")
     bones:           bpy.props.CollectionProperty(type=GFSToolsPhysicsBoneProperties,     name="Bones")
     links:           bpy.props.CollectionProperty(type=GFSToolsPhysicsLinkProperties,     name="Bone Links")
 
     # Helper data
+    collider_editing_active:  bpy.props.BoolProperty(options={'HIDDEN'}, default=False)
     attach_colliders_to_bone: bpy.props.BoolProperty(name="Attach to Bone", default=False)
     active_bone: bpy.props.StringProperty(name="Bone")
-
-
-def radius_getter(self):
-    return self["radius"]
-
-
-def radius_setter(self, value):
-    self["radius"] = value
-    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
-
-
-def height_getter(self):
-    return self["height"]
-
-
-def height_setter(self, value):
-    self["height"] = value
-    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
-    
-def collider_update(self, context):
-    rebuild_collider(self.id_data, self["radius"], self["height"], self.dtype == "Capsule")
-    
-    
-class GFSToolsColliderProperties(bpy.types.PropertyGroup):
-    detached: bpy.props.BoolProperty(name="Detached", description="Export the collider as 'detached' rather than attached to the root bone, if available", default=False)
-    dtype: bpy.props.EnumProperty(items=[("Sphere", "Sphere", "Named Collider"), ("Capsule", "Capsule", "Unnamed Collider")], name="Type", default="Sphere", update=collider_update)
-    radius: bpy.props.FloatProperty(name="Radius", default=1., get=radius_getter, set=radius_setter)
-    height: bpy.props.FloatProperty(name="Height", default=0., get=height_getter, set=height_setter)

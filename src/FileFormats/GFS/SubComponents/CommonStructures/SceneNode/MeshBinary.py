@@ -165,6 +165,50 @@ class MeshBinary(Serializable):
             self.unknown_float_1 = rw.rw_float32(self.unknown_float_1)
             self.unknown_float_2 = rw.rw_float32(self.unknown_float_2)
 
+    def calc_bounding_box(self):
+        if not len(self.vertices):
+            min_dims = [0, 0, 0]
+            max_dims = [0, 0, 0]
+        elif self.vertices[0].position is None:
+            min_dims = [0, 0, 0]
+            max_dims = [0, 0, 0]
+        else:
+            max_dims = [*self.vertices[0].position]
+            min_dims = [*self.vertices[0].position]
+                    
+            for v in self.vertices:
+                pos = v.position
+                for i in range(3):
+                    max_dims[i] = max(max_dims[i], pos[i])
+                    min_dims[i] = min(min_dims[i], pos[i])
+        
+        return min_dims, max_dims
+    
+    def calc_bounding_sphere(self):
+        if not len(self.vertices):
+            center = [0, 0, 0]
+            radius = 0
+        elif self.vertices[0].position is None:
+            center = [0, 0, 0]
+            radius = 0
+        else:
+            # This isn't *exactly* right, but close enough in most cases
+            center = [sum(v.position[i] for v in self.vertices)/len(self.vertices) for i in range(3)]
+            radius = 0.
+            for v in self.vertices:
+                pos = v.position
+                dist = (p-c for p, c in zip(pos, center))
+                radius = max(sum(d*d for d in dist), radius)
+            radius = radius**.5
+        
+        return center, radius
+    
+    def autocalc_bounding_box(self):
+        self.bounding_box_min_dims, self.bounding_box_max_dims   = self.calc_bounding_box()
+    
+    def autocalc_bounding_sphere(self):
+        self.bounding_sphere_centre, self.bounding_sphere_radius = self.calc_bounding_sphere()
+
 
 class VertexAttributes:
     POSITION  = 0
