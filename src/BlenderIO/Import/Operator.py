@@ -6,6 +6,7 @@ from bpy_extras.io_utils import ImportHelper
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
 from ..Data import bone_pose_enum_options
 from ..Preferences import get_preferences
+from ..Utils.Operator import get_op_idname
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
@@ -19,11 +20,11 @@ from ..UI.HelpWindows import HelpWindow
 
 
 def set_fps(self, context):
-    if self.set_fps:
+    if self.policies.set_fps:
         context.scene.render.fps = 30
 
 def set_clip(self, context):
-    if self.set_clip:
+    if self.policies.set_clip:
         for a in context.screen.areas:
             if a.type == 'VIEW_3D':
                 for s in a.spaces:
@@ -38,23 +39,7 @@ def define_set_fps():
     )
 
 
-class ImportGFS(bpy.types.Operator, ImportHelper):
-    bl_idname = 'import_file.import_gfs'
-    bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
-    bl_options = {'REGISTER', 'UNDO'}
-    filename_ext = ".GMD"
-
-
-    debug_mode: bpy.props.BoolProperty(
-                                           default=False,
-                                           options={'HIDDEN'},
-                                      )
-
-    filter_glob: bpy.props.StringProperty(
-                                              default='*.GMD;*.GFS',
-                                              options={'HIDDEN'},
-                                          )
-    
+class ImportPolicies(bpy.types.PropertyGroup):
     set_fps: define_set_fps()
     
     set_clip: bpy.props.BoolProperty(name="Set P5R Screen Clip",
@@ -78,15 +63,38 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         items=bone_pose_enum_options()
 
     )
+
+
+class ImportGFS(bpy.types.Operator, ImportHelper):
+    bl_idname = 'import_file.import_gfs'
+    bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
+    bl_options = {'REGISTER', 'UNDO'}
+    filename_ext = ".GMD"
+    internal_idname = ''
+
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
+
+    filter_glob: bpy.props.StringProperty(
+                                              default='*.GMD;*.GFS',
+                                              options={'HIDDEN'},
+                                          )
+    
+    policies: bpy.props.PointerProperty(type=ImportPolicies)
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.set_fps        = prefs.set_fps
-        self.set_clip       = prefs.set_clip
-        self.merge_vertices = prefs.merge_vertices
-        self.bone_pose      = prefs.bone_pose
+        self.policies.set_fps        = prefs.set_fps
+        self.policies.set_clip       = prefs.set_clip
+        self.policies.merge_vertices = prefs.merge_vertices
+        self.policies.bone_pose      = prefs.bone_pose
         return super().invoke(context, event)
     
+    def draw(self, context):
+        pass
+
     @handle_warning_system("The file you are trying to import.")
     def import_file(self, context, filepath):
         if bpy.context.view_layer.objects.active is not None:        
@@ -115,7 +123,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures, errorlog)
-        armature, gfs_to_bpy_bone_map, mesh_node_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.merge_vertices, self.bone_pose, filepath)
+        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.policies.merge_vertices, self.policies.bone_pose, filepath)
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
@@ -124,7 +132,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
         
-        import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map)
+        import_epls(gfs, armature, gfs_to_bpy_bone_map)
         
         set_fps(self, context)
         set_clip(self, context)
@@ -141,12 +149,22 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         return self.import_file(context, self.filepath)
 
+    @classmethod
+    def register(cls):
+        cls.internal_idname = get_op_idname(cls)
+        
+        bpy.utils.register_class(CUSTOM_PT_GFSModelImportSettings)
+        
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(CUSTOM_PT_GFSModelImportSettings)
 
 class ImportGAP(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gap'
     bl_label = 'Persona 5 Royal - PC (.GAP)'
     bl_options = {'REGISTER', 'UNDO'}
     filename_ext = "*.GAP"
+    internal_idname = ''
 
     def fetch_armatures(self, context):
         armature_list = []
@@ -168,13 +186,16 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
                                            options={'HIDDEN'},
                                       )
     
-    set_fps: define_set_fps()
+    policies: bpy.props.PointerProperty(type=ImportPolicies)
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.set_fps = prefs.set_fps
+        self.policies.set_fps  = prefs.set_fps
         return super().invoke(context, event)
     
+    def draw(self, context):
+        pass
+
     def find_selected_model(self, context):
         sel_obj = context.active_object
         if sel_obj is None:
@@ -237,3 +258,74 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     
     def execute(self, context):
         return self.import_file(context, bpy.data.objects[self.armature_name], self.filepath)
+
+    @classmethod
+    def register(cls):
+        cls.internal_idname = get_op_idname(cls)
+        
+        bpy.utils.register_class(CUSTOM_PT_GFSAnimImportSettings)
+        
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(CUSTOM_PT_GFSAnimImportSettings)
+
+
+class CUSTOM_PT_GFSModelImportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Import Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ImportGFS.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+        policies = operator.policies
+
+        layout.prop(policies, 'set_fps')
+        layout.prop(policies, 'set_clip')
+        layout.prop(policies, 'merge_vertices')
+        layout.prop(policies, 'bone_pose')
+
+
+class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Import Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ImportGAP.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+        policies = operator.policies
+
+        layout.prop(operator, 'armature_name')
+        layout.prop(policies, 'set_fps')
+        layout.prop(policies, 'set_clip')

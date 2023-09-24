@@ -1,1 +1,1 @@
-from .Operator import ImportGFS, ImportGAP
+from .Operator import ImportGFS, ImportGAP, ImportPolicies

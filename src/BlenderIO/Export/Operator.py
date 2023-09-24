@@ -26,31 +26,7 @@ from .ExportEPLs import export_epls
 from ..WarningSystem import ErrorLogger, handle_warning_system
 
 
-class ExportGFS(bpy.types.Operator, ExportHelper):
-    bl_idname = 'export_file.export_gfs'
-    bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
-    bl_options = {'REGISTER', 'UNDO'}
-    internal_idname = ''
-    
-    
-    debug_mode: bpy.props.BoolProperty(
-        default=False,
-        options={'HIDDEN'},
-    )
-    
-    filename_ext: bpy.props.EnumProperty(
-        items=[
-            ('.GMD', '.GMD', ''),
-            ('.GFS', '.GFS', '')
-        ],
-        options={'HIDDEN'}
-    )
-
-    filter_glob: bpy.props.StringProperty(
-        default="*.GMD;*.GFS",
-        options={'HIDDEN'},
-    )
-    
+class ExportPolicies(bpy.types.PropertyGroup):
     pack_animations: bpy.props.BoolProperty(
         name="Pack Animations into Model",
         default=False
@@ -118,17 +94,45 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     version: available_versions_property()
     
+
+
+class ExportGFS(bpy.types.Operator, ExportHelper):
+    bl_idname = 'export_file.export_gfs'
+    bl_label = 'Persona 5 Royal - PC (.GMD, .GFS)'
+    bl_options = {'REGISTER', 'UNDO'}
+    internal_idname = ''
+    
+    debug_mode: bpy.props.BoolProperty(
+        default=False,
+        options={'HIDDEN'},
+    )
+    
+    filename_ext: bpy.props.EnumProperty(
+        items=[
+            ('.GMD', '.GMD', ''),
+            ('.GFS', '.GFS', '')
+        ],
+        options={'HIDDEN'}
+    )
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.GMD;*.GFS",
+        options={'HIDDEN'},
+    )
+    
+    policies: bpy.props.PointerProperty(type=ExportPolicies)
+    
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.strip_missing_vertex_groups   = prefs.strip_missing_vertex_groups
-        self.recalculate_tangents          = prefs.recalculate_tangents
-        self.throw_missing_weight_errors   = prefs.throw_missing_weight_errors
-        self.too_many_vertices_policy      = prefs.too_many_vertices_policy
-        self.too_many_vertex_groups_policy = prefs.too_many_vertex_groups_policy
-        self.multiple_materials_policy     = prefs.multiple_materials_policy
-        self.missing_uv_maps_policy        = prefs.missing_uv_maps_policy
-        self.triangulate_mesh_policy       = prefs.triangulate_mesh_policy
-        self.version                       = prefs.version
+        self.policies.strip_missing_vertex_groups   = prefs.strip_missing_vertex_groups
+        self.policies.recalculate_tangents          = prefs.recalculate_tangents
+        self.policies.throw_missing_weight_errors   = prefs.throw_missing_weight_errors
+        self.policies.too_many_vertices_policy      = prefs.too_many_vertices_policy
+        self.policies.too_many_vertex_groups_policy = prefs.too_many_vertex_groups_policy
+        self.policies.multiple_materials_policy     = prefs.multiple_materials_policy
+        self.policies.missing_uv_maps_policy        = prefs.missing_uv_maps_policy
+        self.policies.triangulate_mesh_policy       = prefs.triangulate_mesh_policy
+        self.policies.version                       = prefs.version
         return super().invoke(context, event)
 
 
@@ -155,15 +159,15 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
-        bpy_material_names, bpy_node_meshes = export_mesh_data(gfs, selected_model, errorlog, log_missing_weights=not self.strip_missing_vertex_groups, recalculate_tangents=self.recalculate_tangents, throw_missing_weight_errors=self.throw_missing_weight_errors, too_many_vertices_policy=self.too_many_vertices_policy, multiple_materials_policy=self.multiple_materials_policy, missing_uv_maps_policy=self.missing_uv_maps_policy, triangulate_mesh_policy=self.triangulate_mesh_policy, too_many_vertex_groups_policy=self.too_many_vertex_groups_policy)
         bpy_to_gfs_nodes, bind_pose_matrices = export_node_tree(gfs, selected_model, errorlog)
+        bpy_material_names = export_mesh_data(gfs, selected_model, bpy_to_gfs_nodes, bind_pose_matrices, errorlog, self.policies)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
         export_physics(gfs, selected_model, errorlog)
         export_0x000100F8(gfs, selected_model)
-        export_epls(gfs, selected_model, bpy_node_meshes, errorlog, self.do_strip_epls)
-        if self.pack_animations:
+        export_epls(gfs, selected_model, errorlog, self.policies)
+        if self.policies.pack_animations:
             export_animations(gfs, selected_model, keep_unused_anims=False)
         
         
@@ -175,7 +179,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
             return {'CANCELLED'}
         
         gfs.has_end_container = True # Put this somewhere else
-        gb = gfs.to_binary(int(self.version, 0x10))
+        gb = gfs.to_binary(int(self.policies.version, 0x10))
         model_bin = gb.get_model_block()
         if model_bin is not None:
             if model_bin.data.skinning_data.bone_count is not None:
@@ -237,10 +241,11 @@ class CUSTOM_PT_GFSModelExportSettings(bpy.types.Panel):
 
         sfile = context.space_data
         operator = sfile.active_operator
+        policies = operator.policies
 
-        layout.prop(operator, 'version')
-        layout.prop(operator, 'pack_animations')
-        layout.prop(operator, 'do_strip_epls')
+        layout.prop(policies, 'version')
+        layout.prop(policies, 'pack_animations')
+        layout.prop(policies, 'do_strip_epls')
 
 class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
     """
@@ -265,15 +270,16 @@ class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
 
         sfile = context.space_data
         operator = sfile.active_operator
+        policies = operator.policies
 
-        layout.prop(operator, 'strip_missing_vertex_groups')
-        layout.prop(operator, 'recalculate_tangents')
-        layout.prop(operator, 'throw_missing_weight_errors')
-        layout.prop(operator, 'too_many_vertices_policy')
-        layout.prop(operator, 'too_many_vertex_groups_policy')
-        layout.prop(operator, 'multiple_materials_policy')
-        layout.prop(operator, 'missing_uv_maps_policy')
-        layout.prop(operator, 'triangulate_mesh_policy')
+        layout.prop(policies, 'strip_missing_vertex_groups')
+        layout.prop(policies, 'recalculate_tangents')
+        layout.prop(policies, 'throw_missing_weight_errors')
+        layout.prop(policies, 'too_many_vertices_policy')
+        layout.prop(policies, 'too_many_vertex_groups_policy')
+        layout.prop(policies, 'multiple_materials_policy')
+        layout.prop(policies, 'missing_uv_maps_policy')
+        layout.prop(policies, 'triangulate_mesh_policy')
 
     
 class ExportGAP(bpy.types.Operator, ExportHelper):
@@ -294,10 +300,11 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     filename_ext = ".GAP"
     
     version: available_versions_property()
+    policies: bpy.props.PointerProperty(type=ExportPolicies)
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.version = prefs.version
+        self.policies.version = prefs.version
         return super().invoke(context, event)
 
 
@@ -333,7 +340,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
             return {'CANCELLED'}
         
         gfs.has_end_container = False # Put this somewhere else
-        gb = gfs.to_binary(int(self.version, 0x10))
+        gb = gfs.to_binary(int(self.policies.version, 0x10))
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.
@@ -384,7 +391,7 @@ class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
         sfile = context.space_data
         operator = sfile.active_operator
 
-        layout.prop(operator, 'version')
+        layout.prop(policies, 'version')
 
 
 def find_selected_model(errorlog):

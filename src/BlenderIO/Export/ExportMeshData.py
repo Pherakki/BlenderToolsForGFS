@@ -205,7 +205,9 @@ class MissingUVMapsError(ReportableError):
         self.mesh.select_set(False)
 
 
-def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, multiple_materials_policy):
+def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_policies):
+    multiple_materials_policy = export_policies.multiple_materials_policy
+    
     bpy_mesh = bpy_mesh_object.data
     
     index_counts = defaultdict(lambda: 0)
@@ -235,9 +237,12 @@ def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, multiple
     return 0
 
 
-def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, too_many_vertices_policy, multiple_materials_policy, missing_uv_maps_policy, triangulate_mesh_policy, too_many_vertex_groups_policy):
+def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlog, export_policies):
     # Note to self: this function is complete dogshit
     # This really needs to be cleaned up, it's disgusting to look at
+    
+    too_many_vertices_policy      = export_policies.too_many_vertices_policy
+    multiple_materials_policy     = export_policies.multiple_materials_policy
     
     # Find meshes
     meshes = []
@@ -247,7 +252,7 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
                 meshes.append(obj)
     
     material_names = set()
-    out = []
+    
     bad_meshes = []
     multiple_materials_meshes = []
     for bpy_mesh_object in meshes:
@@ -268,7 +273,7 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
 
         # Convert bpy meshes -> gfs meshes
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, triangulate_mesh_policy, too_many_vertex_groups_policy))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, errorlog, export_policies))
         
         if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
             bad_meshes.append(bpy_mesh_object)
@@ -365,7 +370,7 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
         gfs.bounding_sphere_centre = centre
         gfs.bounding_sphere_radius = max([np.linalg.norm(centre - b_min), np.linalg.norm(centre - b_max)])
 
-    return sorted(material_names), out
+    return sorted(material_names)
 
 
 def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
@@ -403,7 +408,8 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
     return out
 
 
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, triangulate_mesh_policy, too_many_vertex_groups_policy):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, material_index, errorlog, export_policies):
+    triangulate_mesh_policy = export_policies.triangulate_mesh_policy
 
     # Check if any of the mesh data is invalid... we'll accumulate these
     # into an error report for the user.
@@ -486,7 +492,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
 #####################
 # PRIVATE FUNCTIONS #
 #####################
-def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, too_many_vertex_groups_policy):
+def extract_vertex_data(mesh_obj, bone_names, errorlog, export_policies):
     # Switch to input variables
     vweight_floor = 0
     
@@ -507,7 +513,7 @@ def extract_vertex_data(mesh_obj, bone_names, errorlog, log_missing_weights, rec
 
     vidx_to_lidxs = generate_vertex_to_loops_map(mesh)
     lidx_to_fidx  = generate_loop_to_face_map(mesh)
-    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, too_many_vertex_groups_policy)
+    export_verts, export_faces, gfs_vert_to_bpy_vert = split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, export_policies)
     
     return export_verts, export_faces, gfs_vert_to_bpy_vert
 
@@ -593,7 +599,13 @@ def get_tex_idx(nodes, node_name, default_map):
     return tex_idx, uv_map_name
 
 
-def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, too_many_vertex_groups_policy):
+def split_verts_by_loop_data(bone_names, mesh_obj, vidx_to_lidxs, lidx_to_fidx, vweight_floor, errorlog, export_policies):
+    log_missing_weights           = not export_policies.strip_missing_vertex_groups
+    recalculate_tangents          = export_policies.recalculate_tangents
+    throw_missing_weight_errors   = export_policies.throw_missing_weight_errors
+    missing_uv_maps_policy        = export_policies.missing_uv_maps_policy
+    too_many_vertex_groups_policy = export_policies.too_many_vertex_groups_policy
+    
     mesh = mesh_obj.data
     
     # Figure out what vertex attributes to export 

@@ -3,12 +3,10 @@ import io
 from ...serialization.BinaryTargets import Writer
 
 
-def import_epls(gfs, armature, gfs_to_bpy_bone_map, mesh_node_map):
+def import_epls(gfs, armature, gfs_to_bpy_bone_map):
     for epl in gfs.epls:
         if epl.node == 0:
             props = armature.data.GFSTOOLS_NodeProperties
-        elif epl.node in mesh_node_map:
-            props = mesh_node_map[epl.node].GFSTOOLS_NodeProperties
         else:
             # Get bone
             bpy_bone_idx = gfs_to_bpy_bone_map[epl.node]

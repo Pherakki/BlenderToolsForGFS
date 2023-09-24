@@ -191,8 +191,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     # Get rid of root node
     bones_to_ignore.add(0)
     bpy_node_names  = [None]*len(gfs.bones)
-    mesh_node_map = {}
-
+    
     # Import nodes
     if bone_pose == "bindpose":
         bpy_nodes,            \
@@ -315,7 +314,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.context.view_layer.objects.active = initial_obj
 
-    return main_armature, gfs_to_bpy_bone_map, mesh_node_map
+    return main_armature, gfs_to_bpy_bone_map
 
 
 def filter_rigging_bones_and_ancestors(gfs):
