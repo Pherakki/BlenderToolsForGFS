@@ -443,7 +443,7 @@ class CreateCollider(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ConvertColliders(bpy.props.Operator):
+class ConvertColliders(bpy.types.Operator):
     bl_idname = "GFSTOOLS.ConvertColliders".lower()
     bl_label  = "<ERROR>"
     bl_options = {"REGISTER", "UNDO"}
