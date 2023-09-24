@@ -178,14 +178,15 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     
     bpy.ops.object.mode_set(mode='EDIT')
     
-    nodes_with_meshes = set()
-    for mesh in gfs.meshes:
-        nodes_with_meshes.add(mesh.node)
+    # nodes_with_meshes = set()
+    # for mesh in gfs.meshes:
+    #     nodes_with_meshes.add(mesh.node)
     
+    bones_to_ignore = set()
     rigged_bones, unrigged_bones = filter_rigging_bones_and_ancestors(gfs)
-    meshes_to_rename             = set.intersection(rigged_bones,   nodes_with_meshes)
-    bones_to_ignore              = set.intersection(unrigged_bones, nodes_with_meshes)
-    unrigged_bones_to_import     = set.difference  (unrigged_bones, bones_to_ignore)
+    # meshes_to_rename             = set.intersection(rigged_bones,   nodes_with_meshes)
+    # bones_to_ignore              = set.intersection(unrigged_bones, nodes_with_meshes)
+    # unrigged_bones_to_import     = set.difference  (unrigged_bones, bones_to_ignore)
     
     # Get rid of root node
     bones_to_ignore.add(0)
@@ -233,7 +234,8 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
             bpy_bone.layers[1] = True
             bpy_bone.layers[2] = False
     
-        for i in sorted(unrigged_bones_to_import):
+        #for i in sorted(unrigged_bones_to_import):
+        for i in sorted(unrigged_bones):
             remapped_index = gfs_to_bpy_bone_map[i]
             main_armature.data.bones[remapped_index].layers[0] = True
             main_armature.data.bones[remapped_index].layers[1] = False
@@ -253,7 +255,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     # Now import other nodes
     for i, node in enumerate(gfs.bones):
         # We'll import properties to the meshes during mesh import
-        if (i in bones_to_ignore) or (i in meshes_to_rename):
+        if (i in bones_to_ignore):# or (i in meshes_to_rename):
             continue
         
         bpy_bone = main_armature.data.bones[gfs_to_bpy_bone_map[i]]
@@ -294,8 +296,8 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
         mesh_groups[mesh.node].append(mesh)
     for node_idx, meshes in mesh_groups.items():
         mesh_name = bpy_node_names[node_idx]
-        bpy_mesh_obj = import_mesh_group(mesh_name, gfs.bones[node_idx], bpy_node_names[node_idx], i, meshes, bpy_node_names, main_armature, bone_transforms[node_idx], bone_rest_transforms[node_idx], materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, node_idx in meshes_to_rename)
-        mesh_node_map[node_idx] = bpy_mesh_obj.data
+        for i, mesh in zip([None, *list(range(len(meshes)))], meshes):
+            import_mesh(mesh_name, bpy_node_names[node_idx], i, mesh, bone_transforms[node_idx], bone_rest_transforms[node_idx], bpy_node_names, main_armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
     
     set_material_vertex_attributes(materials, material_vertex_attributes, errorlog)
         
@@ -344,57 +346,9 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-def import_mesh_group(mesh_name, gfs_node, parent_node_name, idx, meshes, bpy_node_names, armature, bind_transform, rest_transform, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed, requires_rename):
-    if requires_rename:
-        mesh_name += "_mesh"
-    bpy_mesh_object = import_mesh(mesh_name, parent_node_name, None, meshes[0], bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
-
-
-    bpy_mesh_object.parent = armature
     
-    # There's going to be a bug here if unrigged and rigged meshes share a
-    # positioning node.
-    # This should be fixed, but it's so unlikely that it's barely ever
-    # going to actually happen...
-    # Fix when less lazy
-    # We differentiate between rigged and unrigged meshes here in the first
-    # place because the game does too.
-    # We treat unrigged meshes as being rigged only to a single bone. That
-    # single bone can control the scale of the mesh via animation.
-    # The rigged meshes can't have their positioning node animated. So we
-    # place them in their rest pose, where they have correct access to their
-    # bones.
-    is_unrigged = meshes[0].vertices[0].indices is None
-    if is_unrigged:
-        transform = bind_transform
-    else:
-        transform = rest_transform
-        if not decomposableToTRS(transform):
-            errorlog.log_warning_message(f"Mesh '{mesh_name}' has a skewed world transform. This means that non-uniform scales are present in the non-leaf nodes used to position the mesh. This is not possible to represent in Blender, and you should expect this mesh to have an incorrect rotation and scale.")
     
-    # Set transform
-    pos, quat, scale = transform.decompose()
-    bpy_mesh_object.rotation_mode = "XYZ"
-    bpy_mesh_object.location = pos
-    bpy_mesh_object.rotation_quaternion = quat
-    bpy_mesh_object.rotation_euler = quat.to_euler('XYZ')
-    bpy_mesh_object.scale = scale
     
-  
-    # Add Node Properties
-    bpy_mesh_object.data.GFSTOOLS_NodeProperties.unknown_float = gfs_node.unknown_float
-    import_properties(gfs_node.properties, bpy_mesh_object.data.GFSTOOLS_NodeProperties.properties)
-
-    for i, mesh in enumerate(meshes[1:]):
-        child_bpy_mesh_object = import_mesh(mesh_name, parent_node_name, i, mesh, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
-    
-        child_bpy_mesh_object.parent = bpy_mesh_object
-        child_bpy_mesh_object.rotation_mode = "QUATERNION"
-        child_bpy_mesh_object.location = [0., 0., 0.]
-        child_bpy_mesh_object.rotation_quaternion = [1., 0., 0., 0.]
-        child_bpy_mesh_object.scale = [1., 1., 1.]
-  
-    return bpy_mesh_object
     
     
 def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed):

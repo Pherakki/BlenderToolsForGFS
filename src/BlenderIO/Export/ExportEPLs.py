@@ -8,8 +8,8 @@ from ...serialization.BinaryTargets import Reader
 from ..WarningSystem.Warning import ReportableError
 
 
-def export_epls(gfs, armature, bpy_node_meshes, errorlog, do_strip_epls):
-    if do_strip_epls:
+def export_epls(gfs, armature, errorlog, export_policies):
+    if export_policies.do_strip_epls:
         return
     
     # Export root node epls
@@ -26,16 +26,6 @@ def export_epls(gfs, armature, bpy_node_meshes, errorlog, do_strip_epls):
         node_idx = [b.name for b in gfs.bones].index(bone.name)
         props = bone.GFSTOOLS_NodeProperties
         
-        for epl_prop in props.epls:
-            epl = EPLInterface()
-            epl.node = node_idx
-            epl.binary = unpack_epl_binary(epl_prop)
-            gfs.epls.append(epl)
-            
-    # Export mesh epls
-    for mesh, node_idx in bpy_node_meshes:
-        props = mesh.GFSTOOLS_NodeProperties
-
         for epl_prop in props.epls:
             epl = EPLInterface()
             epl.node = node_idx

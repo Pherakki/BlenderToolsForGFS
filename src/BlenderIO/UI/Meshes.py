@@ -52,6 +52,28 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         # Help window
         ctr.operator(self.MeshHelpWindow.bl_idname)
         
+        # Rigging data
+        row = ctr.row()
+        row.prop(oprops, "attach_mode_label")
+        if not oprops.is_valid_mesh():
+            return
+        
+        if oprops.is_rigged():
+            label = oprops.attach_mode_label
+            if label == oprops.RIGGED_NEW_NODE_INVALID:
+                row.alert = True
+            
+            bpy_armature_object = bpy_mesh_object.parent
+            
+            #ctr.prop(oprops, "attach_mode")
+            attach_mode = oprops.attach_mode
+            if attach_mode == "NODE":
+                row = ctr.row()
+                row.prop_search(oprops, "node", bpy_armature_object.data, "bones")
+                
+            elif attach_mode == "MESH":
+                ctr.prop(oprops, "merged_node")
+        
         # Bounding volumes
         ctr.prop(mprops, "permit_unrigged_export") # Needs to go
         mprops.bounding_box.draw(ctr)
@@ -106,12 +128,12 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         "PROPERTIES",
         "WINDOW",
         "data", 
-        lambda context: context.mesh.GFSTOOLS_NodeProperties,
-        lambda cls, context: (context.mesh.GFSTOOLS_MeshProperties.is_mesh() and getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType).type != "MESH") 
-                             if context.mesh is not None
+        get_node_props,
+        lambda cls, context: (context.active_object.GFSTOOLS_ObjectProperties.is_valid_mesh() and context.mesh.GFSTOOLS_MeshProperties.is_mesh() and getattr(getattr(context.active_object, "parent", OBJECT_PT_GFSToolsMeshAttributesPanel.DummyType), "type", None) != "MESH") 
+                             if context.active_object is not None
                              else False,
         parent_id="OBJECT_PT_GFSToolsMeshAttributesPanel",
-        predraw=_draw_on_node
+        #predraw=_draw_on_node
     )        
     
     MeshHelpWindow = defineHelpWindow("Mesh", 
