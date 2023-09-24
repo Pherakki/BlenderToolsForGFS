@@ -28,6 +28,14 @@ def fetch_node_ids(ids, node):
 class InconsistentVersionsError(Exception):
     pass
 
+def is_close(a, b, rtol=1e-5, atol=1e-4):
+    if a is None:
+        return b is None
+    elif a == float('inf'):
+        return b == float('inf')
+    else:
+        return abs(a-b) > (atol + rtol*abs(b))
+
 def execute(data_root, error_out, start=0, stop=None, namefilter=None):
     #######################
     # VALIDATE ALL MODELS #
@@ -135,6 +143,14 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
                 m2.bounding_sphere_centre = m1.bounding_sphere_centre
                 m2.bounding_sphere_radius = m1.bounding_sphere_radius
             if model_1 is not None:
+                if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_max_dims, model_2.bounding_box_max_dims)):
+                    raise ValueError("Model bounding boxes max dims not close")
+                if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_min_dims, model_2.bounding_box_min_dims)):
+                    raise ValueError("Model bounding boxes min dims not close")
+                if not all(is_close(a, b) for a, b in zip(model_1.bounding_sphere_centre, model_2.bounding_sphere_centre)):
+                    raise ValueError("Model bounding sphere centres not close")
+                if not is_close(model_1.bounding_sphere_radius, model_2.bounding_sphere_radius):
+                    raise ValueError("Model bounding sphere radii not close")
                 model_2.bounding_box_max_dims = model_1.bounding_box_max_dims
                 model_2.bounding_box_min_dims = model_1.bounding_box_min_dims
                 model_2.bounding_sphere_centre = model_1.bounding_sphere_centre
