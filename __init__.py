@@ -70,9 +70,11 @@ def init_bpy():
     
     CLASSES = (
         AddonPreferences,
+        ImportPolicies,
         ImportGFS,
         ImportGAP,
         GFSImportSubmenu,
+        ExportPolicies,
         ExportGFS,
         ExportGAP,
         GFSExportSubmenu,
