@@ -39,6 +39,50 @@ class ModelFlags(BitVector):
     flag_31             = BitVector.DEF_FLAG(0x1F)
 
 
+class AttachmentGetter:
+    def __init__(self, attachment_type):
+        self.attachment_type = attachment_type
+        self.attachments = []
+        self.current_idx = 0
+        
+    def __call__(self, node):
+        for attachment in node.attachments:
+            if attachment.type == self.attachment_type:
+                self.attachments.append((self.current_idx, attachment.data))
+        self.current_idx += 1
+
+
+class FlatNodes:
+    def __init__(self):
+        self.nodes   = []
+        self.meshes  = []
+        self.cameras = []
+        self.lights  = []
+        self.epls    = []
+        self.morphs  = []
+
+
+class FlatNodesWalker:
+    def __init__(self):
+        self.flat_nodes = FlatNodes()
+    
+    def __call__(self, node):
+        fn = self.flat_nodes
+        
+        idx = len(fn.nodes)
+        fn.nodes.append(node)
+
+        for attachment in node.attachments:
+            if   attachment.type == 4: lst = fn.meshes
+            elif attachment.type == 5: lst = fn.cameras
+            elif attachment.type == 6: lst = fn.lights
+            elif attachment.type == 7: lst = fn.epls
+            elif attachment.type == 9: lst = fn.morphs
+            else: raise NotImplementedError("Unhandled attachment type '{atype}' encountered when flattening nodes")
+            
+            lst.append((idx, attachment.data))
+
+
 class ModelPayload(Serializable):
     TYPECODE = 0x00010003
          
@@ -62,8 +106,8 @@ class ModelPayload(Serializable):
         
         self.flags           = ModelFlags(endianness)
         self.skinning_data   = SkinningDataBinary(endianness)
-        self.bounding_box_max_dims = None
-        self.bounding_box_min_dims = None
+        self.bounding_box_max_dims  = None
+        self.bounding_box_min_dims  = None
         self.bounding_sphere_centre = None
         self.bounding_sphere_radius = None
         self.root_node = SceneNodeBinary()
@@ -84,3 +128,33 @@ class ModelPayload(Serializable):
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
         rw.rw_obj(self.root_node, version)
+        
+    def walk_nodes(self, node, operator):
+        operator(node)
+        for child in node.children[::-1]:
+            self.walk_nodes(node)
+    
+    def fetch_attachment(self, node, attachment_type):
+        ag = AttachmentGetter(attachment_type)
+        self.walk_nodes(node, ag)
+        return ag.attachments
+    
+    def get_meshes(self):
+        return self.fetch_attachment(self.root_node, 4)
+    
+    def get_cameras(self):
+        return self.fetch_attachment(self.root_node, 5)
+    
+    def get_lights(self):
+        return self.fetch_attachment(self.root_node, 6)
+    
+    def get_epls(self):
+        return self.fetch_attachment(self.root_node, 7)
+    
+    def get_morphs(self):
+        return self.fetch_attachment(self.root_node, 9)
+    
+    def flattened(self):
+        fn = FlatNodesWalker()
+        self.walk_nodes(self.root_node, fn)
+        return fn.flat_nodes
