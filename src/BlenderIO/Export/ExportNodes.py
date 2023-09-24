@@ -7,6 +7,7 @@ from ..Utils.Maths import convert_rotation_to_quaternion, convert_YDirBone_to_XD
 
 
 def export_node_tree(gfs, armature, errorlog):
+    bind_pose_matrices = []
     # Export the bounding box/sphere flags when doing the meshes
     gfs.flag_3 = armature.data.GFSTOOLS_ModelProperties.flag_3
     
@@ -39,6 +40,7 @@ def export_node_tree(gfs, armature, errorlog):
     for prop in rn_props.properties:
         root_node.add_property(*prop.extract_data(prop))
     
+    bind_pose_matrices.append(bm)
     bone_list = {bone.name: i for i, bone in enumerate([root_node, *armature.data.bones])}
     # Export each bone as a node
     for bone in armature.data.bones:
@@ -73,7 +75,9 @@ def export_node_tree(gfs, armature, errorlog):
         # Export the custom properties
         for prop in bone.GFSTOOLS_NodeProperties.properties:
             node.add_property(*prop.extract_data(prop))
-
+            
+        bind_pose_matrices.append(bm)
+    return bone_list, bind_pose_matrices
 
 #####################
 # PRIVATE FUNCTIONS #

@@ -1,6 +1,3 @@
-import array
-import math
-
 import bpy
 from mathutils import Matrix, Vector, Quaternion
 import numpy as np
@@ -8,12 +5,15 @@ import numpy as np
 from ...FileFormats.GFS import GFSBinary
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode import NodeInterface
 from ..Globals import GFS_MODEL_TRANSFORMS
+from ..modelUtilsTest.Mesh.Import.MergeVertices import create_merged_mesh
+from ..modelUtilsTest.Mesh.Import.LoopImport    import create_loop_normals
+from ..modelUtilsTest.Mesh.Import.LoopImport    import create_uv_map
+from ..modelUtilsTest.Mesh.Import.LoopImport    import create_color_map
 from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup, decomposableToTRS
 from ..Utils.Object import lock_obj_transforms
 from ..Utils.UVMapManagement import make_uv_map_name
 from ..Utils.UVMapManagement import make_color_map_name
 from .Utils.BoneConstruction import construct_bone, resize_bone_length
-from .Utils.VertexMerging    import merge_vertices, facevert_to_loop_lookup
 from .ImportProperties import import_properties
 
 
@@ -346,12 +346,46 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
+class MergedVertex:
+    # Required interface    
+    @classmethod
+    def from_unmerged(cls, unmerged_verts):
+        # All vertices entering this should have the same position, indices, and weights
+        v0 = unmerged_verts[0]
+        instance = cls(v0.position, v0.indices, v0.weights)
+        
+        return instance
     
+    @staticmethod
+    def get_position(v):
+        return v.position
     
+    @staticmethod
+    def get_merge_attributes(v):
+        return [v.indices, v.weights]
     
+    @staticmethod
+    def is_invalid(v):
+        return any(any(np.isnan(l)) for l in (v.position, v.indices, v.weights))
     
+    # Specialized implementation
+    def __init__(self, position, indices, weights):
+        self.position = position
+        self.indices  = indices
+        self.weights  = weights
+
+
+class UnweightedMergedVertex(MergedVertex):
+    @staticmethod
+    def get_merge_attributes(v):
+        return []
     
-def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed):
+    @staticmethod
+    def is_invalid(v):
+        return any(np.isnan(v.position))
+
+
+def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_transform, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed):
     # Cache the Blender states we are going to change
     prev_obj = bpy.context.view_layer.objects.active
     
@@ -360,127 +394,65 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
         meshobj_name = mesh_name
     else:
         meshobj_name = f"{mesh_name}_{idx}"
-    bpy_mesh = bpy.data.meshes.new(name=meshobj_name)
-    bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
+    
+    is_rigged = mesh.vertices[0].weights is not None
     
     # Merge vertices if requested
-    new_verts, new_tris, new_facevert_to_old_facevert_map = merge_vertices(
-        mesh.vertices, 
-        [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])], 
-        is_vertex_merge_allowed,
-        errorlog
-    )
+    mesh_data = create_merged_mesh(meshobj_name, 
+                                   mesh.vertices, 
+                                   [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])],
+                                   MergedVertex if is_rigged else UnweightedMergedVertex,
+                                   attempt_merge=is_vertex_merge_allowed,
+                                   errorlog=errorlog)
+    bpy_mesh = mesh_data.bpy_mesh
     
-    # Generate geometry
-    positions = [v.position for v in new_verts]
-    bpy_mesh_object.data.from_pydata(positions, [], new_tris)
+    # Construct object
+    bpy_mesh_object = bpy.data.objects.new(meshobj_name, bpy_mesh)
     bpy.context.collection.objects.link(bpy_mesh_object)
-    
     bpy.context.view_layer.objects.active = bpy_mesh_object
+    
+    oprops    = bpy_mesh_object.GFSTOOLS_ObjectProperties
+    mprops    = bpy_mesh.GFSTOOLS_MeshProperties
+    new_verts = mesh_data.vertices
 
-    # Generate loop data
-    loop_data, bpy_vert_to_gfs_verts = facevert_to_loop_lookup(new_facevert_to_old_facevert_map, bpy_mesh, mesh)
+    ####################
+    # IMPORT LOOP DATA #
+    ####################
+    loop_data             = mesh_data.loops
+    bpy_vert_to_gfs_verts = mesh_data.verts_to_modelverts_map
 
     # Create UVs
-    add_uv_map(bpy_mesh, [v.texcoord0 for v in loop_data], make_uv_map_name(0))
-    add_uv_map(bpy_mesh, [v.texcoord1 for v in loop_data], make_uv_map_name(1))
-    add_uv_map(bpy_mesh, [v.texcoord2 for v in loop_data], make_uv_map_name(2))
-    add_uv_map(bpy_mesh, [v.texcoord3 for v in loop_data], make_uv_map_name(3))
-    add_uv_map(bpy_mesh, [v.texcoord4 for v in loop_data], make_uv_map_name(4))
-    add_uv_map(bpy_mesh, [v.texcoord5 for v in loop_data], make_uv_map_name(5))
-    add_uv_map(bpy_mesh, [v.texcoord6 for v in loop_data], make_uv_map_name(6))
-    add_uv_map(bpy_mesh, [v.texcoord7 for v in loop_data], make_uv_map_name(7))
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(0), [v.texcoord0 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(1), [v.texcoord1 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(2), [v.texcoord2 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(3), [v.texcoord3 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(4), [v.texcoord4 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(5), [v.texcoord5 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(6), [v.texcoord6 for v in loop_data])
+    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(7), [v.texcoord7 for v in loop_data])
 
     # Create Vertex Colours
-    add_color_map(bpy_mesh, [v.color1 for v in loop_data], make_color_map_name(0))
-    add_color_map(bpy_mesh, [v.color2 for v in loop_data], make_color_map_name(1))
+    create_color_map_if_exists(bpy_mesh, make_color_map_name(0), [v.color1 for v in loop_data], "BYTE")
+    create_color_map_if_exists(bpy_mesh, make_color_map_name(1), [v.color2 for v in loop_data], "BYTE")
 
     # Rig
-    if new_verts[0].indices is not None:
-        groups = {}
-        for vert_idx, v in enumerate(new_verts):
-            for bone_idx, weight in zip(v.indices, v.weights):
-                if weight == 0.:
-                    continue
-                if bone_idx not in groups:
-                    groups[bone_idx] = []
-                groups[bone_idx].append((vert_idx, weight))
-        for bone_idx, vg in groups.items():
-            vertex_group = bpy_mesh_object.vertex_groups.new(name=bpy_node_names[bone_idx])
-            for vert_idx, vert_weight in vg:
-                vertex_group.add([vert_idx], vert_weight, 'REPLACE')
-    # Remove this if you can get bone parenting to work.
-    else:
-        vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
-        vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
-        bpy_mesh_object.data.GFSTOOLS_MeshProperties.permit_unrigged_export = True
+    if is_rigged: rig_mesh   (bpy_mesh_object, bpy_node_names,   new_verts, mprops)
+    else:         attach_mesh(bpy_mesh_object, parent_node_name, new_verts, mprops)
 
     # Assign normals
     if loop_data[0].normal is not None:
-        # Works thanks to this stackexchange answer https://blender.stackexchange.com/a/75957
-        # which a few of these comments below are also taken from
-        # Do this LAST because it can remove some loops
-        bpy_mesh.create_normals_split()
-        for face in bpy_mesh.polygons:
-            face.use_smooth = True  # loop normals have effect only if smooth shading ?
-    
-        # Set loop normals
-        loop_normals = [l.normal for l in loop_data]
-        bpy_mesh.loops.foreach_set("normal", [subitem for item in loop_normals for subitem in item])
-    
-        bpy_mesh.validate(clean_customdata=False)  # important to not remove loop normals here!
-        bpy_mesh.update()
-    
-        clnors = array.array('f', [0.0] * (len(bpy_mesh.loops) * 3))
-        bpy_mesh.loops.foreach_get("normal", clnors)
-    
-        bpy_mesh.polygons.foreach_set("use_smooth", [True] * len(bpy_mesh.polygons))
-        # This line is pretty smart (came from the stackoverflow answer)
-        # 1. Creates three copies of the same iterator over clnors
-        # 2. Splats those three copies into a zip
-        # 3. Each iteration of the zip now calls the iterator three times, meaning that three consecutive elements
-        #    are popped off
-        # 4. Turn that triplet into a tuple
-        # In this way, a flat list is iterated over in triplets without wasting memory by copying the whole list
-        bpy_mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
-    
-    bpy_mesh.use_auto_smooth = True
+        create_loop_normals(bpy_mesh, [l.normal for l in loop_data])
     
     ####################
     # SET THE MATERIAL #
     ####################
-    if mesh.material_name is not None:
-        active_material, gfs_material = materials.get(mesh.material_name)
-        if active_material is not None:
-            bpy_mesh.materials.append(active_material)
-            bpy.data.objects[meshobj_name].active_material = active_material
-            vas = material_vertex_attributes[mesh.material_name]
-            
-            vas.normals  .append(mesh.vertices[0].normal   is not None)
-            vas.tangents .append(mesh.vertices[0].tangent  is not None)
-            vas.binormals.append(mesh.vertices[0].binormal is not None)
-            vas.color0s  .append(mesh.vertices[0].color1   is not None)
-            vas.color1s  .append(mesh.vertices[0].color2   is not None)
-            
-            if mesh.vertices[0].tangent is not None:
-                if len(bpy_mesh.uv_layers):
-                    uv_map = bpy_mesh.uv_layers.active
-                    
-                    if gfs_material.normal_texture is not None:
-                        uv_idx = gfs_material.texture_indices_1.normal
-                        uv_map_name = make_uv_map_name(uv_idx)
-                        if uv_map_name in bpy_mesh.uv_layers:
-                            uv_map = bpy_mesh.uv_layers[uv_map_name]
-                        else:
-                            errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' uses material '{active_material.name}', which uses UV map '{uv_map_name}' for the normal texture but this UV map is not present on the mesh - falling back to the active UV map to calculate vertex tangents.")
-                    else:
-                        errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangent vectors, but no normal map - using the default UV map to calculate tangent vectors.")
-                    
-                    bpy_mesh.calc_tangents(uvmap=uv_map.name)
-                else:
-                    errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangents but no UV layers - tangents cannot be imported to Blender.")
-        
+    set_material(bpy_mesh_object, mesh, materials, material_vertex_attributes, errorlog)
+    
+    #################
+    # FINALISE MESH #
+    #################
     bpy_mesh.validate(verbose=True, clean_customdata=False)
+    bpy_mesh.use_auto_smooth = True
     
     bpy_mesh.update()
     bpy_mesh.update()
@@ -493,91 +465,57 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bpy_node_names, armature
     #####################
     # IMPORT MORPH KEYS #
     #####################
-    # This is a bit simplified.
-    # There are a few bits of data here that are neglected since they seem to
-    # always take the same values / be unused.
-    # The entire morph set has flags that always seems to just be 0x00000002,
-    # each morph itself has flags that always seems to just be 0x00000002,
-    # and then there's a set of integers as an attachment to nodes with
-    # morphable meshes that always just seems to be a list of 0s with the
-    # same length as the morph set.
-    # We're just going to ignore that data on import (since it's not added to
-    # the GFSInterface) and create it on export automatically with the
-    # GFSInterface.
-    # Use the GFSBinary in a separate script if, for some reason, these values
-    # need to be edited!
     if len(mesh.morphs):
-        # Create base position
-        sk_basis = bpy_mesh_object.shape_key_add(name='Basis')
-        sk_basis.interpolation = 'KEY_LINEAR'
-        bpy_mesh_object.data.shape_keys.use_relative = True
-        for vidx, v in enumerate(new_verts):
-            sk_basis.data[vidx].co = v.position
+        import_morphs(bpy_mesh_object, new_verts, mesh, bpy_vert_to_gfs_verts)
         
-        # Import each shape key
-        for i, position_deltas in enumerate(mesh.morphs):
-            sk = bpy_mesh_object.shape_key_add(name=str(i))
-            sk.interpolation = "KEY_LINEAR"
-            
-            # position each vert
-            for bpy_vidx, gfs_vidxs in bpy_vert_to_gfs_verts.items():
-                vert_position_deltas = [position_deltas[gfs_vidx] for gfs_vidx in gfs_vidxs]
-                
-                # Safety check: Check that the shapekey is manifold
-                avg_pos = [sum(dim)/len(vert_position_deltas) for dim in zip(*vert_position_deltas)]
-                for delta in vert_position_deltas:
-                    # Check if any of the deltas disagree by more than 0.1% from the average
-                    if any([abs((pi - di)/di) > 0.001 
-                            if (abs(di) > 0.001 and abs(pi) > 0.001) 
-                            else (pi - di) > 0.001
-                            for pi, di
-                            in zip(avg_pos, delta)]):
-                        raise ValueError("Invalid shapekey. Try importing without merging vertices.")
-                        
-                sk.data[bpy_vidx].co = [x1 + x2 for x1, x2 in zip(new_verts[bpy_vidx].position, vert_position_deltas[0])]
-                
     ########################
     # DO THE LEFTOVER DATA #
     ########################
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_5   = mesh.flag_5
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_7   = mesh.flag_7
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_8   = mesh.flag_8
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_9   = mesh.flag_9
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_10  = mesh.flag_10
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_11  = mesh.flag_11
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_13  = mesh.flag_13
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_14  = mesh.flag_14
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_15  = mesh.flag_15
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_16  = mesh.flag_16
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_17  = mesh.flag_17
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_18  = mesh.flag_18
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_19  = mesh.flag_19
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_20  = mesh.flag_20
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_21  = mesh.flag_21
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_22  = mesh.flag_22
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_23  = mesh.flag_23
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_24  = mesh.flag_24
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_25  = mesh.flag_25
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_26  = mesh.flag_26
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_27  = mesh.flag_27
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_28  = mesh.flag_28
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_29  = mesh.flag_29
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_30  = mesh.flag_30
-    bpy_mesh.GFSTOOLS_MeshProperties.flag_31  = mesh.flag_31
+    mprops.flag_5   = mesh.flag_5
+    mprops.flag_7   = mesh.flag_7
+    mprops.flag_8   = mesh.flag_8
+    mprops.flag_9   = mesh.flag_9
+    mprops.flag_10  = mesh.flag_10
+    mprops.flag_11  = mesh.flag_11
+    mprops.flag_13  = mesh.flag_13
+    mprops.flag_14  = mesh.flag_14
+    mprops.flag_15  = mesh.flag_15
+    mprops.flag_16  = mesh.flag_16
+    mprops.flag_17  = mesh.flag_17
+    mprops.flag_18  = mesh.flag_18
+    mprops.flag_19  = mesh.flag_19
+    mprops.flag_20  = mesh.flag_20
+    mprops.flag_21  = mesh.flag_21
+    mprops.flag_22  = mesh.flag_22
+    mprops.flag_23  = mesh.flag_23
+    mprops.flag_24  = mesh.flag_24
+    mprops.flag_25  = mesh.flag_25
+    mprops.flag_26  = mesh.flag_26
+    mprops.flag_27  = mesh.flag_27
+    mprops.flag_28  = mesh.flag_28
+    mprops.flag_29  = mesh.flag_29
+    mprops.flag_30  = mesh.flag_30
+    mprops.flag_31  = mesh.flag_31
 
-    
-    bpy_mesh.GFSTOOLS_MeshProperties.unknown_0x12  = mesh.unknown_0x12
+    # Unknowns
+    mprops.unknown_0x12  = mesh.unknown_0x12
     if mesh.unknown_float_1 is not None and mesh.unknown_float_2 is not None:
-        bpy_mesh.GFSTOOLS_MeshProperties.has_unknown_floats = True
-        bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_1  = mesh.unknown_float_1
-        bpy_mesh.GFSTOOLS_MeshProperties.unknown_float_2  = mesh.unknown_float_2
+        mprops.has_unknown_floats = True
+        mprops.unknown_float_1  = mesh.unknown_float_1
+        mprops.unknown_float_2  = mesh.unknown_float_2
     
     bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_box    = mesh.keep_bounding_box
     bpy_mesh.GFSTOOLS_MeshProperties.export_bounding_sphere = mesh.keep_bounding_sphere
     
     bpy.context.view_layer.objects.active = prev_obj
 
-    return bpy_mesh_object
+    ####################
+    # SCENE PROPERTIES #
+    ####################
+    bpy_mesh_object.parent = armature
+    if is_rigged:
+        transform = rest_transform
+    else:
 
 def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, transform):
     # # Bounding box
@@ -651,10 +589,27 @@ def import_bounding_volumes(name, idx, mesh, bpy_bones, armature, bpy_bone, tran
     # constraint = bpy_bsph_object.constraints.new("CHILD_OF")
     # constraint.target = armature
     # constraint.subtarget = bpy_bone.name
+    # Set transform
+    if not decomposableToTRS(transform):
+        errorlog.log_warning_message(f"Mesh '{mesh_name}' has a skewed world transform. This means that non-uniform scales are present in the non-leaf nodes used to position the mesh. This is not possible to represent in Blender, and you should expect this mesh to have an incorrect rotation and scale.")
+
+
+    pos, quat, scale = transform.decompose()
+    bpy_mesh_object.rotation_mode = "XYZ"
+    bpy_mesh_object.location = pos
+    bpy_mesh_object.rotation_quaternion = quat
+    bpy_mesh_object.rotation_euler = quat.to_euler('XYZ')
+    bpy_mesh_object.scale = scale
     
     pass
         
-def add_uv_map(bpy_mesh, texcoords, name):
+    oprops.node = parent_node_name
+    
+
+    return bpy_mesh_object
+
+
+def create_uv_map_if_exists(bpy_mesh, name, texcoords):
     if texcoords[0] is not None:
         uv_layer = bpy_mesh.uv_layers.new(name=name, do_init=True)
         for loop_idx, loop in enumerate(bpy_mesh.loops):
@@ -662,22 +617,47 @@ def add_uv_map(bpy_mesh, texcoords, name):
 
 def unpack_colour(colour):
     # ARGB -> RGBA
-    return [colour[1]/255, colour[2]/255, colour[3]/255, colour[0]/255]
+    return [colour[1], colour[2], colour[3], colour[0]]
 
-def add_color_map(bpy_mesh, color_data, name):
+
+def create_color_map_if_exists(bpy_mesh, name, color_data, datatype):
     if color_data[0] is not None:
-        # Blender 3.2+ 
-        # vertex_colors is equivalent to color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER").
-        # Original data is just uint8s so this is accurate.
-        if hasattr(bpy_mesh, "color_attributes"):
-            ca = bpy_mesh.color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER")
-            for loop_idx, loop in enumerate(bpy_mesh.loops):
-                ca.data[loop_idx].color = unpack_colour(color_data[loop_idx])
-        # Blender 2.81-3.2
-        else:
-            vc = bpy_mesh.vertex_colors.new(name=name)
-            for loop_idx, loop in enumerate(bpy_mesh.loops):
-                vc.data[loop_idx].color = unpack_colour(color_data[loop_idx])
+        create_color_map(bpy_mesh, name, color_data, [unpack_colour(c) for c in color_data])
+
+
+def set_material(bpy_mesh_object, gfs_mesh, materials, material_vertex_attributes, errorlog):
+    bpy_mesh = bpy_mesh_object.data
+    
+    if gfs_mesh.material_name is not None:
+        active_material, gfs_material = materials.get(gfs_mesh.material_name)
+        if active_material is not None:
+            bpy_mesh.materials.append(active_material)
+            bpy_mesh_object.active_material = active_material
+            vas = material_vertex_attributes[gfs_mesh.material_name]
+            
+            vas.normals  .append(gfs_mesh.vertices[0].normal   is not None)
+            vas.tangents .append(gfs_mesh.vertices[0].tangent  is not None)
+            vas.binormals.append(gfs_mesh.vertices[0].binormal is not None)
+            vas.color0s  .append(gfs_mesh.vertices[0].color1   is not None)
+            vas.color1s  .append(gfs_mesh.vertices[0].color2   is not None)
+            
+            if gfs_mesh.vertices[0].tangent is not None:
+                if len(bpy_mesh.uv_layers):
+                    uv_map = bpy_mesh.uv_layers.active
+                    
+                    if gfs_material.normal_texture is not None:
+                        uv_idx = gfs_material.texture_indices_1.normal
+                        uv_map_name = make_uv_map_name(uv_idx)
+                        if uv_map_name in bpy_mesh.uv_layers:
+                            uv_map = bpy_mesh.uv_layers[uv_map_name]
+                        else:
+                            errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' uses material '{active_material.name}', which uses UV map '{uv_map_name}' for the normal texture but this UV map is not present on the mesh - falling back to the active UV map to calculate vertex tangents.")
+                    else:
+                        errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangent vectors, but no normal map - using the default UV map to calculate tangent vectors.")
+                    
+                    bpy_mesh.calc_tangents(uvmap=uv_map.name)
+                else:
+                    errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' has tangents but no UV layers - tangents cannot be imported to Blender.")
 
 
 def import_camera(name, i, camera, armature, bpy_node_names):
@@ -799,6 +779,73 @@ def import_light(name, i, light, armature, bpy_node_names):
     transform = Quaternion([.5**.5, 0., 0., .5**.5]).to_matrix().to_4x4()
     bpy_light_object.matrix_local = transform
 
+
+def rig_mesh(bpy_mesh_object, bpy_node_names, new_verts, mprops):
+    mprops.permit_unrigged_export = False
+    groups = {}
+    for vert_idx, v in enumerate(new_verts):
+        for bone_idx, weight in zip(v.indices, v.weights):
+            if weight == 0.:
+                continue
+            if bone_idx not in groups:
+                groups[bone_idx] = []
+            groups[bone_idx].append((vert_idx, weight))
+    for bone_idx, vg in groups.items():
+        vertex_group = bpy_mesh_object.vertex_groups.new(name=bpy_node_names[bone_idx])
+        for vert_idx, vert_weight in vg:
+            vertex_group.add([vert_idx], vert_weight, 'REPLACE')
+
+
+def attach_mesh(bpy_mesh_object, parent_node_name, new_verts, mprops):
+    vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
+    vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
+    mprops.permit_unrigged_export = True
+    
+    
+def import_morphs(bpy_mesh_object, new_verts, mesh, bpy_vert_to_gfs_verts):
+    # This is a bit simplified.
+    # There are a few bits of data here that are neglected since they seem to
+    # always take the same values / be unused.
+    # The entire morph set has flags that always seems to just be 0x00000002,
+    # each morph itself has flags that always seems to just be 0x00000002,
+    # and then there's a set of integers as an attachment to nodes with
+    # morphable meshes that always just seems to be a list of 0s with the
+    # same length as the morph set.
+    # We're just going to ignore that data on import (since it's not added to
+    # the GFSInterface) and create it on export automatically with the
+    # GFSInterface.
+    # Use the GFSBinary in a separate script if, for some reason, these values
+    # need to be edited!
+    
+    # Create base position
+    sk_basis = bpy_mesh_object.shape_key_add(name='Basis')
+    sk_basis.interpolation = 'KEY_LINEAR'
+    bpy_mesh_object.data.shape_keys.use_relative = True
+    for vidx, v in enumerate(new_verts):
+        sk_basis.data[vidx].co = v.position
+    
+    # Import each shape key
+    for i, position_deltas in enumerate(mesh.morphs):
+        sk = bpy_mesh_object.shape_key_add(name=str(i))
+        sk.interpolation = "KEY_LINEAR"
+        
+        # position each vert
+        for bpy_vidx, gfs_vidxs in bpy_vert_to_gfs_verts.items():
+            vert_position_deltas = [position_deltas[gfs_vidx] for gfs_vidx in gfs_vidxs]
+            
+            # Safety check: Check that the shapekey is manifold
+            avg_pos = [sum(dim)/len(vert_position_deltas) for dim in zip(*vert_position_deltas)]
+            for delta in vert_position_deltas:
+                # Check if any of the deltas disagree by more than 0.1% from the average
+                if any([abs((pi - di)/di) > 0.001 
+                        if   (abs(di) > 0.001 and abs(pi) > 0.001) 
+                        else (pi - di) > 0.001
+                        for  (pi, di)
+                        in   zip(avg_pos, delta)]):
+                    raise ValueError("Invalid shapekey. Try importing without merging vertices.")
+                    
+            sk.data[bpy_vidx].co = [x1 + x2 for x1, x2 in zip(new_verts[bpy_vidx].position, vert_position_deltas[0])]
+            
 
 def make_bounding_box(gfs):
     maxes = []

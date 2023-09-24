@@ -2,7 +2,7 @@ import array
 from collections import defaultdict
 
 import bpy
-from mathutils import Matrix, Quaternion
+from mathutils import Matrix, Quaternion, Vector
 import numpy as np
 
 from ..Globals import GFS_MODEL_TRANSFORMS
@@ -14,6 +14,8 @@ from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary impo
 
 from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
 #from ..modelUtilsTest.Mesh.Export.Attributes import get_colors
+
+from .ExportModel.Vertices import extract_vertices
 
 VERTEX_LIMIT = 6192
 
@@ -249,13 +251,22 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
     bad_meshes = []
     multiple_materials_meshes = []
     for bpy_mesh_object in meshes:
-        material_index = validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, multiple_materials_policy)
+        oprops = bpy_mesh_object.GFSTOOLS_ObjectProperties
         
-        node_id = len(gfs.bones)
-        out.append((bpy_mesh_object.data, node_id))
+        if not oprops.is_valid_mesh():
+            errorlog.log_warning_message(f"THIS IS A BUG: An invalid mesh '{bpy_mesh_object.name}' made its way to the exporter when it should have been skipped. This mesh has NOT been exported and your export is otherwise unaffected, but this message should have never appeared. Please create an Issue on the GitHub page with FULL reproduction instructions and any required files to reproduce this error message.")
+        
+        existing_meshes = set(o.name for o in bpy.data.objects)
+        material_index = validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_policies)
+        
+        # Get node ID
+        if oprops.requires_new_node():
+            node_id = len(gfs.bones)
+        else:
+            node_name = oprops.get_node_name()
+            node_id = bpy_to_gfs_node[node_name]
 
         # Convert bpy meshes -> gfs meshes
-        # This should now be able to return a LIST of meshes...
         gfs_meshes = []
         gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, triangulate_mesh_policy, too_many_vertex_groups_policy))
         
@@ -274,18 +285,47 @@ def export_mesh_data(gfs, armature, errorlog, log_missing_weights, recalculate_t
                 for v in gm.vertices:
                     v.indices = None
                     v.weights = None
-            parent_idx = node_idx
-            
-        # Now create the transforms for the node
-        pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
         
-        # Other crap, create node
-        node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
-        bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
-        gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
-        for prop in node_props.properties:
-            gfs_node.add_property(*prop.extract_data(prop))
-    
+        # Handle the new vs. attached node behaviours
+        if oprops.requires_new_node():
+            if oprops.get_rigged_type() == oprops.RIGGED_NEW_NODE_INVALID:
+                errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' is associated with the bone '{oprops.node}', but this bone does not exist in the armature '{armature.name}'. A new bone '{bpy_mesh_object.name}' has been generated in the exported GFS file to associate with the mesh instead.")
+            
+            # Create new node with the mesh transform
+            parent_idx = 0
+            bind_pose_matrix = convert_Zup_to_Yup(bpy_mesh_object.matrix_local)
+            parent_relative_bind_pose_matrix = armature.matrix_local.inverted() @ bind_pose_matrix    
+                
+            # Now create the transforms for the node
+            pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
+            
+            # Other crap, create node
+            node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
+            bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
+            gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
+            for prop in node_props.properties:
+                gfs_node.add_property(*prop.extract_data(prop))
+        else:
+            # Transform the vertex data by the mesh/node discrepancy
+            bpm = bind_pose_matrices[node_id]
+            relative_transform = convert_Yup_to_Zup(bpm).inverted() @ bpy_mesh_object.matrix_local
+            
+            for gfs_mesh in gfs_meshes:
+                vs = gfs_mesh.vertices
+                # Position
+                if vs[0].position is not None:
+                    for v in vs: v.position = (relative_transform @ Vector([*v.position, 1.]))[:3]
+                # Normal
+                if vs[0].normal is not None:
+                    for v in vs: v.normal   = (relative_transform @ Vector([*v.normal,   0.]))[:3]
+                # Tangent
+                if vs[0].tangent is not None:
+                    for v in vs: v.tangent  = (relative_transform @ Vector([*v.tangent,  0.]))[:3]
+                # Binormal
+                if vs[0].binormal is not None:
+                    for v in vs: v.binormal = (relative_transform @ Vector([*v.binormal, 0.]))[:3]
+            
+        
     if len(bad_meshes):
         if too_many_vertices_policy == "IGNORE":
             pass
@@ -383,7 +423,11 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
-    vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, log_missing_weights, recalculate_tangents, throw_missing_weight_errors, missing_uv_maps_policy, too_many_vertex_groups_policy)
+    #vertices, indices, gfs_vert_to_bpy_vert = extract_vertex_data(bpy_mesh_object, bone_names, errorlog, export_policies)
+    mesh_buffers = extract_vertices(bpy_mesh_object, bone_names, errorlog, export_policies)
+    vertices = mesh_buffers.vertices
+    indices = mesh_buffers.indices
+    gfs_vert_to_bpy_vert = mesh_buffers.vbo_vert_to_bpy_vert_map
     
     # 2) We already checked for vertices belonging to more than 4 vertex groups
     #    and verts with missing vertex group bones in the data extraction
@@ -406,38 +450,38 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     # Export flags we can't currently deduce from Blender data...
     # We might be able to represent some of these flags within Blender itself
     # if we can figure out what some of them do.
-    mesh.flag_5 = mesh_props.flag_5
-    mesh.flag_7 = mesh_props.flag_7
-    mesh.flag_8 = mesh_props.flag_8
-    mesh.flag_9 = mesh_props.flag_9
-    mesh.flag_10 = mesh_props.flag_10
-    mesh.flag_11 = mesh_props.flag_11
-    mesh.flag_13 = mesh_props.flag_13
-    mesh.flag_14 = mesh_props.flag_14
-    mesh.flag_15 = mesh_props.flag_15
-    mesh.flag_16 = mesh_props.flag_16
-    mesh.flag_17 = mesh_props.flag_17
-    mesh.flag_18 = mesh_props.flag_18
-    mesh.flag_19 = mesh_props.flag_19
-    mesh.flag_20 = mesh_props.flag_20
-    mesh.flag_21 = mesh_props.flag_21
-    mesh.flag_22 = mesh_props.flag_22
-    mesh.flag_23 = mesh_props.flag_23
-    mesh.flag_24 = mesh_props.flag_24
-    mesh.flag_25 = mesh_props.flag_25
-    mesh.flag_26 = mesh_props.flag_26
-    mesh.flag_27 = mesh_props.flag_27
-    mesh.flag_28 = mesh_props.flag_28
-    mesh.flag_29 = mesh_props.flag_29
-    mesh.flag_30 = mesh_props.flag_30
-    mesh.flag_31 = mesh_props.flag_31
+    gfs_mesh.flag_5 = mesh_props.flag_5
+    gfs_mesh.flag_7 = mesh_props.flag_7
+    gfs_mesh.flag_8 = mesh_props.flag_8
+    gfs_mesh.flag_9 = mesh_props.flag_9
+    gfs_mesh.flag_10 = mesh_props.flag_10
+    gfs_mesh.flag_11 = mesh_props.flag_11
+    gfs_mesh.flag_13 = mesh_props.flag_13
+    gfs_mesh.flag_14 = mesh_props.flag_14
+    gfs_mesh.flag_15 = mesh_props.flag_15
+    gfs_mesh.flag_16 = mesh_props.flag_16
+    gfs_mesh.flag_17 = mesh_props.flag_17
+    gfs_mesh.flag_18 = mesh_props.flag_18
+    gfs_mesh.flag_19 = mesh_props.flag_19
+    gfs_mesh.flag_20 = mesh_props.flag_20
+    gfs_mesh.flag_21 = mesh_props.flag_21
+    gfs_mesh.flag_22 = mesh_props.flag_22
+    gfs_mesh.flag_23 = mesh_props.flag_23
+    gfs_mesh.flag_24 = mesh_props.flag_24
+    gfs_mesh.flag_25 = mesh_props.flag_25
+    gfs_mesh.flag_26 = mesh_props.flag_26
+    gfs_mesh.flag_27 = mesh_props.flag_27
+    gfs_mesh.flag_28 = mesh_props.flag_28
+    gfs_mesh.flag_29 = mesh_props.flag_29
+    gfs_mesh.flag_30 = mesh_props.flag_30
+    gfs_mesh.flag_31 = mesh_props.flag_31
     
     # Finally log the name of the material so we can pass it on to the material
     # exporter in a different function
     if material_name is not None:
         export_materials.add(material_name)
     
-    return mesh
+    return gfs_mesh
 
 #####################
 # PRIVATE FUNCTIONS #
@@ -484,10 +528,10 @@ def generate_loop_to_face_map(mesh):
 
 def pack_colour(colour):
     # RGBA -> ARGB
-    return tuple([int(max(min(round(colour[3]*255, 0), 255), 0)),
-                  int(max(min(round(colour[0]*255, 0), 255), 0)), 
-                  int(max(min(round(colour[1]*255, 0), 255), 0)),
-                  int(max(min(round(colour[2]*255, 0), 255), 0))])
+    return tuple([int(max(min(round(colour[3]*255), 255), 0)),
+                  int(max(min(round(colour[0]*255), 255), 0)), 
+                  int(max(min(round(colour[1]*255), 255), 0)),
+                  int(max(min(round(colour[2]*255), 255), 0))])
 
 def extract_colours(bpy_mesh, map_name):
     # Blender 3.2+ 
@@ -513,8 +557,10 @@ def extract_colours(bpy_mesh, map_name):
         return tuple([pack_colour(l.color) for l in vc.data])
 
 
+
+
 def extract_colour_map(bpy_mesh_obj, idx, errorlog):
-    map_name = make_color_map_name(0)
+    map_name = make_color_map_name(idx)
     cols = extract_colours(bpy_mesh_obj.data, map_name)
     if cols == 0:
         errorlog.log_warning_message(f"Could not find '{map_name}' on mesh '{bpy_mesh_obj.name}' required by material '{bpy_mesh_obj.active_material.name}' - defaulting to white (1, 1, 1, 1) for each vertex")
