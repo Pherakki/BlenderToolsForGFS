@@ -28,4 +28,5 @@ class ModelTransforms:
     def bone_axis_permutation(self, value):
         self._bone_axis_permutation.set_from_matrix4x4(value)
 
+
 NULL_TRANSFORM = ModelTransforms()

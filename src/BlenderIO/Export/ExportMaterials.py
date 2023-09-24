@@ -566,7 +566,7 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
             errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' does not have an input UV map. Defaulting to UV map 0."))
         if tex_idx is None:
             tex_idx = 0
-            
+        
         # THIS IS WRONG
         # tex_idx_1 and tex_idx_2 CAN BE DIFFERENT IN SOME RARE CASES!!!
         create_sampler(tex_idx, tex_idx, image_name,
