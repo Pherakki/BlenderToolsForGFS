@@ -44,6 +44,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Object        import GFSToolsObjectProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsBoneProperties
+    from .src.BlenderIO.Properties.Physics       import GFSToolsBackendColliderProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsColliderProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsLinkProperties
     from .src.BlenderIO.Properties.Scene         import GFSToolsSceneProperties
@@ -99,6 +100,7 @@ def init_bpy():
         GFSToolsPhysicsBoneProperties,
         GFSToolsPhysicsLinkProperties,
         GFSToolsPhysicsProperties,
+        GFSToolsBackendColliderProperties,
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
         OBJECT_PT_GFSToolsAnimationPackDataPanel,

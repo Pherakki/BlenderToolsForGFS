@@ -1,6 +1,4 @@
 import bpy
-from ..Properties.Physics import GFSToolsPhysicsProperties
-from ..Properties.Physics import GFSToolsPhysicsLinkProperties
 from ..Utils.Object import get_model_props
 from ..Utils.PhysicsGen import make_collider, repair_col_material, get_col_material
 
@@ -418,7 +416,7 @@ def check_armature_context(self, context):
 class CreateCollider(bpy.types.Operator):
     bl_idname = "GFSTOOLS.CreateColliders".lower()
     bl_label = "Create Collider"
-    bl_options = {'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
     
     def execute(self, context):
         err = check_armature_context(self, context)
@@ -443,6 +441,20 @@ class CreateCollider(bpy.types.Operator):
         
         self.report({'INFO'}, f"Created new collider '{c.name}'")
         return {'FINISHED'}
+
+
+class ConvertColliders(bpy.props.Operator):
+    bl_idname = "GFSTOOLS.ConvertColliders".lower()
+    bl_label  = "<ERROR>"
+    bl_options = {"REGISTER", "UNDO"}
+    
+    def execute(self, context):
+        err = check_armature_context(self, context)
+        if len(err): return err
+        
+        bpy_armature_obj = context.active_object
+        bpy_armature     = bpy_armature_obj.data
+        props            = bpy_armature.GFSTOOLS_ModelProperties.physics
 
 
 class OBJECT_PT_GFSToolsPhysicsDataPanel(bpy.types.Panel):
