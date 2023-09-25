@@ -110,7 +110,7 @@ def synchronised_bone_data_from_fcurves(fcurves_dict):
 
 def synchronised_object_transforms_from_fcurves(fcurves_dict):
     obj_fcurves = object_transforms_from_fcurves(fcurves_dict)
-    synchronised_transforms_from_fcurves(obj_fcurves.values())
+    synchronised_transforms_from_fcurves([obj_fcurves])
     return obj_fcurves
 
 

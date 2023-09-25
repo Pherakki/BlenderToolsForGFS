@@ -288,7 +288,7 @@ def get_action_data(action, bpy_armature_obj, is_blend):
         # Extract animation data
         positions = obj_fcurves.get("location", {})
         rotations = obj_fcurves.get("rotation_quaternion", {})
-        rotations = {k: [q.x, q.y, q.z, q.w] for k, q in rotations.items()}
+        rotations = {k: [q[1], q[2], q[3], q[0]] for k, q in rotations.items()}
         scales    = obj_fcurves.get("scale", {})
     
         fps = 30
