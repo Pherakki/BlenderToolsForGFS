@@ -194,7 +194,7 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     
     q_rotations = {k: Quaternion([v[3], v[0], v[1], v[2]]) for k, v in rotations.items()}
 
-    b_positions, b_rotations, b_scales = parent_to_bind(bpy_bone, positions.values(), q_rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
+    b_positions, b_rotations, b_scales = parent_to_bind_blend(bpy_bone, positions.values(), q_rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
     b_positions = {k: v for k, v in zip(positions.keys(), b_positions)}
     b_rotations = {k: v for k, v in zip(rotations.keys(), b_rotations)}
     b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
