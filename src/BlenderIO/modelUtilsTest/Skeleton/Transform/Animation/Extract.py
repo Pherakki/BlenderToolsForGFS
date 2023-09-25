@@ -124,8 +124,6 @@ def synchronised_quat_bone_data_from_fcurves(fcurves_dict, bones):
                 data["rotation_quaternion"] = {k: euler_to_quat(e, rotation_mode).normalized() for k, e in data["rotation_euler"].items()}
         if 'rotation_euler' in data:
             del data['rotation_euler']
-        if 'rotation_quaternion' not in data:
-            data['rotation_quaternion'] = {}
     return bone_fcurves
 
 
@@ -136,8 +134,6 @@ def synchronised_quat_object_transforms_from_fcurves(fcurves_dict, obj):
         obj_fcurves["rotation_quaternion"] = {k: euler_to_quat(e, rotation_mode).normalized() for k, e in obj_fcurves["rotation_euler"].items()}
     if 'rotation_euler' in obj_fcurves:
         del obj_fcurves['rotation_euler']
-    if 'rotation_quaternion' not in obj_fcurves:
-        obj_fcurves['rotation_quaternion'] = {}
     return obj_fcurves
 
 
