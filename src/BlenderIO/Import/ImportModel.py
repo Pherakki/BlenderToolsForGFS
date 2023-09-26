@@ -562,7 +562,7 @@ def unpack_colour(colour):
 
 def create_color_map_if_exists(bpy_mesh, name, color_data, datatype):
     if color_data[0] is not None:
-        create_color_map(bpy_mesh, name, color_data, [unpack_colour(c) for c in color_data])
+        create_color_map(bpy_mesh, name, [unpack_colour(c) for c in color_data], datatype)
 
 
 def set_material(bpy_mesh_object, gfs_mesh, materials, material_vertex_attributes, errorlog):

@@ -16,7 +16,8 @@ def get_colors(bpy_mesh_obj, use_colors, map_name, data_format, errorlog=None, t
     
     bpy_mesh = bpy_mesh_obj.data
     
-    nloops = len(bpy_mesh.loops)
+    loops  = bpy_mesh.loops
+    nloops = len(loops)
     if data_format not in ("BYTE", "FLOAT"):
         raise NotImplementedError("Invalid data format provided to 'get_colors'. Options are 'BYTE' or 'FLOAT'.")
     if use_colors:
@@ -55,11 +56,11 @@ def get_colors(bpy_mesh_obj, use_colors, map_name, data_format, errorlog=None, t
         #############################################
         # the .color member will always return a float value
         if data_format == "FLOAT":
-            if transform is None: return data
-            else:                 return [transform(d) for d in data]
+            if transform is None: return [tuple(d) for d in data]
+            else:                 return [tuple(transform(d, l)) for d, l in zip(data, loops)]
         elif data_format == "BYTE":
-            if transform is None: return [          [int(min(255, max(0, round(e*255)))) for e in d]  for d in data]
-            else:                 return [transform([int(min(255, max(0, round(e*255)))) for e in d]) for d in data]
+            if transform is None: return [          tuple([int(min(255, max(0, round(e*255)))) for e in d])     for d    in data            ]
+            else:                 return [tuple(transform([int(min(255, max(0, round(e*255)))) for e in d], l)) for d, l in zip(data, loops)]
         else:
             raise NotImplementedError("Unhandled output data type '{data_format}'")
         
