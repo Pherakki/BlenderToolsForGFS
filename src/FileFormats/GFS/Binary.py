@@ -24,7 +24,7 @@ class GFSBinary(Serializable):
     def __repr__(self):
         return f"[GFS] Has {len(self.containers)} container{'' if len(self.containers) == 1 else 's'}"
         
-    def read_write(self, rw):
+    def read_write(self, rw, warnings=None):
         self.magic      = rw.rw_bytestring(self.magic, 4)
         if (self.magic != b'GFS0'):
             raise NotAGFSFileError(self.magic)
@@ -42,14 +42,21 @@ class GFSBinary(Serializable):
                 
                 # Validate container size
                 if ctr.size:
-                    rw.assert_equal(ctr.size, rw.tell() - start_offset)
+                    if warnings is None:
+                        rw.assert_equal(ctr.size, rw.tell() - start_offset)
+                    elif ctr.size != rw.tell() - start_offset:
+                        warnings.append(f"Size of container {hex(ctr.type)} is {rw.tell() - start_offset}, expected {ctr.size}")
                 
                 # Check if final container
                 if rw.peek_bytestring(1) == b'':
                     finished = True
-                    
+            
             # Check there's no more data
-            rw.assert_at_eof()
+            if warnings is None:
+                rw.assert_at_eof()
+            else:
+                if rw.peek_bytestring(1) != b'':
+                    warnings.append("Reached the end of the GFS file, but more data remains in the file")
                 
         else:
             for ctr in self.containers:

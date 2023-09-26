@@ -77,7 +77,7 @@ class GFSInterface:
     @classmethod
     def from_file(cls, filepath, warnings=None):
         binary = GFSBinary()
-        binary.read(filepath)
+        binary.read(filepath, warnings=warnings)
         return cls.from_binary(binary, duplicate_data=False, warnings=warnings)
 
     @classmethod
