@@ -132,7 +132,7 @@ class ModelPayload(Serializable):
     def walk_nodes(self, node, operator):
         operator(node)
         for child in node.children[::-1]:
-            self.walk_nodes(node)
+            self.walk_nodes(child, operator)
     
     def fetch_attachment(self, node, attachment_type):
         ag = AttachmentGetter(attachment_type)
