@@ -264,15 +264,21 @@ class AnimationInterface:
                 anim.compress = True
                 anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
-                anim.track_groups.append([0, 1])
+                # WRONG but will do for now
+                anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 31:
                 anim.compress = True
                 anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
-                anim.track_groups.append([0])
+                # WRONG but will do for now
+                anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                anim.track_groups.append([0, 2])
             elif track_binary.keyframe_type == 32:
                 anim.compress = True
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
-                anim.track_groups.append([1])
+                # WRONG but will do for now
+                anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                anim.track_groups.append([1, 2])
             elif track_binary.keyframe_type == 33:
                 anim.compress = True
                 anim.scales    = {f: scale_scl(kf.scale)    for f, kf in zip(track_binary.frames, track_binary.values)}
