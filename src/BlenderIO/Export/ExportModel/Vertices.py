@@ -225,6 +225,7 @@ def construct_vertex(vertex_data, loop_data):
 def group_sort_key(g):
     return g.weight
 
+
 class GFSVertexGetter:
     def __init__(self, bone_names, vertex_group_idx_to_name_map, export_policies, errorlog):
         # Vertex group data

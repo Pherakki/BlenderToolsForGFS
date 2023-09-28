@@ -78,7 +78,7 @@ class NonTriangularFacesError(ReportableError):
         self.mesh.data.vertices.foreach_set("select", (False,) * len(self.mesh.data.vertices))
         if self.prev_obj is not None:
             bpy.context.view_layer.objects.active = self.prev_obj
-
+        
 
 class DisplayableMeshesError(ReportableError):
     __slots__ = ("meshes",)
@@ -96,7 +96,7 @@ class DisplayableMeshesError(ReportableError):
         
     def hideErrorData(self):
         pass
-
+        
 
 class MissingVertexGroupsError(DisplayableVerticesError):
     def __init__(self, mesh, vertex_indices, bone_names):
@@ -128,6 +128,7 @@ class MultipleMaterialsError(DisplayableMeshesError):
         super().__init__(msg, meshes)
 
 
+
 class PartiallyUnriggedMeshError(DisplayableVerticesError):
     def __init__(self, mesh, vertex_indices):
         msg = f"Mesh '{mesh.name}' has {len(vertex_indices)}/{len(mesh.data.vertices)} vertices that are unrigged. These vertices have been selected for you."
@@ -141,7 +142,11 @@ class TooManyIndicesError(DisplayableVerticesError):
 
 
 class TooManyVerticesError(DisplayableMeshesError):
-    VERTEX_LIMIT = VERTEX_LIMIT
+    vtx_limit = VERTEX_LIMIT
+    
     def __init__(self, meshes):
-        msg = f"{len(meshes)} meshes need to be split into more than {self.VERTEX_LIMIT} vertices. These have been selected for you"
+        msg = f"{len(meshes)} meshes need to be split into more than {self.vtx_limit} vertices. These have been selected for you"
         super().__init__(msg, meshes)
+
+
+
