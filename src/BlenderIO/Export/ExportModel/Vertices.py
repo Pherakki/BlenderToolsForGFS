@@ -64,9 +64,12 @@ def extract_vertices(bpy_mesh_obj, bone_names, errorlog, export_policies):
         get_colors(bpy_mesh_obj,    used_attributes.requires_color1, make_color_map_name(1), "BYTE", errorlog, transform=lambda x,l: [x[3], x[0], x[1], x[2]]),    
     ]
     
-    # Convert to VAO/IBO
-    vertex_group_idx_to_name_map = {g.index: g.name for g in bpy_mesh_obj.vertex_groups}
-    vertex_getter = GFSVertexGetter(bone_names, vertex_group_idx_to_name_map, export_policies, errorlog)
+    # Convert to VBO/IBO
+    if bpy_mesh_obj.GFSTOOLS_ObjectProperties.is_unrigged():
+        vertex_getter = GFSUnriggedVertexGetter()
+    else:
+        vertex_group_idx_to_name_map = {g.index: g.name for g in bpy_mesh_obj.vertex_groups}
+        vertex_getter = GFSVertexGetter(bone_names, vertex_group_idx_to_name_map, export_policies, errorlog)
     mesh_buffers = bpy_mesh_to_VBO_IBO(bpy_mesh, vertex_getter, loop_data, construct_vertex)
     vertex_getter.log_errors(bpy_mesh_obj, mesh_buffers.vertices)
     
@@ -226,6 +229,17 @@ def group_sort_key(g):
     return g.weight
 
 
+class GFSUnriggedVertexGetter:
+    def __init__(self):
+        pass
+    
+    def __call__(self, vert_idx, vertex):
+        return vertex.co, None, None
+    
+    def log_errors(self, bpy_mesh_obj, vertices):
+        pass
+
+    
 class GFSVertexGetter:
     def __init__(self, bone_names, vertex_group_idx_to_name_map, export_policies, errorlog):
         # Vertex group data
