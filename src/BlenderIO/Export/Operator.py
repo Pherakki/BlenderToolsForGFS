@@ -32,6 +32,10 @@ class ExportPolicies(bpy.types.PropertyGroup):
         default=False
     )
 
+    combine_new_mesh_nodes: bpy.props.BoolProperty(
+        name="Combine New Mesh Nodes",
+        default=False
+    )
     
     do_strip_epls: bpy.props.BoolProperty(
         name="Strip EPLs",
@@ -91,7 +95,7 @@ class ExportPolicies(bpy.types.PropertyGroup):
         description="Decide the export behavior in the event of a mesh having any non-triangular faces",
         default="ERROR"
     )
-    
+
     version: available_versions_property()
     
 
@@ -124,6 +128,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
+        
+        # Get from preferences
+        self.policies.combine_new_mesh_nodes        = prefs.combine_new_mesh_nodes
         self.policies.strip_missing_vertex_groups   = prefs.strip_missing_vertex_groups
         self.policies.recalculate_tangents          = prefs.recalculate_tangents
         self.policies.throw_missing_weight_errors   = prefs.throw_missing_weight_errors
@@ -245,6 +252,7 @@ class CUSTOM_PT_GFSModelExportSettings(bpy.types.Panel):
 
         layout.prop(policies, 'version')
         layout.prop(policies, 'pack_animations')
+        layout.prop(policies, 'combine_new_mesh_nodes')
         layout.prop(policies, 'do_strip_epls')
 
 class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):

@@ -44,6 +44,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="bindpose"
     )
     
+    combine_new_mesh_nodes: bpy.props.BoolProperty(
+        name="Combine New Mesh Nodes",
+        default=False
+    )
+    
     strip_missing_vertex_groups: bpy.props.BoolProperty(
         name="Strip Missing Vertex Groups",
         description="Default setting for 'Strip Missing Vertex Groups' on export",

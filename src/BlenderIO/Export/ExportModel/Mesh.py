@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import bpy
-from mathutils import Quaternion, Vector
+from mathutils import Quaternion, Vector, Matrix
 import numpy as np
 
 from ...Globals import GFS_MODEL_TRANSFORMS
@@ -16,10 +16,13 @@ from .Vertices import extract_vertices
 
 
 VERTEX_LIMIT = TooManyVerticesError.vtx_limit
+COMBINED_NODE_NAME = "mesh"
+
 
 def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlog, export_policies):
     too_many_vertices_policy      = export_policies.too_many_vertices_policy
     multiple_materials_policy     = export_policies.multiple_materials_policy
+    combine_new_mesh_nodes        = export_policies.combine_new_mesh_nodes
     
     # Find meshes
     meshes = []
@@ -70,32 +73,27 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
         
         # Handle the new vs. attached node behaviours
         if oprops.requires_new_node():
+            export_name = COMBINED_NODE_NAME if combine_new_mesh_nodes else bpy_mesh_object.name
             if oprops.get_rigged_type() == oprops.RIGGED_NEW_NODE_INVALID:
-                errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' is associated with the bone '{oprops.node}', but this bone does not exist in the armature '{armature.name}'. A new bone '{bpy_mesh_object.name}' has been generated in the exported GFS file to associate with the mesh instead.")
+                errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' is associated with the bone '{oprops.node}', but this bone does not exist in the armature '{armature.name}'. A new bone '{export_name}' has been generated in the exported GFS file to associate with the mesh instead.")
             
+            if combine_new_mesh_nodes:
+                for gfs_mesh in gfs_meshes:
+                    bake_mesh_transform(gfs_mesh, bpy_mesh_object.matrix_local)
+                continue
             # Create new node with the mesh transform
-            create_mesh_node(gfs, bpy_mesh_object.name, armature, bpy_mesh_object.matrix_local, bpy_mesh_object.data.GFSTOOLS_NodeProperties)
+            create_mesh_node(gfs, export_name, armature, bpy_mesh_object.matrix_local, bpy_mesh_object.data.GFSTOOLS_NodeProperties)
         else:
             # Transform the vertex data by the mesh/node discrepancy
             bpm = bind_pose_matrices[node_id]
             relative_transform = convert_Yup_to_Zup(bpm).inverted() @ bpy_mesh_object.matrix_local
             
             for gfs_mesh in gfs_meshes:
-                vs = gfs_mesh.vertices
-                # Position
-                if vs[0].position is not None:
-                    for v in vs: v.position = (relative_transform @ Vector([*v.position, 1.]))[:3]
-                # Normal
-                if vs[0].normal is not None:
-                    for v in vs: v.normal   = (relative_transform @ Vector([*v.normal,   0.]))[:3]
-                # Tangent
-                if vs[0].tangent is not None:
-                    for v in vs: v.tangent  = (relative_transform @ Vector([*v.tangent,  0.]))[:3]
-                # Binormal
-                if vs[0].binormal is not None:
-                    for v in vs: v.binormal = (relative_transform @ Vector([*v.binormal, 0.]))[:3]
-            
-        
+                bake_mesh_transform(gfs_mesh, relative_transform)
+    
+    if combine_new_mesh_nodes:
+        create_mesh_node(gfs, COMBINED_NODE_NAME, armature, Matrix.Identity(4))
+    
     if len(bad_meshes):
         if too_many_vertices_policy == "IGNORE":
             pass
@@ -361,3 +359,19 @@ def create_mesh_node(gfs, name, armature, bind_matrix, node_props=None):
     gfs_node = gfs.add_node(parent_idx, uname, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], getattr(node_props, "unknown_float", 1.0), bpm)        
     for prop in getattr(node_props, "properties", []):
         gfs_node.add_property(*prop.extract_data(prop))
+
+
+def bake_mesh_transform(gfs_mesh, transform):
+    vs = gfs_mesh.vertices
+    # Position
+    if vs[0].position is not None:
+        for v in vs: v.position = (transform @ Vector([*v.position, 1.]))[:3]
+    # Normal
+    if vs[0].normal is not None:
+        for v in vs: v.normal   = (transform @ Vector([*v.normal,   0.]))[:3]
+    # Tangent
+    if vs[0].tangent is not None:
+        for v in vs: v.tangent  = (transform @ Vector([*v.tangent,  0.]))[:3]
+    # Binormal
+    if vs[0].binormal is not None:
+        for v in vs: v.binormal = (transform @ Vector([*v.binormal, 0.]))[:3]
