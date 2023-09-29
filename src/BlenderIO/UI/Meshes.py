@@ -24,6 +24,56 @@ def get_node_props(context):
         return bones[bone_name].GFSTOOLS_NodeProperties
 
 
+def get_armature_bones(self, context):
+    return [b.name for b in context.active_object.GFSTOOLS_ObjectProperties.get_armature().data.bones]
+
+
+def get_armature_enum(self, context):
+    return [(name, name, "") for name in get_armature_bones(self, context)]
+
+
+class ConvertToUnriggedMesh(bpy.types.Operator):
+    bl_idname = "gfstools.converttounrigged"
+    bl_label = "Convert To Unrigged"
+    bl_property = "bone_name"
+
+    bone_name: bpy.props.EnumProperty(items=get_armature_enum)
+    
+    @classmethod
+    def poll(cls, context):
+        if context is None:
+            return False
+        if context.active_object is None:
+            return False
+        if context.active_object.type != "MESH":
+            return False
+        if not context.active_object.GFSTOOLS_ObjectProperties.is_valid_mesh():
+            return False
+        
+        return context.active_object.GFSTOOLS_ObjectProperties.is_mesh()
+        
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.invoke_search_popup(self)
+        print(">>", self.bone_name)
+        return {'FINISHED'}
+
+    def execute(self, context):
+        bpy_mesh_object = context.active_object
+        if self.bone_name not in set(get_armature_bones(self, context)):
+            bpy_armature_object = bpy_mesh_object.GFSTOOLS_ObjectProperties.get_armature()
+            self.report({'ERROR'}, f"'{self.bone_name}' is not a bone in '{bpy_armature_object.name}'")
+            return {'CANCELLED'}
+        for vg in list(bpy_mesh_object.vertex_groups):
+            bpy_mesh_object.vertex_groups.remove(vg)
+        vg = bpy_mesh_object.vertex_groups.new(name=self.bone_name)
+        vg.add(list(range(len(bpy_mesh_object.data.vertices))), 1, 'REPLACE')
+        bpy_mesh_object.data.GFSTOOLS_MeshProperties.permit_unrigged_export = True
+        self.report({'INFO'}, f"Made '{bpy_mesh_object.name}' a GFS Unrigged Mesh on bone '{self.bone_name}'")
+        return {'FINISHED'}
+
+
+
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
     bl_idname      = "OBJECT_PT_GFSToolsMeshAttributesPanel"
@@ -73,6 +123,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
                 
             elif attach_mode == "MESH":
                 ctr.prop(oprops, "merged_node")
+        ctr.operator(ConvertToUnriggedMesh.bl_idname)
         
         # Bounding volumes
         ctr.prop(mprops, "permit_unrigged_export") # Needs to go
@@ -110,12 +161,14 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
 
     @classmethod
     def register(cls):
+        bpy.utils.register_class(ConvertToUnriggedMesh)
         bpy.utils.register_class(cls.NodePropertiesPanel)
         bpy.utils.register_class(cls.MeshHelpWindow)
         bpy.utils.register_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
     
     @classmethod
     def unregister(cls):
+        bpy.utils.unregister_class(ConvertToUnriggedMesh)
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
         bpy.utils.unregister_class(cls.MeshHelpWindow)
         bpy.utils.unregister_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
