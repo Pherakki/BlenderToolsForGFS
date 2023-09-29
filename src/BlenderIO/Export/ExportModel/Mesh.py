@@ -8,6 +8,7 @@ from ...Globals import GFS_MODEL_TRANSFORMS
 from ...Utils.Maths import convert_Zup_to_Yup, convert_Yup_to_Zup
 
 from ...modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
+from ...modelUtilsTest.Misc.ID.UniqueName import new_unique_name
 from .Errors import MultipleMaterialsError
 from .Errors import NonTriangularFacesError
 from .Errors import TooManyVerticesError
@@ -73,19 +74,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
                 errorlog.log_warning_message(f"Mesh '{bpy_mesh_object.name}' is associated with the bone '{oprops.node}', but this bone does not exist in the armature '{armature.name}'. A new bone '{bpy_mesh_object.name}' has been generated in the exported GFS file to associate with the mesh instead.")
             
             # Create new node with the mesh transform
-            parent_idx = 0
-            bind_pose_matrix = convert_Zup_to_Yup(bpy_mesh_object.matrix_local)
-            parent_relative_bind_pose_matrix = armature.matrix_local.inverted() @ bind_pose_matrix    
-                
-            # Now create the transforms for the node
-            pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
-            
-            # Other crap, create node
-            node_props = bpy_mesh_object.data.GFSTOOLS_NodeProperties
-            bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
-            gfs_node = gfs.add_node(parent_idx, bpy_mesh_object.name, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], node_props.unknown_float, bpm)        
-            for prop in node_props.properties:
-                gfs_node.add_property(*prop.extract_data(prop))
+            create_mesh_node(gfs, bpy_mesh_object.name, armature, bpy_mesh_object.matrix_local, bpy_mesh_object.data.GFSTOOLS_NodeProperties)
         else:
             # Transform the vertex data by the mesh/node discrepancy
             bpm = bind_pose_matrices[node_id]
@@ -357,3 +346,18 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
         export_materials.add(material_name)
     
     return gfs_mesh
+
+def create_mesh_node(gfs, name, armature, bind_matrix, node_props=None):
+    parent_idx = 0
+    bind_pose_matrix = convert_Zup_to_Yup(bind_matrix)
+    parent_relative_bind_pose_matrix = armature.matrix_local.inverted() @ bind_pose_matrix    
+        
+    # Now create the transforms for the node
+    pos, rot, scl = parent_relative_bind_pose_matrix.decompose()
+    
+    # Other crap, create node
+    bpm = [*bind_pose_matrix[0], *bind_pose_matrix[1], *bind_pose_matrix[2]]
+    uname = new_unique_name(name, set([b.name for b in gfs.bones]))
+    gfs_node = gfs.add_node(parent_idx, uname, [pos.x, pos.y, pos.z], [rot.x, rot.y, rot.z, rot.w], [scl.x, scl.y, scl.z], getattr(node_props, "unknown_float", 1.0), bpm)        
+    for prop in getattr(node_props, "properties", []):
+        gfs_node.add_property(*prop.extract_data(prop))
