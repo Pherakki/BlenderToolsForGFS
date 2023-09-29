@@ -55,6 +55,11 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
             return False
         return True
     
+    def get_armature(self):
+        if not self.is_valid_mesh():
+            return None
+        return self.id_data.parent
+    
     def is_rigged(self):
         return not self.is_unrigged()
     
