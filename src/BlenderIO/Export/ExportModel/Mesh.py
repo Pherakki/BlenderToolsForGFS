@@ -294,14 +294,14 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     if bbox.export_policy == "MANUAL":
         obox = gfs_mesh.overrides.bounding_box
         obox.enabled = True
-        obox.min_dims = np.array(bbox.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        obox.max_dims = np.array(bbox.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        obox.min_dims = np.array(bbox.min_dims)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        obox.max_dims = np.array(bbox.max_dims)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
     
     if bsph.export_policy == "MANUAL":
         osph = gfs_mesh.overrides.bounding_sphere
         osph.enabled = True
-        osph.min_dims = np.array(bsph.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        osph.max_dims = np.array(bsph.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        osph.center = np.array(bsph.center)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        osph.radius = np.array(bsph.radius)# @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
     
     
     # Export flags we can't currently deduce from Blender data...
