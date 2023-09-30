@@ -25,12 +25,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
     combine_new_mesh_nodes        = export_policies.combine_new_mesh_nodes
     
     # Find meshes
-    meshes = []
-    for obj in armature.children:
-        if obj.type == "MESH":
-            if obj.data.GFSTOOLS_MeshProperties.is_mesh():
-                meshes.append(obj)
-    
+    meshes = armature.GFSTOOLS_ObjectProperties.get_model_meshes()
     material_names = set()
     
     bad_meshes = []

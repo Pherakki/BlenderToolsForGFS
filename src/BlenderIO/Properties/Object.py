@@ -19,7 +19,36 @@ def get_label(self):
 def poll_merged_node(self, bpy_object):
     return bpy_object.type == "MESH"
 
-class GFSToolsObjectProperties(bpy.types.PropertyGroup):
+
+class GFSToolsObjectProperties(bpy.types.PropertyGroup):    
+    ############
+    # ARMATURE #
+    ############
+    def is_armature(self):
+        return self.id_data.type == "ARMATURE"
+    
+    def is_model(self):
+        return self.is_armature()
+    
+    def is_epl(self):
+        return False
+    
+    def get_model_meshes(self):
+        if not self.is_model():
+            raise ValueError("Is not a GFS Model")
+            
+        meshes = []
+        for c in self.id_data.children:
+            if not c.GFSTOOLS_ObjectProperties.is_mesh():
+                continue
+            if not c.data.GFSTOOLS_MeshProperties.is_mesh():
+                continue
+            meshes.append(c)
+        return meshes
+            
+    ########
+    # MESH #
+    ########
     attach_mode_label: bpy.props.StringProperty(name="State", get=get_label)
     attach_mode: bpy.props.EnumProperty(items=[("NODE", "Node", "Attach to the specified node"),
                                                ("MESH", "Mesh", "Attach to the same node as another mesh")],
