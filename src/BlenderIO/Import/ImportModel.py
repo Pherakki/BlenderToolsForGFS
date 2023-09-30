@@ -167,9 +167,10 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     boxprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_box
     boxprops.export_policy = "AUTO" if (gfs.bounding_box_max_dims is not None) else "NONE"
     if gfs.bounding_box_max_dims is not None:
-        boxprops.max_dims = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        boxprops.min_dims = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        
+        maxd = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        mind = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        boxprops.max_dims = np.max([maxd, mind], axis=0)
+        boxprops.min_dims = np.min([maxd, mind], axis=0)
     sphprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere
     sphprops.export_policy = "AUTO" if (gfs.bounding_sphere_centre is not None) else "NONE"
     if gfs.bounding_sphere_centre is not None:

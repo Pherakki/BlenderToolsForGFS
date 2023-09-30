@@ -114,8 +114,10 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
     aprops     = armature.data.GFSTOOLS_ModelProperties
     boxprops = aprops.bounding_box
     if boxprops.export_policy == "MANUAL":
-        gfs.bounding_box_max_dims = np.array(boxprops.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        gfs.bounding_box_min_dims = np.array(boxprops.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        maxd = np.array(boxprops.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        mind = np.array(boxprops.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.bounding_box_max_dims = np.max([maxd, mind], axis=0)
+        gfs.bounding_box_min_dims = np.min([maxd, mind], axis=0)
     elif boxprops.export_policy == "AUTO":
         gfs.bounding_box_min_dims, gfs.bounding_box_max_dims, _ = make_bounding_box(gfs)
         
