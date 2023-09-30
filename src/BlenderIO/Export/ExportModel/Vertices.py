@@ -216,6 +216,7 @@ def construct_vertex(vertex_data, loop_data):
     vb.texcoord3 = next(loop_data)
     vb.texcoord4 = next(loop_data)
     vb.texcoord5 = next(loop_data)
+    vb.texcoord6 = next(loop_data)
     vb.texcoord7 = next(loop_data)
     vb.color1    = next(loop_data)
     vb.color2    = next(loop_data)
