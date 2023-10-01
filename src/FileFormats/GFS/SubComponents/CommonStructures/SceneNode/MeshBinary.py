@@ -192,8 +192,8 @@ class MeshBinary(Serializable):
             center = [0, 0, 0]
             radius = 0
         else:
-            # This isn't *exactly* right, but close enough in most cases
-            center = [sum(v.position[i] for v in self.vertices)/len(self.vertices) for i in range(3)]
+            vs = [self.vertices[i] for i in self.indices]
+            center = [sum(v.position[i] for v in vs)/len(vs) for i in range(3)]
             radius = 0.
             for v in self.vertices:
                 pos = v.position

@@ -52,6 +52,7 @@ def calculate_sphere(context):
     class MeshWrapper:
         def __init__(self, bpy_mesh):
             self.vertices = [Vertex(p.co) for p in bpy_mesh.vertices]
+            self.indices  = [v for p in bpy_mesh.polygons for v in p.vertices]
     
     mesh_wrapper = MeshWrapper(bpy_mesh)
     
