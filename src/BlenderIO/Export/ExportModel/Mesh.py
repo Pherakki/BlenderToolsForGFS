@@ -119,18 +119,15 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
         gfs.bounding_box_max_dims = np.max([maxd, mind], axis=0)
         gfs.bounding_box_min_dims = np.min([maxd, mind], axis=0)
     elif boxprops.export_policy == "AUTO":
-        gfs.bounding_box_min_dims, gfs.bounding_box_max_dims, _ = make_bounding_box(gfs)
+        gfs.autocalc_bounding_box()
         
     sphprops = aprops.bounding_sphere
     if sphprops.export_policy == "MANUAL":
         gfs.bounding_sphere_centre = np.array(sphprops.center) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
         gfs.bounding_sphere_radius = sphprops.radius
     elif sphprops.export_policy == "AUTO":
-        b_min, b_max, centre = make_bounding_box(gfs)
-        
-        gfs.bounding_sphere_centre = centre
-        gfs.bounding_sphere_radius = max([np.linalg.norm(centre - b_min), np.linalg.norm(centre - b_max)])
-
+        gfs.autocalc_bounding_sphere()
+    
     return sorted(material_names)
 
 
@@ -142,41 +139,6 @@ def triangulate_mesh(bpy_mesh_object):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
     set_mode("OBJECT")
-
-
-def make_bounding_box(gfs):
-    # Should call an internal method here...
-    verts = []
-    matrices = np.empty((len(gfs.bones), 4, 4))
-    for i, bone in enumerate(gfs.bones):
-        matrix = np.eye(4)
-        q = bone.rotation
-        matrix[:3, :3] = np.array(Quaternion([q[3], q[0], q[1], q[2]]).to_matrix())
-        matrix = matrix @ np.diag([*bone.scale, 1.])
-        matrix[:3, 3] = bone.position
-        
-        if bone.parent_idx > -1:
-            matrices[i] = matrices[bone.parent_idx] @ matrix
-        else:
-            matrices[i] = matrix
-            
-        verts.append(matrices[i][:3, 3])
-    
-    mesh_verts = []
-    for mesh in gfs.meshes:
-        if not mesh.keep_bounding_box:
-            continue
-        matrix = matrices[mesh.node]
-        max_dims = np.max([v.position for v in mesh.vertices], axis=0)
-        min_dims = np.min([v.position for v in mesh.vertices], axis=0)
-        
-        mesh_verts.append((matrix @ np.array([*max_dims, 1.]))[:3])
-        mesh_verts.append((matrix @ np.array([*min_dims, 1.]))[:3])
-        
-    max_dims = np.max([*verts, *mesh_verts], axis=0)
-    min_dims = np.min([*verts, *mesh_verts], axis=0)
-
-    return min_dims, max_dims, np.mean(mesh_verts, axis=0)
 
 
 def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_policies):
