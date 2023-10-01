@@ -131,7 +131,6 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
     return sorted(material_names)
 
 
-
 @safe_active_object_switch
 def triangulate_mesh(bpy_mesh_object):
     set_active_obj(bpy_mesh_object)
