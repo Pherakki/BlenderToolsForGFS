@@ -18,7 +18,7 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
         mat.flag_1              = bpy_material.GFSTOOLS_MaterialProperties.flag_1
         mat.enable_specular     = bpy_material.GFSTOOLS_MaterialProperties.enable_specular
         mat.flag_3              = bpy_material.GFSTOOLS_MaterialProperties.flag_3
-        mat.use_vertex_colous   = bpy_material.GFSTOOLS_MaterialProperties.vertex_colors
+        mat.use_vertex_colors   = bpy_material.GFSTOOLS_MaterialProperties.vertex_colors
         mat.flag_5              = bpy_material.GFSTOOLS_MaterialProperties.flag_5
         mat.flag_6              = bpy_material.GFSTOOLS_MaterialProperties.flag_6
         mat.enable_uv_animation = bpy_material.GFSTOOLS_MaterialProperties.enable_uv_anims
