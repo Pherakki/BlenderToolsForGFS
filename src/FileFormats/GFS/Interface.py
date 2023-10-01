@@ -13,6 +13,7 @@ from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightI
 from .SubComponents.GFS0ContainerBinary import UnsupportedVersionError
 from .SubComponents.Animations.Binary.AnimationBinary import ParticlesError
 from .SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasParticleDataError
+from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, transform_vector
 
 
 class GFSInterface:
@@ -415,3 +416,54 @@ class GFSInterface:
         la_a.right_factor = right_factor
         
         return la_a.up, la_a.down, la_a.left, la_a.right
+
+    def get_mesh_bounding_boxes(self):
+        matrices = [None for _ in range(len(self.bones))]
+        for i, bone in enumerate(self.bones):
+            matrix = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+  
+            if bone.parent_idx > -1:
+                matrices[i] = multiply_transform_matrices(matrices[bone.parent_idx], matrix)
+            else:
+                matrices[i] = matrix
+        
+        mesh_verts = []
+        for mesh in self.meshes:
+            if not mesh.keep_bounding_box:
+                continue
+            matrix   = matrices[mesh.node]
+            min_dims, max_dims = mesh.calc_bounding_box()
+            
+            mesh_verts.append(transform_vector(matrix, min_dims))
+            mesh_verts.append(transform_vector(matrix, max_dims))
+        return mesh_verts, matrices
+
+    def autocalc_bounding_box(self):
+        mesh_verts, matrices = self.get_mesh_bounding_boxes()
+        verts = []
+        for m in matrices:
+            verts.append([m[0*4+3], m[1*4+3], m[2*4+3]])
+            
+        max_dims = [max(vs) for vs in zip(*[*mesh_verts, *verts])]
+        min_dims = [min(vs) for vs in zip(*[*mesh_verts, *verts])]
+        
+        self.bounding_box_max_dims = max_dims
+        self.bounding_box_min_dims = min_dims
+    
+    def autocalc_bounding_sphere(self):
+        mesh_verts, matrices = self.get_mesh_bounding_boxes()
+        center = [sum(vs)/len(vs) for vs in zip(*mesh_verts)]
+        if self.bounding_box_max_dims is not None and self.bounding_box_min_dims is not None:
+            max_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(self.bounding_box_max_dims, center)])**.5
+            min_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(self.bounding_box_min_dims, center)])**.5
+        else:
+            self.autocalc_bounding_box()
+            max_dim_radius = self.bounding_box_max_dims
+            min_dim_radius = self.bounding_box_min_dims
+            self.bounding_box_max_dims = None
+            self.bounding_box_min_dims = None
+        
+        radius = max([max_dim_radius, min_dim_radius])
+        
+        self.bounding_sphere_centre = center
+        self.bounding_sphere_radius = radius

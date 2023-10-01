@@ -308,3 +308,14 @@ def normalise_transform_matrix_scale(matrix):
     matrix[10] /= scale_z
     
     return matrix
+
+
+def transform_vector(matrix_4x3, vector):
+    out = [0, 0, 0]
+    for i in range(3):
+        rx = matrix_4x3[4*i+0]
+        ry = matrix_4x3[4*i+1]
+        rz = matrix_4x3[4*i+2]
+        t  = matrix_4x3[4*i+3]
+        out[i] = rx*vector[0] + ry*vector[1] + rz*vector[2] + t
+    return out
