@@ -170,8 +170,8 @@ class BoundingBoxOverride:
 class BoundingSphereOverride:
     def __init__(self):
         self.enabled = False
-        self.min_dims = [0, 0, 0]
-        self.max_dims = [0, 0, 0]
+        self.center = [0, 0, 0]
+        self.radius = 0
 
 
 class MeshOverrides:
