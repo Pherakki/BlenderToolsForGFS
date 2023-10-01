@@ -15,7 +15,11 @@ def get_box_props(context):
 def calculate_box(context):
     bpy_mesh_object = context.active_object
     bpy_mesh = bpy_mesh_object.data
-    
+    boxprops = bpy_mesh.GFSTOOLS_MeshProperties.bounding_box
+    boxprops.min_dims, boxprops.max_dims = calculate_mesh_box(bpy_mesh)
+
+
+def calculate_mesh_box(bpy_mesh):
     class Vertex:
         __slots__ = ("position",)
         
@@ -28,8 +32,7 @@ def calculate_box(context):
     
     mesh_wrapper = MeshWrapper(bpy_mesh)
     
-    boxprops = bpy_mesh.GFSTOOLS_MeshProperties.bounding_box
-    boxprops.min_dims, boxprops.max_dims = MeshBinary.calc_bounding_box(mesh_wrapper)
+    return MeshBinary.calc_bounding_box(mesh_wrapper)
 
 
 def get_sphere_props(context):
