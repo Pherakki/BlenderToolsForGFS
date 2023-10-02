@@ -3,6 +3,17 @@ import bpy
 from .Animations import poll_lookat_action
 
 
+class NLAStripWrapper(bpy.types.PropertyGroup):
+    start_frame: bpy.props.IntProperty()
+    clip_start:  bpy.props.IntProperty()
+    clip_end:    bpy.props.IntProperty()
+    action: bpy.props.PointerProperty(type=bpy.types.Action)
+    
+
+class NLATrackWrapper(bpy.types.PropertyGroup):
+    strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
+
+    
 class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")
@@ -45,3 +56,5 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
     lookat_down_factor:  bpy.props.FloatProperty(name="LookAt Down Factor")
+
+    animations: bpy.props.CollectionProperty(type=NLATrackWrapper)

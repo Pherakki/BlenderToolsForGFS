@@ -13,6 +13,7 @@ from .BoundingVolumes import define_bounding_sphere
 from .Meshes import calculate_mesh_box
 from .Nodes import make_node_props_class
 from .Physics import GFSToolsPhysicsProperties
+from .AnimationPack import GFSToolsAnimationPackProperties
 
 
 def get_box_props(context):
@@ -138,3 +139,6 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
     has_external_emt: bpy.props.BoolProperty(name="External EMT", default=False)    
     physics:          bpy.props.PointerProperty(name="Physics", type=GFSToolsPhysicsProperties)
     physics_blob:     bpy.props.StringProperty(name="SECRET PHYSICS BLOB - DO NOT TOUCH", default='', options={'HIDDEN'})
+
+    internal_animation_pack:  bpy.props.PointerProperty   (type=GFSToolsAnimationPackProperties)
+    external_animation_packs: bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
