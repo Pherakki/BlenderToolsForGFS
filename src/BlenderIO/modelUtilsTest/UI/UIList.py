@@ -2,13 +2,11 @@ import bpy
 
 
 def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx_name, props_getter):
-    class PropertyPanel(bpy.types.Panel):
-        def draw(self, context):
-            self.draw_collection(context)
+    class UIList:
+        def draw(self, layout, context):
+            self.draw_collection(layout, context)
             
-        def draw_collection(self, context):
-            layout = self.layout
-    
+        def draw_collection(self, layout, context):
             props = props_getter(context)
             row = layout.row()
             row.template_list(ui_list.__name__, "", props, collection_name, props, collection_idx_name)
@@ -44,7 +42,6 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
             def invoke(self, context, event):
                 props          = props_getter(context)
                 collection     = getattr(props, collection_name)
-                collection_idx = getattr(props, collection_idx_name)
                 
                 collection.add()
                 setattr(props, collection_idx_name, len(collection) - 1)
@@ -106,10 +103,10 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     setattr(props, collection_idx_name, new_idx)
                 return {'FINISHED'}
     
-    PropertyPanel.__name__                  = f"{module_name}.OBJECT_PT_{identifier}Panel"
-    PropertyPanel.AddOperator.__name__      = PropertyPanel.AddOperator.bl_idname
-    PropertyPanel.DelOperator.__name__      = PropertyPanel.DelOperator.bl_idname
-    PropertyPanel.MoveUpOperator.__name__   = PropertyPanel.MoveUpOperator.bl_idname
-    PropertyPanel.MoveDownOperator.__name__ = PropertyPanel.MoveDownOperator.bl_idname
+    UIList.__name__                  = "UIList"
+    UIList.AddOperator.__name__      = UIList.AddOperator.bl_idname
+    UIList.DelOperator.__name__      = UIList.DelOperator.bl_idname
+    UIList.MoveUpOperator.__name__   = UIList.MoveUpOperator.bl_idname
+    UIList.MoveDownOperator.__name__ = UIList.MoveDownOperator.bl_idname
     
-    return PropertyPanel
+    return UIList

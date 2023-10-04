@@ -13,10 +13,12 @@ class NLAStripWrapper(bpy.types.PropertyGroup):
     
 
 class NLATrackWrapper(bpy.types.PropertyGroup):
+    name:   bpy.props.StringProperty(name="Name", default="New Track")
     strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
 
     
 class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
+    name:    bpy.props.StringProperty(name="Name", default="New Pack")
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")
     flag_3:  bpy.props.BoolProperty(name="Unknown Flag 3") # Enable morph anims?

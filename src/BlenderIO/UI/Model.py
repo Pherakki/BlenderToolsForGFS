@@ -2,12 +2,30 @@ import bpy
 
 from .Node import makeNodePropertiesPanel
 from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
+from ..modelUtilsTest.UI.UIList import UIListBase
+
 
 def _draw_on_node(context, layout):
     armature = context.armature
     layout = layout
     
     layout.prop(armature.GFSTOOLS_ModelProperties, "root_node_name")
+
+
+class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        layout.prop(item, "name", text="", emboss=False)
+
+
+_uilist = UIListBase(
+    "gfstools",
+    "ExternalAnimPacks", 
+    OBJECT_UL_GFSToolsAnimationPackUIList, 
+    "external_animation_packs", 
+    "external_animation_pack_idx",
+    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties
+)
+
 
 class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     bl_label       = "GFS Model"
@@ -16,6 +34,8 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context     = "data"
     bl_options     = {'DEFAULT_CLOSED'}
+    
+    PACK_LIST = _uilist()
     
     @classmethod
     def poll(self, context):
@@ -34,15 +54,21 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         aprops.bounding_box.draw(ctr)
         aprops.bounding_sphere.draw(ctr)
         
+        self.PACK_LIST.draw(layout, context)
+        
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.NodePropertiesPanel)
         bpy.utils.register_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
-        
+        bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        _uilist.register()
+    
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
         bpy.utils.unregister_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
+        bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        _uilist.unregister()
     
     NodePropertiesPanel = makeNodePropertiesPanel(
         "ArmatureNode", 
