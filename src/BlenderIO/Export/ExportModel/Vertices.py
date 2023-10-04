@@ -254,7 +254,7 @@ class GFSVertexGetter:
         
         # Error-tracking variables
         self.errorlog = errorlog
-        self.missing_bone_names     = []
+        self.missing_bone_names     = set()
         self.missing_weight_verts   = []
         self.too_many_indices_verts = []
         self.unrigged_verts         = []
@@ -291,7 +291,8 @@ class GFSVertexGetter:
         total_weight = sum(group_weights)
         if total_weight > 0.:
             group_weights = [weight / total_weight for weight in group_weights]
-            
+        self.missing_bone_names = sorted(self.missing_bone_names)
+        
         return vertex.co, group_bone_ids, group_weights
 
     def log_errors(self, bpy_mesh_obj, vertices):
