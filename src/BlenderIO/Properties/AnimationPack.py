@@ -4,11 +4,11 @@ from .Animations import poll_lookat_action
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
-    start_frame: bpy.props.FloatProperty()
-    clip_start:  bpy.props.FloatProperty()
-    clip_end:    bpy.props.FloatProperty()
-    scale:       bpy.props.FloatProperty()
-    repeat:      bpy.props.FloatProperty()
+    frame_start_ui:      bpy.props.FloatProperty()
+    action_frame_start:  bpy.props.FloatProperty()
+    action_frame_end:    bpy.props.FloatProperty()
+    scale:               bpy.props.FloatProperty()
+    repeat:              bpy.props.FloatProperty()
     action: bpy.props.PointerProperty(type=bpy.types.Action)
     
 
