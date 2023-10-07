@@ -127,7 +127,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename, gfs_to_bpy_bone_map)
+        import_animations(gfs, armature, filename, is_external=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
         
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
@@ -242,7 +242,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         # Now import file data to Blender
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename)
+        import_animations(gfs, armature, filename, is_external=True)
         
         # Report any warnings that were logged
         errorlog.digest_warnings(self.debug_mode)

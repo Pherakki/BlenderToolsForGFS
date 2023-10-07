@@ -21,7 +21,10 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
 # EXPORTED FUNCTIONS #
 ######################
 
-def import_animations(gfs, bpy_armature_object, filename, gfs_to_bpy_bone_map=None):
+def import_animations(gfs, bpy_armature_object, filename, is_external, gfs_to_bpy_bone_map=None):
+    if not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
+        return
+    
     prev_obj = bpy.context.view_layer.objects.active
 
     bpy_armature_object.animation_data_create()
@@ -80,8 +83,12 @@ def import_animations(gfs, bpy_armature_object, filename, gfs_to_bpy_bone_map=No
 
     # Store animation data
     # Refactor the above when this is the main data management mechanism
-    mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-    ap_props = mprops.external_animation_packs.add()
+    if is_external:
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        ap_props = mprops.external_animation_packs.add()
+    else:
+        ap_props = mprops.internal_animation_pack
+    
     ap_props.name = filename
     ap_props.flag_0  = gfs.anim_flag_0
     ap_props.flag_1  = gfs.anim_flag_1
@@ -116,7 +123,7 @@ def import_animations(gfs, bpy_armature_object, filename, gfs_to_bpy_bone_map=No
     ap_props.flag_31 = gfs.anim_flag_31
     
     ap_props.store_animation_pack(bpy_armature_object)
-    
+
 
 
 def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
