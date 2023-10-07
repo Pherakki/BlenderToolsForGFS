@@ -70,19 +70,19 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
         current_gap = gaps[mprops.external_animation_pack_idx]
         return current_gap
     
-    
-    @staticmethod
-    def store_animation_pack(bpy_armature_object, gap_props):
-        gap_props.tracks.clear()
+    def store_animation_pack(self, bpy_armature_object):
+        gap_props = self
+        
+        gap_props.animations.clear()
         if bpy_armature_object.animation_data is None:
             return
     
         for nla_track in bpy_armature_object.animation_data.nla_tracks:
-            prop_track = gap_props.tracks.new()
+            prop_track = gap_props.animations.add()
             prop_track.name = nla_track.name
             
             for nla_strip in nla_track.strips:
-                prop_strip = prop_track.strips.new()
+                prop_strip = prop_track.strips.add()
                 prop_strip.frame_start_ui      = nla_strip.frame_start_ui
                 prop_strip.action_frame_start  = nla_strip.action_frame_start
                 prop_strip.action_frame_end    = nla_strip.action_frame_end
@@ -91,12 +91,13 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
                 prop_strip.action              = nla_strip.action
                 
     
-    @staticmethod
-    def restore_animation_pack(bpy_armature_object, gap_props):
+    def restore_animation_pack(self, bpy_armature_object):
+        gap_props = self
+        
         bpy_armature_object.animation_data_clear()
         bpy_armature_object.animation_data_create()
         
-        for prop_track in gap_props.tracks:
+        for prop_track in gap_props.animations:
             nla_track = bpy_armature_object.animation_data.nla_tracks.new(name=prop_track.name)
             
             for prop_strip in prop_track.strips:

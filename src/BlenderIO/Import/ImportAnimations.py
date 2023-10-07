@@ -78,6 +78,46 @@ def import_animations(gfs, bpy_armature_object, filename, gfs_to_bpy_bone_map=No
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
 
+    # Store animation data
+    # Refactor the above when this is the main data management mechanism
+    mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+    ap_props = mprops.external_animation_packs.add()
+    ap_props.name = filename
+    ap_props.flag_0  = gfs.anim_flag_0
+    ap_props.flag_1  = gfs.anim_flag_1
+    ap_props.flag_3  = gfs.anim_flag_3
+    ap_props.flag_4  = gfs.anim_flag_4
+    ap_props.flag_5  = gfs.anim_flag_5
+    ap_props.flag_6  = gfs.anim_flag_6
+    ap_props.flag_7  = gfs.anim_flag_7
+    ap_props.flag_8  = gfs.anim_flag_8
+    ap_props.flag_9  = gfs.anim_flag_9
+    ap_props.flag_10 = gfs.anim_flag_10
+    ap_props.flag_11 = gfs.anim_flag_11
+    ap_props.flag_12 = gfs.anim_flag_12
+    ap_props.flag_13 = gfs.anim_flag_13
+    ap_props.flag_14 = gfs.anim_flag_14
+    ap_props.flag_15 = gfs.anim_flag_15
+    ap_props.flag_16 = gfs.anim_flag_16
+    ap_props.flag_17 = gfs.anim_flag_17
+    ap_props.flag_18 = gfs.anim_flag_18
+    ap_props.flag_19 = gfs.anim_flag_19
+    ap_props.flag_20 = gfs.anim_flag_20
+    ap_props.flag_21 = gfs.anim_flag_21
+    ap_props.flag_22 = gfs.anim_flag_22
+    ap_props.flag_23 = gfs.anim_flag_23
+    ap_props.flag_24 = gfs.anim_flag_24
+    ap_props.flag_25 = gfs.anim_flag_25
+    ap_props.flag_26 = gfs.anim_flag_26
+    ap_props.flag_27 = gfs.anim_flag_27
+    ap_props.flag_28 = gfs.anim_flag_28
+    ap_props.flag_29 = gfs.anim_flag_29
+    ap_props.flag_30 = gfs.anim_flag_30
+    ap_props.flag_31 = gfs.anim_flag_31
+    
+    ap_props.store_animation_pack(bpy_armature_object)
+    
+
 
 def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
     prev_obj = bpy.context.view_layer.objects.active
