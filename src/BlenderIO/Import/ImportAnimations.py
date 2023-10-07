@@ -21,24 +21,24 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
 # EXPORTED FUNCTIONS #
 ######################
 
-def import_animations(gfs, armature, filename, gfs_to_bpy_bone_map=None):
+def import_animations(gfs, bpy_armature_object, filename, gfs_to_bpy_bone_map=None):
     prev_obj = bpy.context.view_layer.objects.active
 
-    armature.animation_data_create()
-    bpy.context.view_layer.objects.active = armature
+    bpy_armature_object.animation_data_create()
+    bpy.context.view_layer.objects.active = bpy_armature_object
     
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
-        action = add_animation(f"{filename}_{anim_idx}", anim, armature, is_blend=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+        action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
                 
         if anim.lookat_animations is not None:
-            import_lookat_animations(action.GFSTOOLS_AnimationProperties, armature, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map)
+            import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map)
 
     
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        action = add_animation(f"{filename}_blend_{anim_idx}", anim, armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+        action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
         
-    ap_props = armature.data.GFSTOOLS_AnimationPackProperties
+    ap_props = bpy_armature_object.data.GFSTOOLS_AnimationPackProperties
     ap_props.flag_0  = gfs.anim_flag_0
     ap_props.flag_1  = gfs.anim_flag_1
     ap_props.flag_3  = gfs.anim_flag_3
@@ -73,7 +73,7 @@ def import_animations(gfs, armature, filename, gfs_to_bpy_bone_map=None):
     
     # Lookat Animations
     if gfs.lookat_animations is not None:
-        import_lookat_animations(ap_props, armature, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map)
+        import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map)
     
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
