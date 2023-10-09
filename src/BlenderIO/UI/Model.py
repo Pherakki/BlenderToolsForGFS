@@ -27,6 +27,15 @@ _uilist = UIListBase(
 )
 
 
+class SwapActiveAnimationPack(bpy.types.Operator):
+    bl_label   = "Swap Active GAP"
+    bl_idname  = "gfstools.swapactivegap"
+    bl_options = {'UNDO', 'REGISTER'}
+    
+    def execute(self, context):
+        raise NotImplementedError
+
+
 class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     bl_label       = "GFS Model"
     bl_idname      = "OBJECT_PT_GFSToolsModelDataPanel"
