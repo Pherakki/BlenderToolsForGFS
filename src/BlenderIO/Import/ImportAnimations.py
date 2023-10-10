@@ -221,7 +221,7 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     b_rotations = {k: v for k, v in zip(rotations.keys(), b_rotations)}
     b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
     
-    # b_rotations = {k: v for k, v in zip(q_quaternions.keys(), fix_quaternion_signs(q_rotations.values(), b_rotations.values())}
+    b_rotations = {k: v for k, v in zip(q_rotations.keys(), fix_quaternion_signs(list(q_rotations.values()), list(b_rotations.values())))}
     
     # Create animations
     # This typically takes up ~90% of execution time
@@ -245,7 +245,7 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     b_rotations = {k: v for k, v in zip(rotations.keys(), b_rotations)}
     b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
     
-    # b_rotations = {k: v for k, v in zip(q_quaternions.keys(), fix_quaternion_signs(q_rotations.values(), b_rotations.values())}
+    b_rotations = {k: v for k, v in zip(q_rotations.keys(), fix_quaternion_signs(list(q_rotations.values()), list(b_rotations.values())))}
     
     # Create animations
     # This typically takes up ~90% of execution time
