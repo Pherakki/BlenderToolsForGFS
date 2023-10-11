@@ -19,6 +19,12 @@ def get_preferences():
 class AddonPreferences(bpy.types.AddonPreferences):
     bl_idname = get_package_name()
 
+    align_quats : bpy.props.BoolProperty(
+        name="Align Animation Quaternions",
+        description="Default setting for 'Align Animation Quaternions' on import",
+        default=False
+    )
+    
     merge_vertices : bpy.props.BoolProperty(
         name="Merge Vertices",
         description="Default setting for 'Merge Vertices' on import",
@@ -110,6 +116,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         io_row = layout.row()
         import_col = io_row.column()
         import_col.label(text='Default Import settings:')
+        import_col.prop(self, 'align_quats')
         import_col.prop(self, 'merge_vertices')
         import_col.prop(self, 'set_fps')
         import_col.prop(self, 'set_clip')

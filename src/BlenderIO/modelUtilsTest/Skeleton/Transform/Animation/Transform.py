@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 from .Translation   import parent_to_bind_translation
 from .Translation   import bind_to_parent_translation
@@ -46,6 +47,23 @@ def fix_quaternion_signs(q_rotations, b_rotations):
         flip_signs.append(differences[i]*flip_signs[i])
     
     return [sgn*v for (v, sgn) in zip(b_rotations, flip_signs)]
+
+
+def align_quaternion_signs(quats):
+    if len(quats) > 0:
+        to_return = [quats[0]]
+        for quat in quats[1:]:
+            to_return.append(align_quaternion_sign(to_return[-1], quat))
+        return to_return
+    else:
+        return quats
+
+
+def align_quaternion_sign(comparison_quat, quat):
+    dp = np.dot(comparison_quat, quat)
+    sign = np.sign(dp)
+
+    return sign * quat
 
 
 def _transform_func(bpy_bone, translations, rotations, scales, model_transforms, 

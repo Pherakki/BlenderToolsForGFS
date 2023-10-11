@@ -15,13 +15,13 @@ from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
 from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
-
+from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 
 ######################
 # EXPORTED FUNCTIONS #
 ######################
 
-def import_animations(gfs, bpy_armature_object, filename, is_external, gfs_to_bpy_bone_map=None):
+def import_animations(gfs, bpy_armature_object, filename, is_external, import_policies, gfs_to_bpy_bone_map=None):
     if not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
         return
     
@@ -32,14 +32,14 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, gfs_to_bp
     
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
-        action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+        action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
                 
         if anim.lookat_animations is not None:
-            import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map)
+            import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
 
     
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+        action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
         
     ap_props = bpy_armature_object.data.GFSTOOLS_AnimationPackProperties
     ap_props.flag_0  = gfs.anim_flag_0
@@ -76,7 +76,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, gfs_to_bp
     
     # Lookat Animations
     if gfs.lookat_animations is not None:
-        import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map)
+        import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map, import_policies=import_policies)
     
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
@@ -148,7 +148,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
 
         # General bone
         bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
-        build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale}, {})
+        build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale}, {}, False)
     
     armature.animation_data.action = action
     track = armature.animation_data.nla_tracks.new()
@@ -207,7 +207,7 @@ def build_object_fcurves(action, object, fps, positions, rotations, scales):
     create_fcurves(action, actiongroup, 'scale',               "LINEAR", fps, scales,      [0, 1, 2]   , {})
 
 
-def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank):
+def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank, align_quats):
     # Set up action data
     actiongroup = action.groups.new(bone_name)
     
@@ -222,6 +222,8 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
     
     b_rotations = {k: v for k, v in zip(q_rotations.keys(), fix_quaternion_signs(list(q_rotations.values()), list(b_rotations.values())))}
+    if align_quats:
+        b_rotations = {k: v for k, v in zip(b_rotations.keys(), align_quaternion_signs(list(b_rotations.values())))}
     
     # Create animations
     # This typically takes up ~90% of execution time
@@ -230,7 +232,7 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank):
+def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank, align_quats):
     # Set up action data
     actiongroup       = action      .groups.new(bone_name)
     scale_actiongroup = scale_action.groups.new(bone_name)
@@ -246,6 +248,8 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     b_scales    = {k: v for k, v in zip(scales   .keys(), b_scales   )}
     
     b_rotations = {k: v for k, v in zip(q_rotations.keys(), fix_quaternion_signs(list(q_rotations.values()), list(b_rotations.values())))}
+    if align_quats:
+        b_rotations = {k: v for k, v in zip(b_rotations.keys(), align_quaternion_signs(list(b_rotations.values())))}
     
     # Create animations
     # This typically takes up ~90% of execution time
@@ -254,7 +258,7 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
     
-def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None):
+def add_animation(track_name, anim, armature, is_blend, import_policies, gfs_to_bpy_bone_map=None):
     action = bpy.data.actions.new(track_name)
     if is_blend:    
         scale_action = bpy.data.actions.new(track_name + "_scale")
@@ -295,9 +299,9 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
             continue
         
         if is_blend:
-            build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank)
+            build_blend_fcurves(action, scale_action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank, import_policies.align_quats)
         else:
-            build_transformed_fcurves(action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank)
+            build_transformed_fcurves(action, armature, bone_name, fps, data_track.positions, data_track.rotations, data_track.scales, fcurve_bank, import_policies.align_quats)
 
     if is_blend:
         if len(scale_action.fcurves):  
@@ -393,11 +397,11 @@ def add_animation(track_name, anim, armature, is_blend, gfs_to_bpy_bone_map=None
     
     return action
     
-def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_to_bpy_bone_map):
-    a_r = add_animation(f"{anim_name}_right", lookat_animations.right, armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
-    a_l = add_animation(f"{anim_name}_left",  lookat_animations.left,  armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
-    a_u = add_animation(f"{anim_name}_up",    lookat_animations.up,    armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
-    a_d = add_animation(f"{anim_name}_down",  lookat_animations.down,  armature, is_blend=True, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+def import_lookat_animations(props, armature, lookat_animations, anim_name, gfs_to_bpy_bone_map, import_policies):
+    a_r = add_animation(f"{anim_name}_right", lookat_animations.right, armature, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_l = add_animation(f"{anim_name}_left",  lookat_animations.left,  armature, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_u = add_animation(f"{anim_name}_up",    lookat_animations.up,    armature, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+    a_d = add_animation(f"{anim_name}_down",  lookat_animations.down,  armature, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
     
     a_r.GFSTOOLS_AnimationProperties.category = "LOOKAT"
     a_l.GFSTOOLS_AnimationProperties.category = "LOOKAT"

@@ -38,9 +38,15 @@ def define_set_fps():
         default=True
     )
 
+def define_align_quats():
+    return bpy.props.BoolProperty(name="Align Animation Quaternions",
+                                     description="Eliminate sign flips between animation quaternions",
+                                     default=False)
+
 
 class ImportPolicies(bpy.types.PropertyGroup):
-    set_fps: define_set_fps()
+    align_quats: define_align_quats()
+    set_fps:     define_set_fps()
     
     set_clip: bpy.props.BoolProperty(name="Set P5R Screen Clip",
                                      description="Set Blender's maximum render distance to 1000000, so that most Persona 5 model rendering is not culled",
@@ -86,6 +92,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
+        self.policies.align_quats    = prefs.align_quats
         self.policies.set_fps        = prefs.set_fps
         self.policies.set_clip       = prefs.set_clip
         self.policies.merge_vertices = prefs.merge_vertices
@@ -127,7 +134,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename, is_external=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+        import_animations(gfs, armature, filename, is_external=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map, import_policies=self.policies)
         
         import_physics(gfs, armature)
         import_0x000100F8(gfs, armature)
@@ -190,8 +197,9 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.policies.set_fps  = prefs.set_fps
-        self.policies.set_clip = prefs.set_clip
+        self.policies.align_quats = prefs.align_quats
+        self.policies.set_fps     = prefs.set_fps
+        self.policies.set_clip    = prefs.set_clip
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -242,7 +250,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         # Now import file data to Blender
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename, is_external=True)
+        import_animations(gfs, armature, filename, is_external=True, import_policies=self.policies)
         
         # Report any warnings that were logged
         errorlog.digest_warnings(self.debug_mode)
@@ -297,6 +305,7 @@ class CUSTOM_PT_GFSModelImportSettings(bpy.types.Panel):
         operator = sfile.active_operator
         policies = operator.policies
 
+        layout.prop(policies, 'align_quats')
         layout.prop(policies, 'set_fps')
         layout.prop(policies, 'set_clip')
         layout.prop(policies, 'merge_vertices')
@@ -329,5 +338,6 @@ class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):
         policies = operator.policies
 
         layout.prop(operator, 'armature_name')
+        layout.prop(policies, 'align_quats')
         layout.prop(policies, 'set_fps')
         layout.prop(policies, 'set_clip')
