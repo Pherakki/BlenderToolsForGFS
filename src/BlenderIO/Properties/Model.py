@@ -140,6 +140,7 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
     physics:          bpy.props.PointerProperty(name="Physics", type=GFSToolsPhysicsProperties)
     physics_blob:     bpy.props.StringProperty(name="SECRET PHYSICS BLOB - DO NOT TOUCH", default='', options={'HIDDEN'})
 
-    internal_animation_pack:  bpy.props.PointerProperty   (type=GFSToolsAnimationPackProperties)
-    external_animation_packs: bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
+    active_animation_pack:       bpy.props.IntProperty(default=-2, options={'HIDDEN'})
+    internal_animation_pack:     bpy.props.PointerProperty   (type=GFSToolsAnimationPackProperties)
+    external_animation_packs:    bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
     external_animation_pack_idx: bpy.props.IntProperty(default=0, options={'HIDDEN'})
