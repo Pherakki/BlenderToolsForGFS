@@ -19,10 +19,10 @@ class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
 
 _uilist = UIListBase(
     "gfstools",
-    "ExternalAnimPacks", 
+    "AnimPacks", 
     OBJECT_UL_GFSToolsAnimationPackUIList, 
-    "external_animation_packs", 
-    "external_animation_pack_idx",
+    "animation_packs", 
+    "animation_pack_idx",
     lambda ctx: ctx.armature.GFSTOOLS_ModelProperties
 )
 

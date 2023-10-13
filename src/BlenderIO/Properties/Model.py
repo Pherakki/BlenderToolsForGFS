@@ -140,7 +140,36 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
     physics:          bpy.props.PointerProperty(name="Physics", type=GFSToolsPhysicsProperties)
     physics_blob:     bpy.props.StringProperty(name="SECRET PHYSICS BLOB - DO NOT TOUCH", default='', options={'HIDDEN'})
 
-    active_animation_pack:       bpy.props.IntProperty(default=-2, options={'HIDDEN'})
-    internal_animation_pack:     bpy.props.PointerProperty   (type=GFSToolsAnimationPackProperties)
-    external_animation_packs:    bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
-    external_animation_pack_idx: bpy.props.IntProperty(default=0, options={'HIDDEN'})
+    active_animation_pack_idx:   bpy.props.IntProperty(default=-1, options={'HIDDEN'})
+    internal_animation_pack_idx: bpy.props.IntProperty(default=-1, options={'HIDDEN'})
+    animation_pack_idx:          bpy.props.IntProperty(default= 0, options={'HIDDEN'})
+    animation_packs:             bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
+    
+    ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION INDEX '{idx}'"
+    
+    def get_gap(self, idx, msg="list index out of range"):
+        if idx == -1:
+            return None
+        elif idx < len(self.animation_packs):
+            return self.animation_packs[idx]
+        else:
+            raise IndexError(msg)
+    
+    def _internal_get_gap(self, idx, msg):
+        err_msg = self.ERROR_TEMPLATE.format(msg=msg, idx=idx)
+        return self.get_gap(idx, err_msg)
+    
+    def get_active_gap(self):
+        return self._internal_get_gap(self.active_animation_pack_idx, "ACTIVE")
+    
+    def get_internal_gap(self):
+        return self._internal_get_gap(self.internal_animation_pack_idx, "INTERNAL")
+    
+    def get_selected_gap(self):
+        return self._internal_get_gap(self.animation_pack_idx, "SELECTED")
+    
+    def is_internal_gap_active(self):
+        return self.active_animation_pack_idx == self.internal_animation_pack_idx
+
+    def has_internal_gap(self):
+        return self.internal_animation_pack_idx > -1

@@ -84,10 +84,9 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     # Store animation data
     # Refactor the above when this is the main data management mechanism
     mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-    if is_external:
-        ap_props = mprops.external_animation_packs.add()
-    else:
-        ap_props = mprops.internal_animation_pack
+    if not is_external:
+        mprops.internal_animation_pack_index = len(mprops.animation_packs)
+    ap_props = mprops.animation_packs.add()
     
     ap_props.name = filename
     ap_props.flag_0  = gfs.anim_flag_0
