@@ -5,6 +5,7 @@ import numpy as np
 from ...FileFormats.GFS import GFSBinary
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode import NodeInterface
 from ..Globals import GFS_MODEL_TRANSFORMS
+from ..modelUtilsTest.API.Version import bpy_at_least
 from ..modelUtilsTest.Mesh.Import.MergeVertices import create_merged_mesh
 from ..modelUtilsTest.Mesh.Import.LoopImport    import create_loop_normals
 from ..modelUtilsTest.Mesh.Import.LoopImport    import create_uv_map
@@ -231,18 +232,32 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
 
     # If there are meshes, create bone layers of rigged and unrigged bones
     if len(gfs.meshes):
-        for bpy_bone in main_armature.data.bones:
-            bpy_bone.layers[0] = True
-            bpy_bone.layers[1] = True
-            bpy_bone.layers[2] = False
-    
-        #for i in sorted(unrigged_bones_to_import):
-        for i in sorted(unrigged_bones):
-            remapped_index = gfs_to_bpy_bone_map[i]
-            main_armature.data.bones[remapped_index].layers[0] = True
-            main_armature.data.bones[remapped_index].layers[1] = False
-            main_armature.data.bones[remapped_index].layers[2] = True
-    
+        if bpy_at_least(4, 0, 0):
+            col_rigbones   = main_armature.data.collections.new("Rigged Bones")
+            col_norigbones = main_armature.data.collections.new("Unrigged Bones")
+            
+            for bpy_bone in main_armature.data.bones:
+                col_rigbones.assign(bpy_bone)
+            
+            for i in sorted(unrigged_bones):
+                remapped_index = gfs_to_bpy_bone_map[i]
+                bpy_bone = main_armature.data.bones[remapped_index]
+                
+                col_rigbones.unassign(bpy_bone)
+                col_norigbones.assign(bpy_bone)
+        else:
+            for bpy_bone in main_armature.data.bones:
+                bpy_bone.layers[0] = True
+                bpy_bone.layers[1] = True
+                bpy_bone.layers[2] = False
+        
+            #for i in sorted(unrigged_bones_to_import):
+            for i in sorted(unrigged_bones):
+                remapped_index = gfs_to_bpy_bone_map[i]
+                main_armature.data.bones[remapped_index].layers[0] = True
+                main_armature.data.bones[remapped_index].layers[1] = False
+                main_armature.data.bones[remapped_index].layers[2] = True
+        
     bpy.context.view_layer.objects.active = main_armature
     
     ###################
