@@ -1,7 +1,8 @@
 import bpy
 
 
-def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx_name, props_getter):
+def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx_name, props_getter,
+               add_callback=None, delete_callback=None, moveup_callback=None, movedown_callback=None):
     class UIList:
         def draw(self, layout, context):
             self.draw_collection(layout, context)
@@ -45,6 +46,9 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                 
                 collection.add()
                 setattr(props, collection_idx_name, len(collection) - 1)
+                
+                if add_callback is not None:
+                    add_callback(context, event)
                 return {'FINISHED'}
         
         
@@ -63,6 +67,8 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                 collection.remove(collection_idx)
                 setattr(props, collection_idx_name, collection_idx - 1)
                 
+                if delete_callback is not None:
+                    delete_callback(context, event)
                 return {'FINISHED'}
         
         
@@ -82,6 +88,9 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     new_idx = collection_idx - 1
                     collection.move(collection_idx, new_idx)
                     setattr(props, collection_idx_name, new_idx)
+                    
+                if moveup_callback is not None:
+                    moveup_callback(context, event)
                 return {'FINISHED'}
         
         
@@ -101,6 +110,9 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     new_idx = collection_idx + 1
                     collection.move(collection_idx, new_idx)
                     setattr(props, collection_idx_name, new_idx)
+                    
+                if movedown_callback is not None:
+                    movedown_callback(context, event)
                 return {'FINISHED'}
     
     UIList.__name__                  = "UIList"
