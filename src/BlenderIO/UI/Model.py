@@ -31,13 +31,70 @@ class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
         layout.prop(item, "name", text="", emboss=False)
 
 
+def add_callback(context, event, old_idx, new_idx):
+    pass
+
+
+def delete_callback(context, event, old_idx, new_idx):
+    bpy_armature = context.armature
+    mprops       = bpy_armature.GFSTOOLS_ModelProperties
+    
+    if old_idx <= mprops.active_animation_pack_idx:
+        mprops.active_animation_pack_idx -= 1
+    
+    if old_idx < mprops.internal_animation_pack_idx:
+        mprops.internal_animation_pack_idx -= 1
+    elif old_idx == mprops.internal_animation_pack_idx:
+        mprops.internal_animation_pack_idx = -1
+
+
+def moveup_callback(context, event, old_idx, new_idx):
+    if old_idx == new_idx:
+        return
+    
+    bpy_armature = context.armature
+    mprops       = bpy_armature.GFSTOOLS_ModelProperties
+    
+    if old_idx == mprops.active_animation_pack_idx:
+        mprops.active_animation_pack_idx -= 1
+    elif old_idx == mprops.active_animation_pack_idx + 1:
+        mprops.active_animation_pack_idx += 1
+    
+    if old_idx == mprops.internal_animation_pack_idx:
+        mprops.internal_animation_pack_idx -= 1
+    elif old_idx == mprops.internal_animation_pack_idx + 1:
+        mprops.internal_animation_pack_idx += 1
+
+
+def movedown_callback(context, event, old_idx, new_idx):
+    if old_idx == new_idx:
+        return
+    
+    bpy_armature = context.armature
+    mprops       = bpy_armature.GFSTOOLS_ModelProperties
+    
+    if old_idx == mprops.active_animation_pack_idx:
+        mprops.active_animation_pack_idx += 1
+    elif old_idx == mprops.active_animation_pack_idx - 1:
+        mprops.active_animation_pack_idx -= 1
+    
+    if old_idx == mprops.internal_animation_pack_idx:
+        mprops.internal_animation_pack_idx += 1
+    elif old_idx == mprops.internal_animation_pack_idx - 1:
+        mprops.internal_animation_pack_idx -= 1
+
+
 _uilist = UIListBase(
     "gfstools",
     "AnimPacks", 
     OBJECT_UL_GFSToolsAnimationPackUIList, 
     "animation_packs", 
     "animation_pack_idx",
-    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties
+    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties,
+    add_callback=add_callback,
+    delete_callback=delete_callback,
+    moveup_callback=moveup_callback,
+    movedown_callback=movedown_callback
 )
 
 
