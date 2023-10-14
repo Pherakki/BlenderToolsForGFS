@@ -2,6 +2,7 @@ import bpy
 
 from .Node import makeNodePropertiesPanel
 from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
+from ..modelUtilsTest.API.Icon import icon_lookup
 from ..modelUtilsTest.UI.UIList import UIListBase
 
 
@@ -11,9 +12,22 @@ def _draw_on_node(context, layout):
     
     layout.prop(armature.GFSTOOLS_ModelProperties, "root_node_name")
 
+BLANK_ID = icon_lookup["BLANK1"]
+INTRL_ID = icon_lookup["GROUP"]
+ACTIV_ID = icon_lookup["SOLO_ON"]
+
 
 class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+
+        active_icon   = ACTIV_ID if index == mprops.active_animation_pack_idx   else BLANK_ID
+        layout.prop(item, "name", text="", emboss=False, icon_value=active_icon, icon_only=True)
+        if mprops.has_internal_gap():
+            internal_icon = INTRL_ID if index == mprops.internal_animation_pack_idx else BLANK_ID
+            layout.prop(item, "name", text="", emboss=False, icon_value=internal_icon, icon_only=True)
         layout.prop(item, "name", text="", emboss=False)
 
 
