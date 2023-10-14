@@ -43,12 +43,14 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
             def invoke(self, context, event):
                 props          = props_getter(context)
                 collection     = getattr(props, collection_name)
+                collection_idx = getattr(props, collection_idx_name)
                 
                 collection.add()
-                setattr(props, collection_idx_name, len(collection) - 1)
+                new_idx = len(collection) - 1
+                setattr(props, collection_idx_name, new_idx)
                 
                 if add_callback is not None:
-                    add_callback(context, event)
+                    add_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
         
         
@@ -65,10 +67,11 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                 collection_idx = getattr(props, collection_idx_name)
                 
                 collection.remove(collection_idx)
-                setattr(props, collection_idx_name, collection_idx - 1)
+                new_idx = collection_idx - 1
+                setattr(props, collection_idx_name, new_idx)
                 
                 if delete_callback is not None:
-                    delete_callback(context, event)
+                    delete_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
         
         
@@ -88,9 +91,11 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     new_idx = collection_idx - 1
                     collection.move(collection_idx, new_idx)
                     setattr(props, collection_idx_name, new_idx)
+                else:
+                    new_idx = collection_idx
                     
                 if moveup_callback is not None:
-                    moveup_callback(context, event)
+                    moveup_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
         
         
@@ -110,9 +115,11 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     new_idx = collection_idx + 1
                     collection.move(collection_idx, new_idx)
                     setattr(props, collection_idx_name, new_idx)
+                else:
+                    new_idx = collection_idx
                     
                 if movedown_callback is not None:
-                    movedown_callback(context, event)
+                    movedown_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
     
     UIList.__name__                  = "UIList"
