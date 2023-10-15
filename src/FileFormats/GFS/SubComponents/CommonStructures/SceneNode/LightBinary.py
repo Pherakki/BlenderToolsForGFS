@@ -109,11 +109,11 @@ class LightBinary(Serializable):
         self.color_2 = rw.rw_float32s(self.color_2, 4)
         self.color_3 = rw.rw_float32s(self.color_3, 4)
         
-        if self.type == 1: # Unknown
+        if self.type == 1: # Directional
             self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
             self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
             self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
-        elif self.type == 2: # Sphere
+        elif self.type == 2: # Sphere / Point
             self.unknown_0x34 = rw.rw_float32(self.unknown_0x34)
             self.unknown_0x38 = rw.rw_float32(self.unknown_0x38)
             self.unknown_0x3C = rw.rw_float32(self.unknown_0x3C)
@@ -125,7 +125,7 @@ class LightBinary(Serializable):
                 self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
                 self.unknown_0x4C = rw.rw_float32(self.unknown_0x4C)
                 self.unknown_0x50 = rw.rw_float32(self.unknown_0x50)
-        elif self.type == 3: # Hemisphere
+        elif self.type == 3: # Hemisphere / Spot
             self.unknown_0x54 = rw.rw_float32(self.unknown_0x54)
             self.unknown_0x58 = rw.rw_float32(self.unknown_0x58)
             self.unknown_0x5C = rw.rw_float32(self.unknown_0x5C)
