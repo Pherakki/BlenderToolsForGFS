@@ -163,7 +163,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     PACK_LIST = _uilist()
     
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         return context.armature is not None
 
     def draw(self, context):
