@@ -171,5 +171,8 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
     def is_internal_gap_active(self):
         return self.active_animation_pack_idx == self.internal_animation_pack_idx
 
+    def is_internal_gap_selected(self):
+        return self.animation_pack_idx == self.internal_animation_pack_idx
+    
     def has_internal_gap(self):
         return self.internal_animation_pack_idx > -1

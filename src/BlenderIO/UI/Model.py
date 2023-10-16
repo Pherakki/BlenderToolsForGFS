@@ -98,13 +98,58 @@ _uilist = UIListBase(
 )
 
 
-class SwapActiveAnimationPack(bpy.types.Operator):
-    bl_label   = "Swap Active GAP"
-    bl_idname  = "gfstools.swapactivegap"
+class SetInternalAnimationPack(bpy.types.Operator):
+    bl_label   = "Set Internal GAP"
+    bl_idname  = "gfstools.setinternalgap"
     bl_options = {'UNDO', 'REGISTER'}
     
+    @classmethod
+    def poll(cls, context):
+        return True
+    
+    @staticmethod
+    def getText(context):
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        return "Remove Internal GAP" if mprops.is_internal_gap_selected() else "Set Internal GAP"
+        
+    
     def execute(self, context):
-        raise NotImplementedError
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
+        if mprops.is_internal_gap_selected():
+            new_idx = -1
+        else:
+            new_idx = mprops.animation_pack_idx
+        mprops.internal_animation_pack_idx = new_idx
+        
+        return {'FINISHED'}
+
+
+class SetActiveAnimationPack(bpy.types.Operator):
+    bl_label   = "Set Active GAP"
+    bl_idname  = "gfstools.setactivegap"
+    bl_options = {'UNDO', 'REGISTER'}
+    
+    @classmethod
+    def poll(cls, context):
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
+        return mprops.active_animation_pack_idx != mprops.animation_pack_idx
+    
+    def execute(self, context):
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
+        mprops.active_animation_pack_idx = mprops.animation_pack_idx
+        
+        return {'FINISHED'}
 
 
 class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
@@ -136,11 +181,17 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         self.PACK_LIST.draw(layout, context)
         
+        op_row = ctr.row()
+        op_row.operator(SetActiveAnimationPack.bl_idname)
+        op_row.operator(SetInternalAnimationPack.bl_idname, text=SetInternalAnimationPack.getText(context))
+        
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.NodePropertiesPanel)
         bpy.utils.register_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
         bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        bpy.utils.register_class(SetActiveAnimationPack)
+        bpy.utils.register_class(SetInternalAnimationPack)
         _uilist.register()
     
     @classmethod
@@ -148,6 +199,8 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
         bpy.utils.unregister_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        bpy.utils.unregister_class(SetActiveAnimationPack)
+        bpy.utils.unregister_class(SetInternalAnimationPack)
         _uilist.unregister()
     
     NodePropertiesPanel = makeNodePropertiesPanel(
