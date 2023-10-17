@@ -100,9 +100,10 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
         bpy_armature_object.animation_data_create()
         
         for prop_track in gap_props.animations:
-            nla_track = bpy_armature_object.animation_data.nla_tracks.new(name=prop_track.name)
             
             for prop_strip in prop_track.strips:
+            nla_track = bpy_armature_object.animation_data.nla_tracks.new()
+            nla_track.name = prop_track.name
                 nla_strip = nla_track.strips.new(prop_strip.name,
                                                  1,
                                                  prop_strip.action)
