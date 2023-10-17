@@ -93,6 +93,8 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
     if not is_external:
         mprops.internal_animation_pack_idx = len(mprops.animation_packs)
+    mprops.active_animation_pack_idx = len(mprops.animation_packs)
+    
     ap_props = mprops.animation_packs.add()
     
     ap_props.name = filename
