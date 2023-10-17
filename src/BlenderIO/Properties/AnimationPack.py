@@ -4,6 +4,7 @@ from .Animations import poll_lookat_action
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
+    name:                bpy.props.StringProperty(name="Name", default="New Strip")
     frame_start_ui:      bpy.props.FloatProperty()
     action_frame_start:  bpy.props.FloatProperty()
     action_frame_end:    bpy.props.FloatProperty()
@@ -83,6 +84,7 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
             
             for nla_strip in nla_track.strips:
                 prop_strip = prop_track.strips.add()
+                prop_strip.name                = nla_strip.name
                 prop_strip.frame_start_ui      = nla_strip.frame_start_ui
                 prop_strip.action_frame_start  = nla_strip.action_frame_start
                 prop_strip.action_frame_end    = nla_strip.action_frame_end
@@ -101,11 +103,12 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
             nla_track = bpy_armature_object.animation_data.nla_tracks.new(name=prop_track.name)
             
             for prop_strip in prop_track.strips:
-                nla_strip = nla_track.strips.new()
+                nla_strip = nla_track.strips.new(prop_strip.name,
+                                                 1,
+                                                 prop_strip.action)
                 
                 nla_strip.frame_start_ui     = prop_strip.frame_start_ui
                 nla_strip.action_frame_start = prop_strip.action_frame_start
                 nla_strip.action_frame_end   = prop_strip.action_frame_end
                 nla_strip.scale              = prop_strip.scale
                 nla_strip.repeat             = prop_strip.repeat
-                nla_strip.action             = prop_strip.action
