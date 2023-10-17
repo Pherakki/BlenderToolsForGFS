@@ -113,3 +113,19 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
                 nla_strip.action_frame_end   = prop_strip.action_frame_end
                 nla_strip.scale              = prop_strip.scale
                 nla_strip.repeat             = prop_strip.repeat
+
+    @staticmethod
+    def is_anim_restpose(nla_track):
+        return nla_track.name == "Rest Pose"
+
+    @classmethod
+    def remove_animations_from(cls, bpy_object):
+        if bpy_object.animation_data is None:
+            return
+        
+        ad = bpy_object.animation_data
+        for nla_track in list(ad.nla_tracks):
+            if cls.is_anim_restpose(nla_track):
+                continue
+            
+            ad.nla_tracks.remove(nla_track)
