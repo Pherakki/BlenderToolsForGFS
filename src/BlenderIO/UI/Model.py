@@ -147,6 +147,13 @@ class SetActiveAnimationPack(bpy.types.Operator):
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
         
+        active_gap = mprops.get_active_gap()
+        if active_gap is not None:
+            active_gap.store_animation_pack(bpy_armature_object)
+            # TODO: Need some error-handling stuff in here!!!
+        selected_gap = mprops.get_selected_gap()
+        selected_gap.restore_animation_pack(bpy_armature_object)
+        
         mprops.active_animation_pack_idx = mprops.animation_pack_idx
         
         return {'FINISHED'}
