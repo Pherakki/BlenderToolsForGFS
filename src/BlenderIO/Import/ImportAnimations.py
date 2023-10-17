@@ -27,7 +27,14 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     
     prev_obj = bpy.context.view_layer.objects.active
 
+    # Refresh animation data
     bpy_armature_object.animation_data_create()
+    mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+    active_gap = mprops.get_active_gap()
+    if active_gap is not None:
+        active_gap.store_animation_pack(bpy_armature_object)
+        active_gap.remove_animations_from(bpy_armature_object)
+    
     bpy.context.view_layer.objects.active = bpy_armature_object
     
     bpy.ops.object.mode_set(mode="POSE")
@@ -122,7 +129,6 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     ap_props.flag_31 = gfs.anim_flag_31
     
     ap_props.store_animation_pack(bpy_armature_object)
-
 
 
 def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):

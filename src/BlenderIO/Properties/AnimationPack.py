@@ -77,8 +77,11 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
         gap_props.animations.clear()
         if bpy_armature_object.animation_data is None:
             return
-    
+
         for nla_track in bpy_armature_object.animation_data.nla_tracks:
+            if self.is_anim_restpose(nla_track):
+                continue
+            
             prop_track = gap_props.animations.add()
             prop_track.name = nla_track.name
             
@@ -96,14 +99,15 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
     def restore_animation_pack(self, bpy_armature_object):
         gap_props = self
         
-        bpy_armature_object.animation_data_clear()
-        bpy_armature_object.animation_data_create()
+        self.remove_animations_from(bpy_armature_object)
         
         for prop_track in gap_props.animations:
-            
-            for prop_strip in prop_track.strips:
             nla_track = bpy_armature_object.animation_data.nla_tracks.new()
             nla_track.name = prop_track.name
+            nla_track.mute = True
+            # Import strips in reverse start order so they don't bump into each
+            # other when they get shifted to the correct position in the track
+            for prop_strip in reversed(sorted(prop_track.strips, key=lambda strip: strip.frame_start_ui)):
                 nla_strip = nla_track.strips.new(prop_strip.name,
                                                  1,
                                                  prop_strip.action)
