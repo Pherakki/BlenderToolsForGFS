@@ -21,17 +21,13 @@ from .ExportCameras import export_cameras
 from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
 from .ExportAnimations import export_animations
+from .ExportAnimations import export_gap_props
 from .ExportEPLs import export_epls
 
 from ..WarningSystem import ErrorLogger, handle_warning_system
 
 
 class ExportPolicies(bpy.types.PropertyGroup):
-    pack_animations: bpy.props.BoolProperty(
-        name="Pack Animations into Model",
-        default=False
-    )
-
     combine_new_mesh_nodes: bpy.props.BoolProperty(
         name="Combine New Mesh Nodes",
         default=False
@@ -124,6 +120,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'},
     )
     
+    
     policies: bpy.props.PointerProperty(type=ExportPolicies)
     
     def invoke(self, context, event):
@@ -140,6 +137,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.policies.missing_uv_maps_policy        = prefs.missing_uv_maps_policy
         self.policies.triangulate_mesh_policy       = prefs.triangulate_mesh_policy
         self.policies.version                       = prefs.version
+        
         return super().invoke(context, event)
 
 
@@ -174,8 +172,11 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         export_physics(gfs, selected_model, errorlog)
         export_0x000100F8(gfs, selected_model)
         export_epls(gfs, selected_model, errorlog, self.policies)
-        if self.policies.pack_animations:
-            export_animations(gfs, selected_model, keep_unused_anims=False)
+        
+        mprops = selected_model.data.GFSTOOLS_ModelProperties
+        internal_pack = mprops.get_internal_gap()
+        if internal_pack is not None:
+            export_gap_props(gfs, selected_model, internal_pack, keep_unused_anims=False)
         
         
         # Check if any errors occurred that prevented export.
@@ -251,7 +252,6 @@ class CUSTOM_PT_GFSModelExportSettings(bpy.types.Panel):
         policies = operator.policies
 
         layout.prop(policies, 'version')
-        layout.prop(policies, 'pack_animations')
         layout.prop(policies, 'combine_new_mesh_nodes')
         layout.prop(policies, 'do_strip_epls')
 
