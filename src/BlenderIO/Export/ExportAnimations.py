@@ -17,6 +17,11 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
 
 def export_animations(gfs, armature, keep_unused_anims):
     if armature.animation_data is not None:
+        mprops = armature.data.GFSTOOLS_ModelProperties
+        active_gap = mprops.get_active_gap()
+        if active_gap is not None:
+            active_gap.store_animation_pack(armature)
+        
         ap_props = armature.data.GFSTOOLS_AnimationPackProperties
         
         gfs.anim_flag_0  = ap_props.flag_0
