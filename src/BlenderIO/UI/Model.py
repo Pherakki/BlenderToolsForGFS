@@ -32,7 +32,12 @@ class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
 
 
 def add_callback(context, event, old_idx, new_idx):
-    pass
+    bpy_armature_object = context.active_object
+    bpy_armature        = bpy_armature_object.data
+    mprops              = bpy_armature.GFSTOOLS_ModelProperties
+    if len(mprops.animation_packs) == 1:
+        mprops.animation_packs[0].store_animation_pack(bpy_armature_object)
+        mprops.active_animation_pack_idx = 0
 
 
 def delete_callback(context, event, old_idx, new_idx):
@@ -46,6 +51,10 @@ def delete_callback(context, event, old_idx, new_idx):
         mprops.internal_animation_pack_idx -= 1
     elif old_idx == mprops.internal_animation_pack_idx:
         mprops.internal_animation_pack_idx = -1
+        
+    if len(mprops.animation_packs) == 0:
+        mprops.internal_animation_pack_idx = -1
+        mprops.active_animation_pack_idx   = -1
 
 
 def moveup_callback(context, event, old_idx, new_idx):
@@ -105,14 +114,18 @@ class SetInternalAnimationPack(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context):
-        return True
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
+        return len(mprops.animation_packs) > 0
     
     @staticmethod
     def getText(context):
         bpy_armature_object = context.active_object
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
-        return "Remove Internal GAP" if mprops.is_internal_gap_selected() else "Set Internal GAP"
+        return "Remove Internal GAP" if mprops.is_internal_gap_selected() and len(mprops.animation_packs) else "Set Internal GAP"
         
     
     def execute(self, context):
@@ -140,7 +153,7 @@ class SetActiveAnimationPack(bpy.types.Operator):
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
         
-        return mprops.active_animation_pack_idx != mprops.animation_pack_idx
+        return mprops.active_animation_pack_idx != mprops.animation_pack_idx and len(mprops.animation_packs)
     
     def execute(self, context):
         bpy_armature_object = context.active_object
