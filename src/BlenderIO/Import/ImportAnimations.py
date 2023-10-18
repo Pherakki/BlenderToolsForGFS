@@ -22,7 +22,7 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 ######################
 
 def import_animations(gfs, bpy_armature_object, filename, is_external, import_policies, gfs_to_bpy_bone_map=None):
-    if not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
+    if not is_external and not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
         return
     
     prev_obj = bpy.context.view_layer.objects.active
@@ -37,6 +37,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     
     bpy.context.view_layer.objects.active = bpy_armature_object
     
+    # Do imports
     bpy.ops.object.mode_set(mode="POSE")
     for anim_idx, anim in enumerate(gfs.animations):
         action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
@@ -154,7 +155,7 @@ def create_rest_pose(gfs, armature, gfs_to_bpy_bone_map):
             continue
 
         # General bone
-        bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name #node.name
+        bone_name = armature.pose.bones[gfs_to_bpy_bone_map[node_idx]].name
         build_transformed_fcurves(action, armature, bone_name, 30, {0: node.position}, {0: node.rotation}, {0: node.scale}, {}, False)
     
     armature.animation_data.action = action
