@@ -56,7 +56,6 @@ class ConvertToUnriggedMesh(bpy.types.Operator):
     def invoke(self, context, event):
         wm = context.window_manager
         wm.invoke_search_popup(self)
-        print(">>", self.bone_name)
         return {'FINISHED'}
 
     def execute(self, context):
