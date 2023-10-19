@@ -435,7 +435,7 @@ class AnimationInterface:
             binary.epls.data            = self.epls
             binary.epls.count           = len(self.epls)
         if binary.flags.has_lookat_anims:
-            binary.lookat_animations = self.lookat_animations.to_binary()
+            binary.lookat_animations = self.lookat_animations.to_binary(old_node_id_to_new_node_id_map)
         binary.extra_track_data      = self.extra_track_data
         binary.bounding_box_max_dims = self.bounding_box_max_dims
         binary.bounding_box_min_dims = self.bounding_box_min_dims

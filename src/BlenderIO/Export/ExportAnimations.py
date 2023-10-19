@@ -64,7 +64,7 @@ def export_animations(gfs, armature, keep_unused_anims):
             action = track.strips[0].action
             if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(gfs, armature, gfs.add_animation(),       action, is_blend=False, keep_unused_anims=keep_unused_anims)
             elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(gfs, armature, gfs.add_blend_animation(), action, is_blend=True,  keep_unused_anims=keep_unused_anims)
-        export_lookat_animations(armature, ap_props, gfs, keep_unused_anims)
+        export_lookat_animations(gfs, armature, ap_props, gfs, keep_unused_anims)
 
 
 def export_gap_props(gfs, bpy_armature_object, ap_props, keep_unused_anims):
@@ -119,13 +119,13 @@ def export_gap_props(gfs, bpy_armature_object, ap_props, keep_unused_anims):
         action = track.strips[0].action
         if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(gfs, bpy_armature_object, gfs.add_animation(),       action, is_blend=False, keep_unused_anims=keep_unused_anims)
         elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(gfs, bpy_armature_object, gfs.add_blend_animation(), action, is_blend=True,  keep_unused_anims=keep_unused_anims)
-    export_lookat_animations(bpy_armature_object, ap_props, gfs, keep_unused_anims)
+    export_lookat_animations(gfs, bpy_armature_object, ap_props, gfs, keep_unused_anims)
     
     
 
-def export_lookat_animations(armature, props, gfs_obj, keep_unused_anims):
+def export_lookat_animations(gfs_obj, armature, props, lookat_holder, keep_unused_anims):
         if props.has_lookat_anims:
-            la_up, la_down, la_left, la_right = gfs_obj.add_lookat_animations(
+            la_up, la_down, la_left, la_right = lookat_holder.add_lookat_animations(
                 props.lookat_up_factor, 
                 props.lookat_down_factor, 
                 props.lookat_left_factor, 
@@ -235,7 +235,7 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
         unimported_tracks = AnimationInterface.from_binary(ab)
     
     if props.category == "NORMAL":
-        export_lookat_animations(armature, props, gfs_anim, keep_unused_anims)
+        export_lookat_animations(gfs_obj, armature, props, gfs_anim, keep_unused_anims)
         gfs_anim.extra_track_data = unimported_tracks.extra_track_data
         
     # Export unused bone animations
