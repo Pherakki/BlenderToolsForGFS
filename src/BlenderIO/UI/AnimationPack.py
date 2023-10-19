@@ -1,9 +1,11 @@
 import bpy
 from .HelpWindows import defineHelpWindow
+from .Model import OBJECT_PT_GFSToolsModelDataPanel
 
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     bl_label       = "GFS Animation Pack"
+    bl_parent_id   = OBJECT_PT_GFSToolsModelDataPanel.bl_idname
     bl_idname      = "OBJECT_PT_GFSToolsAnimationPackDataPanel"
     bl_space_type  = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -12,15 +14,25 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     
     @classmethod
     def poll(self, context):
-        return context.armature is not None
+        if context.armature is None:
+            return False
+        
+        bpy_armature = context.armature
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        if mprops.get_active_gap() is None:
+            return False
+        
+        return True
 
     def draw(self, context):
-        armature = context.armature
+        bpy_armature = context.armature
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
         layout = self.layout
         
         layout.operator(self.AnimationPackHelpWindow.bl_idname)
         
-        props = armature.GFSTOOLS_AnimationPackProperties
+        props = mprops.get_active_gap()
         
         # Flags
         flag_col = layout.column()

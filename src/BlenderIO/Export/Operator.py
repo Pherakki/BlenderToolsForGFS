@@ -308,7 +308,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     filename_ext = ".GAP"
     
     policies: bpy.props.PointerProperty(type=ExportPolicies)
-    
+
     def invoke(self, context, event):
         prefs = get_preferences()
         self.policies.version = prefs.version
@@ -336,8 +336,13 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
-        export_animations(gfs, selected_model, keep_unused_anims=True)
         
+        mprops = selected_model.data.GFSTOOLS_ModelProperties
+        active_pack = mprops.get_active_gap()
+        if active_pack is not None:
+            export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True)
+        else:
+            return {'CANCELLED'}
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
