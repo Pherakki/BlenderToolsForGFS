@@ -20,7 +20,6 @@ from .ExportLights import export_lights
 from .ExportCameras import export_cameras
 from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
-from .ExportAnimations import export_animations
 from .ExportAnimations import export_gap_props
 from .ExportEPLs import export_epls
 

@@ -15,58 +15,6 @@ from ..modelUtilsTest.Skeleton.Transform.Animation.Extract import extract_fcurve
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
 
 
-def export_animations(gfs, armature, keep_unused_anims):
-    if armature.animation_data is not None:
-        mprops = armature.data.GFSTOOLS_ModelProperties
-        active_gap = mprops.get_active_gap()
-        if active_gap is not None:
-            active_gap.store_animation_pack(armature)
-        
-        ap_props = armature.data.GFSTOOLS_AnimationPackProperties
-        
-        gfs.anim_flag_0  = ap_props.flag_0
-        gfs.anim_flag_1  = ap_props.flag_1
-        gfs.anim_flag_3  = ap_props.flag_3
-        gfs.anim_flag_4  = ap_props.flag_4
-        gfs.anim_flag_5  = ap_props.flag_5
-        gfs.anim_flag_6  = ap_props.flag_6
-        gfs.anim_flag_7  = ap_props.flag_7
-        gfs.anim_flag_8  = ap_props.flag_8
-        gfs.anim_flag_9  = ap_props.flag_9
-        gfs.anim_flag_10 = ap_props.flag_10
-        gfs.anim_flag_11 = ap_props.flag_11
-        gfs.anim_flag_12 = ap_props.flag_12
-        gfs.anim_flag_13 = ap_props.flag_13
-        gfs.anim_flag_14 = ap_props.flag_14
-        gfs.anim_flag_15 = ap_props.flag_15
-        gfs.anim_flag_16 = ap_props.flag_16
-        gfs.anim_flag_17 = ap_props.flag_17
-        gfs.anim_flag_18 = ap_props.flag_18
-        gfs.anim_flag_19 = ap_props.flag_19
-        gfs.anim_flag_20 = ap_props.flag_20
-        gfs.anim_flag_21 = ap_props.flag_21
-        gfs.anim_flag_22 = ap_props.flag_22
-        gfs.anim_flag_23 = ap_props.flag_23
-        gfs.anim_flag_24 = ap_props.flag_24
-        gfs.anim_flag_25 = ap_props.flag_25
-        gfs.anim_flag_26 = ap_props.flag_26
-        gfs.anim_flag_27 = ap_props.flag_27
-        gfs.anim_flag_28 = ap_props.flag_28
-        gfs.anim_flag_29 = ap_props.flag_29
-        gfs.anim_flag_30 = ap_props.flag_30
-        gfs.anim_flag_31 = ap_props.flag_31
-
-        for track in armature.animation_data.nla_tracks:
-            if track.name == "Rest Pose":
-                continue
-            if not len(track.strips):
-                continue
-            action = track.strips[0].action
-            if   action.GFSTOOLS_AnimationProperties.category == "NORMAL": export_animation(gfs, armature, gfs.add_animation(),       action, is_blend=False, keep_unused_anims=keep_unused_anims)
-            elif action.GFSTOOLS_AnimationProperties.category == "BLEND":  export_animation(gfs, armature, gfs.add_blend_animation(), action, is_blend=True,  keep_unused_anims=keep_unused_anims)
-        export_lookat_animations(gfs, armature, ap_props, gfs, keep_unused_anims)
-
-
 def export_gap_props(gfs, bpy_armature_object, ap_props, keep_unused_anims):
     mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
     active_gap = mprops.get_active_gap()
