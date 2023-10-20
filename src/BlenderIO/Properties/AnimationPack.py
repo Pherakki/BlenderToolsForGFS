@@ -1,6 +1,7 @@
 import bpy
 
 from .Animations import poll_lookat_action
+from ..modelUtilsTest.Misc.ID import new_unique_name
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -133,3 +134,6 @@ class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
                 continue
             
             ad.nla_tracks.remove(nla_track)
+            
+    def rename_unique(self, collection):
+        self.name = new_unique_name(self.name, collection, separator=".")
