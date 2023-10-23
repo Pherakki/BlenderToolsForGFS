@@ -4,7 +4,7 @@ import subprocess
 
 import bpy
 
-from ..Utils.TextWrapping import wrapText
+from ..modelUtilsTest.Utils.TextWrapping import wrapText
 from .HelpWindows import OpenDocumentation
 
 

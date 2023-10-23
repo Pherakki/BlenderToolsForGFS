@@ -1,6 +1,6 @@
 import bpy
 
-from ..Utils.TextWrapping import wrapText
+from ..modelUtilsTest.Utils.TextWrapping import wrapText
 from .UI import BasicErrorBox, BasicWarningBox
 from .Warning import ReportableWarning, ReportableError
 

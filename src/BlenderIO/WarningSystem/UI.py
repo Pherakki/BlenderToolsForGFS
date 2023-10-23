@@ -1,6 +1,6 @@
 import bpy
 
-from ..Utils.TextWrapping import wrapText
+from ..modelUtilsTest.Utils.TextWrapping import wrapText
 
 class BasicErrorBox(bpy.types.Operator):
     bl_idname = "gfstools.basicerrorbox"
