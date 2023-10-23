@@ -3,7 +3,6 @@ import os
 import bpy
 
 from ..Data import dummy_image_data
-from ..WarningSystem.Warning import ReportableWarning, ReportableError
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 
 
@@ -500,7 +499,7 @@ def export_texture(gfs, texture_name, mat_name, node_name, errorlog):
     # embed it in the model
     # If it isn't... need to convert it to DDS, which we won't support currently
     if bpy_image.type != "FILE" and bpy_image.type != "IMAGE":
-        errorlog.log_error(ReportableError(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} used by material '{mat_name}' on texture node '{node_name}'"))
+        errorlog.log_error_message(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} used by material '{mat_name}' on texture node '{node_name}'")
     
     # Check if the file is packed in the blend or external;
     # get data depending on which is the case
@@ -557,13 +556,13 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
                     if proposed_tex_idx < 8:
                         tex_idx = proposed_tex_idx
                     else:
-                        errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                        errorlog.log_warning_message(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0.")
                 else:
-                    errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0."))
+                    errorlog.log_warning_message(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0.")
             else:
-                errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0."))
+                errorlog.log_warning_message(f"Image texture node '{name}' on material '{mat_name}' has an input vector, but it does not come from a UV Map node. Defaulting to UV map 0.")
         else:
-            errorlog.log_warning(ReportableWarning(f"Image texture node '{name}' on material '{mat_name}' does not have an input UV map. Defaulting to UV map 0."))
+            errorlog.log_warning_message(f"Image texture node '{name}' on material '{mat_name}' does not have an input UV map. Defaulting to UV map 0.")
         if tex_idx is None:
             tex_idx = 0
         

@@ -1,14 +1,9 @@
-import bpy
 import functools
 import traceback
 
 
-def handle_warning_system(unhandled_context_msg):
+def display_exceptions(unhandled_context_msg, unhandled_errorbox):
     def impl(function):
-        """
-        The mode of operation for this function is heavily derived from the Google-forms reporter at
-        https://github.com/TheDuckCow/user-report-wrapper
-        """
         @functools.wraps(function)
         def handled_execute(self, *args, **kwargs):
             try:
@@ -18,7 +13,7 @@ def handle_warning_system(unhandled_context_msg):
                     raise e
                 else:
                     print(''.join(traceback.TracebackException.from_exception(e).format()))
-                    bpy.ops.gfstools.unhandlederrorbox('INVOKE_DEFAULT', exception_msg=str(e), context_msg=unhandled_context_msg)
+                    unhandled_errorbox('INVOKE_DEFAULT', exception_msg=str(e), context_msg=unhandled_context_msg)
                     return {"CANCELLED"}
         return handled_execute
     return impl

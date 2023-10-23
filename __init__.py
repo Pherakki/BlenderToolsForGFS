@@ -72,8 +72,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Physics       import OBJECT_PT_GFSToolsColliderPanel
     from .src.BlenderIO.UI.RegisterWindow import RegisterWindow
     from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
-    from .src.BlenderIO.WarningSystem.UI import BasicErrorBox, BasicWarningBox, UnhandledErrorBox
-    
+    from .src.BlenderIO.Globals          import ErrorLogger
     
     CLASSES = (
         AddonPreferences,
@@ -126,9 +125,6 @@ def init_bpy():
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsImagePanel,
-        BasicErrorBox,
-        BasicWarningBox,
-        UnhandledErrorBox
     )
     
     PROP_GROUPS = (
@@ -154,13 +150,17 @@ def init_bpy():
         (bpy.types.TOPBAR_MT_file_export, menu_func_export)
     )
     
-    return CLASSES, PROP_GROUPS, LIST_ITEMS
+    MODULES = (
+        ErrorLogger,
+    )
+    
+    return CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES
 
 
 def register():
     import bpy
     
-    CLASSES, PROP_GROUPS, LIST_ITEMS = init_bpy()
+    CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
     blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
    # Note for later: multi-language support can be implemented by checking
@@ -177,6 +177,9 @@ def register():
         
     for obj, elem in LIST_ITEMS:
         obj.append(elem)
+        
+    for obj in MODULES:
+        obj.register()
      
     # Apparently not allowed to do this. Would be handy though to direct users...  
     # bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
@@ -185,7 +188,7 @@ def register():
 def unregister():
     import bpy
     
-    CLASSES, PROP_GROUPS, LIST_ITEMS = init_bpy()
+    CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
     for classtype in CLASSES[::-1]:
         bpy.utils.unregister_class(classtype)
@@ -196,4 +199,7 @@ def unregister():
         
     for obj, elem in LIST_ITEMS:
         obj.remove(elem)
+        
+    for obj in MODULES:
+        obj.unregister()
         

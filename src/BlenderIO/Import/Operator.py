@@ -7,6 +7,7 @@ from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFil
 from ..Data import bone_pose_enum_options
 from ..Preferences import get_preferences
 from ..modelUtilsTest.API.Operator import get_op_idname
+from ..Globals import ErrorLogger
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
@@ -15,7 +16,6 @@ from .ImportPinnedModel import import_pincushion_model
 from .ImportPhysics import import_physics
 from .ImportTextures import import_textures
 from .ImportEPLs import import_epls
-from ..WarningSystem import handle_warning_system, ErrorLogger
 from ..UI.HelpWindows import HelpWindow
 
 
@@ -102,7 +102,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     def draw(self, context):
         pass
 
-    @handle_warning_system("The file you are trying to import.")
+    @ErrorLogger.display_exceptions("The file you are trying to import.")
     def import_file(self, context, filepath):
         if bpy.context.view_layer.objects.active is not None:        
             bpy.ops.object.mode_set(mode="OBJECT")
@@ -215,7 +215,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
             return sel_obj
         return None
 
-    @handle_warning_system("The file you are trying to import.")
+    @ErrorLogger.display_exceptions("The file you are trying to import.")
     def import_file(self, context, armature, filepath):
         if bpy.context.view_layer.objects.active is not None:        
             bpy.ops.object.mode_set(mode="OBJECT")

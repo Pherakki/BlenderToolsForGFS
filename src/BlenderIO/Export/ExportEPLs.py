@@ -5,7 +5,6 @@ import bpy
 from ...FileFormats.GFS.Interface import EPLInterface
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.EPL.EPLBinary import EPLBinary
 from ...serialization.BinaryTargets import Reader
-from ..WarningSystem.Warning import ReportableError
 
 
 def export_epls(gfs, armature, errorlog, export_policies):

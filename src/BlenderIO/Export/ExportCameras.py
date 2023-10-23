@@ -4,7 +4,6 @@ import bpy
 from mathutils import Matrix, Quaternion
 
 from ..Utils.Maths import convert_rotation_to_quaternion
-from ..WarningSystem.Warning import ReportableError
 from .Utils import find_obj_parent_bone
 
     
@@ -22,7 +21,7 @@ def export_cameras(gfs, armature, errorlog):
         props = bpy_camera_object.data.GFSTOOLS_CameraProperties
         
         if bpy_camera_object.data.lens_unit != "FOV":
-            errorlog.log_error(ReportableError(f"Camera '{bpy_camera_object.name}' has a focal length not defined in FOV units. Cameras must currently be exported with FOV units."))
+            errorlog.log_error_message(f"Camera '{bpy_camera_object.name}' has a focal length not defined in FOV units. Cameras must currently be exported with FOV units.")
         
         cam_bone = armature.data.bones[cam_bone]
         view_pos, view_rot, view_scl = ((armature.matrix_world @ cam_bone.matrix_local).inverted() @ bpy_camera_object.matrix_world).decompose()

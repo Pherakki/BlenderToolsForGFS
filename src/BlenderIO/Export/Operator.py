@@ -13,6 +13,7 @@ from ..Data import multiple_materials_policy_options
 from ..Data import triangulate_mesh_policy_options
 from ..Preferences import get_preferences
 from ..modelUtilsTest.API.Operator import get_op_idname
+from ..Globals import ErrorLogger
 from .ExportNodes import export_node_tree
 from .ExportModel.Mesh import export_mesh_data
 from .ExportMaterials import export_materials_and_textures
@@ -22,8 +23,6 @@ from .ExportPhysics import export_physics
 from .Export0x000100F8 import export_0x000100F8
 from .ExportAnimations import export_gap_props
 from .ExportEPLs import export_epls
-
-from ..WarningSystem import ErrorLogger, handle_warning_system
 
 
 class ExportPolicies(bpy.types.PropertyGroup):
@@ -140,7 +139,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         return super().invoke(context, event)
 
 
-    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
+    @ErrorLogger.display_exceptions("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger
         errorlog = ErrorLogger()
@@ -313,7 +312,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         self.policies.version = prefs.version
         return super().invoke(context, event)
 
-    @handle_warning_system("The .blend file you are trying to export from, with all images packed into the file.")
+    @ErrorLogger.display_exceptions("The .blend file you are trying to export from, with all images packed into the file.")
     def export_file(self, context, filepath):
         # Init a logger
         errorlog = ErrorLogger()
