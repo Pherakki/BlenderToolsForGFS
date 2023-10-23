@@ -291,14 +291,13 @@ class GFSVertexGetter:
         total_weight = sum(group_weights)
         if total_weight > 0.:
             group_weights = [weight / total_weight for weight in group_weights]
-        self.missing_bone_names = sorted(self.missing_bone_names)
         
         return vertex.co, group_bone_ids, group_weights
 
     def log_errors(self, bpy_mesh_obj, vertices):
         # Log any errors that were encountered
         if self.log_missing_weights and len(self.missing_weight_verts):
-            self.errorlog.log_error(MissingVertexGroupsError(bpy_mesh_obj, self.missing_weight_verts, self.missing_bone_names))
+            self.errorlog.log_error(MissingVertexGroupsError(bpy_mesh_obj, self.missing_weight_verts, sorted(self.missing_bone_names)))
         if len(self.too_many_indices_verts):
             if self.too_many_vertex_groups_policy == "WARN":
                 self.errorlog.log_warning_message(f"{len(self.too_many_indices_verts)} vertices on mesh '{bpy_mesh_obj.name}' had too many vertex groups. The least influential groups were removed. Change the export policy to 'Throw Error' if you want to see which vertices have this problem instead.")
