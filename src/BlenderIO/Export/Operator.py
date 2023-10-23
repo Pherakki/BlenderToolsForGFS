@@ -12,7 +12,7 @@ from ..Data import missing_uv_maps_policy_options
 from ..Data import multiple_materials_policy_options
 from ..Data import triangulate_mesh_policy_options
 from ..Preferences import get_preferences
-from ..Utils.Operator import get_op_idname
+from ..modelUtilsTest.API.Operator import get_op_idname
 from .ExportNodes import export_node_tree
 from .ExportModel.Mesh import export_mesh_data
 from .ExportMaterials import export_materials_and_textures

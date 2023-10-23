@@ -6,7 +6,7 @@ from bpy_extras.io_utils import ImportHelper
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
 from ..Data import bone_pose_enum_options
 from ..Preferences import get_preferences
-from ..Utils.Operator import get_op_idname
+from ..modelUtilsTest.API.Operator import get_op_idname
 from .Import0x000100F8 import import_0x000100F8
 from .ImportAnimations import create_rest_pose, import_animations
 from .ImportMaterials import import_materials
