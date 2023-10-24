@@ -30,11 +30,13 @@ def ErrorBoxBase(namespace, plugin_name):
             layout = self.layout
     
             col = layout.column()
-    
-            msg_lines = wrapText(self.message, 96)
             col.scale_y = 0.6
-            for line in msg_lines:
-                col.label(text=line)
+    
+            for submsg in self.message.split('\n'):
+                col.separator(factor=0.2)
+                msg_lines = wrapText(submsg, 96)
+                for line in msg_lines:
+                    col.label(text=line)
     return ErrorBoxBaseImpl
 
             
@@ -64,11 +66,13 @@ def WarningBoxBase(namespace, plugin_name):
             layout = self.layout
     
             col = layout.column()
-    
-            msg_lines = wrapText(self.message, 96)
             col.scale_y = 0.6
-            for line in msg_lines:
-                col.label(text=line)
+    
+            for submsg in self.message.split('\n'):
+                col.separator(factor=0.2)
+                msg_lines = wrapText(submsg, 96)
+                for line in msg_lines:
+                    col.label(text=line)
     return WarningBoxBaseImpl
 
 
@@ -101,8 +105,12 @@ def UnhandledBoxBase(namespace, plugin_name, unhandled_error_message):
             col = layout.column()
             col.scale_y = 0.6
     
-            msg_lines = wrapText(unhandled_error_message.format(exception_msg=self.exception_msg, 
-                                                                context_msg=self.context_msg), 96)
-            for line in msg_lines:
-                col.label(text=line)
+            submessages = unhandled_error_message.format(exception_msg=self.exception_msg, 
+                                                         context_msg=self.context_msg).split('\n')
+            for submsg in submessages:
+                col.separator(factor=0.2)
+                msg_lines = wrapText(submsg, 96)
+                
+                for line in msg_lines:
+                    col.label(text=line)
     return UnhandledBoxBaseImpl

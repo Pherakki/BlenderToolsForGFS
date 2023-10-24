@@ -56,9 +56,10 @@ def ErrorLogBase(namespace, plugin_name, unhandled_error_message):
             if len(self.warnings):
                 lines = []
                 for i, warning in enumerate(self.warnings):
-                    current_warning = wrapText(f"{i+1}) {warning.msg}", 80)
+                    warning_text = f"{i+1}) {warning.msg}"
+                    current_warning = wrapText(warning_text, 80)
                     if len(lines) + len(current_warning) < 15:
-                        lines.extend(current_warning)
+                        lines.append(warning_text)
                         print(warning.msg)
                     else:
                         lines.append(f"Plus {len(self.warnings) - i} additional warnings. Check the console for details.")
@@ -100,9 +101,9 @@ def ErrorLogBase(namespace, plugin_name, unhandled_error_message):
                     err.showErrorData()
             
                 msg = f"({len(self.errors)}) error(s) were detected when trying to export. The first error is shown below, and displayed if appropriate."
-                msg += "\n\n" + err.msg
+                msg += "\n" + err.msg
                 if err.HAS_DISPLAYABLE_ERROR:
-                    msg += "\n\n" + "The relevant data has been selected for you."
+                    msg += "\n" + "The relevant data has been selected for you."
                 self._make_error_popup("INVOKE_DEFAULT", message=msg)
             self.errors.clear()
     
