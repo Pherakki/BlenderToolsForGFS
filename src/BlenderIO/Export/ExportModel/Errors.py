@@ -37,6 +37,12 @@ class MissingUVMapsError(ReportableError):
         self.bpy_mesh_object.select_set(False)
 
 
+class MissingMaterialError(DisplayableMeshesError):
+    def __init__(self, bpy_mesh_objects):
+        msg = f"{len(bpy_mesh_objects)} meshes have no material. A mesh must have a single material for successful export. The affected meshes have been selected for you."
+        super().__init__(msg, bpy_mesh_objects)
+
+
 class MultipleMaterialsError(DisplayableMeshesError):
     def __init__(self, bpy_mesh_objects):
         msg = f"{len(bpy_mesh_objects)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. You can ignore this error or auto-split meshes on export from the Export menu and in the Addon Preferences. The affected meshes have been selected for you."
