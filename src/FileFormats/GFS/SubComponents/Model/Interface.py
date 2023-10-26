@@ -1,6 +1,6 @@
 import copy
 
-from ...Utils.Matrices import multiply_transform_matrices, normalise_transform_matrix_scale, invert_pos_rot_matrix
+from ...Utils.Matrices import multiply_transform_matrices, normalise_transform_matrix_scale
 from ...Utils.Matrices import transforms_to_matrix, transposed_mat4x4_to_mat4x3, mat4x3_to_transposed_mat4x4
 from ...Utils.Matrices import are_transform_matrices_close, invert_transform_matrix
 
