@@ -87,29 +87,46 @@ def multiply_rotation_matrices(a, b):
 
     return out
 
+
 def are_transform_matrices_close(a, b, rot_tol, trans_tol, debug=False):
-    results = [False]*len(a)
+    results = [False]*(9 + 3 + 3)
     
     # Check if rotations are close
-    rot_a = slice_rotation_from_transform(a)
-    rot_b = slice_rotation_from_transform(b)
-    inv_rot_b = transposed_mat3x3(rot_b)
+    rt_a = normalise_transform_matrix_scale([_ for _ in a])
+    rt_b = normalise_transform_matrix_scale([_ for _ in b])
+    rot_a = normalise_rotation_matrix(slice_rotation_from_transform(rt_a))
+    rot_b = normalise_rotation_matrix(slice_rotation_from_transform(rt_b))
     
-    close_to_identity = multiply_rotation_matrices(rot_a, inv_rot_b)
-    close_to_identity[0] -= 1.
-    close_to_identity[4] -= 1.
-    close_to_identity[8] -= 1.
-    
-    for i in range(9):
-        results[i] = abs(close_to_identity[i]) < rot_tol
+    # This is the most numerically stable (albiet not complete accurate) check
+    test_1 = [(ra-rb) < rot_tol for ra, rb in zip(rot_a, rot_b)]
+    if all(test_1):
+        for i in range(9):
+            results[i] = True
+    else:
+        # Not close enough for stable solution, so check if A . B^T = 1
+        inv_rot_b = transposed_mat3x3(rot_b)
+        
+        close_to_identity = multiply_rotation_matrices(rot_a, inv_rot_b)
+        close_to_identity[0] -= 1.
+        close_to_identity[4] -= 1.
+        close_to_identity[8] -= 1.
+        
+        for i in range(9):
+            results[i] = abs(close_to_identity[i]) < rot_tol
     
     # Check if translations are close
     pos_a = slice_translation_from_transform(a)
     pos_b = slice_translation_from_transform(b)
     close_to_zero = [ai - bi for ai, bi in zip(pos_a, pos_b)]
-    
     for i in range(3):
         results[i+9] = abs(close_to_zero[i]) < trans_tol
+    
+    # Check if scales are close
+    scl_a = slice_scale_from_matrix(a)
+    scl_b = slice_scale_from_matrix(b)
+    close_to_zero = [ai - bi for ai, bi in zip(scl_a, scl_b)]
+    for i in range(3):
+        results[i+9+3] = abs(close_to_zero[i]) < trans_tol
     
     return results
 
