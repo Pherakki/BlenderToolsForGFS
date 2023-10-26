@@ -59,6 +59,7 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
     merge_node: bpy.props.PointerProperty(type=bpy.types.Object, name="Merge Node", description="Attach to the node of the selected mesh on export", poll=poll_merged_node)
     
     UNRIGGED_ATTACHED       = "Unrigged [Attached]"
+    UNRIGGED_ROOT           = "Unrigged [Root Node]"
     UNRIGGED_NEW_NODE       = "Unrigged [New Node]"
     UNRIGGED_AMBIGUOUS      = "Unrigged [Ambiguous]"
     RIGGED_NEW_NODE         = "Rigged [New Node]"
@@ -92,13 +93,26 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
     def is_rigged(self):
         return not self.is_unrigged()
     
+    def is_root_unrigged(self):
+        if self.is_unrigged():
+            return self.get_unrigged_type() == self.UNRIGGED_ROOT
+        else:
+            return False
+    
     def is_unrigged(self):
         bpy_mesh_object = self.id_data
         return (len(bpy_mesh_object.vertex_groups) <= 1) and bpy_mesh_object.data.GFSTOOLS_MeshProperties.permit_unrigged_export
     
     def get_unrigged_type(self):
         if len(self.id_data.vertex_groups) == 1:
-            return self.UNRIGGED_ATTACHED
+            bone = self.id_data.vertex_groups[0].name
+            armature = get_armature(self.id_data)
+            if bone == armature.data.GFSTOOLS_ModelProperties.root_node_name:
+                return self.UNRIGGED_ROOT
+            elif bone in armature.data.bones:
+                return self.UNRIGGED_ATTACHED
+            else:
+                return self.UNRIGGED_INVALID
         elif len(self.id_data.vertex_groups) == 0:
             return self.UNRIGGED_NEW_NODE
         else:
@@ -150,6 +164,8 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
             rig_type = self.get_unrigged_type()
             if rig_type == self.UNRIGGED_ATTACHED:
                 return self.id_data.vertex_groups[0].name
+            elif rig_type == self.UNRIGGED_ROOT:
+                return get_armature(self.id_data).data.GFSTOOLS_ModelProperties.root_node_name
             elif rig_type == self.UNRIGGED_NEW_NODE:
                 return Exception("CALLED get_node_name IN INVALID CONTEXT: UNRIGGED REQUIRES NEW NODE")
             elif rig_type == self.UNRIGGED_AMBIGUOUS:

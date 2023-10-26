@@ -17,11 +17,14 @@ def get_node_props(context):
         return context.mesh.GFSTOOLS_NodeProperties
     else:
         bone_name = bpy_object.vertex_groups[0].name
-        bpy_armature_object = context.active_object.parent
+        bpy_armature_object = context.active_object.get_armature()
         bones = bpy_armature_object.data.bones
-        if    oprops.is_rigged(): bone_name = oprops.node
-        else:                     bone_name = bpy_object.vertex_groups[0].name
-        return bones[bone_name].GFSTOOLS_NodeProperties
+        if oprops.is_root_unrigged():
+            return bpy_armature_object.GFSTOOLS_NodeProperties
+        else:
+            if    oprops.is_rigged(): bone_name = oprops.node
+            else:                     bone_name = bpy_object.vertex_groups[0].name
+            return bones[bone_name].GFSTOOLS_NodeProperties
 
 
 def get_armature_bones(self, context):
