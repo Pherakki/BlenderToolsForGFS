@@ -9,6 +9,7 @@ from ...Utils.Maths import convert_Zup_to_Yup, convert_Yup_to_Zup
 
 from ...modelUtilsTest.Context.ActiveObject import safe_active_object_switch, get_active_obj, set_active_obj, set_mode
 from ...modelUtilsTest.Misc.ID.UniqueName import new_unique_name
+from .Errors import MissingMaterialError
 from .Errors import MultipleMaterialsError
 from .Errors import NonTriangularFacesError
 from .Errors import TooManyVerticesError
@@ -30,6 +31,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
     
     bad_meshes = []
     multiple_materials_meshes = []
+    no_materials_meshes = []
     for bpy_mesh_object in meshes:
         oprops = bpy_mesh_object.GFSTOOLS_ObjectProperties
         
@@ -37,7 +39,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
             errorlog.log_warning_message(f"THIS IS A BUG: An invalid mesh '{bpy_mesh_object.name}' made its way to the exporter when it should have been skipped. This mesh has NOT been exported and your export is otherwise unaffected, but this message should have never appeared. Please create an Issue on the GitHub page with FULL reproduction instructions and any required files to reproduce this error message.")
         
         existing_meshes = set(o.name for o in bpy.data.objects)
-        material_index = validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_policies)
+        material_index = validate_mesh_materials(bpy_mesh_object, no_materials_meshes, multiple_materials_meshes, export_policies)
         
         # Get node ID
         if oprops.requires_new_node():
@@ -111,6 +113,9 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
         else:
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: MULTIPLE_MATERIALS_POLICY '{multiple_materials_policy}' NOT DEFINED")
     
+    if len(no_materials_meshes):
+        errorlog.log_error(MissingMaterialError(no_materials_meshes))
+    
     aprops     = armature.data.GFSTOOLS_ModelProperties
     boxprops = aprops.bounding_box
     if boxprops.export_policy == "MANUAL":
@@ -140,7 +145,7 @@ def triangulate_mesh(bpy_mesh_object):
     set_mode("OBJECT")
 
 
-def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_policies):
+def validate_mesh_materials(bpy_mesh_object, no_material_meshes, multiple_materials_meshes, export_policies):
     multiple_materials_policy = export_policies.multiple_materials_policy
     
     bpy_mesh = bpy_mesh_object.data
@@ -169,6 +174,8 @@ def validate_mesh_materials(bpy_mesh_object, multiple_materials_meshes, export_p
         else:
             # Return material index with most polygons
             return max(index_counts, key=index_counts.get)
+    elif bpy_mesh_object.active_material is None:
+        no_material_meshes.append(bpy_mesh_object)
     return 0
 
 
