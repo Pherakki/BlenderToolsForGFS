@@ -62,6 +62,15 @@ def multiply_transform_matrices(a, b):
 
 	return out
 
+
+def normalise_rotation_matrix(a):
+    for i in range(3):
+        magnitude = sum(a[3*i:3*i+3])
+        for j in range(3):
+            a[3*i+j] /= magnitude
+    return a
+
+
 def multiply_rotation_matrices(a, b):
     out = [
         0., 0., 0.,
