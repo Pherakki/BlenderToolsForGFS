@@ -337,7 +337,8 @@ class GFSInterface:
         mesh.unknown_float_1 = unknown_float_1
         mesh.unknown_float_2 = unknown_float_2
         
-        mesh.index_type = 2 if max(indices) >= 2**16 else 1
+        if len(indices): mesh.index_type = 2 if max(indices) >= 2**16 else 1
+        else:            mesh.index_type = 1
         mesh.keep_bounding_box    = keep_bounding_box
         mesh.keep_bounding_sphere = keep_bounding_sphere
         

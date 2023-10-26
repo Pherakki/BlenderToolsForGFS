@@ -229,7 +229,10 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
     
-    mesh_buffers = extract_vertices(bpy_mesh_object, bone_names, errorlog, export_policies)
+    mesh_buffers = extract_vertices(bpy_mesh_object, material_index, bone_names, errorlog, export_policies)
+    if mesh_buffers is None:
+        return gfs.add_mesh(node_id, [], "", [], [], 0, 0., 0., False, False)
+    
     vertices = mesh_buffers.vertices
     indices = mesh_buffers.indices
     gfs_vert_to_bpy_vert = mesh_buffers.vbo_vert_to_bpy_vert_map
@@ -321,6 +324,9 @@ def create_mesh_node(gfs, name, armature, bind_matrix, node_props=None):
 
 def bake_mesh_transform(gfs_mesh, transform):
     vs = gfs_mesh.vertices
+    if len(vs) == 0:
+        return
+    
     # Position
     if vs[0].position is not None:
         for v in vs: v.position = (transform @ Vector([*v.position, 1.]))[:3]

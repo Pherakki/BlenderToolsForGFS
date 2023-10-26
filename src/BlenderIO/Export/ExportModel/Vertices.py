@@ -13,15 +13,15 @@ from .Errors import PartiallyUnriggedMeshError
 from .Errors import TooManyIndicesError
 
 
-def extract_vertices(bpy_mesh_obj, bone_names, errorlog, export_policies):
+def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_policies):
     bpy_mesh     = bpy_mesh_obj.data
-    bpy_material = bpy_mesh_obj.active_material # Revist this...
+    if not len(bpy_mesh_obj.material_slots):
+        return None
+    bpy_material = bpy_mesh_obj.material_slots[material_idx].material
     
     missing_uv_maps_policy = export_policies.missing_uv_maps_policy
     recalculate_tangents   = export_policies.recalculate_tangents
     
-    if bpy_material is None:
-        return [], []
     
     used_attributes = get_used_attributes(bpy_mesh, bpy_material)
     
