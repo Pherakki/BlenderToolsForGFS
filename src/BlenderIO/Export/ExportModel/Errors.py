@@ -24,7 +24,7 @@ class MissingUVMapsError(ReportableError):
     __slots__ = ("bpy_mesh_object", "mapname")
     
     def __init__(self, bpy_mesh_object, mapname):
-        msg = f"Mesh '{bpy_mesh_object.name}' uses a material that requires UV map '{mapname}', but the mesh does not contain this map"
+        msg = f"Mesh '{bpy_mesh_object.name}' uses a material that requires UV map '{mapname}', but the mesh does not contain this map."
         super().__init__(msg)
         self.bpy_mesh_object = bpy_mesh_object
         self.mapname = mapname
@@ -39,7 +39,7 @@ class MissingUVMapsError(ReportableError):
 
 class MultipleMaterialsError(DisplayableMeshesError):
     def __init__(self, bpy_mesh_objects):
-        msg = f"{len(bpy_mesh_objects)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. You can ignore this error or auto-split meshes on export from the Export menu and in the Addon Preferences. The affected meshes have been selected for you"
+        msg = f"{len(bpy_mesh_objects)} meshes have more than one material. A mesh must have a single material for successful export. You can split meshes by material by selecting all vertices in Edit Mode, pressing P, and clicking 'Split by Material' on the pop-up menu. You can ignore this error or auto-split meshes on export from the Export menu and in the Addon Preferences. The affected meshes have been selected for you."
         super().__init__(msg, bpy_mesh_objects)
 
 
@@ -59,5 +59,5 @@ class TooManyVerticesError(DisplayableMeshesError):
     vtx_limit = VERTEX_LIMIT
     
     def __init__(self, bpy_mesh_objects):
-        msg = f"{len(bpy_mesh_objects)} meshes need to be split into more than {self.vtx_limit} vertices. These have been selected for you"
+        msg = f"{len(bpy_mesh_objects)} meshes need to be split into more than {self.vtx_limit} vertices. These have been selected for you."
         super().__init__(msg, bpy_mesh_objects)
