@@ -106,16 +106,9 @@ class ModelInterface:
         return bones, meshes, cameras, lights, epls, bb_min, bb_max, bs_centre, bs_radius, flag_3
         
     @staticmethod
-    def to_binary(bones, meshes, cameras, lights, epls, bb_min, bb_max, bs_centre, bs_radius, flag_3, copy_verts=True):
+    def to_binary(bones, meshes, cameras, lights, epls, keep_bounding_box, keep_bounding_sphere, overrides, flag_3, copy_verts=True):
         binary = ModelPayload()
-
-        binary.flags.has_bounding_box    = (bb_max    is not None) and (bb_min    is not None)
-        binary.flags.has_bounding_sphere = (bs_centre is not None) and (bs_radius is not None)
-        binary.bounding_box_max_dims  = bb_max
-        binary.bounding_box_min_dims  = bb_min
-        binary.bounding_sphere_centre = bs_centre
-        binary.bounding_sphere_radius = bs_radius
-        binary.flags.flag_3           = flag_3
+        binary.flags.flag_3 = flag_3
         
         # At this point, the bone indices in the mesh binaries are global.
         # Need to convert them to "local" matrix palette bones at the end of 
@@ -203,76 +196,23 @@ class ModelInterface:
                                 indices[wgt_idx] = 0
                         v.indices = indices[::-1]
         
-        # ####################
-        # # BOUNDING VOLUMES #
-        # ####################
-        # if (keep_bounding_box or keep_bounding_sphere) and len(mesh_binaries):
-        #     # verts = []
-        #     # for mesh_binary, mesh_node_id in mesh_binaries:
-        #     #     node_matrix = rest_pose_matrices[mesh_node_id]
-        #     #     if mesh_binary.flags.has_bounding_box != 0:  # Check if you need to do the others here too
-        #     #         mx = mesh_binary.bounding_box_max_dims
-        #     #         mn = mesh_binary.bounding_box_min_dims
-        #     #         verts.extend([
-        #     #             transform_vector(node_matrix, [mx[0], mx[1], mx[2]]),
-        #     #             transform_vector(node_matrix, [mx[0], mx[1], mn[2]]),
-        #     #             transform_vector(node_matrix, [mx[0], mn[1], mx[2]]),
-        #     #             transform_vector(node_matrix, [mx[0], mn[1], mn[2]]),
-        #     #             transform_vector(node_matrix, [mn[0], mn[1], mn[2]]),
-        #     #             transform_vector(node_matrix, [mn[0], mn[1], mx[2]]),
-        #     #             transform_vector(node_matrix, [mn[0], mx[1], mn[2]]),
-        #     #             transform_vector(node_matrix, [mn[0], mx[1], mx[2]])
-        #     #         ])
-                
-        #     # if not len(verts):
-        #     #     if keep_bounding_box:
-        #     #         raise ValueError("Model is marked for bounding box export, but has no meshes with vertex position data")
-        #     #     elif keep_bounding_sphere:
-        #     #         raise ValueError("Model is marked for bounding sphere export, but has no meshes with vertex position data")
+        if keep_bounding_box:
+            binary.flags.has_bounding_box = True
+            bounding_box = overrides.bounding_box
+            if bounding_box.enabled:
+                binary.bounding_box_min_dims = bounding_box.min_dims
+                binary.bounding_box_max_dims = bounding_box.max_dims
+            else:
+                binary.autocalc_bounding_box()
             
-            
-        #     # max_dims = [*verts[0]]
-        #     # min_dims = [*verts[0]]
-                    
-        #     # for pos in verts:
-        #     #     for i in range(3):
-        #     #         max_dims[i] = max(max_dims[i], pos[i])
-        #     #         min_dims[i] = min(min_dims[i], pos[i])
-            
-        #     mesh_binary, mesh_node_id = mesh_binaries[0]
-        #     node_matrix = rest_pose_matrices[mesh_node_id]
-        #     max_dims = transform_vector(node_matrix, mesh_binary.vertices[0].position)
-        #     min_dims = transform_vector(node_matrix, mesh_binary.vertices[0].position)
-            
-        #     for mesh_binary, mesh_node_id in mesh_binaries:
-        #         node_matrix = rest_pose_matrices[mesh_node_id]
-        #         for vertex in mesh_binary.vertices:
-        #             pos = transform_vector(node_matrix, vertex.position)
-                        
-        #             for i in range(3):
-        #                 max_dims[i] = max(max_dims[i], pos[i])
-        #                 min_dims[i] = min(min_dims[i], pos[i])
-            
-        #     # Do box
-        #     if keep_bounding_box:
-        #         binary.bounding_box_max_dims = max_dims
-        #         binary.bounding_box_min_dims = min_dims
-                
-        #     # Do sphere
-        #     # This is WRONG but I can't get an iterative Welzl algorithm working
-        #     if keep_bounding_sphere:
-        #         centre = [.5*(mx + mn) for mx, mn in zip(max_dims, min_dims)]
-        #         radius = 0.
-        #         for mesh_binary, mesh_node_id in mesh_binaries:
-        #             if not mesh_binary.vertex_format.has_positions:
-        #                 continue
-        #             for v in mesh_binary.vertices:
-        #                 pos = v.position
-        #                 dist = (p-c for p, c in zip(pos, centre))
-        #                 radius = max(sum(d*d for d in dist), radius)
-        #         binary.bounding_sphere_centre = centre
-        #         binary.bounding_sphere_radius = radius**.5
-            
+        if keep_bounding_sphere:
+            binary.flags.has_bounding_sphere = True
+            bounding_sph = overrides.bounding_sphere
+            if bounding_sph.enabled:
+                binary.bounding_sphere_centre = bounding_sph.center
+                binary.bounding_sphere_radius = bounding_sph.radius
+            else:
+                binary.autocalc_bounding_sphere()
         
         return binary, old_node_id_to_new_node_id_map
     

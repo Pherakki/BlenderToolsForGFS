@@ -1,5 +1,6 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
+from ....Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, transform_vector
 from ...CommonStructures import BitVector, SceneNodeBinary
 from .SkinningDataBinary import SkinningDataBinary
 
@@ -45,33 +46,40 @@ class AttachmentGetter:
         self.attachments = []
         self.current_idx = 0
         
-    def __call__(self, node):
+    def begin(self, node):
         for attachment in node.attachments:
             if attachment.type == self.attachment_type:
                 self.attachments.append((self.current_idx, attachment.data))
         self.current_idx += 1
+        
+    def end(self):
+        return
 
 
 class FlatNodes:
     def __init__(self):
-        self.nodes   = []
-        self.meshes  = []
-        self.cameras = []
-        self.lights  = []
-        self.epls    = []
-        self.morphs  = []
+        self.nodes        = []
+        self.node_parents = []
+        self.meshes       = []
+        self.cameras      = []
+        self.lights       = []
+        self.epls         = []
+        self.morphs       = []
 
 
 class FlatNodesWalker:
     def __init__(self):
         self.flat_nodes = FlatNodes()
+        self.parent_stack = [-1]
     
-    def __call__(self, node):
+    def begin(self, node):
         fn = self.flat_nodes
         
         idx = len(fn.nodes)
         fn.nodes.append(node)
-
+        fn.node_parents.append(self.parent_stack[-1])
+        self.parent_stack.append(len(fn.nodes)-1)
+        
         for attachment in node.attachments:
             if   attachment.type == 4: lst = fn.meshes
             elif attachment.type == 5: lst = fn.cameras
@@ -82,6 +90,9 @@ class FlatNodesWalker:
             
             lst.append((idx, attachment.data))
 
+    def end(self):
+        self.parent_stack.pop(-1)
+        
 
 class ModelPayload(Serializable):
     TYPECODE = 0x00010003
@@ -130,9 +141,10 @@ class ModelPayload(Serializable):
         rw.rw_obj(self.root_node, version)
         
     def walk_nodes(self, node, operator):
-        operator(node)
+        operator.begin(node)
         for child in node.children[::-1]:
             self.walk_nodes(child, operator)
+        operator.end()
     
     def fetch_attachment(self, node, attachment_type):
         ag = AttachmentGetter(attachment_type)
@@ -158,3 +170,65 @@ class ModelPayload(Serializable):
         fn = FlatNodesWalker()
         self.walk_nodes(self.root_node, fn)
         return fn.flat_nodes
+
+    def get_mesh_bounding_boxes(self):
+        flat_nodes = self.flattened()
+        nodes        = flat_nodes.nodes
+        node_parents = flat_nodes.node_parents
+        
+        matrices = [None for _ in range(len(nodes))]
+        for i, bone in enumerate(nodes):
+            matrix = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
+            parent_idx = node_parents[i]
+            if parent_idx > -1:
+                matrices[i] = multiply_transform_matrices(matrices[parent_idx], matrix)
+            else:
+                matrices[i] = matrix
+        
+        mesh_verts = []
+        for node_idx, mesh in self.get_meshes():
+            if not mesh.flags.has_bounding_box:
+                continue
+            matrix   = matrices[node_idx]
+            min_dims = mesh.bounding_box_min_dims
+            max_dims = mesh.bounding_box_max_dims
+            
+            mesh_verts.append(transform_vector(matrix, min_dims))
+            mesh_verts.append(transform_vector(matrix, max_dims))
+        return mesh_verts, matrices
+
+    def calc_bounding_box(self):
+        mesh_verts, matrices = self.get_mesh_bounding_boxes()
+        if not len(mesh_verts):
+            return ([0, 0, 0], [0, 0, 0])
+        verts = []
+        for m in matrices:
+            verts.append([m[0*4+3], m[1*4+3], m[2*4+3]])
+            
+        max_dims = [max(vs) for vs in zip(*[*mesh_verts, *verts])]
+        min_dims = [min(vs) for vs in zip(*[*mesh_verts, *verts])]
+        
+        return (min_dims, max_dims)
+    
+    def autocalc_bounding_box(self):
+        self.bounding_box_min_dims, self.bounding_box_max_dims = self.calc_bounding_box()
+        self.flags.has_bounding_box = True
+    
+    def calc_bounding_sphere(self):
+        mesh_verts, matrices = self.get_mesh_bounding_boxes()
+        min_dims, max_dims = self.calc_bounding_box()
+        center = [sum(vs)/len(vs) for vs in zip(*mesh_verts)]
+        if max_dims is not None and min_dims is not None:
+            max_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(max_dims, center)])**.5
+            min_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(min_dims, center)])**.5
+        else:
+            max_dim_radius = max_dims
+            min_dim_radius = min_dims
+        
+        radius = max([max_dim_radius, min_dim_radius])
+        
+        return (center, radius)
+    
+    def autocalc_bounding_sphere(self):
+        self.bounding_sphere_centre, self.bounding_sphere_radius = self.calc_bounding_sphere()
+        self.flags.has_bounding_sphere = True

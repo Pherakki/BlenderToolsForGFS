@@ -13,15 +13,12 @@ from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightI
 from .SubComponents.GFS0ContainerBinary import UnsupportedVersionError
 from .SubComponents.Animations.Binary.AnimationBinary import ParticlesError
 from .SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasParticleDataError
-from .Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, transform_vector
 
 
 class GFSInterface:
     def __init__(self):
-        self.bounding_box_max_dims = None
-        self.bounding_box_min_dims = None
-        self.bounding_sphere_centre = None
-        self.bounding_sphere_radius = None
+        self.keep_bounding_box    = False
+        self.keep_bounding_sphere = False
         
         self.flag_3 = False
         self.meshes = []
@@ -68,6 +65,8 @@ class GFSInterface:
         self.blend_animations  = []
         self.lookat_animations = None #UnknownAnimations()
         
+        self.overrides = ModelOverrides()
+        
         # Things that need to be removed eventually
         self.has_end_container = True
         self.animation_data  = None
@@ -97,11 +96,20 @@ class GFSInterface:
                 instance.cameras,               \
                 instance.lights,                \
                 instance.epls,                  \
-                instance.bounding_box_min_dims, \
-                instance.bounding_box_max_dims, \
-                instance.bounding_sphere_centre,\
-                instance.bounding_sphere_radius,\
+                bounding_box_min_dims, \
+                bounding_box_max_dims, \
+                bounding_sphere_centre,\
+                bounding_sphere_radius,\
                 instance.flag_3 = ModelInterface.from_binary(ctr.data, duplicate_data, warnings)
+                instance.keep_bounding_box    = (bounding_box_min_dims  is not None) or (bounding_box_max_dims  is not None)
+                instance.keep_bounding_sphere = (bounding_sphere_centre is not None) or (bounding_sphere_radius is not None)
+                
+                if instance.keep_bounding_box:
+                    instance.overrides.bounding_box.min_dims  = bounding_box_min_dims
+                    instance.overrides.bounding_box.max_dims  = bounding_box_max_dims
+                if instance.keep_bounding_sphere:
+                    instance.overrides.bounding_sphere.center = bounding_sphere_centre
+                    instance.overrides.bounding_sphere.radius = bounding_sphere_radius
             elif ctr.type == 0x000100FD:
                 instance.animation_data = ctr.data
                 instance.anim_flag_0    = ctr.data.flags.flag_0
@@ -205,7 +213,7 @@ class GFSInterface:
             mdl_ctr.version = version
             mdl_ctr.type = 0x00010003
             
-            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.bounding_box_min_dims, self.bounding_box_max_dims, self.bounding_sphere_centre, self.bounding_sphere_radius, self.flag_3, copy_verts=duplicate_data)
+            model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.overrides, self.flag_3, copy_verts=duplicate_data)
             mdl_ctr.data = model_binary
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
@@ -418,53 +426,30 @@ class GFSInterface:
         
         return la_a.up, la_a.down, la_a.left, la_a.right
 
-    def get_mesh_bounding_boxes(self):
-        matrices = [None for _ in range(len(self.bones))]
-        for i, bone in enumerate(self.bones):
-            matrix = transforms_to_matrix(bone.position, bone.rotation, bone.scale)
-  
-            if bone.parent_idx > -1:
-                matrices[i] = multiply_transform_matrices(matrices[bone.parent_idx], matrix)
-            else:
-                matrices[i] = matrix
-        
-        mesh_verts = []
-        for mesh in self.meshes:
-            if not mesh.keep_bounding_box:
-                continue
-            matrix   = matrices[mesh.node]
-            min_dims, max_dims = mesh.calc_bounding_box()
-            
-            mesh_verts.append(transform_vector(matrix, min_dims))
-            mesh_verts.append(transform_vector(matrix, max_dims))
-        return mesh_verts, matrices
 
-    def autocalc_bounding_box(self):
-        mesh_verts, matrices = self.get_mesh_bounding_boxes()
-        verts = []
-        for m in matrices:
-            verts.append([m[0*4+3], m[1*4+3], m[2*4+3]])
-            
-        max_dims = [max(vs) for vs in zip(*[*mesh_verts, *verts])]
-        min_dims = [min(vs) for vs in zip(*[*mesh_verts, *verts])]
-        
-        self.bounding_box_max_dims = max_dims
-        self.bounding_box_min_dims = min_dims
+class BoundingBoxOverride:
+    def __init__(self):
+        self.enabled = False
+        self.min_dims = [0, 0, 0]
+        self.max_dims = [0, 0, 0]
+
+
+class BoundingSphereOverride:
+    def __init__(self):
+        self.enabled = False
+        self.center = [0, 0, 0]
+        self.radius = 0
+
+
+class ModelOverrides:
+    def __init__(self):
+        self._bounding_box    = BoundingBoxOverride()
+        self._bounding_sphere = BoundingSphereOverride()
     
-    def autocalc_bounding_sphere(self):
-        mesh_verts, matrices = self.get_mesh_bounding_boxes()
-        center = [sum(vs)/len(vs) for vs in zip(*mesh_verts)]
-        if self.bounding_box_max_dims is not None and self.bounding_box_min_dims is not None:
-            max_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(self.bounding_box_max_dims, center)])**.5
-            min_dim_radius = sum([(v1 - v2)**2 for v1, v2 in zip(self.bounding_box_min_dims, center)])**.5
-        else:
-            self.autocalc_bounding_box()
-            max_dim_radius = self.bounding_box_max_dims
-            min_dim_radius = self.bounding_box_min_dims
-            self.bounding_box_max_dims = None
-            self.bounding_box_min_dims = None
-        
-        radius = max([max_dim_radius, min_dim_radius])
-        
-        self.bounding_sphere_centre = center
-        self.bounding_sphere_radius = radius
+    @property
+    def bounding_box(self):
+        return self._bounding_box
+    
+    @property
+    def bounding_sphere(self):
+        return self._bounding_sphere

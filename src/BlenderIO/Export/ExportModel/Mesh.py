@@ -118,20 +118,21 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
     
     aprops     = armature.data.GFSTOOLS_ModelProperties
     boxprops = aprops.bounding_box
+    gfs.keep_bounding_box = boxprops.export_policy != "NONE"
     if boxprops.export_policy == "MANUAL":
         maxd = np.array(boxprops.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
         mind = np.array(boxprops.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        gfs.bounding_box_max_dims = np.max([maxd, mind], axis=0)
-        gfs.bounding_box_min_dims = np.min([maxd, mind], axis=0)
-    elif boxprops.export_policy == "AUTO":
-        gfs.autocalc_bounding_box()
+        gfs.overrides.bounding_box.max_dims = np.max([maxd, mind], axis=0)
+        gfs.overrides.bounding_box.min_dims = np.min([maxd, mind], axis=0)
+        gfs.overrides.bounding_box.enabled  = True
+
         
     sphprops = aprops.bounding_sphere
+    gfs.keep_bounding_sphere = sphprops.export_policy != "NONE"
     if sphprops.export_policy == "MANUAL":
-        gfs.bounding_sphere_centre = np.array(sphprops.center) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
-        gfs.bounding_sphere_radius = sphprops.radius
-    elif sphprops.export_policy == "AUTO":
-        gfs.autocalc_bounding_sphere()
+        gfs.overrides.bounding_sphere.center = np.array(sphprops.center) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy()
+        gfs.overrides.bounding_sphere.radius = sphprops.radius
+        gfs.overrides.bounding_sphere.enabled  = True
     
     return sorted(material_names)
 

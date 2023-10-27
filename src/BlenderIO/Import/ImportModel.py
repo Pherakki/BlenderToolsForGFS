@@ -165,18 +165,21 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     main_armature.data.GFSTOOLS_ModelProperties.root_node_name   = gfs.bones[0].name if len(gfs.bones) else ""
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None
     
+    # Bounding box
     boxprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_box
-    boxprops.export_policy = "AUTO" if (gfs.bounding_box_max_dims is not None) else "NONE"
-    if gfs.bounding_box_max_dims is not None:
-        maxd = np.array(gfs.bounding_box_max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        mind = np.array(gfs.bounding_box_min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+    boxprops.export_policy = "AUTO" if gfs.keep_bounding_box else "NONE"
+    if gfs.keep_bounding_box:
+        maxd = np.array(gfs.overrides.bounding_box.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        mind = np.array(gfs.overrides.bounding_box.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
         boxprops.max_dims = np.max([maxd, mind], axis=0)
         boxprops.min_dims = np.min([maxd, mind], axis=0)
+    
+    # Bounding sphere
     sphprops = main_armature.data.GFSTOOLS_ModelProperties.bounding_sphere
-    sphprops.export_policy = "AUTO" if (gfs.bounding_sphere_centre is not None) else "NONE"
-    if gfs.bounding_sphere_centre is not None:
-        sphprops.center = np.array(gfs.bounding_sphere_centre) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
-        sphprops.radius = gfs.bounding_sphere_radius
+    sphprops.export_policy = "AUTO" if gfs.keep_bounding_sphere else "NONE"
+    if gfs.keep_bounding_sphere:
+        sphprops.center = np.array(gfs.overrides.bounding_sphere.center) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        sphprops.radius = gfs.overrides.bounding_sphere.radius
     
     main_armature.rotation_mode = 'XYZ'
     
