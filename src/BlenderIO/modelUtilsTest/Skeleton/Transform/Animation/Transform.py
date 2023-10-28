@@ -1,14 +1,16 @@
 import math
 import numpy as np
 
-from .Translation   import parent_to_bind_translation
-from .Translation   import bind_to_parent_translation
-from .Rotation      import parent_to_bind_rotation
-from .Rotation      import bind_to_parent_rotation
-from .RotationBlend import parent_to_bind_rotation_blend
-from .RotationBlend import bind_to_parent_rotation_blend
-from .Scale         import parent_to_bind_scale
-from .Scale         import bind_to_parent_scale
+from .Translation      import parent_to_bind_translation
+from .Translation      import bind_to_parent_translation
+from .TranslationBlend import parent_to_bind_translation_blend
+from .TranslationBlend import bind_to_parent_translation_blend
+from .Rotation         import parent_to_bind_rotation
+from .Rotation         import bind_to_parent_rotation
+from .RotationBlend    import parent_to_bind_rotation_blend
+from .RotationBlend    import bind_to_parent_rotation_blend
+from .Scale            import parent_to_bind_scale
+from .Scale            import bind_to_parent_scale
 from ....TRSTransforms import TRSTransforms
 
 
@@ -84,7 +86,7 @@ def parent_to_bind(bpy_bone, translations, rotations, scales, model_transforms):
 
 def parent_to_bind_blend(bpy_bone, translations, rotations, scales, model_transforms):
     return _transform_func(bpy_bone, translations, rotations, scales, model_transforms, 
-                           parent_to_bind_translation, 
+                           parent_to_bind_translation_blend, 
                            parent_to_bind_rotation_blend, 
                            parent_to_bind_scale)
 
@@ -98,6 +100,6 @@ def bind_to_parent(bpy_bone, translations, rotations, scales, model_transforms):
 
 def bind_to_parent_blend(bpy_bone, translations, rotations, scales, model_transforms):
     return _transform_func(bpy_bone, translations, rotations, scales, model_transforms, 
-                           bind_to_parent_translation, 
+                           bind_to_parent_translation_blend, 
                            bind_to_parent_rotation_blend, 
                            bind_to_parent_scale)
