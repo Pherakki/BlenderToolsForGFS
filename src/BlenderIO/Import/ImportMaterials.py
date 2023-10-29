@@ -22,22 +22,28 @@ def import_materials(gfs, textures, errorlog):
         
         nodes = bpy_material.node_tree.nodes
         connect = bpy_material.node_tree.links.new
-        bsdf_node = nodes.get('Principled BSDF')
+        
+        # Construct basic output
+        nodes.clear()
+        bsdf_node = nodes.new("ShaderNodeBsdfPrincipled")
+        output_node = nodes.new("ShaderNodeOutputMaterial")
+        output_node.location = (280, 0)
+        connect(bsdf_node.outputs[0], output_node.inputs[0])
         
         
         node_pos_data = NodePositioningData()
-        node = add_texture_to_material_node(bpy_material, node_pos_data, textures, "Diffuse Texture", mat.diffuse_texture, mat.texture_indices_1.diffuse,   errorlog)
+        node = add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Diffuse Texture", mat.diffuse_texture, mat.texture_indices_1.diffuse,   errorlog)
         if node is not None:
             connect(node.outputs["Color"], bsdf_node.inputs["Base Color"])
         
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Normal Texture",     mat.normal_texture,     mat.texture_indices_1.normal,     errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Specular Texture",   mat.specular_texture,   mat.texture_indices_1.specular,   errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Reflection Texture", mat.reflection_texture, mat.texture_indices_1.reflection, errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Highlight Texture",  mat.highlight_texture,  mat.texture_indices_1.highlight,  errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Glow Texture",       mat.glow_texture,       mat.texture_indices_1.glow,       errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Night Texture",      mat.night_texture,      mat.texture_indices_1.night,      errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Detail Texture",     mat.detail_texture,     mat.texture_indices_1.detail,     errorlog)
-        add_texture_to_material_node(bpy_material, node_pos_data, textures, "Shadow Texture",     mat.shadow_texture,     mat.texture_indices_1.shadow,     errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Normal Texture",     mat.normal_texture,     mat.texture_indices_1.normal,     errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Specular Texture",   mat.specular_texture,   mat.texture_indices_1.specular,   errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Reflection Texture", mat.reflection_texture, mat.texture_indices_1.reflection, errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Highlight Texture",  mat.highlight_texture,  mat.texture_indices_1.highlight,  errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Glow Texture",       mat.glow_texture,       mat.texture_indices_1.glow,       errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Night Texture",      mat.night_texture,      mat.texture_indices_1.night,      errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Detail Texture",     mat.detail_texture,     mat.texture_indices_1.detail,     errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Shadow Texture",     mat.shadow_texture,     mat.texture_indices_1.shadow,     errorlog)
 
         # Register currently-unrepresentable data
         # Can hopefully remove a few of these when a standardised material
@@ -504,9 +510,9 @@ def import_materials(gfs, textures, errorlog):
                 
     return materials
 
-def add_texture_to_material_node(bpy_material, node_pos_data, textures, name, texture, texcoord_id, errorlog):
+def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, name, texture, texcoord_id, errorlog):
     nodes = bpy_material.node_tree.nodes
-    reference_pos = nodes['Principled BSDF'].location
+    reference_pos = bsdf_node.location
     if texture is not None:
         node = nodes.new('ShaderNodeTexImage')
         node.name = name
