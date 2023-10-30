@@ -11,6 +11,7 @@ from .Data import too_many_vertex_groups_policy_options
 from .Data import multiple_materials_policy_options
 from .Data import missing_uv_maps_policy_options
 from .Data import triangulate_mesh_policy_options
+from .UI.HelpWindows import OpenDocumentation
 
     
 def get_preferences():
@@ -141,3 +142,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'missing_uv_maps_policy')
         export_col.prop(self, 'triangulate_mesh_policy')
         export_col.prop(self, 'version')
+        
+        docs_row = layout.row()
+        docs_row.operator(OpenDocumentation.bl_idname)
