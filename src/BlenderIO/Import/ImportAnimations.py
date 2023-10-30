@@ -317,16 +317,20 @@ def add_animation(track_name, anim, armature, is_blend, import_policies, gfs_to_
     props.flag_26 = anim.flag_26
     props.flag_27 = anim.flag_27
     
-    if anim.bounding_box_max_dims is not None:
-        props.export_bounding_box = True
-        
-        # Assumes the world axis rotation is a permutation matrix, which it is
-        dims = np.array([anim.bounding_box_max_dims, anim.bounding_box_min_dims])
-        dims = dims @ np.array(GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy())
-        props.bounding_box_max = np.max(dims, axis=0)
-        props.bounding_box_min = np.min(dims, axis=0)        
+    # Bounding box
+    boxprops = props.bounding_box
+    if import_policies.anim_boundbox_policy == "AUTO":
+        default_policy = "AUTO"
+    elif import_policies.anim_boundbox_policy == "MANUAL":
+        default_policy = "MANUAL"
     else:
-        props.export_bounding_box = False
+        raise NotImplementedError(f"CRITICAL INTERNAL ERROR: Unknown ANIM_BOUNDBOX_POLICY '{import_policies.anim_boundbox_policy}'")
+    boxprops.export_policy = default_policy if anim.keep_bounding_box else "NONE"
+    if anim.keep_bounding_box:
+        maxd = np.array(anim.overrides.bounding_box.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        mind = np.array(anim.overrides.bounding_box.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        boxprops.max_dims = np.max([maxd, mind], axis=0)
+        boxprops.min_dims = np.min([maxd, mind], axis=0)
     
     if is_blend:
         props.category = "BLEND"
@@ -342,7 +346,7 @@ def add_animation(track_name, anim, armature, is_blend, import_policies, gfs_to_
     ai.morph_animations    = anim.morph_animations
     ai.unknown_animations  = anim.unknown_animations
     ai.extra_track_data    = anim.extra_track_data
-    ab = ai.to_binary(None)
+    ab = ai.to_binary(None, None)
     
     stream = io.BytesIO()
     wtr = Writer(None)

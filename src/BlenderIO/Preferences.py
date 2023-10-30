@@ -5,6 +5,7 @@ import bpy
 from .Data import get_package_name
 from .Data import available_versions_property
 from .Data import bone_pose_enum_options
+from .Data import anim_boundbox_policy_options
 from .Data import too_many_vertices_policy_options
 from .Data import too_many_vertex_groups_policy_options
 from .Data import multiple_materials_policy_options
@@ -24,6 +25,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         description="Default setting for 'Align Animation Quaternions' on import",
         default=False
     )
+    
+    anim_boundbox_policy: bpy.props.EnumProperty(
+        items=anim_boundbox_policy_options(),
+        name="Animation Bounding Boxes",
+        description="Default setting for 'Animation Bounding Boxes' on export",
+        default="AUTO")
     
     merge_vertices : bpy.props.BoolProperty(
         name="Merge Vertices",
@@ -117,6 +124,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         import_col = io_row.column()
         import_col.label(text='Default Import settings:')
         import_col.prop(self, 'align_quats')
+        import_col.prop(self, "anim_boundbox_policy")
         import_col.prop(self, 'merge_vertices')
         import_col.prop(self, 'set_fps')
         import_col.prop(self, 'set_clip')

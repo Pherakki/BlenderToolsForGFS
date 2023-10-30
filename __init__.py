@@ -22,6 +22,8 @@ def init_bpy():
     from .src.BlenderIO.Export      import ExportGFS, ExportGAP, ExportPolicies
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
     from .src.BlenderIO.Properties.Animations    import GFSToolsAnimationProperties
+    from .src.BlenderIO.Properties.Animations    import AnimBoundingBox
+    from .src.BlenderIO.Properties.Animations    import AnimBoundingBoxProps
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties, NLAStripWrapper, NLATrackWrapper
     from .src.BlenderIO.Properties.Bones         import GFSToolsBoneNodeProperties
     from .src.BlenderIO.Properties.Cameras       import GFSToolsCameraProperties
@@ -90,6 +92,8 @@ def init_bpy():
         GFSToolsGenericProperty,
         RegisterWindow,
         OpenDocumentation,
+        AnimBoundingBox,
+        AnimBoundingBoxProps,
         ModelBoundingBox,
         ModelBoundingBoxProps,
         ModelBoundingSphere,

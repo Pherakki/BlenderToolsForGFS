@@ -58,6 +58,12 @@ def bone_pose_enum_options():
         ("restpose", "Scaleless Rest Pose", "Define the bind pose as the rest pose, without scales. As a side-effect, this bakes the mesh transforms into the vertices"),    
     ]
 
+def anim_boundbox_policy_options():
+    return [
+        ("MANUAL", "Original", "Import all animation bounding boxes with their export policy set to 'Manual'. This can be changed for each animation inside Blender. Animations will be exported with fixed bounding boxes set within Blender, which are initially set to the imported bounding box. This means that if you need to change a bounding box, you must do it manually in the properties for that animation, and the box will not automatically update to reflect changes to the animation. However, this guarantees that bounding boxes will not be modified when you re-export the model unless you explicitly edit them yourself"),
+        ("AUTO",   "Auto",     "Import all animation bounding boxes with their export policy set to 'Auto'. This can be changed for each animation inside Blender. Animations will exported with automatically-calculated bounding boxes. The automatically calculated bounding boxes will not exactly match the vanilla bounding boxes, but will be more accurate")
+    ]
+
 def too_many_vertices_policy_options():
     return [
             ('IGNORE', 'Ignore',      ''),

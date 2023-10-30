@@ -348,8 +348,13 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
+        # Need to serialise the mesh data in order to calcualte the anim
+        # bounding boxes
+        gfs_bbox = GFSInterface()
+        export_node_tree(gfs_bbox, selected_model, None)
+        
         gfs.has_end_container = False # Put this somewhere else
-        gb = gfs.to_binary(int(self.policies.version, 0x10))
+        gb = gfs.to_binary(int(self.policies.version, 0x10), anim_model_binary=gfs_bbox.to_binary(0x01105100).get_model_block().data)
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.

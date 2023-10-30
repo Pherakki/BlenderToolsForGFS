@@ -47,11 +47,11 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
         
         layout.prop(props, "autocorrect_action")
         layout.prop(props, "category")
-        layout.prop(props, "export_bounding_box")
-        if props.export_bounding_box:
-            layout.prop(props, "bounding_box_max")
-            layout.prop(props, "bounding_box_min")
-            layout.operator(GenerateMesh.bl_idname, text="Hide" if props.is_bounding_box_alive() else "Show")
+        props.bounding_box.draw(layout)
+        if props.bounding_box.export_policy == "MANUAL":
+            row = layout.row()
+            row.operator(AnimCopyBoundingBox.bl_idname)
+            row.operator(AnimPasteBoundingBox.bl_idname)
         
         layout.prop(props, "flag_0")
         layout.prop(props, "flag_1")
@@ -113,11 +113,15 @@ class OBJECT_PT_GFSToolsAnimationPanel(bpy.types.Panel):
     def register(cls):
         bpy.utils.register_class(cls.AnimationHelpWindow)
         bpy.utils.register_class(GenerateMesh)
+        bpy.utils.register_class(AnimCopyBoundingBox)
+        bpy.utils.register_class(AnimPasteBoundingBox)
         
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.AnimationHelpWindow)
         bpy.utils.unregister_class(GenerateMesh)
+        bpy.utils.unregister_class(AnimCopyBoundingBox)
+        bpy.utils.unregister_class(AnimPasteBoundingBox)
 
 
 OBJECT_PT_GFSToolsAnimationGenericPropertyPanel = makeCustomPropertiesPanel(

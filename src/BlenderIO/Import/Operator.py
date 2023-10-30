@@ -5,6 +5,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
 from ..Data import bone_pose_enum_options
+from ..Data import anim_boundbox_policy_options
 from ..Preferences import get_preferences
 from ..modelUtilsTest.API.Operator import get_op_idname
 from ..Globals import ErrorLogger
@@ -69,6 +70,12 @@ class ImportPolicies(bpy.types.PropertyGroup):
         items=bone_pose_enum_options()
 
     )
+    
+    anim_boundbox_policy: bpy.props.EnumProperty(
+        name="Animation Bounding Boxes",
+        description="The default setting for how to calculate animation bounding boxes when exporting the model",
+        items=anim_boundbox_policy_options()
+    )
 
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
@@ -92,11 +99,12 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.policies.align_quats    = prefs.align_quats
-        self.policies.set_fps        = prefs.set_fps
-        self.policies.set_clip       = prefs.set_clip
-        self.policies.merge_vertices = prefs.merge_vertices
-        self.policies.bone_pose      = prefs.bone_pose
+        self.policies.align_quats          = prefs.align_quats
+        self.policies.set_fps              = prefs.set_fps
+        self.policies.set_clip             = prefs.set_clip
+        self.policies.merge_vertices       = prefs.merge_vertices
+        self.policies.bone_pose            = prefs.bone_pose
+        self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -197,9 +205,10 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
     
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.policies.align_quats = prefs.align_quats
-        self.policies.set_fps     = prefs.set_fps
-        self.policies.set_clip    = prefs.set_clip
+        self.policies.align_quats          = prefs.align_quats
+        self.policies.set_fps              = prefs.set_fps
+        self.policies.set_clip             = prefs.set_clip
+        self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -306,6 +315,7 @@ class CUSTOM_PT_GFSModelImportSettings(bpy.types.Panel):
         policies = operator.policies
 
         layout.prop(policies, 'align_quats')
+        layout.prop(policies, 'anim_boundbox_policy')
         layout.prop(policies, 'set_fps')
         layout.prop(policies, 'set_clip')
         layout.prop(policies, 'merge_vertices')
@@ -339,5 +349,6 @@ class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):
 
         layout.prop(operator, 'armature_name')
         layout.prop(policies, 'align_quats')
+        layout.prop(policies, 'anim_boundbox_policy')
         layout.prop(policies, 'set_fps')
         layout.prop(policies, 'set_clip')

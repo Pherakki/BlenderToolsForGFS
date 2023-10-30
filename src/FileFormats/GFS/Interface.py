@@ -157,12 +157,12 @@ class GFSInterface:
         return instance
     
 
-    def to_file(self, filepath, version):
-        binary = self.to_binary(version, duplicate_data=True)
+    def to_file(self, filepath, version, anim_model_binary=None):
+        binary = self.to_binary(version, duplicate_data=True, anim_model_binary=anim_model_binary)
         binary.write(filepath)
 
 
-    def to_binary(self, version, duplicate_data=False):
+    def to_binary(self, version, duplicate_data=False, anim_model_binary=None):
         binary = GFSBinary()
         
         ot = OffsetTracker()
@@ -273,12 +273,14 @@ class GFSInterface:
             anm_ctr.data.flags.flag_30 = self.anim_flag_30
             anm_ctr.data.flags.flag_31 = self.anim_flag_31
             
+            if anim_model_binary is None:
+                anim_model_binary = model_binary
             anm_ctr.data.animations.count = len(self.animations)
-            anm_ctr.data.animations.data  = [a.to_binary(old_node_id_to_new_node_id_map) for a in self.animations]
+            anm_ctr.data.animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map) for a in self.animations]
             anm_ctr.data.blend_animations.count = len(self.blend_animations)
-            anm_ctr.data.blend_animations.data  = [a.to_binary(old_node_id_to_new_node_id_map) for a in self.blend_animations]
+            anm_ctr.data.blend_animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map) for a in self.blend_animations]
             if anm_ctr.data.flags.has_lookat_anims:
-                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(old_node_id_to_new_node_id_map)
+                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(anim_model_binary, old_node_id_to_new_node_id_map)
   
             ot.rw_obj(anm_ctr)
             anm_ctr.size = ot.tell() - offset

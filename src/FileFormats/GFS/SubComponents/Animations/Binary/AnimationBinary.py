@@ -1,10 +1,12 @@
 from ......serialization.Serializable import Serializable
 from ......serialization.utils import safe_format, hex32_format
+from ....Utils.Matrices import transforms_to_matrix, multiply_transform_matrices, transform_vector
 from ...CommonStructures.SceneNode.EPL import EPLBinary
 from ...CommonStructures import ObjectName, PropertyBinary, BitVector
 from ...CommonStructures.SizedObjArrayModule import SizedObjArray
 from .AnimController import AnimationControllerBinary
 from .AnimTrack import AnimationTrackBinary
+from ..NodeAnimation import NodeAnimation
 
 
 class ParticlesError(Exception):
@@ -86,7 +88,90 @@ class AnimationBinary(Serializable):
             self.speed = rw.rw_float32(self.speed)
         if self.flags.has_properties:
             rw.rw_obj(self.properties, version)
+            
+    def calc_bounding_box(self, model_binary):
+        def get_frame(dct, frame):
+            smaller_frames = [f for f in dct if f <= frame]
+            smallest_frame = max(smaller_frames) if len(smaller_frames) else list(dct.keys())[0]
+            return dct[smallest_frame]
+            
+        # Get all relevant frames
+        all_frames = set()
+        node_anims = []
+        for controller in self.controllers:
+            if controller.type != 1:
+                continue
+            for track in controller.tracks:
+                all_frames.update(set(track.frames))
+            node_anims.append(NodeAnimation.from_controller(controller))
+        all_frames = sorted(all_frames)
+        
+        # Flatten the node structure
+        flat_nodes = model_binary.flattened()
+        
+        # Collect all bounding box vertices
+        mesh_verts = []
+        for node_idx, mesh in flat_nodes.meshes:
+            if not mesh.flags.has_bounding_box:
+                continue
+            min_dims = mesh.bounding_box_min_dims
+            max_dims = mesh.bounding_box_max_dims
+            mesh_verts.append((node_idx, min_dims, max_dims))
+        
+        # Now measure the bounding box of the model on each frame
+        frame_minima = []
+        frame_maxima = []
+        for frame_idx, frame in enumerate(all_frames):
+            bone_data = [[b.position, b.rotation, b.scale] for b in flat_nodes.nodes]
+            # Do the animation without interpolation since that sounds like
+            # what might have been done
+            for anim in node_anims:
+                if len(anim.positions): bone_data[anim.id][0] = get_frame(anim.positions, frame)
+                if len(anim.rotations): bone_data[anim.id][1] = get_frame(anim.rotations, frame)
+                if len(anim.scales):    bone_data[anim.id][2] = get_frame(anim.scales,    frame)
+            
+            # Build bone matrices for the frame
+            bone_matrices = [None for _ in range(len(flat_nodes.nodes))]
+            for i, (bone, bd) in enumerate(zip(flat_nodes.nodes, bone_data)):
+                matrix = transforms_to_matrix(*bd)
+                parent_idx = flat_nodes.node_parents[i]
+                if parent_idx > -1:
+                    bone_matrices[i] = multiply_transform_matrices(bone_matrices[parent_idx], matrix)
+                else:
+                    bone_matrices[i] = matrix
+            
+            # Now do bounding box transforms
+            bbox_verts = [None for _ in range(len(mesh_verts)*2)]
+            for i, (node_idx, min_v, max_v) in enumerate(mesh_verts):
+                bbox_verts[2*i+0] = transform_vector(bone_matrices[node_idx], min_v)
+                bbox_verts[2*i+1] = transform_vector(bone_matrices[node_idx], max_v)
+            
+            # Identify bounding box for this frame
+            min_v = [0, 0, 0]
+            max_v = [0, 0, 0]
+            if len(bbox_verts) or len(bone_matrices):
+                for pidx in range(3):
+                    dataset = [*[m[3 + 4*pidx] for m in bone_matrices], *[v[pidx] for v in bbox_verts]]
+                    min_v[pidx] = min(dataset)
+                    max_v[pidx] = max(dataset)
+            
+            frame_minima.append(min_v)
+            frame_maxima.append(max_v)
+        
+        # Export global min/max
+        global_min = [0, 0, 0]
+        global_max = [0, 0, 0]
+        if len(frame_minima):
+            for pidx in range(3):
+                global_min[pidx] = min([v[pidx] for v in frame_minima])
+                global_max[pidx] = max([v[pidx] for v in frame_maxima])
+        return global_min, global_max
 
+    def autocalc_bounding_box(self, model_binary):   
+        self.bounding_box_min_dims, self.bounding_box_max_dims = self.calc_bounding_box(model_binary)
+        if self.bounding_box_min_dims is not None:
+            self.flags.has_bounding_box = True
+            
 
 class EPLEntry(Serializable):
     def __init__(self, endianness='>'):

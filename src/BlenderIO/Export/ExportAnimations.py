@@ -219,11 +219,13 @@ def export_animation(gfs_obj, armature, gfs_anim, action, is_blend, keep_unused_
     gfs_anim.speed = None
     
     # Create bounding box if required
-    if props.export_bounding_box:
-        dims = np.array([props.bounding_box_max, props.bounding_box_min])
+    gfs_anim.keep_bounding_box = props.bounding_box.export_policy != "NONE"
+    if props.bounding_box.export_policy == "MANUAL":
+        dims = np.array([props.bounding_box.max_dims, props.bounding_box.min_dims])
         dims = dims @ np.array(GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3.copy())
-        gfs_anim.bounding_box_max_dims = np.max(dims, axis=0)
-        gfs_anim.bounding_box_min_dims = np.min(dims, axis=0)
+        gfs_anim.overrides.bounding_box.max_dims = np.max(dims, axis=0)
+        gfs_anim.overrides.bounding_box.min_dims = np.min(dims, axis=0)
+        gfs_anim.overrides.bounding_box.enabled  = True
     
     # Export the custom properties
     for prop in props.properties:
