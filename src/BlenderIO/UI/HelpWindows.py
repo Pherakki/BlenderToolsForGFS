@@ -5,10 +5,11 @@ import subprocess
 import bpy
 
 from ..modelUtilsTest.Utils.TextWrapping import wrapText
+from ..Globals import NAMESPACE
 
 
 class HelpWindow(bpy.types.Operator):
-    bl_idname = "gfsblendertools.helpwindow"
+    bl_idname = f"{NAMESPACE}.helpwindow"
     bl_label = "How To Use"
     bl_options = {'REGISTER'}
     
@@ -46,7 +47,7 @@ def defineHelpWindow(subid, msg):
     return SubHelpWindow
 
 class OpenDocumentation(bpy.types.Operator):
-    bl_idname = "gfsblendertools.opendocs"
+    bl_idname = f"{NAMESPACE}.opendocs"
     bl_label = "Open Docs"
     bl_options = {'REGISTER'}
     
