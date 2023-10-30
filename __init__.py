@@ -27,6 +27,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties, NLAStripWrapper, NLATrackWrapper
     from .src.BlenderIO.Properties.Bones         import GFSToolsBoneNodeProperties
     from .src.BlenderIO.Properties.Cameras       import GFSToolsCameraProperties
+    from .src.BlenderIO.Properties.Clipboard     import GFSToolsClipboard
     from .src.BlenderIO.Properties.GFSProperties import GFSToolsGenericProperty
     from .src.BlenderIO.Properties.Lights        import GFSToolsLightProperties
     from .src.BlenderIO.Properties.Materials     import GFSToolsTextureRefPanelProperties
@@ -107,6 +108,7 @@ def init_bpy():
         GFSToolsPhysicsBoneProperties,
         GFSToolsPhysicsLinkProperties,
         GFSToolsPhysicsProperties,
+        GFSToolsClipboard,
         OBJECT_PT_GFSToolsAnimationPanel,
         OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,

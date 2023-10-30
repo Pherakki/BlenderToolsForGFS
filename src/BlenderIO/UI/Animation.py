@@ -1,4 +1,5 @@
 import bpy
+from ..Globals import NAMESPACE
 from .HelpWindows import defineHelpWindow
 from .GFSProperties import makeCustomPropertiesPanel
 
@@ -16,6 +17,44 @@ class GenerateMesh(bpy.types.Operator):
             props.remove_bounding_box()
         else:
             props.generate_bounding_box()
+        return {'FINISHED'}
+
+
+class AnimCopyBoundingBox(bpy.types.Operator):
+    bl_label   = "Copy Box"
+    bl_idname  = f"{NAMESPACE}.animcopyboundingbox"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None) and (context.active_nla_strip is not None)
+    
+    def execute(self, context):
+        scene = context.scene
+        action = context.active_nla_strip.action
+        clipboard = scene.GFSTOOLS_SceneProperties.clipboard
+        aprops    = action.GFSTOOLS_AnimationProperties
+        clipboard.bounding_box_min_dims = aprops.bounding_box.min_dims
+        clipboard.bounding_box_max_dims = aprops.bounding_box.max_dims
+        return {'FINISHED'}
+
+
+class AnimPasteBoundingBox(bpy.types.Operator):
+    bl_label   = "Paste Box"
+    bl_idname  = f"{NAMESPACE}.animpasteboundingbox"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None) and (context.active_nla_strip is not None)
+    
+    def execute(self, context):
+        scene = context.scene
+        action = context.active_nla_strip.action
+        clipboard = scene.GFSTOOLS_SceneProperties.clipboard
+        aprops    = action.GFSTOOLS_AnimationProperties
+        aprops.bounding_box.min_dims = clipboard.bounding_box_min_dims
+        aprops.bounding_box.max_dims = clipboard.bounding_box_max_dims
         return {'FINISHED'}
 
 
