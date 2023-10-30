@@ -1,7 +1,7 @@
 import bpy
 
 
-def define_managed_mesh(make_name, update_mesh, get_props=None, operator_id=None, calculate=None, calculate_id=None):
+def define_managed_mesh(make_name, update_mesh, get_props=None, operator_id=None, calculate=None, calculate_id=None, get_parent=None):
     has_operator  = get_props is not None and operator_id is not None
     has_calculate = calculate is not None and calculate_id is not None
     
@@ -53,7 +53,10 @@ def define_managed_mesh(make_name, update_mesh, get_props=None, operator_id=None
             self.remove()
             
             # Generate object
-            active_obj = context.active_object
+            if get_parent is None:
+                active_obj = context.active_object
+            else:
+                active_obj = get_parent(context)
             bpy_mesh = bpy.data.meshes.new(make_name(self.id_data))
             bpy_mesh_object = bpy.data.objects.new(bpy_mesh.name, bpy_mesh)
             active_obj.users_collection[0].objects.link(bpy_mesh_object)
