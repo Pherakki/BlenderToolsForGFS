@@ -58,18 +58,18 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
 
         # Export any samplers
         nodes = bpy_material.node_tree.nodes
-        texture_names.add(export_texture_node_data(mat_name, "Diffuse Texture",    nodes, mat.set_diffuse_texture   , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Normal Texture",     nodes, mat.set_normal_texture    , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Specular Texture",   nodes, mat.set_specular_texture  , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Reflection Texture", nodes, mat.set_reflection_texture, errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Highlight Texture",  nodes, mat.set_highlight_texture , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Glow Texture",       nodes, mat.set_glow_texture      , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Night Texture",      nodes, mat.set_night_texture     , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Detail Texture",     nodes, mat.set_detail_texture    , errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Shadow Texture",     nodes, mat.set_shadow_texture    , errorlog))
-          
         props = bpy_material.GFSTOOLS_MaterialProperties
-        
+      
+        texture_names.add(export_texture_node_data(mat_name, "Diffuse Texture",    nodes, mat.set_diffuse_texture   , props.diffuse_uv_in,    props.diffuse_uv_out,    errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Normal Texture",     nodes, mat.set_normal_texture    , props.normal_uv_in,     props.normal_uv_out,     errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Specular Texture",   nodes, mat.set_specular_texture  , props.specular_uv_in,   props.specular_uv_out,   errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Reflection Texture", nodes, mat.set_reflection_texture, props.reflection_uv_in, props.reflection_uv_out, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Highlight Texture",  nodes, mat.set_highlight_texture , props.highlight_uv_in,  props.highlight_uv_out,  errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Glow Texture",       nodes, mat.set_glow_texture      , props.glow_uv_in,       props.glow_uv_out,       errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Night Texture",      nodes, mat.set_night_texture     , props.night_uv_in,      props.night_uv_out,      errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Detail Texture",     nodes, mat.set_detail_texture    , props.detail_uv_in,     props.detail_uv_out,     errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Shadow Texture",     nodes, mat.set_shadow_texture    , props.shadow_uv_in,     props.shadow_uv_out,     errorlog))
+          
         # Export attributes
         # TOON
         if props.has_toon:
@@ -531,7 +531,7 @@ def export_texture(gfs, texture_name, mat_name, node_name, errorlog):
         gfs.add_texture(texture_name, image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
     
         
-def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
+def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_idx, errorlog):
     if name in nodes:
         tex_node = nodes[name]
         if tex_node.type != "TEX_IMAGE":
@@ -568,7 +568,9 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, errorlog):
         
         # THIS IS WRONG
         # tex_idx_1 and tex_idx_2 CAN BE DIFFERENT IN SOME RARE CASES!!!
-        create_sampler(tex_idx, tex_idx, image_name,
+        in_idx  = 7 if in_idx  == "None" else int(in_idx)
+        out_idx = 7 if out_idx == "None" else int(out_idx)
+        create_sampler(in_idx, out_idx, image_name,
             tex_node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
             tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
             tex_node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,

@@ -8,6 +8,12 @@ from ..Utils.UVMapManagement import make_uv_map_name
 class NodePositioningData:
     def __init__(self):
         self.tex_count = 0
+        
+def format_texindex(idx):
+    if 0 <= idx < 7:
+        return str(idx)
+    else:
+        return "None"
 
 
 def import_materials(gfs, textures, errorlog):
@@ -45,49 +51,70 @@ def import_materials(gfs, textures, errorlog):
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Detail Texture",     mat.detail_texture,     mat.texture_indices_1.detail,     errorlog)
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Shadow Texture",     mat.shadow_texture,     mat.texture_indices_1.shadow,     errorlog)
 
+
         # Register currently-unrepresentable data
         # Can hopefully remove a few of these when a standardised material
         # shader node tree can be built...
-        bpy_material.GFSTOOLS_MaterialProperties.flag_0 = mat.flag_0
-        bpy_material.GFSTOOLS_MaterialProperties.flag_1 = mat.flag_1
-        bpy_material.GFSTOOLS_MaterialProperties.enable_specular = mat.enable_specular
-        bpy_material.GFSTOOLS_MaterialProperties.flag_3 = mat.flag_3
-        bpy_material.GFSTOOLS_MaterialProperties.vertex_colors = mat.use_vertex_colors
-        bpy_material.GFSTOOLS_MaterialProperties.flag_5 = mat.flag_5
-        bpy_material.GFSTOOLS_MaterialProperties.flag_6 = mat.flag_6
-        bpy_material.GFSTOOLS_MaterialProperties.enable_uv_anims = mat.enable_uv_animation
-        bpy_material.GFSTOOLS_MaterialProperties.enable_emissive = mat.enable_emissive
-        bpy_material.GFSTOOLS_MaterialProperties.flag_9 = mat.flag_9
-        bpy_material.GFSTOOLS_MaterialProperties.flag_10 = mat.flag_10
-        bpy_material.GFSTOOLS_MaterialProperties.light_2 = mat.use_light_2
-        bpy_material.GFSTOOLS_MaterialProperties.pwire = mat.purple_wireframe
-        bpy_material.GFSTOOLS_MaterialProperties.flag_13 = mat.flag_13
-        bpy_material.GFSTOOLS_MaterialProperties.receive_shadow = mat.receive_shadow
-        bpy_material.GFSTOOLS_MaterialProperties.cast_shadow = mat.cast_shadow
-        bpy_material.GFSTOOLS_MaterialProperties.flag_18 = mat.flag_18
-        bpy_material.GFSTOOLS_MaterialProperties.disable_bloom = mat.disable_bloom
-        bpy_material.GFSTOOLS_MaterialProperties.flag_29 = mat.flag_29
-        bpy_material.GFSTOOLS_MaterialProperties.flag_30 = mat.flag_30
-        bpy_material.GFSTOOLS_MaterialProperties.flag_31 = mat.flag_31
+        props = bpy_material.GFSTOOLS_MaterialProperties
+        props.flag_0          = mat.flag_0
+        props.flag_1          = mat.flag_1
+        props.enable_specular = mat.enable_specular
+        props.flag_3          = mat.flag_3
+        props.vertex_colors   = mat.use_vertex_colors
+        props.flag_5          = mat.flag_5
+        props.flag_6          = mat.flag_6
+        props.enable_uv_anims = mat.enable_uv_animation
+        props.enable_emissive = mat.enable_emissive
+        props.flag_9          = mat.flag_9
+        props.flag_10         = mat.flag_10
+        props.light_2         = mat.use_light_2
+        props.pwire           = mat.purple_wireframe
+        props.flag_13         = mat.flag_13
+        props.receive_shadow  = mat.receive_shadow
+        props.cast_shadow     = mat.cast_shadow
+        props.flag_18         = mat.flag_18
+        props.disable_bloom   = mat.disable_bloom
+        props.flag_29         = mat.flag_29
+        props.flag_30         = mat.flag_30
+        props.flag_31         = mat.flag_31
         
-        bpy_material.GFSTOOLS_MaterialProperties.ambient  = mat.ambient
-        bpy_material.GFSTOOLS_MaterialProperties.diffuse  = mat.diffuse
-        bpy_material.GFSTOOLS_MaterialProperties.specular = mat.specular
-        bpy_material.GFSTOOLS_MaterialProperties.emissive = mat.emissive
-        bpy_material.GFSTOOLS_MaterialProperties.reflectivity = mat.reflectivity
-        bpy_material.GFSTOOLS_MaterialProperties.outline_idx  = mat.outline_idx
-        bpy_material.GFSTOOLS_MaterialProperties.draw_method  = mat.draw_method
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x51 = mat.unknown_0x51
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x52 = mat.unknown_0x52
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x53 = mat.unknown_0x53
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x54 = mat.unknown_0x54
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x55 = mat.unknown_0x55
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x56 = mat.unknown_0x56
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x58 = mat.unknown_0x58
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5A = mat.unknown_0x5A
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5C = mat.unknown_0x5C
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5E = mat.unknown_0x5E
-        bpy_material.GFSTOOLS_MaterialProperties.unknown_0x6A = mat.unknown_0x6A
+        props.ambient      = mat.ambient
+        props.diffuse      = mat.diffuse
+        props.specular     = mat.specular
+        props.emissive     = mat.emissive
+        props.reflectivity = mat.reflectivity
+        props.outline_idx  = mat.outline_idx
+        props.draw_method  = mat.draw_method
+        props.unknown_0x51 = mat.unknown_0x51
+        props.unknown_0x52 = mat.unknown_0x52
+        props.unknown_0x53 = mat.unknown_0x53
+        props.unknown_0x54 = mat.unknown_0x54
+        props.unknown_0x55 = mat.unknown_0x55
+        props.unknown_0x56 = mat.unknown_0x56
+        props.unknown_0x58 = mat.unknown_0x58
+        props.unknown_0x5A = mat.unknown_0x5A
+        props.unknown_0x5C = mat.unknown_0x5C
+        props.unknown_0x5E = mat.unknown_0x5E
+        props.unknown_0x6A = mat.unknown_0x6A
+        
+        props.diffuse_uv_in     = format_texindex(mat.texture_indices_1.diffuse)
+        props.diffuse_uv_out    = format_texindex(mat.texture_indices_2.diffuse)
+        props.normal_uv_in      = format_texindex(mat.texture_indices_1.normal)
+        props.normal_uv_out     = format_texindex(mat.texture_indices_2.normal)
+        props.specular_uv_in    = format_texindex(mat.texture_indices_1.specular)
+        props.specular_uv_out   = format_texindex(mat.texture_indices_2.specular)
+        props.reflection_uv_in  = format_texindex(mat.texture_indices_1.reflection)
+        props.reflection_uv_out = format_texindex(mat.texture_indices_2.reflection)
+        props.highlight_uv_in   = format_texindex(mat.texture_indices_1.highlight)
+        props.highlight_uv_out  = format_texindex(mat.texture_indices_2.highlight)
+        props.glow_uv_in        = format_texindex(mat.texture_indices_1.glow)
+        props.glow_uv_out       = format_texindex(mat.texture_indices_2.glow)
+        props.night_uv_in       = format_texindex(mat.texture_indices_1.night)
+        props.night_uv_out      = format_texindex(mat.texture_indices_2.night)
+        props.detail_uv_in      = format_texindex(mat.texture_indices_1.detail)
+        props.detail_uv_out     = format_texindex(mat.texture_indices_2.detail)
+        props.shadow_uv_in      = format_texindex(mat.texture_indices_1.shadow)
+        props.shadow_uv_out     = format_texindex(mat.texture_indices_2.shadow)
         
         bpy_material.use_backface_culling = not bool(mat.disable_backface_culling)
         

@@ -1,6 +1,19 @@
 import bpy
 
 
+def gen_tex_prop(name):
+    return bpy.props.EnumProperty(name=name, items=[
+            ("None", "None", "Unused UV channel"),
+            ("0", "UV0", "Use UV0"),
+            ("1", "UV1", "Use UV1"),
+            ("2", "UV2", "Use UV2"),
+            ("3", "UV3", "Use UV3"),
+            ("4", "UV4", "Use UV4"),
+            ("5", "UV5", "Use UV5"),
+            ("6", "UV6", "Use UV6")
+        ], default="None")
+
+
 class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
     # def update_unknown_0x04(self, context):
     #     print("UPDATING")
@@ -79,6 +92,25 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     requires_color1s:   bpy.props.BoolProperty(name="Requires Color Map 1",  default=False)
     # Positions?
     # Weights?
+    
+    diffuse_uv_in:     gen_tex_prop("")
+    diffuse_uv_out:    gen_tex_prop("")
+    normal_uv_in:      gen_tex_prop("")
+    normal_uv_out:     gen_tex_prop("")
+    specular_uv_in:    gen_tex_prop("")
+    specular_uv_out:   gen_tex_prop("")
+    reflection_uv_in:  gen_tex_prop("")
+    reflection_uv_out: gen_tex_prop("")
+    highlight_uv_in:   gen_tex_prop("")
+    highlight_uv_out:  gen_tex_prop("")
+    glow_uv_in:        gen_tex_prop("")
+    glow_uv_out:       gen_tex_prop("")
+    night_uv_in:       gen_tex_prop("")
+    night_uv_out:      gen_tex_prop("")
+    detail_uv_in:      gen_tex_prop("")
+    detail_uv_out:     gen_tex_prop("")
+    shadow_uv_in:      gen_tex_prop("")
+    shadow_uv_out:     gen_tex_prop("")
     
     ##################
     # TOON ATTRIBUTE #
