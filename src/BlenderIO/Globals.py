@@ -1,16 +1,16 @@
 import bpy
 from mathutils import Matrix
 
-from . import Data
 from . import modelUtilsTest as blenderModelSupportUtils
 from .modelUtilsTest.Misc.Errorlog import ErrorLogBase
 bmu = blenderModelSupportUtils
 
+NAMESPACE = "gfstools"
 
 GFS_MODEL_TRANSFORMS = bmu.ModelTransforms(world_axis=['X', 'Z', '-Y'], 
                                            bone_axis=['-Y', 'X', 'Z'])
 
-ErrorLogger = ErrorLogBase(Data.NAMESPACE, "BlenderToolsForGFS", 
+ErrorLogger = ErrorLogBase(NAMESPACE, "BlenderToolsForGFS", 
     "BlenderToolsForGFS has encountered an unhandled error. The exception is:\n\n"               \
     "{exception_msg}\n\n"                                                                        \
     "A full stacktrace has been printed to the console.\n"                                       \
