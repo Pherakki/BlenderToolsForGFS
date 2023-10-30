@@ -163,12 +163,19 @@ def init_bpy():
     return CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES
 
 
+
 def register():
     import bpy
+    from .src.BlenderIO.Preferences import get_preferences
+    
+    def create_welcome_message():
+        prefs = get_preferences()
+        if not prefs.initialized:
+            prefs.initialized = True
+            bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
     
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
-    blender_version = bpy.app.version_string  # Can use this string to switch version-dependent Blender API codes
    # Note for later: multi-language support can be implemented by checking
    #     - bpy.context.preferences.view.language
    #     - bpy.context.preferences.view.use_translate_interface
@@ -186,9 +193,9 @@ def register():
         
     for obj in MODULES:
         obj.register()
-     
-    # Apparently not allowed to do this. Would be handy though to direct users...  
-    # bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
+    
+    # Fire off the welcome message
+    bpy.app.timers.register(create_welcome_message, first_interval=.01)
 
 
 def unregister():

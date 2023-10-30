@@ -21,6 +21,14 @@ def get_preferences():
 class AddonPreferences(bpy.types.AddonPreferences):
     bl_idname = get_package_name()
 
+    ##################
+    ## GLOBAL STATE ##
+    ##################
+    initialized: bpy.props.BoolProperty(default=False)
+
+    ############
+    ## IMPORT ##
+    ############
     align_quats : bpy.props.BoolProperty(
         name="Align Animation Quaternions",
         description="Default setting for 'Align Animation Quaternions' on import",
@@ -58,6 +66,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="bindpose"
     )
     
+    ############
+    ## EXPORT ##
+    ############
     combine_new_mesh_nodes: bpy.props.BoolProperty(
         name="Combine New Mesh Nodes",
         default=False
@@ -114,6 +125,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         name="Triangulate Meshes",
         description="Default setting for 'Triangulate Meshes' on export",
         default="ERROR")
+    
     
     version: available_versions_property()
 
