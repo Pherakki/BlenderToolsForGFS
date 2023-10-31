@@ -553,7 +553,7 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
                 uv_map_name = uv_node.uv_map
                 if is_valid_uv_map(uv_map_name):
                     proposed_tex_idx = get_uv_idx_from_name(uv_map_name)
-                    if proposed_tex_idx < 8:
+                    if proposed_tex_idx < 7:
                         tex_idx = proposed_tex_idx
                     else:
                         errorlog.log_warning_message(f"Image texture node '{name}' on material '{mat_name}' is linked to the UV Map '{uv_map_name}', but this is not a valid UV map name (must be a number between 0-7 prefixed with 'UV', e.g. UV3). Defaulting to UV map 0.")
