@@ -566,8 +566,6 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
         if tex_idx is None:
             tex_idx = 0
         
-        # THIS IS WRONG
-        # tex_idx_1 and tex_idx_2 CAN BE DIFFERENT IN SOME RARE CASES!!!
         in_idx  = 7 if in_idx  == "None" else int(in_idx)
         out_idx = 7 if out_idx == "None" else int(out_idx)
         create_sampler(in_idx, out_idx, image_name,
