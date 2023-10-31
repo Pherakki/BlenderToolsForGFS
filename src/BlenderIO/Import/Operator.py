@@ -63,6 +63,11 @@ class ImportPolicies(bpy.types.PropertyGroup):
                     "dropped by this feature",
         default=True
     )
+     
+    connect_child_bones: bpy.props.BoolProperty(
+        name="Connect Child Bones",
+        description="Attach bone tails and heads if they are sufficiently close",
+        default=False)
         
     bone_pose: bpy.props.EnumProperty(
         name="Bind Pose",
@@ -104,6 +109,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         self.policies.set_clip             = prefs.set_clip
         self.policies.merge_vertices       = prefs.merge_vertices
         self.policies.bone_pose            = prefs.bone_pose
+        self.policies.connect_child_bones  = prefs.connect_child_bones
         self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
         return super().invoke(context, event)
     
@@ -138,7 +144,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         # Now import file data to Blender
         textures  = import_textures(gfs)
         materials = import_materials(gfs, textures, errorlog)
-        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.policies.merge_vertices, self.policies.bone_pose, filepath)
+        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.policies.merge_vertices, self.policies.bone_pose, filepath, self.policies)
         
         create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
@@ -320,6 +326,7 @@ class CUSTOM_PT_GFSModelImportSettings(bpy.types.Panel):
         layout.prop(policies, 'set_clip')
         layout.prop(policies, 'merge_vertices')
         layout.prop(policies, 'bone_pose')
+        layout.prop(policies, 'connect_child_bones')
 
 
 class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):

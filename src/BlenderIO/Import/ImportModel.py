@@ -147,7 +147,7 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
     return bpy_nodes, bone_transforms, [Matrix.Identity(4) for b in bone_transforms], gfs_to_bpy_bone_map, skewed_bpm_nodes
 
 
-def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, filepath):
+def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, filepath, import_policies):
     """
     This is a really bad function. It's way too long - it needs to be split
     up into smaller, more modular chunks. Although it's all logically
@@ -300,6 +300,15 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     for bpy_bone in main_armature.data.edit_bones:
         resize_bone_length(bpy_bone, dims, min_bone_length)
         
+    if import_policies.connect_child_bones:
+        for bpy_bone in main_armature.data.edit_bones:
+            for child in bpy_bone.children:
+                child_pos = np.array(list(child.head))
+                this_tail = np.array(list(bpy_bone.tail))
+                diff = np.abs(child_pos - this_tail)
+                if np.allclose(child_pos, this_tail, rtol=1e-5, atol=1e-5):
+                    child.use_connect = True
+                
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.mode_set(mode="EDIT")
         

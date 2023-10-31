@@ -66,6 +66,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
         default="bindpose"
     )
     
+    connect_child_bones: bpy.props.BoolProperty(
+        name="Connect Child Bones",
+        description="Default setting for 'Connect Child Bones' policy",
+        default=False
+    )
+    
     ############
     ## EXPORT ##
     ############
@@ -142,6 +148,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         import_col.prop(self, 'set_fps')
         import_col.prop(self, 'set_clip')
         import_col.prop(self, 'bone_pose')
+        import_col.prop(self, 'connect_child_bones')
         
         export_col = io_row.column()
         export_col.label(text='Default Export settings:')
