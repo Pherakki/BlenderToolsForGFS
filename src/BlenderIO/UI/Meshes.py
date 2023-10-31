@@ -37,7 +37,7 @@ def get_armature_enum(self, context):
 
 
 class ConvertToUnriggedMesh(bpy.types.Operator):
-    bl_idname = "gfstools.converttounrigged"
+    bl_idname = f"{NAMESPACE}.converttounrigged"
     bl_label = "Convert To Unrigged"
     bl_property = "bone_name"
     bl_options = {'REGISTER', 'UNDO'}

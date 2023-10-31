@@ -95,7 +95,7 @@ def movedown_callback(context, event, old_idx, new_idx):
 
 
 _uilist = UIListBase(
-    "gfstools",
+    NAMESPACE,
     "AnimPacks", 
     OBJECT_UL_GFSToolsAnimationPackUIList, 
     "animation_packs", 
@@ -110,7 +110,7 @@ _uilist = UIListBase(
 
 class SetInternalAnimationPack(bpy.types.Operator):
     bl_label   = "Set Internal GAP"
-    bl_idname  = "gfstools.setinternalgap"
+    bl_idname  = f"{NAMESPACE}.setinternalgap"
     bl_options = {'UNDO', 'REGISTER'}
     
     @classmethod
@@ -145,7 +145,7 @@ class SetInternalAnimationPack(bpy.types.Operator):
 
 class SetActiveAnimationPack(bpy.types.Operator):
     bl_label   = "Set Active GAP"
-    bl_idname  = "gfstools.setactivegap"
+    bl_idname  = f"{NAMESPACE}.setactivegap"
     bl_options = {'UNDO', 'REGISTER'}
     
     @classmethod
