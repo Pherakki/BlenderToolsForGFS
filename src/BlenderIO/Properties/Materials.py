@@ -1,7 +1,8 @@
 import bpy
+from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 
-
-def gen_tex_prop(name):
+def gen_tex_prop(name, getter=None):
+    description = "" if getter is None else "This UV map is determined from the appropriate node in the shader tree"
     return bpy.props.EnumProperty(name=name, items=[
             ("None", "None", "Unused UV channel"),
             ("0", "UV0", "Use UV0"),
@@ -11,7 +12,35 @@ def gen_tex_prop(name):
             ("4", "UV4", "Use UV4"),
             ("5", "UV5", "Use UV5"),
             ("6", "UV6", "Use UV6")
-        ], default="None")
+        ], default="None", description=description, get=getter)
+
+
+def get_in_tex(self, name):
+    material = self.id_data
+    if material.node_tree is None:
+        return 0
+    
+    nodes = material.node_tree.nodes
+    if name not in nodes:
+        return 1
+
+    tex_node = nodes[name]
+    if tex_node.type != "TEX_IMAGE":
+        return 0
+    connections = tex_node.inputs["Vector"].links
+
+    tex_idx = None
+    if len(connections):
+        uv_node = connections[0].from_socket.node
+        if uv_node.type == "UVMAP":
+            uv_map_name = uv_node.uv_map
+            if is_valid_uv_map(uv_map_name):
+                proposed_tex_idx = get_uv_idx_from_name(uv_map_name)
+                if proposed_tex_idx < 7:
+                    tex_idx = proposed_tex_idx
+                    return tex_idx + 1
+    
+    return "UV0"
 
 
 class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
@@ -93,23 +122,23 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     # Positions?
     # Weights?
     
-    diffuse_uv_in:     gen_tex_prop("")
+    diffuse_uv_in:     gen_tex_prop("", lambda self: get_in_tex(self, "Diffuse Texture"))
     diffuse_uv_out:    gen_tex_prop("")
-    normal_uv_in:      gen_tex_prop("")
+    normal_uv_in:      gen_tex_prop("", lambda self: get_in_tex(self, "Normal Texture"))
     normal_uv_out:     gen_tex_prop("")
-    specular_uv_in:    gen_tex_prop("")
+    specular_uv_in:    gen_tex_prop("", lambda self: get_in_tex(self, "Specular Texture"))
     specular_uv_out:   gen_tex_prop("")
-    reflection_uv_in:  gen_tex_prop("")
+    reflection_uv_in:  gen_tex_prop("", lambda self: get_in_tex(self, "Reflection Texture"))
     reflection_uv_out: gen_tex_prop("")
-    highlight_uv_in:   gen_tex_prop("")
+    highlight_uv_in:   gen_tex_prop("", lambda self: get_in_tex(self, "Highlight Texture"))
     highlight_uv_out:  gen_tex_prop("")
-    glow_uv_in:        gen_tex_prop("")
+    glow_uv_in:        gen_tex_prop("", lambda self: get_in_tex(self, "Glow Texture"))
     glow_uv_out:       gen_tex_prop("")
-    night_uv_in:       gen_tex_prop("")
+    night_uv_in:       gen_tex_prop("", lambda self: get_in_tex(self, "Night Texture"))
     night_uv_out:      gen_tex_prop("")
-    detail_uv_in:      gen_tex_prop("")
+    detail_uv_in:      gen_tex_prop("", lambda self: get_in_tex(self, "Detail Texture"))
     detail_uv_out:     gen_tex_prop("")
-    shadow_uv_in:      gen_tex_prop("")
+    shadow_uv_in:      gen_tex_prop("", lambda self: get_in_tex(self, "Shadow Texture"))
     shadow_uv_out:     gen_tex_prop("")
     
     ##################
