@@ -4,6 +4,7 @@ from .Node import makeNodePropertiesPanel
 from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
 from ..modelUtilsTest.API.Icon import icon_lookup
 from ..modelUtilsTest.UI.UIList import UIListBase
+from ..Globals import NAMESPACE
 
 
 def _draw_on_node(context, layout):
@@ -172,6 +173,21 @@ class SetActiveAnimationPack(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class AutonameMeshUVs(bpy.types.Operator):
+    bl_label = "Auto-Rename Mesh UVs"
+    bl_idname = f"{NAMESPACE}.autonamemeshuvs"
+    
+    @classmethod
+    def poll(cls, context):
+        if context.active_object is None:
+            return False
+        return context.active_object.GFSTOOLS_ObjectProperties.is_model()
+    
+    def execute(self, context):
+        context.active_object.GFSTOOLS_ObjectProperties.autoname_mesh_uvs()
+        return {'FINISHED'}
+            
+
 class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
     bl_label       = "GFS Model"
     bl_idname      = "OBJECT_PT_GFSToolsModelDataPanel"
@@ -196,6 +212,8 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         ctr.prop(aprops, "has_external_emt")
         ctr.prop(aprops, "flag_3")
         
+        ctr.operator(AutonameMeshUVs.bl_idname)
+        
         aprops.bounding_box.draw(ctr)
         aprops.bounding_sphere.draw(ctr)
         
@@ -212,6 +230,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationPackUIList)
         bpy.utils.register_class(SetActiveAnimationPack)
         bpy.utils.register_class(SetInternalAnimationPack)
+        bpy.utils.register_class(AutonameMeshUVs)
         _uilist.register()
     
     @classmethod
@@ -221,6 +240,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationPackUIList)
         bpy.utils.unregister_class(SetActiveAnimationPack)
         bpy.utils.unregister_class(SetInternalAnimationPack)
+        bpy.utils.unregister_class(AutonameMeshUVs)
         _uilist.unregister()
     
     NodePropertiesPanel = makeNodePropertiesPanel(

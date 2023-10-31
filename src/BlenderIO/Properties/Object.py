@@ -47,6 +47,13 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
             meshes.append(c)
         return meshes
             
+    def autoname_mesh_uvs(self):
+        if not self.is_model():
+            raise ValueError(f"Cannot autoname child mesh UVs on a non-GFS-model object: '{self.type}'")
+        
+        for bpy_mesh_obj in self.get_model_meshes():
+            bpy_mesh_obj.GFSTOOLS_ObjectProperties.autoname_uvs()
+    
     ########
     # MESH #
     ########
