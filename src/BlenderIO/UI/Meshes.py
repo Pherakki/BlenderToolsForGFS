@@ -1,6 +1,7 @@
 import bpy
 from .HelpWindows import defineHelpWindow
 from .Node import makeNodePropertiesPanel
+from ..Globals import NAMESPACE
 
 
 def _draw_on_node(context, layout):
@@ -76,6 +77,20 @@ class ConvertToUnriggedMesh(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class AutonameUVs(bpy.types.Operator):
+    bl_label = "Auto-Rename UVs"
+    bl_idname = f"{NAMESPACE}.autonameuvs"
+    
+    @classmethod
+    def poll(cls, context):
+        if context.active_object is None:
+            return False
+        return context.active_object.GFSTOOLS_ObjectProperties.is_mesh()
+    
+    def execute(self, context):
+        context.active_object.GFSTOOLS_ObjectProperties.autoname_uvs()
+        return {'FINISHED'}
+
 
 class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
     bl_label       = "GFS Mesh"
@@ -104,6 +119,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         
         # Help window
         ctr.operator(self.MeshHelpWindow.bl_idname)
+        ctr.operator(AutonameUVs.bl_idname)
         
         # Rigging data
         row = ctr.row()
@@ -168,6 +184,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         bpy.utils.register_class(cls.NodePropertiesPanel)
         bpy.utils.register_class(cls.MeshHelpWindow)
         bpy.utils.register_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
+        bpy.utils.register_class(AutonameUVs)
     
     @classmethod
     def unregister(cls):
@@ -175,6 +192,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
         bpy.utils.unregister_class(cls.MeshHelpWindow)
         bpy.utils.unregister_class(cls.OBJECT_PT_GFSToolsMeshUnknownFloatsPanel)
+        bpy.utils.unregister_class(AutonameUVs)
     
     class DummyType:
         type = None

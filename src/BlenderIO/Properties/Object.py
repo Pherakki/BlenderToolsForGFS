@@ -1,4 +1,5 @@
 import bpy
+from ..Utils.UVMapManagement import make_uv_map_name
 
 
 def get_armature(bpy_mesh_object):
@@ -172,3 +173,45 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
                 return Exception("CALLED get_node_name IN INVALID CONTEXT: UNRIGGED AMBIGIOUS")
             else:
                 raise NotImplementedError(f"CRITICAL INTERNAL ERROR: UNIMPLEMENTED RIG TYPE '{rig_type}'")
+
+    def autoname_uvs(self):
+        if not self.is_mesh():
+            raise ValueError(f"Cannot autoname UVs on a non-mesh object: '{self.type}'")
+        material = self.id_data.active_material
+        mprops = material.GFSTOOLS_MaterialProperties
+        required_uvs = set()
+        
+        def get_uv(uv):
+            if uv != "None":
+                required_uvs.add(int(uv))
+        
+        get_uv(mprops.diffuse_uv_in)
+        get_uv(mprops.normal_uv_in)
+        get_uv(mprops.specular_uv_in)
+        get_uv(mprops.reflection_uv_in)
+        get_uv(mprops.highlight_uv_in)
+        get_uv(mprops.glow_uv_in)
+        get_uv(mprops.night_uv_in)
+        get_uv(mprops.detail_uv_in)
+        get_uv(mprops.shadow_uv_in)
+        
+        uv_layers = self.id_data.data.uv_layers
+        required_uvs  = sorted(required_uvs)
+        required_maps = [make_uv_map_name(uv) for uv in required_uvs]
+        uv_map_names  = [m.name for m in uv_layers]
+        unimplemented_names = sorted(set(required_maps) - set(uv_map_names))
+        implemented_names = set(required_maps) - set(unimplemented_names)
+        
+        if not len(unimplemented_names):
+            return
+        
+        idx = 0
+        for uv_map in uv_map_names:
+            if uv_map in implemented_names:
+                continue
+            else:
+                uv_layers[uv_map].name = unimplemented_names[idx]
+                idx += 1
+                if idx >= len(unimplemented_names):
+                    return
+        
