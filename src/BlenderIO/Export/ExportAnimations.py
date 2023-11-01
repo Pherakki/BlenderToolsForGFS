@@ -272,24 +272,15 @@ def get_action_data(action, bpy_armature_obj, is_blend):
 
         bpy_bone = bpy_armature_obj.data.bones[bone_name]
         override_name = bpy_bone.GFSTOOLS_NodeProperties.override_name
-        if is_blend:
-            positions = bone_fcurves[bone_name].get("location", {})
-            rotations = bone_fcurves[bone_name].get("rotation_quaternion", {})
-            scales    = bone_fcurves[bone_name].get("scale", {})
-
-            g_positions, g_rotations, g_scales = bind_to_parent_blend(bpy_bone, positions.values(), rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
-            g_positions = {k: v for k, v in zip(positions.keys(), g_positions)}
-            g_rotations = {k: q for k, q in zip(rotations.keys(), g_rotations)}
-            g_scales    = {k: v for k, v in zip(scales.keys(),    g_scales   )}
-        else:
-            positions = bone_fcurves[bone_name].get("location", {})
-            rotations = bone_fcurves[bone_name].get("rotation_quaternion", {})
-            scales    = bone_fcurves[bone_name].get("scale", {})
-            
-            g_positions, g_rotations, g_scales = bind_to_parent(bpy_bone, positions.values(), rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
-            g_positions = {k: v for k, v in zip(positions.keys(), g_positions)}
-            g_rotations = {k: q for k, q in zip(rotations.keys(), g_rotations)}
-            g_scales    = {k: v for k, v in zip(scales.keys(),    g_scales   )}
+        
+        positions = bone_fcurves[bone_name].get("location", {})
+        rotations = bone_fcurves[bone_name].get("rotation_quaternion", {})
+        scales    = bone_fcurves[bone_name].get("scale", {})
+        if is_blend: g_positions, g_rotations, g_scales = bind_to_parent_blend(bpy_bone, positions.values(), rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
+        else:        g_positions, g_rotations, g_scales = bind_to_parent      (bpy_bone, positions.values(), rotations.values(), scales.values(), GFS_MODEL_TRANSFORMS)
+        g_positions = {k: v for k, v in zip(positions.keys(), g_positions)}
+        g_rotations = {k: q for k, q in zip(rotations.keys(), g_rotations)}
+        g_scales    = {k: v for k, v in zip(scales.keys(),    g_scales   )}
 
         g_rotations = {k: [q.x, q.y, q.z, q.w] for k, q in zip(rotations.keys(), fix_quaternion_signs([Quaternion(q) for q in rotations.values()], list(g_rotations.values())))}
         
