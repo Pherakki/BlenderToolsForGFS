@@ -305,7 +305,6 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
             for child in bpy_bone.children:
                 child_pos = np.array(list(child.head))
                 this_tail = np.array(list(bpy_bone.tail))
-                diff = np.abs(child_pos - this_tail)
                 if np.allclose(child_pos, this_tail, rtol=1e-4, atol=1e-4):
                     child.use_connect = True
                 
