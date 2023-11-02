@@ -20,7 +20,7 @@ VERTEX_LIMIT = TooManyVerticesError.vtx_limit
 COMBINED_NODE_NAME = "mesh"
 
 
-def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlog, export_policies):
+def export_mesh_data(gfs, armature, bpy_to_gfs_node, full_rest_pose_matrices, errorlog, export_policies):
     too_many_vertices_policy      = export_policies.too_many_vertices_policy
     multiple_materials_policy     = export_policies.multiple_materials_policy
     combine_new_mesh_nodes        = export_policies.combine_new_mesh_nodes
@@ -82,8 +82,8 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, bind_pose_matrices, errorlo
             create_mesh_node(gfs, export_name, armature, bpy_mesh_object.matrix_local, bpy_mesh_object.data.GFSTOOLS_NodeProperties)
         else:
             # Transform the vertex data by the mesh/node discrepancy
-            bpm = bind_pose_matrices[node_id]
-            relative_transform = convert_Yup_to_Zup(bpm).inverted() @ bpy_mesh_object.matrix_local
+            bpm = full_rest_pose_matrices[node_id]
+            relative_transform = convert_Yup_to_Zup(bpm).inverted() @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix4x4 @ bpy_mesh_object.matrix_local
             
             for gfs_mesh in gfs_meshes:
                 bake_mesh_transform(gfs_mesh, relative_transform)

@@ -13,7 +13,6 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
     
     # Get the rest pose if it exists
     rest_pose_matrices, armature_rest_pose = get_rest_pose(bpy_armature_object)
-    
     # Add root node
     rn_props = bpy_armature_object.data.GFSTOOLS_NodeProperties
     t, r, s = armature_rest_pose.decompose()
@@ -30,6 +29,7 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
         root_node.add_property(*prop.extract_data(prop))
     
     bind_pose_matrices.append(bm)
+    full_rest_pose_matrices = [armature_rest_pose]
     bone_list = {bone.name: i for i, bone in enumerate([root_node, *bpy_armature_object.data.bones])}
     # Export each bone as a node
     for bone in bpy_armature_object.data.bones:
@@ -66,4 +66,5 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
             node.add_property(*prop.extract_data(prop))
             
         bind_pose_matrices.append(bm)
-    return bone_list, bind_pose_matrices
+        full_rest_pose_matrices.append((full_rest_pose_matrices[parent_id] @ bind_relative_pose))
+    return bone_list, full_rest_pose_matrices

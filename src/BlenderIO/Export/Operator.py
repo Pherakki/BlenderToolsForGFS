@@ -162,8 +162,8 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
-        bpy_to_gfs_nodes, bind_pose_matrices = export_node_tree(gfs, selected_model, errorlog)
-        bpy_material_names = export_mesh_data(gfs, selected_model, bpy_to_gfs_nodes, bind_pose_matrices, errorlog, self.policies)
+        bpy_to_gfs_nodes, full_rest_pose_matrices = export_node_tree(gfs, selected_model, errorlog)
+        bpy_material_names = export_mesh_data(gfs, selected_model, bpy_to_gfs_nodes, full_rest_pose_matrices, errorlog, self.policies)
         export_materials_and_textures(gfs, bpy_material_names, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
