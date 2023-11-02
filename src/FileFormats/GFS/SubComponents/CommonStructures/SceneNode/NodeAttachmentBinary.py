@@ -7,12 +7,6 @@ from .EPL.EPLBinary         import EPLBinary
 from .EPLLeaf.EPLLeafBinary import EPLLeafBinary
 
 
-class HasParticleDataError(Exception):
-    pass
-
-class HasType9Error(Exception):
-    pass
-
 class NodeAttachmentBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -35,7 +29,6 @@ class NodeAttachmentBinary(Serializable):
             elif self.type == 6:
                 dtype = LightBinary
             elif self.type == 7:
-                #raise HasParticleDataError
                 dtype = EPLBinary
             elif self.type == 8:
                 dtype = EPLLeafBinary

@@ -12,7 +12,6 @@ from .SubComponents.CommonStructures import NodeInterface, MeshInterface, LightI
 
 from .SubComponents.GFS0ContainerBinary import UnsupportedVersionError
 from .SubComponents.Animations.Binary.AnimationBinary import ParticlesError
-from .SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasParticleDataError
 
 
 class GFSInterface:
