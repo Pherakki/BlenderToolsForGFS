@@ -2,8 +2,8 @@ from ..CustomProperty import PropertyInterface
 from .NodeAttachmentBinary import NodeAttachmentBinary
 from .NodeBinary   import SceneNodeBinary
 from .Mesh import MeshInterface
-from .LightBinary  import LightBinary
 from .MorphBinary  import MorphBinary
+from .Light  import LightInterface
 from .Camera import CameraInterface
 
 
@@ -159,24 +159,6 @@ class NodeInterface:
         self.properties.append(prop)
         return prop
 
-    
-class LightInterface:
-    def __init__(self):
-        self.node   = None
-        self.binary = LightBinary()
-        
-    @classmethod
-    def from_binary(cls, node_idx, binary):
-        instance = cls()
-        
-        # Deal with unpacking later...
-        instance.node = node_idx
-        instance.binary = binary
-        
-        return instance
-        
-    def to_binary(self):
-        return self.binary
 
 class MorphInterface:
     # This attachment should actually be redundant since the data is always the same

@@ -1,6 +1,6 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import BitVector0x20
+from .......serialization.Serializable import Serializable
+from .......serialization.utils import safe_format, hex32_format
+from ....CommonStructures import BitVector0x20
 
 
 class LightFlags(BitVector0x20):

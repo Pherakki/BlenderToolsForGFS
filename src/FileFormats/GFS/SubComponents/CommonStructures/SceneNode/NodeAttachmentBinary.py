@@ -1,9 +1,9 @@
 from ......serialization.Serializable import Serializable
 from .MorphBinary import MorphBinary
-from .LightBinary import LightBinary
 from .EPL.EPLBinary import EPLBinary
 from .Mesh.MeshBinary        import MeshBinary
 from .Camera.CameraBinary    import CameraBinary
+from .Light.LightBinary      import LightBinary
 from .EPL.Leaf.EPLLeafBinary import EPLLeafBinary
 
 
