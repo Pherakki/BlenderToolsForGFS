@@ -5,6 +5,7 @@ from .Mesh   import MeshInterface
 from .Light  import LightInterface
 from .Camera import CameraInterface
 from .Morph  import MorphInterface, MorphBinary
+from .EPL    import EPLInterface
 
 
 def generate_morphs(node_list, mesh_list):
@@ -158,21 +159,3 @@ class NodeInterface:
         prop.data = data
         self.properties.append(prop)
         return prop
-
-
-class EPLInterface:
-    def __init__(self):
-        self.node = None
-        self.binary = None
-        
-    @classmethod
-    def from_binary(cls, node_idx, binary):
-        instance = cls()
-        
-        instance.node = node_idx
-        instance.binary = binary
-        
-        return instance
-    
-    def to_binary(self):
-        return self.binary
