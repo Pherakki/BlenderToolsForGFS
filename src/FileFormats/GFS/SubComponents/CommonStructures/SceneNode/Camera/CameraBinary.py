@@ -1,5 +1,5 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format
+from .......serialization.Serializable import Serializable
+from .......serialization.utils import safe_format
 
 
 class CameraBinary(Serializable):

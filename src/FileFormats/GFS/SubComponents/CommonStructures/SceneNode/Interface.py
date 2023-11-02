@@ -3,8 +3,8 @@ from .NodeAttachmentBinary import NodeAttachmentBinary
 from .NodeBinary   import SceneNodeBinary
 from .Mesh import MeshInterface
 from .LightBinary  import LightBinary
-from .CameraBinary import CameraBinary
 from .MorphBinary  import MorphBinary
+from .Camera import CameraInterface
 
 
 def generate_morphs(node_list, mesh_list):
@@ -159,23 +159,6 @@ class NodeInterface:
         self.properties.append(prop)
         return prop
 
-
-class CameraInterface:
-    def __init__(self):
-        self.node   = None
-        self.binary = CameraBinary()
-        
-    @classmethod
-    def from_binary(cls, node_idx, binary):
-        instance = cls()
-        # Deal with unpacking later...
-        instance.node = node_idx
-        instance.binary = binary
-        
-        return instance
-        
-    def to_binary(self):
-        return self.binary
     
 class LightInterface:
     def __init__(self):
