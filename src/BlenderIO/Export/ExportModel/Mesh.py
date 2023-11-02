@@ -340,10 +340,10 @@ def bake_mesh_transform(gfs_mesh, transform):
         for v in vs: v.position = (transform @ Vector([*v.position, 1.]))[:3]
     # Normal
     if vs[0].normal is not None:
-        for v in vs: v.normal   = (transform @ Vector([*v.normal,   0.]))[:3]
+        for v in vs: v.normal   = (transform @ Vector([*v.normal,   0.])).normalized()[:3]
     # Tangent
     if vs[0].tangent is not None:
-        for v in vs: v.tangent  = (transform @ Vector([*v.tangent,  0.]))[:3]
+        for v in vs: v.tangent  = (transform @ Vector([*v.tangent,  0.])).normalized()[:3]
     # Binormal
     if vs[0].binormal is not None:
-        for v in vs: v.binormal = (transform @ Vector([*v.binormal, 0.]))[:3]
+        for v in vs: v.binormal = (transform @ Vector([*v.binormal, 0.])).normalized()[:3]
