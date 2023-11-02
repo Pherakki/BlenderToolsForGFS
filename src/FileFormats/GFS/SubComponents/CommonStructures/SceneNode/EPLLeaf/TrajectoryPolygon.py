@@ -1,5 +1,5 @@
-from ........serialization.Serializable import Serializable
-from .....CommonStructures import ObjectName
+from .......serialization.Serializable import Serializable
+from ....CommonStructures import ObjectName
 from .Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
 
 

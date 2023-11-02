@@ -1,6 +1,6 @@
-from ........serialization.Serializable import Serializable
-from ........serialization.utils import safe_format, hex32_format
-from .....CommonStructures import ObjectName, BitVector0x20
+from .......serialization.Serializable import Serializable
+from .......serialization.utils import safe_format, hex32_format
+from ....CommonStructures import ObjectName, BitVector0x20
 from .Particle             import EPLLeafParticle
 from .FlashPolygon         import EPLLeafFlashPolygon
 from .CirclePolygon        import EPLLeafCirclePolygon

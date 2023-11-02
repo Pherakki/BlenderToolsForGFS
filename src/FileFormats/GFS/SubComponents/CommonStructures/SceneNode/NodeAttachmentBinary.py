@@ -1,10 +1,10 @@
 from ......serialization.Serializable import Serializable
-from .Mesh.MeshBinary        import MeshBinary
-from .Morph.MorphBinary      import MorphBinary
-from .Camera.CameraBinary    import CameraBinary
-from .Light.LightBinary      import LightBinary
-from .EPL.EPLBinary          import EPLBinary
-from .EPL.Leaf.EPLLeafBinary import EPLLeafBinary
+from .Mesh.MeshBinary       import MeshBinary
+from .Morph.MorphBinary     import MorphBinary
+from .Camera.CameraBinary   import CameraBinary
+from .Light.LightBinary     import LightBinary
+from .EPL.EPLBinary         import EPLBinary
+from .EPLLeaf.EPLLeafBinary import EPLLeafBinary
 
 
 class HasParticleDataError(Exception):
