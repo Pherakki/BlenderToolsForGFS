@@ -1,7 +1,7 @@
 from ..CustomProperty import PropertyInterface
 from .NodeAttachmentBinary import NodeAttachmentBinary
-from .NodeBinary   import SceneNodeBinary
-from .Mesh import MeshInterface
+from .NodeBinary import SceneNodeBinary
+from .Mesh   import MeshInterface
 from .Light  import LightInterface
 from .Camera import CameraInterface
 from .Morph  import MorphInterface, MorphBinary
