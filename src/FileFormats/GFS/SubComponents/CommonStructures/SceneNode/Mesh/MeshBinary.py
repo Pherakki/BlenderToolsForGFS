@@ -1,7 +1,7 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format, hex32_format
-from ...CommonStructures import ObjectName, BitVector
-from ...CommonStructures.SizedObjArrayModule import SizedObjArray
+from .......serialization.Serializable import Serializable
+from .......serialization.utils import safe_format, hex32_format
+from ....CommonStructures import ObjectName, BitVector
+from ....CommonStructures.SizedObjArrayModule import SizedObjArray
 
 
 class MeshFlags(BitVector):

@@ -1,4 +1,4 @@
-from ....FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import VertexBinary
+from ....FileFormats.GFS.SubComponents.CommonStructures.SceneNode.Mesh.MeshBinary import VertexBinary
 from ...modelUtilsTest.Mesh.Export.ExtractMeshBuffers import bpy_mesh_to_VBO_IBO
 from ...modelUtilsTest.Mesh.Export.Attributes import get_normals
 from ...modelUtilsTest.Mesh.Export.Attributes import get_tangents

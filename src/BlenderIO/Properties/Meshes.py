@@ -1,5 +1,5 @@
 import bpy
-from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.MeshBinary import MeshBinary
+from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.Mesh.MeshBinary import MeshBinary
 from ..modelUtilsTest.Mesh.Managed import define_managed_mesh
 from ..Utils.BoundingVolumes import update_box
 from ..Utils.BoundingVolumes import update_sphere
