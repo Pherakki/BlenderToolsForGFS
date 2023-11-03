@@ -66,5 +66,5 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
             node.add_property(*prop.extract_data(prop))
             
         bind_pose_matrices.append(bm)
-        full_rest_pose_matrices.append((full_rest_pose_matrices[parent_id] @ bind_relative_pose))
+        full_rest_pose_matrices.append((full_rest_pose_matrices[parent_id] @ parent_relative_pose))
     return bone_list, full_rest_pose_matrices

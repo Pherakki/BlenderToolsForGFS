@@ -83,7 +83,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, full_rest_pose_matrices, er
         else:
             # Transform the vertex data by the mesh/node discrepancy
             bpm = full_rest_pose_matrices[node_id]
-            relative_transform = convert_Yup_to_Zup(bpm).inverted() @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix4x4 @ bpy_mesh_object.matrix_local
+            relative_transform = convert_Yup_to_Zup(bpm).inverted() @ bpy_mesh_object.matrix_local
             
             for gfs_mesh in gfs_meshes:
                 bake_mesh_transform(gfs_mesh, relative_transform)
