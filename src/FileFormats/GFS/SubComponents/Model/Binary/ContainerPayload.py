@@ -40,60 +40,6 @@ class ModelFlags(BitVector):
     flag_31             = BitVector.DEF_FLAG(0x1F)
 
 
-class AttachmentGetter:
-    def __init__(self, attachment_type):
-        self.attachment_type = attachment_type
-        self.attachments = []
-        self.current_idx = 0
-        
-    def begin(self, node):
-        for attachment in node.attachments:
-            if attachment.type == self.attachment_type:
-                self.attachments.append((self.current_idx, attachment.data))
-        self.current_idx += 1
-        
-    def end(self):
-        return
-
-
-class FlatNodes:
-    def __init__(self):
-        self.nodes        = []
-        self.node_parents = []
-        self.meshes       = []
-        self.cameras      = []
-        self.lights       = []
-        self.epls         = []
-        self.morphs       = []
-
-
-class FlatNodesWalker:
-    def __init__(self):
-        self.flat_nodes = FlatNodes()
-        self.parent_stack = [-1]
-    
-    def begin(self, node):
-        fn = self.flat_nodes
-        
-        idx = len(fn.nodes)
-        fn.nodes.append(node)
-        fn.node_parents.append(self.parent_stack[-1])
-        self.parent_stack.append(len(fn.nodes)-1)
-        
-        for attachment in node.attachments:
-            if   attachment.type == 4: lst = fn.meshes
-            elif attachment.type == 5: lst = fn.cameras
-            elif attachment.type == 6: lst = fn.lights
-            elif attachment.type == 7: lst = fn.epls
-            elif attachment.type == 9: lst = fn.morphs
-            else: raise NotImplementedError("Unhandled attachment type '{atype}' encountered when flattening nodes")
-            
-            lst.append((idx, attachment.data))
-
-    def end(self):
-        self.parent_stack.pop(-1)
-        
-
 class ModelPayload(Serializable):
     TYPECODE = 0x00010003
          
@@ -139,40 +85,9 @@ class ModelPayload(Serializable):
             self.bounding_sphere_radius = rw.rw_float32(self.bounding_sphere_radius)
             
         rw.rw_obj(self.root_node, version)
-        
-    def walk_nodes(self, node, operator):
-        operator.begin(node)
-        for child in node.children[::-1]:
-            self.walk_nodes(child, operator)
-        operator.end()
     
-    def fetch_attachment(self, node, attachment_type):
-        ag = AttachmentGetter(attachment_type)
-        self.walk_nodes(node, ag)
-        return ag.attachments
-    
-    def get_meshes(self):
-        return self.fetch_attachment(self.root_node, 4)
-    
-    def get_cameras(self):
-        return self.fetch_attachment(self.root_node, 5)
-    
-    def get_lights(self):
-        return self.fetch_attachment(self.root_node, 6)
-    
-    def get_epls(self):
-        return self.fetch_attachment(self.root_node, 7)
-    
-    def get_morphs(self):
-        return self.fetch_attachment(self.root_node, 9)
-    
-    def flattened(self):
-        fn = FlatNodesWalker()
-        self.walk_nodes(self.root_node, fn)
-        return fn.flat_nodes
-
     def get_mesh_bounding_boxes(self):
-        flat_nodes = self.flattened()
+        flat_nodes = self.root_node.flattened()
         nodes        = flat_nodes.nodes
         node_parents = flat_nodes.node_parents
         
@@ -186,7 +101,7 @@ class ModelPayload(Serializable):
                 matrices[i] = matrix
         
         mesh_verts = []
-        for node_idx, mesh in self.get_meshes():
+        for node_idx, mesh in self.root_node.get_meshes():
             if not mesh.flags.has_bounding_box:
                 continue
             matrix   = matrices[node_idx]
