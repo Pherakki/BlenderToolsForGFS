@@ -36,6 +36,7 @@ class EPLInterface:
         if len(instance._scenegraph.lights):  print("WARNING: EPL has lights!")
         if len(instance._scenegraph.epls):    print("WARNING: EPL has sub-EPLs!")
         
+        instance.flags     = binary.flags
         instance.node      = node_idx
         instance.animation = binary.animation
         instance.unknown   = binary.unknown
@@ -45,7 +46,7 @@ class EPLInterface:
     def to_binary(self, endianness=">"):
         binary = EPLBinary(endianness)
         binary.flags = self.flags
-        binary.root_node = self._scenegraph.packed()
+        binary.root_node = self._scenegraph.packed()[0]
         if self.animation is not None:
             binary.animation = self.animation
         binary.unknown = self.unknown
