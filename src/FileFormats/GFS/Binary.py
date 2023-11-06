@@ -77,7 +77,7 @@ class GFSBinary(Serializable):
     def get_0x000100F8_block(self): return self.get_container(0x000100F8)
     
 
-class EPLBinary(Serializable):
+class EPLFileBinary(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
         self.context.endianness = endianness
