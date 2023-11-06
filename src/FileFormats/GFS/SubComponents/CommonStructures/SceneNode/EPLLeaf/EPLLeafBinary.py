@@ -74,7 +74,7 @@ class EPLLeafBinary(Serializable):
         self.type = rw.rw_uint32(self.type)
         self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
         
-        if self.type == 0: return
+        if   self.type == 0:  return
         elif self.type == 1:  PayloadType = EPLLeafParticle
         elif self.type == 2:  PayloadType = EPLLeafFlashPolygon
         elif self.type == 3:  PayloadType = EPLLeafCirclePolygon

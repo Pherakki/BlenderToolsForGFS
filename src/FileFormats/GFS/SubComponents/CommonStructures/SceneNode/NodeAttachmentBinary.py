@@ -1,10 +1,10 @@
 from ......serialization.Serializable import Serializable
-from .Mesh.MeshBinary       import MeshBinary
-from .Morph.MorphBinary     import MorphBinary
-from .Camera.CameraBinary   import CameraBinary
-from .Light.LightBinary     import LightBinary
-from .EPL.EPLBinary         import EPLBinary
-from .EPLLeaf.EPLLeafBinary import EPLLeafBinary
+from . import Mesh
+from . import Morph
+from . import Camera
+from . import Light
+from . import EPL
+from . import EPLLeaf
 
 
 class NodeAttachmentBinary(Serializable):
@@ -22,12 +22,12 @@ class NodeAttachmentBinary(Serializable):
         self.type = rw.rw_uint32(self.type)
         
         if rw.mode() == "read":
-            if   self.type == 4: dtype = MeshBinary
-            elif self.type == 5: dtype = CameraBinary 
-            elif self.type == 6: dtype = LightBinary
-            elif self.type == 7: dtype = EPLBinary
-            elif self.type == 8: dtype = EPLLeafBinary
-            elif self.type == 9: dtype = MorphBinary
+            if   self.type == 4: dtype = Mesh.MeshBinary
+            elif self.type == 5: dtype = Camera.CameraBinary 
+            elif self.type == 6: dtype = Light.LightBinary
+            elif self.type == 7: dtype = EPL.EPLBinary
+            elif self.type == 8: dtype = EPLLeaf.EPLLeafBinary
+            elif self.type == 9: dtype = Morph.MorphBinary
             else: raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")
             self.data = dtype()
             

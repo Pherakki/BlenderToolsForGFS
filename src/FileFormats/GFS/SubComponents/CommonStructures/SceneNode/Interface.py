@@ -1,11 +1,12 @@
 from ..CustomProperty import PropertyInterface
-from .NodeAttachmentBinary import NodeAttachmentBinary
-from .NodeBinary import SceneNodeBinary
-from .Mesh   import MeshInterface
-from .Light  import LightInterface
-from .Camera import CameraInterface
-from .Morph  import MorphInterface, MorphBinary
-from .EPL    import EPLInterface
+from . import NodeAttachmentBinary
+from . import NodeBinary
+from .Mesh    import MeshInterface
+from .Light   import LightInterface
+from .Camera  import CameraInterface
+from .Morph   import MorphInterface, MorphBinary
+from . import EPL
+from . import EPLLeaf
 
 
 def generate_morphs(node_list, mesh_list):
@@ -45,7 +46,8 @@ class NodeInterface:
         cls._fetch_node_from_tree(binary, -1, node_list, mesh_list, camera_list, light_list, epl_list)
         
         return node_list, mesh_list, camera_list, light_list, epl_list
-        
+
+    
     @classmethod
     def _fetch_node_from_tree(cls, node, parent, node_list, mesh_list, camera_list, light_list, epl_list):
         node_idx = len(node_list)
@@ -58,7 +60,7 @@ class NodeInterface:
             elif attachment.type == 6:
                 light_list.append(LightInterface.from_binary(node_idx, attachment.data))
             elif attachment.type == 7:
-                epl_list.append(EPLInterface.from_binary(node_idx, attachment.data))
+                epl_list.append(EPL.EPLInterface.from_binary(node_idx, attachment.data))
             elif attachment.type == 9:
                 pass
             #     morph_list.append(MorphInterface.from_binary(node_idx, attachment.data))
@@ -99,7 +101,7 @@ class NodeInterface:
                 # Interface order, not the Binary order.
                 #remapped_node = id_map[elem.node]
                 node = node_collection[elem.node]
-                attachment = NodeAttachmentBinary()
+                attachment = NodeAttachmentBinary.NodeAttachmentBinary()
                 attachment.type = typevalue
                 attachment.data = elem.to_binary()
                 node.attachments.append(attachment)
@@ -139,7 +141,7 @@ class NodeInterface:
         return instance
     
     def to_binary(self):
-        binary = SceneNodeBinary()
+        binary = NodeBinary.SceneNodeBinary()
         
         binary.name = binary.name.from_name(self.name)
         binary.position = self.position
