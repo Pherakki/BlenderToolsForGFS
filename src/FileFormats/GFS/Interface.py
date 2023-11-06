@@ -1,5 +1,5 @@
 from ...serialization.BinaryTargets import OffsetTracker
-from .Binary import GFSBinary
+from .Binary import GFSBinary, EPLFileBinary
 from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
 
 from .SubComponents.Materials.Interface import MaterialInterface
@@ -454,3 +454,40 @@ class ModelOverrides:
     @property
     def bounding_sphere(self):
         return self._bounding_sphere
+
+
+# This needs to be replaced by the standard "EPLInterface"...
+class EPLFileInterface(EPLInterface):
+    def __init__(self):
+        super().__init__()
+        self.version = None
+    
+    @classmethod
+    def from_binary(cls, binary):
+        instance = super().from_binary(None, binary.epl)
+        instance.version = binary.start_block.version
+        return instance
+    
+    @classmethod
+    def from_file(cls, filepath):
+        binary = EPLFileBinary()
+        binary.read(filepath)
+        return cls.from_binary(binary)
+
+    def to_file(self, filepath, version=None, endianness=">"):
+        binary = self.to_binary(version, endianness)
+        binary.write(filepath)
+
+    def to_binary(self, version=None, endianness=">"):
+        if version is None:
+            version = self.version
+        if version is None:
+            raise ValueError("EPL version is None and no 'version' number was passed to 'to_file'. Either set the 'version' attribute on the object, or pass an override version to the 'to_file' call")
+        
+        binary = EPLFileBinary(endianness)
+        binary.start_block.version = version
+        binary.start_block.type    = 0x00000001
+        binary.start_block.size    = 0
+        binary.epl = super().to_binary(endianness)
+        
+        return binary
