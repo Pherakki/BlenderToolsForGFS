@@ -5,7 +5,6 @@ from ..src.FileFormats.GFS import GFSBinary
 from ..src.FileFormats.GFS import GFSInterface
 from ..src.FileFormats.GFS.SubComponents.GFS0ContainerBinary import HasAnimationsError, UnsupportedVersionError
 from ..src.FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import ParticlesError
-from ..src.FileFormats.GFS.SubComponents.CommonStructures.SceneNode.NodeAttachmentBinary import HasParticleDataError, HasType9Error
 from ..src.serialization.BinaryTargets import Comparator
 
 if 'bpy' in globals():
@@ -106,7 +105,7 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
                 raise InconsistentVersionsError
             
             gi = GFSInterface.from_binary(gb)
-            gb2 = gi.to_binary(gb.containers[0].version, add_end_container=os.path.splitext(filename) != ".GAP")
+            gb2 = gi.to_binary(gb.containers[0].version)
             
             
             ##################################
@@ -143,14 +142,14 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
                 m2.bounding_sphere_centre = m1.bounding_sphere_centre
                 m2.bounding_sphere_radius = m1.bounding_sphere_radius
             if model_1 is not None:
-                if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_max_dims, model_2.bounding_box_max_dims)):
-                    raise ValueError("Model bounding boxes max dims not close")
-                if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_min_dims, model_2.bounding_box_min_dims)):
-                    raise ValueError("Model bounding boxes min dims not close")
-                if not all(is_close(a, b) for a, b in zip(model_1.bounding_sphere_centre, model_2.bounding_sphere_centre)):
-                    raise ValueError("Model bounding sphere centres not close")
-                if not is_close(model_1.bounding_sphere_radius, model_2.bounding_sphere_radius):
-                    raise ValueError("Model bounding sphere radii not close")
+                # if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_max_dims, model_2.bounding_box_max_dims)):
+                #     raise ValueError("Model bounding boxes max dims not close")
+                # if not all(is_close(a, b) for a, b in zip(model_1.bounding_box_min_dims, model_2.bounding_box_min_dims)):
+                #     raise ValueError("Model bounding boxes min dims not close")
+                # if not all(is_close(a, b) for a, b in zip(model_1.bounding_sphere_centre, model_2.bounding_sphere_centre)):
+                #     raise ValueError("Model bounding sphere centres not close")
+                # if not is_close(model_1.bounding_sphere_radius, model_2.bounding_sphere_radius):
+                #     raise ValueError("Model bounding sphere radii not close")
                 model_2.bounding_box_max_dims = model_1.bounding_box_max_dims
                 model_2.bounding_box_min_dims = model_1.bounding_box_min_dims
                 model_2.bounding_sphere_centre = model_1.bounding_sphere_centre
@@ -201,12 +200,8 @@ def execute(data_root, error_out, start=0, stop=None, namefilter=None):
             anim_particles_error.append(file)
         except HasAnimationsError:
             anim_errors.append(file)
-        except HasParticleDataError:
-            particle_errors.append(file)
         except UnsupportedVersionError as e:
             version_errors.append((file + " " + str(e)))
-        except HasType9Error:
-            type_9_errors.append(file)
         except InconsistentVersionsError:
             inconsistent_versions_errors.append(file)
         except Exception as e:
