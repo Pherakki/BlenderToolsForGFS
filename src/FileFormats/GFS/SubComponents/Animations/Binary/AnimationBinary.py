@@ -107,7 +107,7 @@ class AnimationBinary(Serializable):
         all_frames = sorted(all_frames)
         
         # Flatten the node structure
-        flat_nodes = model_binary.flattened()
+        flat_nodes = model_binary.root_node.flattened()
         
         # Collect all bounding box vertices
         mesh_verts = []
