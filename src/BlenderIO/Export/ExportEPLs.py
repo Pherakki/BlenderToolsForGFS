@@ -15,9 +15,7 @@ def export_epls(gfs, armature, errorlog, export_policies):
     root_props = armature.data.GFSTOOLS_NodeProperties
 
     for epl_prop in root_props.epls:
-        epl = EPLInterface()
-        epl.node = 0
-        epl.binary = unpack_epl_binary(epl_prop)
+        epl = EPLInterface.from_binary(0, unpack_epl_binary(epl_prop))
         gfs.epls.append(epl)
     
     # Export bone epls
@@ -26,9 +24,7 @@ def export_epls(gfs, armature, errorlog, export_policies):
         props = bone.GFSTOOLS_NodeProperties
         
         for epl_prop in props.epls:
-            epl = EPLInterface()
-            epl.node = node_idx
-            epl.binary = unpack_epl_binary(epl_prop)
+            epl = EPLInterface.from_binary(node_idx, unpack_epl_binary(epl_prop))
             gfs.epls.append(epl)
     
 

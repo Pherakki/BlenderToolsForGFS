@@ -17,7 +17,7 @@ def import_epls(gfs, armature, gfs_to_bpy_bone_map):
         stream = io.BytesIO()
         wtr = Writer(None)
         wtr.bytestream = stream
-        wtr.rw_obj(epl.binary, 0x01105100)
+        wtr.rw_obj(epl.to_binary(), 0x01105100)
         stream.seek(0)
         
         # Add blob
