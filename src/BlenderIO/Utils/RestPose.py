@@ -80,7 +80,7 @@ def create_pose_matrix(pose_curves, pose_object):
                                               pose_object.rotation_mode)
     
     t_matrix = Matrix.Translation(pose_curves['location'])
-    r_matrix = rotation.to_matrix().to_4x4()
+    r_matrix = rotation.normalized().to_matrix().to_4x4()
     s_matrix = Matrix.Diagonal([*pose_curves['scale'], 1.])
     
     return  t_matrix @ r_matrix @ s_matrix
