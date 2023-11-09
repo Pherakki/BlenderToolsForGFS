@@ -3,24 +3,12 @@ import math
 from mathutils import Euler, Matrix, Quaternion
 
 from .Interpolation import interpolate_keyframe_dict, lerp, slerp
+from ..Globals import GFS_MODEL_TRANSFORMS
 
-upY_to_upZ_matrix = Matrix([[ 1.,  0.,  0.,  0.],
-                            [ 0.,  0., -1.,  0.],
-                            [ 0.,  1.,  0.,  0.],
-                            [ 0.,  0.,  0.,  1.]])
+upY_to_upZ_matrix     = GFS_MODEL_TRANSFORMS.world_axis_rotation  .matrix4x4.copy()
+boneY_to_boneX_matrix = GFS_MODEL_TRANSFORMS.bone_axis_permutation.matrix4x4.copy()
+colY_to_colX_matrix   = GFS_MODEL_TRANSFORMS.world_axis_rotation  .matrix4x4.copy()
 
-boneY_to_boneX_matrix = Matrix([[ 0.,  1.,  0.,  0.],
-                                [-1.,  0.,  0.,  0.],
-                                [ 0.,  0.,  1.,  0.],
-                                [ 0.,  0.,  0.,  1.]])
-
-colY_to_colX_matrix = Matrix([[ 1.,  0.,  0.,  0.],
-                              [ 0.,  0., -1.,  0.],
-                              [ 0.,  1.,  0.,  0.],
-                              [ 0.,  0.,  0.,  1.]])
-
-# boneY_to_boneX_matrix = Matrix.Identity(4)
-# upY_to_upZ_matrix = Matrix.Identity(4)
 
 def convert_XDirBone_to_YDirBone(matrix):
     return matrix @ boneY_to_boneX_matrix
