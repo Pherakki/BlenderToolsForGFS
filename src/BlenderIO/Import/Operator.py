@@ -9,15 +9,8 @@ from ..Data import anim_boundbox_policy_options
 from ..Preferences import get_preferences
 from ..modelUtilsTest.API.Operator import get_op_idname
 from ..Globals import ErrorLogger
-from .Import0x000100F8 import import_0x000100F8
-from .ImportAnimations import create_rest_pose, import_animations
-from .ImportMaterials import import_materials
-from .ImportModel import import_model
-from .ImportPinnedModel import import_pincushion_model
-from .ImportPhysics import import_physics
-from .ImportTextures import import_textures
-from .ImportEPLs import import_epls
-from ..UI.HelpWindows import HelpWindow
+from .ImportGFS import import_gfs_object
+from .ImportAnimations import import_animations
 
 
 def set_fps(self, context):
@@ -142,18 +135,8 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
             return {'CANCELLED'}
 
         # Now import file data to Blender
-        textures  = import_textures(gfs)
-        materials = import_materials(gfs, textures, errorlog)
-        armature, gfs_to_bpy_bone_map = import_model(gfs, os.path.split(filepath)[1].split('.')[0], materials, errorlog, self.policies.merge_vertices, self.policies.bone_pose, filepath, self.policies)
-        
-        create_rest_pose(gfs, armature, gfs_to_bpy_bone_map)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename, is_external=False, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map, import_policies=self.policies)
-        
-        import_physics(gfs, armature)
-        import_0x000100F8(gfs, armature)
-        
-        import_epls(gfs, armature, gfs_to_bpy_bone_map)
+        import_gfs_object(gfs, filename, errorlog, self.policies)
         
         set_fps(self, context)
         set_clip(self, context)
