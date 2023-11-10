@@ -20,3 +20,5 @@ def import_gfs_object(gfs, name, errorlog, import_policies):
     import_0x000100F8(gfs, armature)
     
     ImportEPLs.import_epls(gfs, armature, gfs_to_bpy_bone_map, errorlog, import_policies)
+
+    return armature

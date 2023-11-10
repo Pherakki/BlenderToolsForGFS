@@ -74,6 +74,11 @@ class ImportPolicies(bpy.types.PropertyGroup):
         description="The default setting for how to calculate animation bounding boxes when exporting the model",
         items=anim_boundbox_policy_options()
     )
+    
+    epl_tests: bpy.props.BoolProperty(
+        name="EPL Tests",
+        description="Imports embedded EPL models as Blender Data",
+        default=False)
 
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
@@ -158,10 +163,12 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         cls.internal_idname = get_op_idname(cls)
         
         bpy.utils.register_class(CUSTOM_PT_GFSModelImportSettings)
+        bpy.utils.register_class(CUSTOM_PT_GFSModelDeveloperImportSettings)
         
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(CUSTOM_PT_GFSModelImportSettings)
+        bpy.utils.unregister_class(CUSTOM_PT_GFSModelDeveloperImportSettings)
 
 class ImportGAP(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gap'
@@ -310,6 +317,30 @@ class CUSTOM_PT_GFSModelImportSettings(bpy.types.Panel):
         layout.prop(policies, 'merge_vertices')
         layout.prop(policies, 'bone_pose')
         layout.prop(policies, 'connect_child_bones')
+
+
+class CUSTOM_PT_GFSModelDeveloperImportSettings(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Developer Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ImportGFS.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+        policies = operator.policies
+
+        layout.prop(policies, 'epl_tests')
 
 
 class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):
