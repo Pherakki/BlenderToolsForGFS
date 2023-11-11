@@ -80,6 +80,12 @@ class GFSInterface:
         return cls.from_binary(binary, duplicate_data=False, warnings=warnings)
 
     @classmethod
+    def from_bytes(cls, bytes_, warnings=None):
+        binary = GFSBinary()
+        binary.unpack(bytes_, warnings=warnings)
+        return cls.from_binary(binary, duplicate_data=False, warnings=warnings)
+
+    @classmethod
     def from_binary(cls, binary, duplicate_data=True, warnings=None):
         instance = cls()
         
@@ -160,6 +166,9 @@ class GFSInterface:
         binary = self.to_binary(version, duplicate_data=True, anim_model_binary=anim_model_binary)
         binary.write(filepath)
 
+    def to_bytes(self, version, anim_model_binary=None):
+        binary = self.to_binary(version, duplicate_data=True, anim_model_binary=anim_model_binary)
+        return binary.pack()
 
     def to_binary(self, version, duplicate_data=False, anim_model_binary=None):
         binary = GFSBinary()
