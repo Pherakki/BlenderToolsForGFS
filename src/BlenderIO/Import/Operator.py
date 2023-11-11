@@ -4,12 +4,14 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
+from ...FileFormats.GFS.Interface import EPLFileInterface
 from ..Data import bone_pose_enum_options
 from ..Data import anim_boundbox_policy_options
 from ..Preferences import get_preferences
 from ..modelUtilsTest.API.Operator import get_op_idname
 from ..Globals import ErrorLogger
 from .ImportGFS import import_gfs_object
+from .ImportEPLs import import_epl
 from .ImportAnimations import import_animations
 
 
@@ -374,3 +376,120 @@ class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):
         layout.prop(policies, 'anim_boundbox_policy')
         layout.prop(policies, 'set_fps')
         layout.prop(policies, 'set_clip')
+
+
+class ImportEPL(bpy.types.Operator, ImportHelper):
+    bl_idname = 'import_file.import_epl'
+    bl_label = 'Persona 5 Royal - PC (.EPL)'
+    bl_options = {'REGISTER', 'UNDO'}
+    filename_ext = ".EPL"
+    internal_idname = ''
+
+    debug_mode: bpy.props.BoolProperty(
+                                           default=False,
+                                           options={'HIDDEN'},
+                                      )
+
+    filter_glob: bpy.props.StringProperty(
+                                              default='*.EPL',
+                                              options={'HIDDEN'},
+                                          )
+    
+    policies: bpy.props.PointerProperty(type=ImportPolicies)
+    
+    @classmethod
+    def poll(cls, context):
+        prefs = get_preferences()
+        return prefs.developer_mode
+    
+    def invoke(self, context, event):
+        prefs = get_preferences()
+        self.policies.align_quats          = prefs.align_quats
+        self.policies.set_fps              = prefs.set_fps
+        self.policies.set_clip             = prefs.set_clip
+        self.policies.merge_vertices       = prefs.merge_vertices
+        self.policies.bone_pose            = prefs.bone_pose
+        self.policies.connect_child_bones  = prefs.connect_child_bones
+        self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
+        return super().invoke(context, event)
+    
+    def draw(self, context):
+        pass
+
+    @ErrorLogger.display_exceptions("The file you are trying to import.")
+    def import_file(self, context, filepath):
+        if bpy.context.view_layer.objects.active is not None:        
+            bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action='DESELECT')
+        
+        # Try to load file and log any errors...
+        errorlog = ErrorLogger()
+        try:
+            epl = EPLFileInterface.from_file(filepath)
+        except NotAGFSFileError as e:
+            errorlog.log_error_message(str(e))
+        except UnsupportedVersionError as e:
+            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
+
+
+        # Now import file data to Blender
+        filename = os.path.splitext(os.path.split(filepath)[1])[0]
+        import_epl(filename, epl, errorlog, self.policies)
+        
+        set_fps(self, context)
+        set_clip(self, context)
+        
+        # Report any warnings that were logged
+        if len(errorlog.warnings):
+            errorlog.digest_warnings(self.debug_mode)
+            self.report({"INFO"}, "Import successful, with warnings.")
+        elif not self.debug_mode:
+            self.report({"INFO"}, "Import successful.")
+            
+        return {'FINISHED'}
+    
+    def execute(self, context):
+        return self.import_file(context, self.filepath)
+
+    @classmethod
+    def register(cls):
+        cls.internal_idname = get_op_idname(cls)
+        bpy.utils.register_class(CUSTOM_PT_EPLImportSettings)
+        
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(CUSTOM_PT_EPLImportSettings)
+
+
+class CUSTOM_PT_EPLImportSettings(bpy.types.Panel):
+    """
+    Adapted from https://blender.stackexchange.com/a/217796
+    """
+    
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Import Settings"
+    bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+        return operator.bl_idname == ImportEPL.internal_idname
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+        policies = operator.policies
+
+        layout.prop(policies, 'align_quats')
+        layout.prop(policies, 'anim_boundbox_policy')
+        layout.prop(policies, 'set_fps')
+        layout.prop(policies, 'set_clip')
+        layout.prop(policies, 'merge_vertices')
+        layout.prop(policies, 'bone_pose')
+        layout.prop(policies, 'connect_child_bones')

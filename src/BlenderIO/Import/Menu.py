@@ -1,6 +1,6 @@
 import bpy
 
-from .Operator import ImportGFS, ImportGAP
+from .Operator import ImportGFS, ImportGAP, ImportEPL
 
 
 class GFSImportSubmenu(bpy.types.Menu):
@@ -11,6 +11,7 @@ class GFSImportSubmenu(bpy.types.Menu):
         layout = self.layout
         layout.operator(ImportGFS.bl_idname, text="GFS Model (.GMD, .GFS)")
         layout.operator(ImportGAP.bl_idname, text="GAP Animations (.GAP)")
+        layout.operator(ImportEPL.bl_idname, text="EPLs (.EPL)")
     
 
 def menu_func_import(self, context):

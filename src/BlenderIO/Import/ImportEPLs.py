@@ -16,70 +16,77 @@ from .Utils.BoneConstruction import construct_bone, resize_bone_length
 
 def import_epls(gfs, armature, gfs_to_bpy_bone_map, errorlog, import_policies):
     for epl in gfs.epls:
+        import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, import_policies)
+
+def import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, import_policies):
+    if epl.node == 0:
+        props = armature.data.GFSTOOLS_NodeProperties
+    else:
+        # Get bone
+        bpy_bone_idx = gfs_to_bpy_bone_map[epl.node]
+        bpy_bone     = armature.data.bones[bpy_bone_idx]
+        props        = bpy_bone.GFSTOOLS_NodeProperties
+        
+    # Write the EPL to a blob
+    stream = io.BytesIO()
+    wtr = Writer(None)
+    wtr.bytestream = stream
+    wtr.rw_obj(epl.to_binary(), 0x01105100)
+    stream.seek(0)
+    
+    # Add blob
+    item = props.epls.add()
+    item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+    
+    
+    if import_policies.epl_tests:
+        armature_name = gfs.bones[epl.node].name
+        main_armature = import_epl(armature_name, epl, errorlog, import_policies)
+        
         if epl.node == 0:
-            props = armature.data.GFSTOOLS_NodeProperties
+            main_armature.parent = armature
         else:
-            # Get bone
+            constraint = main_armature.constraints.new("CHILD_OF")
+            constraint.target    = armature
             bpy_bone_idx = gfs_to_bpy_bone_map[epl.node]
             bpy_bone     = armature.data.bones[bpy_bone_idx]
-            props        = bpy_bone.GFSTOOLS_NodeProperties
-            
-        # Write the EPL to a blob
-        stream = io.BytesIO()
-        wtr = Writer(None)
-        wtr.bytestream = stream
-        wtr.rw_obj(epl.to_binary(), 0x01105100)
-        stream.seek(0)
-        
-        # Add blob
-        item = props.epls.add()
-        item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
-        
-        
-        if import_policies.epl_tests:
-            armature_name = gfs.bones[epl.node].name
-            main_armature = bpy.data.objects.new(armature_name, bpy.data.armatures.new(armature_name))
-            bpy.context.collection.objects.link(main_armature)
-            bpy.context.view_layer.objects.active = main_armature
-            bpy_nodes, bone_transforms, epl_to_bpy_bone_map = build_armature(epl, main_armature)
-    
-            if epl.node == 0:
-                main_armature.parent = armature
-            else:
-                constraint = main_armature.constraints.new("CHILD_OF")
-                constraint.target    = armature
-                bpy_bone_idx = gfs_to_bpy_bone_map[epl.node]
-                bpy_bone     = armature.data.bones[bpy_bone_idx]
-                constraint.subtarget = bpy_bone.name
-                constraint.inverse_matrix = Matrix.Identity(4)
-            
-            for leaf in epl.leaves:
-                lb = leaf.binary
-                if lb.type == 7: # Model
-                    payload = lb.payload
-                    if payload.has_embedded_file:
-                        file = payload.embedded_file
-                        
-                        model_name = file.name.string
-                        model_data = file.payload
-                        
-                        gb = GFSBinary()
-                        gb.unpack(model_data)
-                        gi = GFSInterface.from_binary(gb, duplicate_data=False)
-                        
-                        subobject = ImportGFS.import_gfs_object(gi, lb.name.string, errorlog, import_policies)
+            constraint.subtarget = bpy_bone.name
+            constraint.inverse_matrix = Matrix.Identity(4)
 
-                    
-                        if leaf.node == 0:
-                            subobject.parent = main_armature
-                        else:
-                            constraint = subobject.constraints.new("CHILD_OF")
-                            constraint.target    = main_armature
-                            bpy_bone_idx         = epl_to_bpy_bone_map[leaf.node]
-                            bpy_bone             = main_armature.data.bones[bpy_bone_idx]
-                            constraint.subtarget = bpy_bone.name
-                            constraint.inverse_matrix = Matrix.Identity(4)
-                        
+
+def import_epl(name, epl, errorlog, import_policies):
+    main_armature = bpy.data.objects.new(name, bpy.data.armatures.new(name))
+    bpy.context.collection.objects.link(main_armature)
+    bpy.context.view_layer.objects.active = main_armature
+    bpy_nodes, bone_transforms, epl_to_bpy_bone_map = build_armature(epl, main_armature)
+
+    for leaf in epl.leaves:
+        lb = leaf.binary
+        if lb.type == 7: # Model
+            payload = lb.payload
+            if payload.has_embedded_file:
+                file = payload.embedded_file
+                
+                model_name = file.name.string
+                model_data = file.payload
+                
+                gb = GFSBinary()
+                gb.unpack(model_data)
+                gi = GFSInterface.from_binary(gb, duplicate_data=False)
+                
+                subobject = ImportGFS.import_gfs_object(gi, lb.name.string, errorlog, import_policies)
+
+            
+                if leaf.node == 0:
+                    subobject.parent = main_armature
+                else:
+                    constraint = subobject.constraints.new("CHILD_OF")
+                    constraint.target    = main_armature
+                    bpy_bone_idx         = epl_to_bpy_bone_map[leaf.node]
+                    bpy_bone             = main_armature.data.bones[bpy_bone_idx]
+                    constraint.subtarget = bpy_bone.name
+                    constraint.inverse_matrix = Matrix.Identity(4)
+
 
 def build_armature(epl, main_armature):
     matrix_w = GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix4x4

@@ -17,7 +17,7 @@ def init_bpy():
     import bpy
     
     from .src.BlenderIO.Preferences import AddonPreferences
-    from .src.BlenderIO.Import      import ImportGFS, ImportGAP, ImportPolicies
+    from .src.BlenderIO.Import      import ImportGFS, ImportGAP, ImportEPL, ImportPolicies
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export      import ExportGFS, ExportGAP, ExportPolicies
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
@@ -82,6 +82,7 @@ def init_bpy():
         ImportPolicies,
         ImportGFS,
         ImportGAP,
+        ImportEPL,
         GFSImportSubmenu,
         ExportPolicies,
         ExportGFS,
