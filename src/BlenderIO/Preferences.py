@@ -25,7 +25,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
     ## GLOBAL STATE ##
     ##################
     initialized: bpy.props.BoolProperty(default=False)
-
+    developer_mode: bpy.props.BoolProperty(name="Developer Mode",
+                                           description="Enables Experimental and Developer features",
+                                           default=False)
     ############
     ## IMPORT ##
     ############
@@ -164,3 +166,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
         
         docs_row = layout.row()
         docs_row.operator(OpenDocumentation.bl_idname)
+        
+        dev_row = layout.row()
+        dev_row.prop(self, 'developer_mode')

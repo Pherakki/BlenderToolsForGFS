@@ -329,7 +329,8 @@ class CUSTOM_PT_GFSModelDeveloperImportSettings(bpy.types.Panel):
     def poll(cls, context):
         sfile = context.space_data
         operator = sfile.active_operator
-        return operator.bl_idname == ImportGFS.internal_idname
+        prefs = get_preferences()
+        return operator.bl_idname == ImportGFS.internal_idname and prefs.developer_mode
 
     def draw(self, context):
         layout = self.layout
