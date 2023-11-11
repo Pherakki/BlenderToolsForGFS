@@ -126,7 +126,9 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         errorlog = ErrorLogger()
         warnings = []
         try:
-            gfs = GFSInterface.from_file(filepath, warnings=warnings)
+            with open(filepath, 'rb') as F:
+                raw_gfs = F.read()
+            gfs = GFSInterface.from_bytes(raw_gfs, warnings=warnings)
         except NotAGFSFileError as e:
             errorlog.log_error_message(str(e))
         except UnsupportedVersionError as e:
@@ -143,7 +145,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
 
         # Now import file data to Blender
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_gfs_object(gfs, filename, errorlog, self.policies)
+        import_gfs_object(gfs, raw_gfs, filename, errorlog, self.policies)
         
         set_fps(self, context)
         set_clip(self, context)

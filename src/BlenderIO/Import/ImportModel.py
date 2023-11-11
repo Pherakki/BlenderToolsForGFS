@@ -76,7 +76,7 @@ def build_bones_from_bind_pose(gfs, main_armature, bones_to_ignore):
     return bpy_nodes, bone_transforms, bone_rest_transforms, gfs_to_bpy_bone_map, skewed_bpm_nodes
 
 
-def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
+def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, raw_gfs):
     skewed_bpm_nodes = []
     gfs_to_bpy_bone_map = {}
     bpy_bone_counter = 0
@@ -113,7 +113,7 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
         
     # Now let's replace the mesh vertex data with transformed data
     gb = GFSBinary()
-    gb.read(filepath)
+    gb.unpack(raw_gfs)
     model_binary = gb.get_model_block().data
     
     bones,   \
@@ -147,7 +147,7 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath):
     return bpy_nodes, bone_transforms, [Matrix.Identity(4) for b in bone_transforms], gfs_to_bpy_bone_map, skewed_bpm_nodes
 
 
-def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, filepath, import_policies):
+def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_pose, raw_gfs, import_policies):
     """
     This is a really bad function. It's way too long - it needs to be split
     up into smaller, more modular chunks. Although it's all logically
@@ -211,7 +211,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
         bone_transforms,      \
         bone_rest_transforms, \
         gfs_to_bpy_bone_map,  \
-        skewed_bpm_nodes = build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, filepath)
+        skewed_bpm_nodes = build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, raw_gfs)
     else:
         errorlog.log_error_message(f"CRITICAL INTERNAL ERROR: Did not recognise bone pose '{bone_pose}'. THIS IS A BUG - PLEASE REPORT IT.")
 

@@ -74,7 +74,7 @@ def import_epl(name, epl, errorlog, import_policies):
                 gb.unpack(model_data)
                 gi = GFSInterface.from_binary(gb, duplicate_data=False)
                 
-                subobject = ImportGFS.import_gfs_object(gi, lb.name.string, errorlog, import_policies)
+                subobject = ImportGFS.import_gfs_object(gi, model_data, lb.name.string, errorlog, import_policies)
 
             
                 if leaf.node == 0:
