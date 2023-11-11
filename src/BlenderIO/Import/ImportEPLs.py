@@ -86,7 +86,7 @@ def import_epl(name, epl, errorlog, import_policies):
                     bpy_bone             = main_armature.data.bones[bpy_bone_idx]
                     constraint.subtarget = bpy_bone.name
                     constraint.inverse_matrix = Matrix.Identity(4)
-
+    return main_armature
 
 def build_armature(epl, main_armature):
     matrix_w = GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix4x4
