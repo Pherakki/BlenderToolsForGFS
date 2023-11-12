@@ -2,6 +2,7 @@ import bpy
 
 from .Animations import poll_lookat_action
 from ..modelUtilsTest.Misc.ID import new_unique_name
+from .MixIns.Version import GFSVersionedProperty
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -20,6 +21,7 @@ class NLATrackWrapper(bpy.types.PropertyGroup):
 
     
 class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
+class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     name:    bpy.props.StringProperty(name="Name", default="New Pack")
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")

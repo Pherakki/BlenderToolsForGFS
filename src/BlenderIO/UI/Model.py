@@ -209,6 +209,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         ctr = layout.column()
         
+        ctr.prop(aprops, 'version')
         ctr.prop(aprops, "has_external_emt")
         ctr.prop(aprops, "flag_3")
         

@@ -184,8 +184,9 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
+        gfs.version = selected_model.GFSTOOLS_ModelProperties.int_version
         gfs.has_end_container = True # Put this somewhere else
-        gb = gfs.to_binary(int(self.policies.version, 0x10))
+        gb = gfs.to_binary()
         model_bin = gb.get_model_block()
         if model_bin is not None:
             if model_bin.data.skinning_data.bone_count is not None:
@@ -353,8 +354,9 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         gfs_bbox = GFSInterface()
         export_node_tree(gfs_bbox, selected_model, None)
         
+        gfs.version           = active_pack.int_version
         gfs.has_end_container = False # Put this somewhere else
-        gb = gfs.to_binary(int(self.policies.version, 0x10), anim_model_binary=gfs_bbox.to_binary(0x01105100).get_model_block().data)
+        gb = gfs.to_binary(anim_model_binary=gfs_bbox.to_binary(active_pack.int_version).get_model_block().data)
         gb.write(filepath)
         
         # Tell the user if there are any warnings they should be aware of.

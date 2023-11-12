@@ -14,6 +14,7 @@ from .Meshes import calculate_mesh_box
 from .Nodes import make_node_props_class
 from .Physics import GFSToolsPhysicsProperties
 from .AnimationPack import GFSToolsAnimationPackProperties
+from .MixIns.Version import GFSVersionedProperty
 
 
 def get_box_props(context):
@@ -129,7 +130,7 @@ ModelBoundingSphereProps = define_bounding_sphere(ModelBoundingSphere)
 GFSToolsModelNodeProperties = make_node_props_class("GFSToolsModelNodeProperties")
 
 
-class GFSToolsModelProperties(bpy.types.PropertyGroup):
+class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     bounding_box:    bpy.props.PointerProperty(type=ModelBoundingBoxProps)
     bounding_sphere: bpy.props.PointerProperty(type=ModelBoundingSphereProps)
 
@@ -176,3 +177,4 @@ class GFSToolsModelProperties(bpy.types.PropertyGroup):
     
     def has_internal_gap(self):
         return self.internal_animation_pack_idx > -1
+    

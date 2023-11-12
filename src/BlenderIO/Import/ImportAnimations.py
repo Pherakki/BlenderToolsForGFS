@@ -51,6 +51,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     
     ap_props = mprops.animation_packs.add()
     
+    ap_props.version = f"0x{gfs.version:0>8x}"
     ap_props.name = filename
     ap_props.flag_0  = gfs.anim_flag_0
     ap_props.flag_1  = gfs.anim_flag_1

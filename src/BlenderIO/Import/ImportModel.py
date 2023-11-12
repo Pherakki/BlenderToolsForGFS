@@ -161,6 +161,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     bpy.context.collection.objects.link(main_armature)
     bpy.context.view_layer.objects.active = main_armature
     
+    main_armature.data.GFSTOOLS_ModelProperties.version          = f"0x{gfs.version:0>8x}"
     main_armature.data.GFSTOOLS_ModelProperties.flag_3           = gfs.flag_3
     main_armature.data.GFSTOOLS_ModelProperties.root_node_name   = gfs.bones[0].name if len(gfs.bones) else ""
     main_armature.data.GFSTOOLS_ModelProperties.has_external_emt = gfs.data_0x000100F8 is not None

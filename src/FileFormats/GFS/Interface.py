@@ -16,6 +16,7 @@ from .SubComponents.Animations.Binary.AnimationBinary import ParticlesError
 
 class GFSInterface:
     def __init__(self):
+        self.version              = 0x01105100
         self.keep_bounding_box    = False
         self.keep_bounding_sphere = False
         
@@ -91,7 +92,11 @@ class GFSInterface:
         
         instance.has_end_container = False
         for ctr in binary.containers:
-            if ctr.type == 0x000100FC:
+            if ctr.type == 0x00000001:
+                # All blocks must have a version, but this is always the same
+                # and the "start" block must always exist... so get it from here
+                instance.version = ctr.version
+            elif ctr.type == 0x000100FC:
                 instance.textures = [TextureInterface.from_binary(tx) for tx in ctr.data]
             elif ctr.type == 0x000100FB:
                 instance.materials = [MaterialInterface.from_binary(mb) for mb in ctr.data]
@@ -162,22 +167,22 @@ class GFSInterface:
         return instance
     
 
-    def to_file(self, filepath, version, anim_model_binary=None):
-        binary = self.to_binary(version, duplicate_data=True, anim_model_binary=anim_model_binary)
+    def to_file(self, filepath, anim_model_binary=None):
+        binary = self.to_binary(duplicate_data=True, anim_model_binary=anim_model_binary)
         binary.write(filepath)
 
-    def to_bytes(self, version, anim_model_binary=None):
-        binary = self.to_binary(version, duplicate_data=True, anim_model_binary=anim_model_binary)
+    def to_bytes(self, anim_model_binary=None):
+        binary = self.to_binary(duplicate_data=True, anim_model_binary=anim_model_binary)
         return binary.pack()
 
-    def to_binary(self, version, duplicate_data=False, anim_model_binary=None):
+    def to_binary(self, duplicate_data=False, anim_model_binary=None):
         binary = GFSBinary()
         
         ot = OffsetTracker()
         
         # Start container
         start_ctr = GFS0ContainerBinary()
-        start_ctr.version = version
+        start_ctr.version = self.version
         start_ctr.type = 0x00000001
         ot.rw_obj(start_ctr)
         start_ctr.size = 0
@@ -187,7 +192,7 @@ class GFSInterface:
         if len(self.materials): # Unless textures are stored externally?
             offset = ot.tell()
             tex_ctr = GFS0ContainerBinary()
-            tex_ctr.version = version
+            tex_ctr.version = self.version
             tex_ctr.type = 0x000100FC
             
             tex_array = TexturePayload()
@@ -202,7 +207,7 @@ class GFSInterface:
         if len(self.materials):
             offset = ot.tell()
             mat_ctr = GFS0ContainerBinary()
-            mat_ctr.version = version
+            mat_ctr.version = self.version
             mat_ctr.type = 0x000100FB
             
             mat_array = MaterialPayload()
@@ -218,7 +223,7 @@ class GFSInterface:
         if len(self.bones):
             offset = ot.tell()
             mdl_ctr = GFS0ContainerBinary()
-            mdl_ctr.version = version
+            mdl_ctr.version = self.version
             mdl_ctr.type = 0x00010003
             
             model_binary, old_node_id_to_new_node_id_map = ModelInterface.to_binary(self.bones, self.meshes, self.cameras, self.lights, self.epls, self.keep_bounding_box, self.keep_bounding_sphere, self.overrides, self.flag_3, copy_verts=duplicate_data)
@@ -243,7 +248,7 @@ class GFSInterface:
             (self.lookat_animations is not None)):
             offset = ot.tell()
             anm_ctr = GFS0ContainerBinary()
-            anm_ctr.version = version
+            anm_ctr.version = self.version
             anm_ctr.type = 0x000100FD
             
             #anm_ctr.data = self.animation_data
@@ -299,7 +304,7 @@ class GFSInterface:
         if self.physics_data is not None:
             offset = ot.tell()
             physics_ctr = GFS0ContainerBinary()
-            physics_ctr.version = version
+            physics_ctr.version = self.version
             physics_ctr.type = 0x000100F9
             
             physics_ctr.data = self.physics_data
@@ -311,7 +316,7 @@ class GFSInterface:
         if self.data_0x000100F8 is not None:
             offset = ot.tell()
             unk_ctr = GFS0ContainerBinary()
-            unk_ctr.version = version
+            unk_ctr.version = self.version
             unk_ctr.type = 0x000100F8
             
             unk_ctr.data = self.data_0x000100F8
@@ -323,7 +328,7 @@ class GFSInterface:
         # End container
         if self.has_end_container:
             end_ctr = GFS0ContainerBinary()
-            end_ctr.version = version
+            end_ctr.version = self.version
             end_ctr.type = 0x00000000
             
             end_ctr.size = 0
@@ -469,7 +474,7 @@ class ModelOverrides:
 class EPLFileInterface(EPLInterface):
     def __init__(self):
         super().__init__()
-        self.version = None
+        self.version = 0x01105100
     
     @classmethod
     def from_binary(cls, binary):
@@ -483,18 +488,16 @@ class EPLFileInterface(EPLInterface):
         binary.read(filepath)
         return cls.from_binary(binary)
 
-    def to_file(self, filepath, version=None, endianness=">"):
-        binary = self.to_binary(version, endianness)
+    def to_file(self, filepath, endianness=">"):
+        binary = self.to_binary(endianness)
         binary.write(filepath)
 
-    def to_binary(self, version=None, endianness=">"):
-        if version is None:
-            version = self.version
-        if version is None:
-            raise ValueError("EPL version is None and no 'version' number was passed to 'to_file'. Either set the 'version' attribute on the object, or pass an override version to the 'to_file' call")
+    def to_binary(self, endianness=">"):
+        if self.version is None:
+            raise ValueError("EPL version is None. Ensure that this is set to an appropriate value, such as 0x01105100")
         
         binary = EPLFileBinary(endianness)
-        binary.start_block.version = version
+        binary.start_block.version = self.version
         binary.start_block.type    = 0x00000001
         binary.start_block.size    = 0
         binary.epl = super().to_binary(endianness)

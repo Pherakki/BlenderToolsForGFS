@@ -34,6 +34,7 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         
         props = mprops.get_active_gap()
         
+        layout.prop(props, 'version')
         # Flags
         flag_col = layout.column()
         flag_col.prop(props, "flag_0")
