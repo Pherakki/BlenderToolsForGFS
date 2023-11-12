@@ -231,18 +231,7 @@ class GFSInterface:
             ot.rw_obj(mdl_ctr)
             mdl_ctr.size = ot.tell() - offset
             binary.containers.append(mdl_ctr)
-                    
-        # Animation container
-        # if self.animation_data is not None:
-        #     offset = ot.tell()
-        #     anm_ctr = GFS0ContainerBinary()
-        #     anm_ctr.version = version
-        #     anm_ctr.type = 0x000100FD
-            
-        #     anm_ctr.data = self.animation_data
-        #     ot.rw_obj(anm_ctr)
-        #     anm_ctr.size = ot.tell() - offset
-        #     binary.containers.append(anm_ctr)
+        
         if ((len(self.animations) > 0) or
             (len(self.blend_animations) > 0) or 
             (self.lookat_animations is not None)):
