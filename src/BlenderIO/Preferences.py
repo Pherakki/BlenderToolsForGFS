@@ -3,7 +3,6 @@ import os
 import bpy
 
 from .Data import get_package_name
-from .Data import available_versions_property
 from .Data import bone_pose_enum_options
 from .Data import anim_boundbox_policy_options
 from .Data import too_many_vertices_policy_options
@@ -11,6 +10,7 @@ from .Data import too_many_vertex_groups_policy_options
 from .Data import multiple_materials_policy_options
 from .Data import missing_uv_maps_policy_options
 from .Data import triangulate_mesh_policy_options
+from .Data import version_override_options
 from .UI.HelpWindows import OpenDocumentation
 
     
@@ -134,13 +134,20 @@ class AddonPreferences(bpy.types.AddonPreferences):
         description="Default setting for 'Triangulate Meshes' on export",
         default="ERROR")
     
+    version_override: bpy.props.EnumProperty(
+        items=version_override_options(),
+        name="Export Version",
+        description="Default setting for 'Export Version' on export",
+        default="DEFAULT"
+    )
     
-    version: available_versions_property()
-
     
     def draw(self, context):
         layout = self.layout
         
+        dev_row = layout.row()
+        dev_row.prop(self, 'developer_mode')
+
         io_row = layout.row()
         import_col = io_row.column()
         import_col.label(text='Default Import settings:')
@@ -154,6 +161,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         
         export_col = io_row.column()
         export_col.label(text='Default Export settings:')
+        export_col.prop(self, 'version_override')
         export_col.prop(self, 'strip_missing_vertex_groups')
         export_col.prop(self, 'recalculate_tangents')
         export_col.prop(self, 'throw_missing_weight_errors')
@@ -162,10 +170,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
         export_col.prop(self, 'multiple_materials_policy')
         export_col.prop(self, 'missing_uv_maps_policy')
         export_col.prop(self, 'triangulate_mesh_policy')
-        export_col.prop(self, 'version')
         
         docs_row = layout.row()
         docs_row.operator(OpenDocumentation.bl_idname)
         
-        dev_row = layout.row()
-        dev_row.prop(self, 'developer_mode')

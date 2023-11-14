@@ -5,13 +5,14 @@ from bpy_extras.io_utils import ExportHelper
 import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
-from ..Data import available_versions_property
+from ..Data import version_override_options
 from ..Data import too_many_vertices_policy_options
 from ..Data import too_many_vertex_groups_policy_options
 from ..Data import missing_uv_maps_policy_options
 from ..Data import multiple_materials_policy_options
 from ..Data import triangulate_mesh_policy_options
 from ..Preferences import get_preferences
+from ..Properties.MixIns.Version import GFSVersionedProperty
 from ..modelUtilsTest.API.Operator import get_op_idname
 from ..Globals import ErrorLogger
 from .ExportNodes import export_node_tree
@@ -25,7 +26,7 @@ from .ExportAnimations import export_gap_props
 from .ExportEPLs import export_epls
 
 
-class ExportPolicies(bpy.types.PropertyGroup):
+class ExportPolicies(GFSVersionedProperty, bpy.types.PropertyGroup):
     combine_new_mesh_nodes: bpy.props.BoolProperty(
         name="Combine New Mesh Nodes",
         default=False
@@ -89,9 +90,26 @@ class ExportPolicies(bpy.types.PropertyGroup):
         description="Decide the export behavior in the event of a mesh having any non-triangular faces",
         default="ERROR"
     )
-
-    version: available_versions_property()
     
+    version_override: bpy.props.EnumProperty(
+        items=version_override_options(),
+        name="Export Version",
+        description="Method used to determine the version number of the exported data",
+        default="DEFAULT"
+    )
+    
+    def get_version(self, default_version):
+        if self.version_override == "DEFAULT":
+            print("RETURNING DEFAULT:", default_version)
+            return default_version
+        elif self.version_override == "P5R":
+            print("RETURNING P5R:", 0x01105100)
+            return 0x01105100
+        elif self.version_override == "CUSTOM":
+            print("RETURNING CUSTOM:", self.int_version)
+            return self.int_version
+        else:
+            raise NotImplementedError(f"CRITICAL INTERNAL ERROR: Unknown VERSION_OVERRIDE policy '{self.version_override}'")
 
 
 class ExportGFS(bpy.types.Operator, ExportHelper):
@@ -134,7 +152,6 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         self.policies.multiple_materials_policy     = prefs.multiple_materials_policy
         self.policies.missing_uv_maps_policy        = prefs.missing_uv_maps_policy
         self.policies.triangulate_mesh_policy       = prefs.triangulate_mesh_policy
-        self.policies.version                       = prefs.version
         
         return super().invoke(context, event)
 
@@ -184,7 +201,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
-        gfs.version = selected_model.GFSTOOLS_ModelProperties.int_version
+        gfs.version = self.policies.get_version(selected_model.data.GFSTOOLS_ModelProperties.int_version)
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary()
         model_bin = gb.get_model_block()
@@ -250,7 +267,9 @@ class CUSTOM_PT_GFSModelExportSettings(bpy.types.Panel):
         operator = sfile.active_operator
         policies = operator.policies
 
-        layout.prop(policies, 'version')
+        layout.prop(policies, 'version_override')
+        if policies.version_override == "CUSTOM":
+            layout.prop(policies, "version")
         layout.prop(policies, 'combine_new_mesh_nodes')
         layout.prop(policies, 'do_strip_epls')
 
@@ -310,7 +329,6 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
 
     def invoke(self, context, event):
         prefs = get_preferences()
-        self.policies.version = prefs.version
         return super().invoke(context, event)
 
     @ErrorLogger.display_exceptions("The .blend file you are trying to export from, with all images packed into the file.")
@@ -354,7 +372,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         gfs_bbox = GFSInterface()
         export_node_tree(gfs_bbox, selected_model, None)
         
-        gfs.version           = active_pack.int_version
+        gfs.version           = self.policies.get_version(active_pack.int_version)
         gfs.has_end_container = False # Put this somewhere else
         gb = gfs.to_binary(anim_model_binary=gfs_bbox.to_binary(active_pack.int_version).get_model_block().data)
         gb.write(filepath)
@@ -408,7 +426,9 @@ class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
         operator = sfile.active_operator
         policies = operator.policies
 
-        layout.prop(policies, 'version')
+        layout.prop(policies, 'version_override')
+        if policies.version_override == "CUSTOM":
+            layout.prop(policies, "version")
 
 
 def find_selected_model(errorlog):

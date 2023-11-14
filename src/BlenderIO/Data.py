@@ -30,25 +30,13 @@ def get_package_name():
     return os.path.basename(get_root_path())
 
 
-def available_versions_property():
-    return bpy.props.EnumProperty(items=(
-            ("0x01104920", "0x01104920", ""),
-            ("0x01104950", "0x01104950", ""),
-            ("0x01105000", "0x01105000", ""),
-            ("0x01105010", "0x01105010", ""),
-            ("0x01105020", "0x01105020", ""),
-            ("0x01105030", "0x01105030", ""),
-            ("0x01105040", "0x01105040", ""),
-            ("0x01105050", "0x01105050", ""),
-            ("0x01105060", "0x01105060", ""),
-            ("0x01105070", "0x01105070", ""),
-            ("0x01105080", "0x01105080", ""),
-            ("0x01105090", "0x01105090", ""),
-            ("0x01105100", "0x01105100", "")
-        ),
-        name="Version",
-        default="0x01105100"
-    )
+def version_override_options():
+    return [
+        ("DEFAULT", "Default", "Use the version specin the Custom Properties of the exported data"),
+        ("P5R",     "P5R",     "Export to a version compatible with Persona 5 Royal (0x01105100)"),
+        ("CUSTOM",  "Custom",  "Use a custom version number")
+    ]
+
 
 def bone_pose_enum_options():
     return [
