@@ -20,7 +20,6 @@ class NLATrackWrapper(bpy.types.PropertyGroup):
     strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
 
     
-class GFSToolsAnimationPackProperties(bpy.types.PropertyGroup):
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     name:    bpy.props.StringProperty(name="Name", default="New Pack")
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
