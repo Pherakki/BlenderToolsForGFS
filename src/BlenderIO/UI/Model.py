@@ -218,7 +218,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         aprops.bounding_box.draw(ctr)
         aprops.bounding_sphere.draw(ctr)
         
-        self.PACK_LIST.draw(layout, context)
+        self.PACK_LIST.draw(ctr, context)
         
         op_row = ctr.row()
         op_row.operator(SetActiveAnimationPack.bl_idname)
