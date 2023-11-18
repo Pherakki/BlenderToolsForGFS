@@ -19,6 +19,7 @@ def set_fps(self, context):
     if self.policies.set_fps:
         context.scene.render.fps = 30
 
+
 def set_clip(self, context):
     if self.policies.set_clip:
         for a in context.screen.areas:
@@ -27,12 +28,14 @@ def set_clip(self, context):
                     if s.type == 'VIEW_3D':
                         s.clip_end = 1000000
 
+
 def define_set_fps():
     return bpy.props.BoolProperty(
         name="Set Blender Scene FPS to 30",
         description="Set the animation framerate of the current scene to 30, so that imported animations display at the correct speed",
         default=True
     )
+
 
 def define_align_quats():
     return bpy.props.BoolProperty(name="Align Animation Quaternions",
@@ -82,6 +85,12 @@ class ImportPolicies(bpy.types.PropertyGroup):
         description="Imports embedded EPL models as Blender Data",
         default=False)
 
+    wip_animation_import: bpy.props.BoolProperty(
+        name="WIP Animation Refactor",
+        description="Import animations under the WIP multigap support feature - FOR TESTING ONLY!",
+        default=False
+    )
+
 
 class ImportGFS(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gfs'
@@ -111,6 +120,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         self.policies.bone_pose            = prefs.bone_pose
         self.policies.connect_child_bones  = prefs.connect_child_bones
         self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
+        self.policies.wip_animation_import = prefs.wip_animation_import
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -173,6 +183,7 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     def unregister(cls):
         bpy.utils.unregister_class(CUSTOM_PT_GFSModelImportSettings)
         bpy.utils.unregister_class(CUSTOM_PT_GFSModelDeveloperImportSettings)
+
 
 class ImportGAP(bpy.types.Operator, ImportHelper):
     bl_idname = 'import_file.import_gap'
@@ -346,6 +357,8 @@ class CUSTOM_PT_GFSModelDeveloperImportSettings(bpy.types.Panel):
         policies = operator.policies
 
         layout.prop(policies, 'epl_tests')
+        layout.prop(policies, 'wip_animation_import')
+        layout.prop(operator, 'debug_mode')
 
 
 class CUSTOM_PT_GFSAnimImportSettings(bpy.types.Panel):

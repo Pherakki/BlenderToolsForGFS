@@ -31,6 +31,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
     ############
     ## IMPORT ##
     ############
+    wip_animation_import: bpy.props.BoolProperty(
+        name="WIP Animation Refactor",
+        description="Import animations under the WIP multigap support feature - FOR TESTING ONLY!",
+        default=False
+    )
+
     align_quats : bpy.props.BoolProperty(
         name="Align Animation Quaternions",
         description="Default setting for 'Align Animation Quaternions' on import",
@@ -158,6 +164,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
         import_col.prop(self, 'set_clip')
         import_col.prop(self, 'bone_pose')
         import_col.prop(self, 'connect_child_bones')
+        if self.developer_mode:
+            import_col.prop(self, 'wip_animation_import')
         
         export_col = io_row.column()
         export_col.label(text='Default Export settings:')

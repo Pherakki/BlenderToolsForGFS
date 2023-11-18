@@ -9,8 +9,8 @@ from ...serialization.BinaryTargets import Writer
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from ..Utils.Maths import convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup, convert_Zup_to_Yup
 from .ImportProperties import import_properties
+from ..Preferences import get_preferences
 
-from ..Globals import blenderModelSupportUtils
 from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
@@ -20,6 +20,7 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 ######################
 # EXPORTED FUNCTIONS #
 ######################
+
 
 def import_animations(gfs, bpy_armature_object, filename, is_external, import_policies, gfs_to_bpy_bone_map=None):
     if not is_external and not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
@@ -38,18 +39,30 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     bpy.context.view_layer.objects.active = bpy_armature_object
     
     # Do imports
-    bpy.ops.object.mode_set(mode="POSE")
-    for anim_idx, anim in enumerate(gfs.animations):
-        action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
-                
-        if anim.lookat_animations is not None:
-            import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
-
-    
-    for anim_idx, anim in enumerate(gfs.blend_animations):
-        action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
-    
     ap_props = mprops.animation_packs.add()
+
+    bpy.ops.object.mode_set(mode="POSE")
+
+    if get_preferences().wip_animation_import and get_preferences().developer_mode:
+        for anim_idx, anim in enumerate(gfs.animations):
+            prop_anim = ap_props.test_anims.add()
+            prop_anim.name = str(anim_idx)
+            prop_anim_from_gfs_anim(prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
+
+            # Delay this...
+            prop_anim.node_animation.to_nla_track(bpy_armature_object.animation_data, filename)
+    else:
+        for anim_idx, anim in enumerate(gfs.animations):
+            action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+
+            if anim.lookat_animations is not None:
+                import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
+
+        for anim_idx, anim in enumerate(gfs.blend_animations):
+            action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
+
+            if anim.lookat_animations is not None:
+                import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_blend_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
     
     ap_props.version = f"0x{gfs.version:0>8x}"
     ap_props.name = filename
@@ -233,7 +246,157 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
-    
+
+def prop_anim_from_gfs_anim(prop_anim, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
+    ####################
+    # SET UP VARIABLES #
+    ####################
+    anim_name = prop_anim.name
+    nodes_action = bpy.data.actions.new(anim_name)
+    if is_blend:
+        scale_action = bpy.data.actions.new(anim_name + "_scale")
+        scale_action.GFSTOOLS_AnimationProperties.category = "BLENDSCALE"
+
+    bpy_bones = bpy_armature_obj.data.bones
+    available_names = {
+        (
+            bpy_bone.name
+            if bpy_bone.GFSTOOLS_NodeProperties.override_name == ""
+            else bpy_bone.GFSTOOLS_NodeProperties.override_name
+        ): bpy_bone.name
+        for bpy_bone in bpy_bones
+    }
+    root_name = bpy_armature_obj.data.GFSTOOLS_ModelProperties.root_node_name
+
+    #############################################
+    # CONSTRUCT ACTION FROM NODE ANIMATION DATA #
+    #############################################
+    unimported_node_animations = []
+    fcurve_bank = {}
+    for track_idx, data_track in enumerate(gfs_anim.node_animations):
+        if gfs_to_bpy_bone_map is None:
+            bone_name = available_names.get(data_track.name)
+        else:
+            if data_track.id in gfs_to_bpy_bone_map:
+                bone_name = bpy_bones[gfs_to_bpy_bone_map[data_track.id]].name
+            else:
+                bone_name = None
+
+        fps = 30 / (1 if gfs_anim.speed is None else gfs_anim.speed)
+
+        # Special cases
+        if bone_name == root_name:
+            build_object_fcurves(nodes_action, bpy_armature_obj, fps, data_track.positions, data_track.rotations, data_track.scales)
+            continue
+        elif bone_name is None or bone_name not in bpy_bones:
+            unimported_node_animations.append(track_idx)
+            continue
+
+        if is_blend:
+            build_blend_fcurves(nodes_action, scale_action, bpy_armature_obj, bone_name, fps, data_track.positions,
+                                data_track.rotations, data_track.scales, fcurve_bank, import_policies.align_quats)
+        else:
+            build_transformed_fcurves(nodes_action, bpy_armature_obj, bone_name, fps, data_track.positions, data_track.rotations,
+                                      data_track.scales, fcurve_bank, import_policies.align_quats)
+
+    ##############################################
+    # CONSTRUCT THE NODE ANIMATION PROPERTY DATA #
+    ##############################################
+    # Actions
+    if is_blend:
+        if len(scale_action.fcurves):
+            prop_anim.has_blendscale_animation = True
+            prop_anim.blendscale_node_animation.from_action(scale_action)
+        else:
+            scale_action.user_clear()
+            bpy.data.actions.remove(scale_action)
+    prop_anim.node_animation.from_action(nodes_action)
+
+    # Flags
+    prop_anim.flag_0 = gfs_anim.flag_0
+    prop_anim.flag_1 = gfs_anim.flag_1
+    prop_anim.flag_2 = gfs_anim.flag_2
+    prop_anim.flag_3 = gfs_anim.flag_3
+    prop_anim.flag_4 = gfs_anim.flag_4
+    prop_anim.flag_5 = gfs_anim.flag_5
+    prop_anim.flag_6 = gfs_anim.flag_6
+    prop_anim.flag_7 = gfs_anim.flag_7
+    prop_anim.flag_8 = gfs_anim.flag_8
+    prop_anim.flag_9 = gfs_anim.flag_9
+    prop_anim.flag_10 = gfs_anim.flag_10
+    prop_anim.flag_11 = gfs_anim.flag_11
+    prop_anim.flag_12 = gfs_anim.flag_12
+    prop_anim.flag_13 = gfs_anim.flag_13
+    prop_anim.flag_14 = gfs_anim.flag_14
+    prop_anim.flag_15 = gfs_anim.flag_15
+    prop_anim.flag_16 = gfs_anim.flag_16
+    prop_anim.flag_17 = gfs_anim.flag_17
+    prop_anim.flag_18 = gfs_anim.flag_18
+    prop_anim.flag_19 = gfs_anim.flag_19
+    prop_anim.flag_20 = gfs_anim.flag_20
+    prop_anim.flag_21 = gfs_anim.flag_21
+    prop_anim.flag_22 = gfs_anim.flag_22
+    prop_anim.flag_24 = gfs_anim.flag_24
+    prop_anim.flag_26 = gfs_anim.flag_26
+    prop_anim.flag_27 = gfs_anim.flag_27
+
+    # Bounding box
+    boxprops = prop_anim.bounding_box
+    if import_policies.anim_boundbox_policy == "AUTO":
+        default_policy = "AUTO"
+    elif import_policies.anim_boundbox_policy == "MANUAL":
+        default_policy = "MANUAL"
+    else:
+        raise NotImplementedError(
+            f"CRITICAL INTERNAL ERROR: Unknown ANIM_BOUNDBOX_POLICY '{import_policies.anim_boundbox_policy}'")
+    boxprops.export_policy = default_policy if gfs_anim.keep_bounding_box else "NONE"
+    if gfs_anim.keep_bounding_box:
+        maxd = np.array(
+            gfs_anim.overrides.bounding_box.max_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        mind = np.array(
+            gfs_anim.overrides.bounding_box.min_dims) @ GFS_MODEL_TRANSFORMS.world_axis_rotation.matrix3x3_inv.copy()
+        boxprops.max_dims = np.max([maxd, mind], axis=0)
+        boxprops.min_dims = np.min([maxd, mind], axis=0)
+
+    if is_blend:
+        prop_anim.category = "BLEND"
+    else:
+        prop_anim.category = "NORMAL"
+
+    # Store unimported data as a blob
+    ai = AnimationInterface()
+    ai.node_animations     = [gfs_anim.node_animations[tidx] for tidx in unimported_node_animations]
+    ai.material_animations = gfs_anim.material_animations
+    ai.camera_animations   = gfs_anim.camera_animations
+    ai.morph_animations    = gfs_anim.morph_animations
+    ai.unknown_animations  = gfs_anim.unknown_animations
+    ai.extra_track_data    = gfs_anim.extra_track_data
+    ab = ai.to_binary(None, None)
+
+    stream = io.BytesIO()
+    wtr = Writer(None)
+    wtr.bytestream = stream
+    wtr.rw_obj(ab, 0x01105100)
+    stream.seek(0)
+    prop_anim.unimported_tracks = ''.join(f"{elem:0>2X}" for elem in stream.read())
+
+    # Import properties
+    import_properties(gfs_anim.properties, prop_anim.properties)
+
+    # Import EPLs
+    # Write the EPL to a blob
+    for epl_entry in ai.epls:
+        stream = io.BytesIO()
+        wtr = Writer(None)
+        wtr.bytestream = stream
+        wtr.rw_obj(epl_entry.binary, 0x01105100)
+        stream.seek(0)
+
+        # Add blob
+        item = prop_anim.epls.add()
+        item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+
+
 def add_animation(track_name, anim, armature, is_blend, import_policies, gfs_to_bpy_bone_map=None):
     action = bpy.data.actions.new(track_name)
     if is_blend:    
