@@ -11,12 +11,12 @@ def makeNodePropertiesPanel(identifier, space_type, region_type, context, props_
         bl_label       = "GFS Node"
         if parent_id is not None:
             bl_parent_id = parent_id
-            
+            bl_options   = {'DEFAULT_CLOSED'}
+
         bl_idname      = make_idname()
         bl_space_type  = space_type
         bl_region_type = region_type
         bl_context     = context
-        
         
         @classmethod
         def poll(cls, context):
