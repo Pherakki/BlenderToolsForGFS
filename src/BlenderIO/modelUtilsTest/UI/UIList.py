@@ -2,7 +2,11 @@ import bpy
 
 
 def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx_name, props_getter,
-               add_callback=None, delete_callback=None, moveup_callback=None, movedown_callback=None):
+               add_callback=None, delete_callback=None, moveup_callback=None, movedown_callback=None,
+               extra_collection_indices=None):
+    if extra_collection_indices is None:
+        extra_collection_indices = []
+
     class UIList:
         def draw(self, layout, context):
             self.draw_collection(layout, context)
@@ -52,8 +56,7 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                 if add_callback is not None:
                     add_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
-        
-        
+
         class DelOperator(bpy.types.Operator):
             bl_idname = f"{module_name}.OBJECT_OT_{identifier}PanelDel".lower()
             
@@ -69,12 +72,16 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                 collection.remove(collection_idx)
                 new_idx = collection_idx - 1
                 setattr(props, collection_idx_name, new_idx)
-                
+
+                for idx_name in extra_collection_indices:
+                    old_idx = getattr(props, idx_name)
+                    if old_idx == collection_idx:
+                        setattr(props, idx_name, -1)
+
                 if delete_callback is not None:
                     delete_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
-        
-        
+
         class MoveUpOperator(bpy.types.Operator):
             bl_idname = f"{module_name}.OBJECT_OT_{identifier}PanelMoveUp".lower()
             
@@ -93,12 +100,18 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     setattr(props, collection_idx_name, new_idx)
                 else:
                     new_idx = collection_idx
+
+                for idx_name in extra_collection_indices:
+                    idx = getattr(props, idx_name)
+                    if collection_idx == idx:
+                        setattr(props, idx_name, idx-1)
+                    elif collection_idx == idx+ 1:
+                        setattr(props, idx_name, idx+1)
                     
                 if moveup_callback is not None:
                     moveup_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
-        
-        
+
         class MoveDownOperator(bpy.types.Operator):
             bl_idname = f"{module_name}.OBJECT_OT_{identifier}PanelMoveDown".lower()
             
@@ -117,7 +130,14 @@ def UIListBase(module_name, identifier, ui_list, collection_name, collection_idx
                     setattr(props, collection_idx_name, new_idx)
                 else:
                     new_idx = collection_idx
-                    
+
+                for idx_name in extra_collection_indices:
+                    idx = getattr(props, idx_name)
+                    if collection_idx == idx:
+                        setattr(props, idx_name, idx + 1)
+                    elif collection_idx == idx - 1:
+                        setattr(props, idx_name, idx - 1)
+
                 if movedown_callback is not None:
                     movedown_callback(context, event, collection_idx, new_idx)
                 return {'FINISHED'}
