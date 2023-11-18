@@ -146,7 +146,7 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     animation_pack_idx:          bpy.props.IntProperty(default= 0, options={'HIDDEN'})
     animation_packs:             bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
     
-    ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION INDEX '{idx}'"
+    ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION PACK INDEX '{idx}'"
     
     def get_gap(self, idx, msg="list index out of range"):
         if idx == -1:
