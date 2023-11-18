@@ -1,6 +1,76 @@
 import bpy
 from .HelpWindows import defineHelpWindow
 from .Model import OBJECT_PT_GFSToolsModelDataPanel
+from ..Preferences import get_preferences
+
+from ..modelUtilsTest.UI.UIList import UIListBase
+from ..Globals import NAMESPACE
+
+
+class SwitchAnimation(bpy.types.Operator):
+    index: bpy.props.IntProperty()
+
+    bl_label   = ""
+    bl_idname = f"{NAMESPACE}.switchanimation"
+    bl_options = {"UNDO", "REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        return mprops.is_selected_gap_active()
+
+    def execute(self, context):
+        bpy_armature_object = context.active_object
+        anim_data           = bpy_armature_object.animation_data
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        name = f"{gap.name}_{gap.test_anims[self.index].name}"
+
+        # Reset armature pose, deactivate tracks
+        for nla_track in anim_data.nla_tracks:
+            nla_track.mute = True
+        for bone in bpy_armature_object.pose.bones:
+            bone.location            = (0., 0., 0.)
+            bone.rotation_quaternion = (1., 0., 0., 0.)
+            bone.rotation_euler      = (0., 0., 0.)
+            bone.scale               = (1., 1., 1.)
+
+        # Reactivate any necessary animations, set index
+        if gap.active_anim_idx == self.index:
+            gap.active_anim_idx = -1
+        else:
+            gap.active_anim_idx = self.index
+            for nla_track in anim_data.nla_tracks:
+                if nla_track.name == name or nla_track.name == "Rest Pose":
+                    nla_track.mute = False
+
+        return {'FINISHED'}
+
+
+class OBJECT_UL_GFSToolsAnimationUIList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        icon_name = "SOLO_ON" if index == gap.active_anim_idx else "SOLO_OFF"
+        op = layout.operator(SwitchAnimation.bl_idname, icon=icon_name, emboss=False)
+        op.index = index
+        layout.prop(item, "name", text="", emboss=False)
+
+
+_uilist = UIListBase(
+    NAMESPACE,
+    "GAPAnims",
+    OBJECT_UL_GFSToolsAnimationUIList,
+    "test_anims",
+    "test_anims_idx",
+    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties.get_selected_gap(),
+    extra_collection_indices=["active_anim_idx"]
+)
+setattr(_uilist, "poll", classmethod(lambda cls, context: get_preferences().developer_mode))
 
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
@@ -11,7 +81,9 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context     = "data"
     bl_options     = {'DEFAULT_CLOSED'}
-    
+
+    ANIM_LIST = _uilist()
+
     @classmethod
     def poll(self, context):
         if context.armature is None:
@@ -83,6 +155,9 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         
         lookat_col.enabled = props.has_lookat_anims
 
+        if get_preferences().developer_mode:
+            self.ANIM_LIST.draw(layout, context)
+
     AnimationPackHelpWindow = defineHelpWindow("AnimationPack",
         "- 'Unknown Flags' are unknown. Only Flag 3 appears to be used and may do something.\n"\
         "- 'LookAt Anims' are a set of animations for the four directions the character can look in.\n"\
@@ -91,7 +166,13 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     @classmethod
     def register(cls):
         bpy.utils.register_class(cls.AnimationPackHelpWindow)
+        bpy.utils.register_class(SwitchAnimation)
+        bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationUIList)
+        _uilist.register()
     
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.AnimationPackHelpWindow)
+        bpy.utils.unregister_class(SwitchAnimation)
+        bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationUIList)
+        _uilist.unregister()
