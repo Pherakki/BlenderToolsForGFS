@@ -152,7 +152,11 @@ def rebuild_collider(bpy_mesh, radius, height, is_capsule):
 
 def make_collider(has_name, dtype, height, radius, ibpm, parent_bone, armature):
     # Get parent bone data
-    bone = armature.data.bones.get(parent_bone)
+    if parent_bone is None:
+        bone = None
+    else:
+        bone = armature.data.bones.get(parent_bone)
+
     if bone is None:
         parent_matrix = upY_to_upZ_matrix @ armature.matrix_world    
         collider_name = f".Collider_{armature.name}"
