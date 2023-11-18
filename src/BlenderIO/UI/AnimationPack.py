@@ -19,7 +19,7 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         
         bpy_armature = context.armature
         mprops = bpy_armature.GFSTOOLS_ModelProperties
-        if mprops.get_active_gap() is None:
+        if mprops.get_selected_gap() is None:
             return False
         
         return True
@@ -32,7 +32,7 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         
         layout.operator(self.AnimationPackHelpWindow.bl_idname)
         
-        props = mprops.get_active_gap()
+        props = mprops.get_selected_gap()
         
         layout.prop(props, 'version')
         # Flags
