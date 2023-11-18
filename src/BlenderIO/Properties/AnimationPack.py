@@ -3,6 +3,8 @@ import bpy
 from .Animations import poll_lookat_action
 from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
+from .GFSProperties import GFSToolsGenericProperty
+from .Animations import BlobProperty, AnimBoundingBoxProps
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -49,7 +51,123 @@ class NLATrackWrapper(bpy.types.PropertyGroup):
     name:   bpy.props.StringProperty(name="Name", default="New Track")
     strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
 
+
+class BaseTypedAnimation:
+    name:   bpy.props.StringProperty(name="Name", default="New Track")
+    strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
+
+    def from_nla_track(self, name, nla_track):
+        self.name = name
+        self.strips.clear()
+        for nla_strip in nla_track.strips:
+            prop_strip = self.strips.add()
+            prop_strip.from_nla_strip(nla_strip)
+
+    def to_nla_track(self, bpy_animation_data, gap_name):
+        track = bpy_animation_data.nla_tracks.new()
+        track.name = f"{gap_name}_{self.name}"
+        track.mute = True
+        for strip in self.strips:
+            strip.to_nla_strip(track)
+
+
+class NodeAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
+    compress: bpy.props.BoolProperty(name="Compress", default=True)
+
+    def from_action(self, action):
+        self.name = action.name
+        self.strips.clear()
+        prop_strip = self.strips.add()
+        prop_strip.from_action(action)
+
+
+class MaterialAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
+    pass
+
+
+class CameraAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
+    pass
+
+
+class Type4AnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
+    pass
+
+
+class MorphAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
+    pass
+
+
+class AnimationProperties(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name")
+
+    category: bpy.props.EnumProperty(items=[
+            ("NORMAL",     "Normal",      "Standard Animation"                                             ),
+            ("BLEND",      "Blend",       "Animations combined channel-by-channel with Standard Animations"),
+            ("LOOKAT",     "Look At",     "Special Blend animations used for looking up/down/left/right"   )
+        ],
+        #update=update_category,
+        name="Category"
+    )
+
+    epls:                bpy.props.CollectionProperty(name="EPLs",
+                                                     type=BlobProperty,
+                                                     options={'HIDDEN'})
     
+    # Common properties
+    flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0", default=True) # Enable node anims?
+    flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1", default=False) # Enable material anims?
+    flag_2:  bpy.props.BoolProperty(name="Unknown Flag 2", default=False) # Enable camera anims?
+    flag_3:  bpy.props.BoolProperty(name="Unknown Flag 3", default=False) # Enable morph anims?
+    flag_4:  bpy.props.BoolProperty(name="Unknown Flag 4", default=False) # Enable type 5 anims?
+    flag_5:  bpy.props.BoolProperty(name="Unknown Flag 5 (Unused?)", default=False)
+    flag_6:  bpy.props.BoolProperty(name="Unknown Flag 6 (Unused?)", default=False)
+    flag_7:  bpy.props.BoolProperty(name="Unknown Flag 7 (Unused?)", default=False)
+    flag_8:  bpy.props.BoolProperty(name="Unknown Flag 8 (Unused?)", default=False)
+    flag_9:  bpy.props.BoolProperty(name="Unknown Flag 9 (Unused?)", default=False)
+    flag_10: bpy.props.BoolProperty(name="Unknown Flag 10 (Unused?)", default=False)
+    flag_11: bpy.props.BoolProperty(name="Unknown Flag 11 (Unused?)", default=False)
+    flag_12: bpy.props.BoolProperty(name="Unknown Flag 12 (Unused?)", default=False)
+    flag_13: bpy.props.BoolProperty(name="Unknown Flag 13 (Unused?)", default=False)
+    flag_14: bpy.props.BoolProperty(name="Unknown Flag 14 (Unused?)", default=False)
+    flag_15: bpy.props.BoolProperty(name="Unknown Flag 15 (Unused?)", default=False)
+    flag_16: bpy.props.BoolProperty(name="Unknown Flag 16 (Unused?)", default=False)
+    flag_17: bpy.props.BoolProperty(name="Unknown Flag 17 (Unused?)", default=False)
+    flag_18: bpy.props.BoolProperty(name="Unknown Flag 18 (Unused?)", default=False)
+    flag_19: bpy.props.BoolProperty(name="Unknown Flag 19 (Unused?)", default=False)
+    flag_20: bpy.props.BoolProperty(name="Unknown Flag 20 (Unused?)", default=False)
+    flag_21: bpy.props.BoolProperty(name="Unknown Flag 21 (Unused?)", default=False)
+    flag_22: bpy.props.BoolProperty(name="Unknown Flag 22 (Unused?)", default=False)
+    flag_24: bpy.props.BoolProperty(name="Unknown Flag 24 (Unused?)", default=False)
+    flag_26: bpy.props.BoolProperty(name="Unknown Flag 26 (Unused?)", default=False)
+    flag_27: bpy.props.BoolProperty(name="Unknown Flag 27 (Unused?)", default=False)
+    
+    bounding_box:    bpy.props.PointerProperty(type=AnimBoundingBoxProps)
+    
+    # Only for Normal animations
+    has_lookat_anims:    bpy.props.BoolProperty(name="LookAt Anims")
+    lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
+    lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
+    lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
+    lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
+    lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
+    lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
+    lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
+    lookat_down_factor:  bpy.props.FloatProperty(name="LookAt Down Factor")
+
+    properties:          bpy.props.CollectionProperty(name="Properties", type=GFSToolsGenericProperty)
+    active_property_idx: bpy.props.IntProperty(options={'HIDDEN'})
+
+    # Animation Data
+    has_blendscale_animation:  bpy.props.BoolProperty(name="Has Scale Animation")
+    node_animation:            bpy.props.PointerProperty(type=NodeAnimationProperties)
+    blendscale_node_animation: bpy.props.PointerProperty(type=NodeAnimationProperties)
+    material_animations:       bpy.props.CollectionProperty(type=MaterialAnimationProperties)
+    camera_animations:         bpy.props.CollectionProperty(type=CameraAnimationProperties)
+    type4_animations:          bpy.props.CollectionProperty(type=Type4AnimationProperties)
+    morph_animations:          bpy.props.CollectionProperty(type=MorphAnimationProperties)
+    unimported_tracks:         bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
+
+
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     name:    bpy.props.StringProperty(name="Name", default="New Pack")
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
@@ -95,14 +213,32 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     lookat_down_factor:  bpy.props.FloatProperty(name="LookAt Down Factor")
 
     animations: bpy.props.CollectionProperty(type=NLATrackWrapper)
-    
-    @staticmethod
-    def get_active_external_gap(bpy_armature_object):
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        gaps = mprops.external_animation_packs
-        current_gap = gaps[mprops.external_animation_pack_idx]
-        return current_gap
-    
+    test_anims: bpy.props.CollectionProperty(type=AnimationProperties)
+    test_anims_idx:  bpy.props.IntProperty(default=-1)
+    active_anim_idx: bpy.props.IntProperty(default=-1)
+
+    ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION INDEX '{idx}'"
+
+    def get_anim(self, idx, msg="list index out of range"):
+        if not len(self.test_anims):
+            return None
+        elif idx == -1:
+            return None
+        elif idx < len(self.test_anims):
+            return self.test_anims[idx]
+        else:
+            raise IndexError(msg)
+
+    def _internal_get_anim(self, idx, msg):
+        err_msg = self.ERROR_TEMPLATE.format(msg=msg, idx=idx)
+        return self.get_anim(idx, err_msg)
+
+    def get_selected_anim(self):
+        return self._internal_get_anim(self.test_anims_idx, "SELECTED")
+
+    def get_active_anim(self):
+        return self._internal_get_anim(self.active_anim_idx, "ACTIVE")
+
     def store_animation_pack(self, bpy_armature_object):
         gap_props = self
         
