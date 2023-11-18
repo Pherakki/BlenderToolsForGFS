@@ -7,13 +7,43 @@ from .MixIns.Version import GFSVersionedProperty
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
     name:                bpy.props.StringProperty(name="Name", default="New Strip")
-    frame_start_ui:      bpy.props.FloatProperty()
+    frame_start_ui:      bpy.props.FloatProperty(default=1.)
     action_frame_start:  bpy.props.FloatProperty()
     action_frame_end:    bpy.props.FloatProperty()
-    scale:               bpy.props.FloatProperty()
-    repeat:              bpy.props.FloatProperty()
+    scale:               bpy.props.FloatProperty(default=1.)
+    repeat:              bpy.props.FloatProperty(default=1.)
     action: bpy.props.PointerProperty(type=bpy.types.Action)
+
+    def from_action(self, action):
+        self.name                = action.name
+        self.frame_start_ui      = 1.
+        self.action_frame_start, \
+        self.action_frame_end    = action.frame_range
+        self.scale               = 1.
+        self.repeat              = 1.
+        self.action              = action
+
+
+    def from_nla_strip(self, nla_strip):
+        self.name                = nla_strip.name
+        self.frame_start_ui      = nla_strip.frame_start_ui
+        self.action_frame_start  = nla_strip.action_frame_start
+        self.action_frame_end    = nla_strip.action_frame_end
+        self.scale               = nla_strip.scale
+        self.repeat              = nla_strip.repeat
+        self.action              = nla_strip.action
     
+    def to_nla_strip(self, nla_track):
+        nla_strip = nla_track.strips.new(self.name,
+                                         1,
+                                         self.action)
+        
+        nla_strip.frame_start_ui     = self.frame_start_ui
+        nla_strip.action_frame_start = self.action_frame_start
+        nla_strip.action_frame_end   = self.action_frame_end
+        nla_strip.scale              = self.scale
+        nla_strip.repeat             = self.repeat
+
 
 class NLATrackWrapper(bpy.types.PropertyGroup):
     name:   bpy.props.StringProperty(name="Name", default="New Track")
