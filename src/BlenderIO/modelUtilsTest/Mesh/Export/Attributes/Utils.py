@@ -16,6 +16,8 @@ def round_to_sigfigs(x, p):
 
 
 def fetch_data(obj, element, sigfigs):
+    if not len(obj):
+        return []
     dsize = len(getattr(obj[0], element))
     data = array.array('f', [0.0] * (len(obj) * dsize))
     obj.foreach_get(element, data)

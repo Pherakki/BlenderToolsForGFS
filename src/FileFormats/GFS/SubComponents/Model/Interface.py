@@ -48,7 +48,7 @@ class ModelInterface:
             for mesh in meshes:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
-                if mesh.vertices[0].indices is not None:
+                if len(mesh.vertices) and mesh.vertices[0].indices is not None:
                     # Remap indices from local indices to global indices
                     palette_indices = set()
                     for v in mesh.vertices:
@@ -187,7 +187,7 @@ class ModelInterface:
             for mesh, mesh_node_id in mesh_binaries:
                 if copy_verts:
                     mesh.vertices = copy.deepcopy(mesh.vertices)
-                if mesh.vertices[0].indices is not None:
+                if len(mesh.vertices) and mesh.vertices[0].indices is not None:
                     for v in mesh.vertices:
                         indices = [index_lookup[(mesh_node_id, idx)] for idx in v.indices]
                         all_indices.update(indices)

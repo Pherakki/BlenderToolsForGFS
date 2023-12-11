@@ -15,6 +15,7 @@ from .Errors import TooManyIndicesError
 
 def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_policies):
     bpy_mesh     = bpy_mesh_obj.data
+
     if not len(bpy_mesh_obj.material_slots):
         return None
     bpy_material = bpy_mesh_obj.material_slots[material_idx].material
@@ -39,13 +40,14 @@ def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_po
         bpy_mesh.normals_split_custom_set(res)
     
     # Create loop data if we need it but it doesn't exist
-    if used_attributes.requires_normals and tuple(bpy_mesh.loops[0].normal) == (0., 0., 0.):
-        bpy_mesh.calc_normals_split()
-    if (used_attributes.requires_tangents or used_attributes.requires_binormals) and (tuple(bpy_mesh.loops[0].tangent) == (0., 0., 0.) or recalculate_tangents):
-        if used_attributes.tangent_uvs is None:
-            errorlog.log_error_message(f"Material '{bpy_material.name}' requires tangents for export, but mesh '{bpy_mesh_obj.name}' does not have any UV maps")
-        else:
-            bpy_mesh.calc_tangents(uvmap=used_attributes.tangent_uvs)
+    if len(bpy_mesh.loops):
+        if used_attributes.requires_normals and tuple(bpy_mesh.loops[0].normal) == (0., 0., 0.):
+            bpy_mesh.calc_normals_split()
+        if (used_attributes.requires_tangents or used_attributes.requires_binormals) and (tuple(bpy_mesh.loops[0].tangent) == (0., 0., 0.) or recalculate_tangents):
+            if used_attributes.tangent_uvs is None:
+                errorlog.log_error_message(f"Material '{bpy_material.name}' requires tangents for export, but mesh '{bpy_mesh_obj.name}' does not have any UV maps")
+            else:
+                bpy_mesh.calc_tangents(uvmap=used_attributes.tangent_uvs)
     
     # Extract data
     loop_data = [
