@@ -22,7 +22,7 @@ def get_in_tex(self, name):
     
     nodes = material.node_tree.nodes
     if name not in nodes:
-        return 1
+        return 0
 
     tex_node = nodes[name]
     if tex_node.type != "TEX_IMAGE":
@@ -40,7 +40,7 @@ def get_in_tex(self, name):
                     tex_idx = proposed_tex_idx
                     return tex_idx + 1
     
-    return "UV0"
+    return 1
 
 
 class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
