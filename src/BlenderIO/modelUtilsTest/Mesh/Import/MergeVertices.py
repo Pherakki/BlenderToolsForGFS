@@ -225,7 +225,7 @@ def create_merged_mesh(mesh_name, vertices, faces, VertexType, sanitize_vertices
     # Get the loop data
     new_facevert_to_old_facevert_map = geometry.new_facevert_to_old_facevert_map
     loops_to_modelverts_map = np.empty((len(bpy_mesh.loops)), dtype=np.uint32)
-    verts_to_modelverts_map = defaultdict(list)
+    verts_to_modelverts_map = defaultdict(set)
     for new_poly_idx, poly in enumerate(bpy_mesh.polygons):
         for loop_idx in poly.loop_indices:
             bpy_vert_idx = bpy_mesh.loops[loop_idx].vertex_index
@@ -233,7 +233,8 @@ def create_merged_mesh(mesh_name, vertices, faces, VertexType, sanitize_vertices
             mdl_vert_idx = new_facevert_to_old_facevert_map[(new_poly_idx, bpy_vert_idx)][1]
             
             loops_to_modelverts_map[loop_idx] = mdl_vert_idx
-            verts_to_modelverts_map[bpy_vert_idx].append(mdl_vert_idx)
+            verts_to_modelverts_map[bpy_vert_idx].add(mdl_vert_idx)
+    verts_to_modelverts_map = {k: sorted(v) for k, v in verts_to_modelverts_map.items()}
 
     # Also need to add in loose vertices here too!
     
