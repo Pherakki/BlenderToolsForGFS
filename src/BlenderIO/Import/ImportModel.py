@@ -130,7 +130,7 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, raw_gfs):
     
         y_up_to_z_up = convert_Yup_to_Zup(Matrix.Identity(4))
         for raw_mesh, mesh in zip(meshes, gfs.meshes):
-            if mesh.vertices[0].indices is not None:
+            if len(mesh.vertices) and mesh.vertices[0].indices is not None:
                 for raw_v, v in zip(raw_mesh.vertices, mesh.vertices):
                     animation_matrix = Matrix.Diagonal([0., 0., 0., 0.])
                     for idx, weight in zip(raw_v.indices[::-1], raw_v.weights):
@@ -350,13 +350,13 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
 def filter_rigging_bones_and_ancestors(gfs):
     used_indices = set()
     for mesh in gfs.meshes:
-        if mesh.vertices[0].indices is None:
+        if len(mesh.vertices) and mesh.vertices[0].indices is not None:
+            for v in mesh.vertices:
+                used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
+        else:
             # Because we're going to rig the mesh to the bone later
             # Can get rid of this if we replace that with bone parenting
             used_indices.add(mesh.node)
-        else:
-            for v in mesh.vertices:
-                used_indices.update([idx for idx, wgt in zip(v.indices, v.weights) if wgt > 0])
     
     for cam in gfs.cameras:
         used_indices.add(cam.node)
@@ -424,12 +424,12 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     else:
         meshobj_name = f"{mesh_name}_{idx}"
     
-    is_rigged = mesh.vertices[0].weights is not None
+    is_rigged = len(mesh.vertices) and (mesh.vertices[0].weights is not None)
     
     # Merge vertices if requested
     mesh_data = create_merged_mesh(meshobj_name, 
                                    mesh.vertices, 
-                                   [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])],
+                                   [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])] if mesh.indices is not None else [],
                                    MergedVertex if is_rigged else UnweightedMergedVertex,
                                    attempt_merge=is_vertex_merge_allowed,
                                    errorlog=errorlog)
@@ -469,7 +469,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     else:         attach_mesh(bpy_mesh_object, parent_node_name, new_verts, mprops)
 
     # Assign normals
-    if loop_data[0].normal is not None:
+    if len(loop_data) and loop_data[0].normal is not None:
         create_loop_normals(bpy_mesh, [l.normal for l in loop_data])
     
     ####################
@@ -579,7 +579,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
 
 
 def create_uv_map_if_exists(bpy_mesh, name, texcoords):
-    if texcoords[0] is not None:
+    if len(texcoords) and texcoords[0] is not None:
         create_uv_map(bpy_mesh, name, texcoords)
 
 
@@ -589,18 +589,22 @@ def unpack_colour(colour):
 
 
 def create_color_map_if_exists(bpy_mesh, name, color_data, datatype):
-    if color_data[0] is not None:
+    if len(color_data) and color_data[0] is not None:
         create_color_map(bpy_mesh, name, [unpack_colour(c) for c in color_data], datatype)
 
 
 def set_material(bpy_mesh_object, gfs_mesh, materials, material_vertex_attributes, errorlog):
     bpy_mesh = bpy_mesh_object.data
-    
+
     if gfs_mesh.material_name is not None:
         active_material, gfs_material = materials.get(gfs_mesh.material_name)
+        
         if active_material is not None:
             bpy_mesh.materials.append(active_material)
             bpy_mesh_object.active_material = active_material
+            if not len(gfs_mesh.vertices):
+                return
+            
             vas = material_vertex_attributes[gfs_mesh.material_name]
             
             vas.normals  .append(gfs_mesh.vertices[0].normal   is not None)
@@ -819,6 +823,8 @@ def make_bounding_box(gfs):
     maxes = []
     mins = []
     for mesh in gfs.meshes:
+        if not len(mesh.vertices):
+            continue
         if mesh.vertices[0].position is not None:
             local_max = mesh.vertices[0].position
             local_min = mesh.vertices[0].position
