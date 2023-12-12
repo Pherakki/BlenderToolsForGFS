@@ -375,43 +375,87 @@ def filter_rigging_bones_and_ancestors(gfs):
     return used_indices, unused_indices
 
 
-class MergedVertex:
-    # Required interface    
+class TestableVertex:
+    # Required interface
     @classmethod
     def from_unmerged(cls, unmerged_verts):
         # All vertices entering this should have the same position, indices, and weights
         v0 = unmerged_verts[0]
-        instance = cls(v0.position, v0.indices, v0.weights)
-        
+        instance = cls(v0.position, v0.indices, v0.weights, v0.morph_offsets)
+
         return instance
-    
+
     @staticmethod
     def get_position(v):
         return v.position
-    
-    @staticmethod
-    def get_merge_attributes(v):
-        return [v.indices, v.weights]
-    
-    @staticmethod
-    def is_invalid(v):
-        return any(any(np.isnan(l)) for l in (v.position, v.indices, v.weights))
-    
+
     # Specialized implementation
-    def __init__(self, position, indices, weights):
+    def __init__(self, position, indices, weights, morph_offsets):
         self.position = position
-        self.indices  = indices
-        self.weights  = weights
+        self.indices = indices
+        self.weights = weights
+        self.morph_offsets = morph_offsets
 
 
-class UnweightedMergedVertex(MergedVertex):
+class MergedVertex(TestableVertex):
     @staticmethod
     def get_merge_attributes(v):
-        return []
+        return [v.indices, v.weights, v.morph_offsets]
     
     @staticmethod
     def is_invalid(v):
-        return any(np.isnan(v.position))
+        return any(any(np.isnan(l)) for l in (v.position, v.indices, v.weights, v.morph_offsets))
+
+
+class UnweightedMergedVertex(TestableVertex):
+    @staticmethod
+    def get_merge_attributes(v):
+        return [v.morph_offsets]
+    
+    @staticmethod
+    def is_invalid(v):
+        return any(any(np.isnan(l)) for l in (v.position, v.morph_offsets))
+
+
+class MergeVertexWrapper:
+    def __init__(self, v, morph_offsets):
+        self.v = v
+        self._morph_offsets = morph_offsets if morph_offsets is not None else []
+
+    @property
+    def position(self):return self.v.position
+    @property
+    def indices(self): return self.v.indices
+    @property
+    def weights(self): return self.v.weights
+    @property
+    def normal(self): return self.v.normal
+    @property
+    def tangent(self): return self.v.tangent
+    @property
+    def binormal(self): return self.v.binormal
+    @property
+    def texcoord0(self): return self.v.texcoord0
+    @property
+    def texcoord1(self): return self.v.texcoord0
+    @property
+    def texcoord2(self): return self.v.texcoord0
+    @property
+    def texcoord3(self): return self.v.texcoord0
+    @property
+    def texcoord4(self): return self.v.texcoord0
+    @property
+    def texcoord5(self): return self.v.texcoord0
+    @property
+    def texcoord6(self): return self.v.texcoord0
+    @property
+    def texcoord7(self): return self.v.texcoord0
+    @property
+    def color1(self): return self.v.color1
+    @property
+    def color2(self): return self.v.color2
+    @property
+    def morph_offsets(self): return [m for offset in self._morph_offsets for m in offset]
 
 
 def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_transform, bpy_node_names, armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed):
@@ -425,14 +469,20 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
         meshobj_name = f"{mesh_name}_{idx}"
     
     is_rigged = len(mesh.vertices) and (mesh.vertices[0].weights is not None)
-    
+
+    if mesh.morphs is not None:
+        mergeable_verts = [MergeVertexWrapper(v, [morph[vidx] for morph in mesh.morphs]) for vidx, v in enumerate(mesh.vertices)]
+    else:
+        empty_list = []
+        mergeable_verts = [MergeVertexWrapper(v, empty_list) for v in mesh.vertices]
     # Merge vertices if requested
     mesh_data = create_merged_mesh(meshobj_name, 
-                                   mesh.vertices, 
+                                   mergeable_verts,
                                    [(a, b, c) for a, b, c in zip(mesh.indices[0::3], mesh.indices[1::3], mesh.indices[2::3])] if mesh.indices is not None else [],
                                    MergedVertex if is_rigged else UnweightedMergedVertex,
                                    attempt_merge=is_vertex_merge_allowed,
                                    errorlog=errorlog)
+    del mergeable_verts
     bpy_mesh = mesh_data.bpy_mesh
     
     # Construct object
