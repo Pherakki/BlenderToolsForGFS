@@ -84,7 +84,23 @@ class MaterialBinary(Serializable):
         self.texture_indices_2 = TextureMapIndices()
         self.disable_backface_culling = None
         self.unknown_0x6A = None
-        
+
+        # Unknown 0x56 - Unknown, [0, 1, 2, 5, 7, 10, 15, 20, 25, 30, 31, 32, 50, 60, 64, 65, 80, 90, 99, 100, 110, 112, 120, 125, 128, 129, 150, 160, 180, 200, 253, 255]
+        # Unknown 0x58 - Unknown, [0, 1, 3, 4, 5, 6, 7]
+        # Unknown 0x5A + 0x5C - More flags
+        # Unknown_0x5E:
+        # 0x00 - No attributes
+        # 0x02 - Toon Attribute
+        # 0x03 - Attribute ID 1
+        # 0x35 - Attribute ID 3
+        # 0x46 - Also Attribute ID 3
+        # 0x52 - Attribute ID 4
+        # 0x63 - Also Attribute ID 4
+        # 0x64 - Attribute ID 7
+        # 0x77 - Also Attribute ID 7
+        # Mixed attributes - ???
+        # Outline attribute - doesn't affect this
+
         self.diffuse_texture    = None
         self.normal_texture     = None
         self.specular_texture   = None
