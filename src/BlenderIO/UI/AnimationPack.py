@@ -5,7 +5,7 @@ from ..Preferences import get_preferences
 
 from ..modelUtilsTest.UI.UIList import UIListBase
 from ..Globals import NAMESPACE
-
+from ..Utils.Animation import gapnames_to_nlatrack, is_anim_restpose
 
 class SwitchAnimation(bpy.types.Operator):
     index: bpy.props.IntProperty()
@@ -26,7 +26,7 @@ class SwitchAnimation(bpy.types.Operator):
         mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
         gap = mprops.get_selected_gap()
 
-        name = f"{gap.name}_{gap.test_anims[self.index].name}"
+        name = gapnames_to_nlatrack(gap.name, gap.test_anims[self.index].name)
 
         # Reset armature pose, deactivate tracks
         for nla_track in anim_data.nla_tracks:
@@ -43,7 +43,7 @@ class SwitchAnimation(bpy.types.Operator):
         else:
             gap.active_anim_idx = self.index
             for nla_track in anim_data.nla_tracks:
-                if nla_track.name == name or nla_track.name == "Rest Pose":
+                if nla_track.name == name or is_anim_restpose(nla_track):
                     nla_track.mute = False
 
         return {'FINISHED'}

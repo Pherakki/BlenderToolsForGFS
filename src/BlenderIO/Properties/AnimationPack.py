@@ -5,6 +5,7 @@ from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
 from .GFSProperties import GFSToolsGenericProperty
 from .Animations import BlobProperty, AnimBoundingBoxProps
+from ..Utils.Animation import gapnames_from_nlatrack, gapnames_to_nlatrack, is_anim_restpose
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -65,7 +66,7 @@ class BaseTypedAnimation:
 
     def to_nla_track(self, bpy_animation_data, gap_name):
         track = bpy_animation_data.nla_tracks.new()
-        track.name = f"{gap_name}_{self.name}"
+        track.name = gapnames_to_nlatrack(gap_name, anim_name)
         track.mute = True
         for strip in self.strips:
             strip.to_nla_strip(track)
@@ -247,7 +248,6 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             return
 
         for nla_track in bpy_armature_object.animation_data.nla_tracks:
-            if self.is_anim_restpose(nla_track):
                 continue
             
             prop_track = gap_props.animations.add()
@@ -297,7 +297,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         
         ad = bpy_object.animation_data
         for nla_track in list(ad.nla_tracks):
-            if cls.is_anim_restpose(nla_track):
+            if is_anim_restpose(nla_track):
                 continue
             
             ad.nla_tracks.remove(nla_track)
