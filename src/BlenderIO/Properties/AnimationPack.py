@@ -26,7 +26,6 @@ class NLAStripWrapper(bpy.types.PropertyGroup):
         self.repeat              = 1.
         self.action              = action
 
-
     def from_nla_strip(self, nla_strip):
         self.name                = nla_strip.name
         self.frame_start_ui      = nla_strip.frame_start_ui
@@ -54,29 +53,31 @@ class NLATrackWrapper(bpy.types.PropertyGroup):
 
 
 class BaseTypedAnimation:
-    name:   bpy.props.StringProperty(name="Name", default="New Track")
+    obj_name: bpy.props.StringProperty(name="Name", default="")
     strips: bpy.props.CollectionProperty(type=NLAStripWrapper)
 
-    def from_nla_track(self, name, nla_track):
-        self.name = name
+    def from_nla_track(self, nla_track, object_name):
+        self.obj_name = object_name
         self.strips.clear()
         for nla_strip in nla_track.strips:
             prop_strip = self.strips.add()
             prop_strip.from_nla_strip(nla_strip)
 
-    def to_nla_track(self, bpy_animation_data, gap_name):
+    def to_nla_track(self, bpy_animation_data, gap_name, anim_name):
         track = bpy_animation_data.nla_tracks.new()
         track.name = gapnames_to_nlatrack(gap_name, anim_name)
         track.mute = True
-        for strip in self.strips:
-            strip.to_nla_strip(track)
+        # Import strips in reverse start order so they don't bump into each
+        # other when they get shifted to the correct position in the track
+        for prop_strip in reversed(sorted(self.strips, key=lambda strip: strip.frame_start_ui)):
+            prop_strip.to_nla_strip(track)
 
 
 class NodeAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
     compress: bpy.props.BoolProperty(name="Compress", default=True)
 
     def from_action(self, action):
-        self.name = action.name
+        self.obj_name = ""
         self.strips.clear()
         prop_strip = self.strips.add()
         prop_strip.from_action(action)

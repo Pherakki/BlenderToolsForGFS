@@ -10,6 +10,7 @@ from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from ..Utils.Maths import convert_XDirBone_to_YDirBone, convert_YDirBone_to_XDirBone, convert_Yup_to_Zup, convert_Zup_to_Yup
 from .ImportProperties import import_properties
 from ..Preferences import get_preferences
+from ..Utils.Animation import gapnames_to_nlatrack
 
 from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
@@ -47,7 +48,8 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
         for anim_idx, anim in enumerate(gfs.animations):
             prop_anim = ap_props.test_anims.add()
             prop_anim.name = str(anim_idx)
-            prop_anim_from_gfs_anim(prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
+            action_name = gapnames_to_nlatrack(filename, prop_anim.name)
+            prop_anim_from_gfs_anim(action_name, prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
 
             # Delay this...
             prop_anim.node_animation.to_nla_track(bpy_armature_object.animation_data, filename)
@@ -247,11 +249,10 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def prop_anim_from_gfs_anim(prop_anim, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
+def prop_anim_from_gfs_anim(anim_name, prop_anim, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
     ####################
     # SET UP VARIABLES #
     ####################
-    anim_name = prop_anim.name
     nodes_action = bpy.data.actions.new(anim_name)
     if is_blend:
         scale_action = bpy.data.actions.new(anim_name + "_scale")
