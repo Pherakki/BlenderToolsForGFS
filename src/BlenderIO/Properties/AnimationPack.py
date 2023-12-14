@@ -248,6 +248,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             return
 
         for nla_track in bpy_armature_object.animation_data.nla_tracks:
+            if is_anim_restpose(nla_track):
                 continue
             
             prop_track = gap_props.animations.add()
