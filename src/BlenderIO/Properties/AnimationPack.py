@@ -255,14 +255,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             
             for nla_strip in nla_track.strips:
                 prop_strip = prop_track.strips.add()
-                prop_strip.name                = nla_strip.name
-                prop_strip.frame_start_ui      = nla_strip.frame_start_ui
-                prop_strip.action_frame_start  = nla_strip.action_frame_start
-                prop_strip.action_frame_end    = nla_strip.action_frame_end
-                prop_strip.scale               = nla_strip.scale
-                prop_strip.repeat              = nla_strip.repeat
-                prop_strip.action              = nla_strip.action
-                
+                prop_strip.from_nla_strip(nla_strip)
     
     def restore_animation_pack(self, bpy_armature_object):
         gap_props = self
@@ -276,19 +269,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             # Import strips in reverse start order so they don't bump into each
             # other when they get shifted to the correct position in the track
             for prop_strip in reversed(sorted(prop_track.strips, key=lambda strip: strip.frame_start_ui)):
-                nla_strip = nla_track.strips.new(prop_strip.name,
-                                                 1,
-                                                 prop_strip.action)
-                
-                nla_strip.frame_start_ui     = prop_strip.frame_start_ui
-                nla_strip.action_frame_start = prop_strip.action_frame_start
-                nla_strip.action_frame_end   = prop_strip.action_frame_end
-                nla_strip.scale              = prop_strip.scale
-                nla_strip.repeat             = prop_strip.repeat
-
-    @staticmethod
-    def is_anim_restpose(nla_track):
-        return nla_track.name == "Rest Pose"
+                prop_strip.to_nla_strip(nla_track)
 
     @classmethod
     def remove_animations_from(cls, bpy_object):
