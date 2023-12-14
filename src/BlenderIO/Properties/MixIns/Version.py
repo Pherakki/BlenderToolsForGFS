@@ -6,10 +6,10 @@ def version_getter(self):
     v = struct.unpack('I', struct.pack('i', self.int_version))[0]
     return f"0x{v:0>8X}"
 
+
 def version_setter(self, value):
     bad_string = ValueError("Version numbers must be a hexadecimal string starting with '0x' and followed by exactly 8 hexadecimal digits")
-    
-    print(value)
+
     if value[:2] != "0x" or len(value) != 10:
         raise bad_string
     
