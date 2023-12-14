@@ -17,6 +17,8 @@ def _draw_on_node(context, layout):
 BLANK_ID = icon_lookup["BLANK1"]
 INTRL_ID = icon_lookup["GROUP"]
 ACTIV_ID = icon_lookup["SOLO_ON"]
+TOGON_ID  = icon_lookup["CHECKBOX_HLT"]
+TOGOFF_ID = icon_lookup["CHECKBOX_DEHLT"]
 
 
 class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
@@ -25,8 +27,15 @@ class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
 
-        active_icon   = ACTIV_ID if index == mprops.active_animation_pack_idx   else BLANK_ID
-        layout.prop(item, "name", text="", emboss=False, icon_value=active_icon, icon_only=True)
+        if get_preferences().wip_animation_import and get_preferences().developer_mode:
+            anim = mprops.animation_packs[index]
+            active_icon = TOGON_ID if anim.is_active else TOGOFF_ID
+            op = layout.operator(ToggleActiveAnimationPack.bl_idname, text="", icon_value=active_icon, emboss=False)
+            op.index = index
+        else:
+            active_icon = ACTIV_ID if index == mprops.active_animation_pack_idx   else BLANK_ID
+            layout.prop(item, "name", text="", emboss=False, icon_value=active_icon, icon_only=True)
+
         if mprops.has_internal_gap():
             internal_icon = INTRL_ID if index == mprops.internal_animation_pack_idx else BLANK_ID
             layout.prop(item, "name", text="", emboss=False, icon_value=internal_icon, icon_only=True)
@@ -179,11 +188,13 @@ class ToggleActiveAnimationPack(bpy.types.Operator):
     bl_idname  = f"{NAMESPACE}.toggleactivegap"
     bl_options = {'UNDO', 'REGISTER'}
 
+    index: bpy.props.IntProperty()
+
     def execute(self, context):
         bpy_armature_object = context.active_object
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
-        selected_gap = mprops.get_selected_gap()
+        selected_gap = mprops.animation_packs[self.index]
 
         if selected_gap.is_active:
             # Deactivate
@@ -259,7 +270,8 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         
         op_row = ctr.row()
         if get_preferences().wip_animation_import and get_preferences().developer_mode:
-            op_row.operator(ToggleActiveAnimationPack.bl_idname, text=ToggleActiveAnimationPack.getText(context))
+            op = op_row.operator(ToggleActiveAnimationPack.bl_idname, text=ToggleActiveAnimationPack.getText(context))
+            op.index = aprops.animation_pack_idx
         else:
             op_row.operator(SetActiveAnimationPack.bl_idname)
         op_row.operator(SetInternalAnimationPack.bl_idname, text=SetInternalAnimationPack.getText(context))
