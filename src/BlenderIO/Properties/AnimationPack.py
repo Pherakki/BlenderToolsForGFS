@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import bpy
 
 from .Animations import poll_lookat_action
@@ -171,6 +173,7 @@ class AnimationProperties(bpy.types.PropertyGroup):
 
 
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
+    is_active: bpy.props.BoolProperty(name="Active", default=False)
     name:    bpy.props.StringProperty(name="Name", default="New Pack")
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")
@@ -287,3 +290,86 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             
     def rename_unique(self, collection):
         self.name = new_unique_name(self.name, collection, separator=".")
+
+    ###########
+    # NEW API #
+    ###########
+    def is_track_tagged_as_this_pack(self, nla_track):
+        gap_name, anim_name = gapnames_from_nlatrack(nla_track)
+        return gap_name == self.name
+
+    def relevant_nla_to_list(self, bpy_object):
+        if bpy_object.animation_data is None:
+            return
+
+        ad = bpy_object.animation_data
+        valid_tracks = []
+        names = defaultdict(lambda: 0)
+        for nla_track in ad.nla_tracks:
+            if self.is_track_tagged_as_this_pack(nla_track) and not is_anim_restpose(nla_track):
+                valid_tracks.append(nla_track)
+                names[nla_track.name] += 1
+
+        # Data validation - make sure there are no duplicate tracks
+        duplicate_tracks = {nm: count for nm, count in names.items() if count > 1}
+        if len(duplicate_tracks):
+            raise NotImplementedError("CRITICAL INTERNAL ERROR - UNIMPLEMENTED BEHAVIOUR - DUPLICATE NLA TRACK NAMES - POP UP A DIALOG HERE INSTEAD")
+
+        return valid_tracks
+
+    def anims_as_dict(self):
+        out = {}
+        for i, anim in enumerate(self.test_anims):
+            out[anim.name] = anim
+        return out
+
+    def update_from_nla(self, bpy_object):
+        if bpy_object.animation_data is None:
+            return
+
+        nla_tracks = self.relevant_nla_to_list(bpy_object)
+        gap_anims  = self.anims_as_dict()
+
+        # Now store the tracks on the GAP
+        for nla_track in nla_tracks:
+            _, anim_name = gapnames_from_nlatrack(nla_track)
+            prop_anim = self.test_anims.add()
+            prop_anim.name = anim_name
+            prop_anim.node_animation.from_nla_track(nla_track, bpy_object.name)
+
+            # TODO: BLENDSCALE ANIMS!!!!
+            # blendscale_node_animation: bpy.props.PointerProperty(type=NodeAnimationProperties)
+
+            if anim_name in gap_anims:
+                gap_anim = gap_anims[anim_name]
+                for elem in ["material_animations", "camera_animations", "type4_animations", "morph_animations"]:
+                    gap_elems = getattr(gap_anim, elem)
+                    prop_elems = getattr(prop_anim, elem)
+                    for elem_anim in gap_elems:
+                        prop_elem_anim = prop_elems.add()
+                        prop_elem_anim.from_nla_track(elem_anim, elem_anim.name)
+                prop_anim.unimported_tracks = gap_anim.unimported_tracks
+
+        # Remove previous anims
+        # Keep popping off front element
+        for _ in range(len(gap_anims)):
+            self.test_anims.remove(0)
+
+        self.test_anims_idx = 0 if len(self.test_anims) else -1
+
+    def remove_from_nla(self, bpy_object):
+        if bpy_object.animation_data is None:
+            return
+
+        ad = bpy_object.animation_data
+        for nla_track in list(ad.nla_tracks):
+            if self.is_track_tagged_as_this_pack(nla_track) and not is_anim_restpose(nla_track):
+                ad.nla_tracks.remove(nla_track)
+
+    def add_to_nla(self, bpy_object):
+        if bpy_object.animation_data is None:
+            bpy_object.animation_data_create()
+
+        ad = bpy_object.animation_data
+        for prop_anim in self.test_anims:
+            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.name)

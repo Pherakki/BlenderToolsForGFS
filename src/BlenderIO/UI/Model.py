@@ -5,6 +5,7 @@ from .Physics import OBJECT_PT_GFSToolsPhysicsDataPanel
 from ..modelUtilsTest.API.Icon import icon_lookup
 from ..modelUtilsTest.UI.UIList import UIListBase
 from ..Globals import NAMESPACE
+from ..Preferences import get_preferences
 
 
 def _draw_on_node(context, layout):
@@ -173,6 +174,42 @@ class SetActiveAnimationPack(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class ToggleActiveAnimationPack(bpy.types.Operator):
+    bl_label   = "Activate GAP"
+    bl_idname  = f"{NAMESPACE}.toggleactivegap"
+    bl_options = {'UNDO', 'REGISTER'}
+
+    def execute(self, context):
+        bpy_armature_object = context.active_object
+        bpy_armature        = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        selected_gap = mprops.get_selected_gap()
+
+        if selected_gap.is_active:
+            # Deactivate
+            selected_gap.is_active = False
+            selected_gap.update_from_nla(bpy_armature_object)
+            selected_gap.remove_from_nla(bpy_armature_object)
+        else:
+            # Activate
+            selected_gap.is_active = True
+            selected_gap.add_to_nla(bpy_armature_object)
+
+        return {'FINISHED'}
+
+    @staticmethod
+    def getText(context):
+        bpy_armature_object = context.active_object
+        bpy_armature = bpy_armature_object.data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        selected_gap = mprops.get_selected_gap()
+
+        if selected_gap.is_active:
+            return "Deactivate GAP"
+        else:
+            return "Activate GAP"
+
+
 class AutonameMeshUVs(bpy.types.Operator):
     bl_label = "Auto-Rename Mesh UVs"
     bl_idname = f"{NAMESPACE}.autonamemeshuvs"
@@ -221,7 +258,10 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         self.PACK_LIST.draw(ctr, context)
         
         op_row = ctr.row()
-        op_row.operator(SetActiveAnimationPack.bl_idname)
+        if get_preferences().wip_animation_import and get_preferences().developer_mode:
+            op_row.operator(ToggleActiveAnimationPack.bl_idname, text=ToggleActiveAnimationPack.getText(context))
+        else:
+            op_row.operator(SetActiveAnimationPack.bl_idname)
         op_row.operator(SetInternalAnimationPack.bl_idname, text=SetInternalAnimationPack.getText(context))
         
     @classmethod
@@ -229,6 +269,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         bpy.utils.register_class(cls.NodePropertiesPanel)
         bpy.utils.register_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
         bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        bpy.utils.register_class(ToggleActiveAnimationPack)
         bpy.utils.register_class(SetActiveAnimationPack)
         bpy.utils.register_class(SetInternalAnimationPack)
         bpy.utils.register_class(AutonameMeshUVs)
@@ -239,6 +280,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         bpy.utils.unregister_class(cls.NodePropertiesPanel)
         bpy.utils.unregister_class(OBJECT_PT_GFSToolsPhysicsDataPanel)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationPackUIList)
+        bpy.utils.unregister_class(ToggleActiveAnimationPack)
         bpy.utils.unregister_class(SetActiveAnimationPack)
         bpy.utils.unregister_class(SetInternalAnimationPack)
         bpy.utils.unregister_class(AutonameMeshUVs)

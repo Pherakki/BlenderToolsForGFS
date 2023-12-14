@@ -52,7 +52,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
             prop_anim_from_gfs_anim(action_name, prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
 
             # Delay this...
-            prop_anim.node_animation.to_nla_track(bpy_armature_object.animation_data, filename)
+            # prop_anim.node_animation.to_nla_track(bpy_armature_object.animation_data, filename, prop_anim.name)
     else:
         for anim_idx, anim in enumerate(gfs.animations):
             action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
