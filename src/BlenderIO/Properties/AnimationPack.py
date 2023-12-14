@@ -65,9 +65,9 @@ class BaseTypedAnimation:
             prop_strip = self.strips.add()
             prop_strip.from_nla_strip(nla_strip)
 
-    def to_nla_track(self, bpy_animation_data, gap_name, anim_name):
+    def to_nla_track(self, bpy_animation_data, gap_name, anim_type, anim_name):
         track = bpy_animation_data.nla_tracks.new()
-        track.name = gapnames_to_nlatrack(gap_name, anim_name)
+        track.name = gapnames_to_nlatrack(gap_name, anim_type, anim_name)
         track.mute = True
         # Import strips in reverse start order so they don't bump into each
         # other when they get shifted to the correct position in the track
@@ -295,7 +295,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     # NEW API #
     ###########
     def is_track_tagged_as_this_pack(self, nla_track):
-        gap_name, anim_name = gapnames_from_nlatrack(nla_track)
+        gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
         return gap_name == self.name
 
     def relevant_nla_to_list(self, bpy_object):
@@ -332,7 +332,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         # Now store the tracks on the GAP
         for nla_track in nla_tracks:
-            _, anim_name = gapnames_from_nlatrack(nla_track)
+            _, _, anim_name = gapnames_from_nlatrack(nla_track)
             prop_anim = self.test_anims.add()
             prop_anim.name = anim_name
             prop_anim.node_animation.from_nla_track(nla_track, bpy_object.name)
@@ -372,4 +372,4 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         ad = bpy_object.animation_data
         for prop_anim in self.test_anims:
-            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.name)
+            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.category, prop_anim.name)

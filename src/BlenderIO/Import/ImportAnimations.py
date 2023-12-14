@@ -48,7 +48,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
         for anim_idx, anim in enumerate(gfs.animations):
             prop_anim = ap_props.test_anims.add()
             prop_anim.name = str(anim_idx)
-            action_name = gapnames_to_nlatrack(filename, prop_anim.name)
+            action_name = gapnames_to_nlatrack(filename, prop_anim.category, prop_anim.name)
             prop_anim_from_gfs_anim(action_name, prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
 
             # Delay this...

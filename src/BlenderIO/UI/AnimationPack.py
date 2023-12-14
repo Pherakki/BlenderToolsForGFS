@@ -26,7 +26,8 @@ class SwitchAnimation(bpy.types.Operator):
         mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
         gap = mprops.get_selected_gap()
 
-        name = gapnames_to_nlatrack(gap.name, gap.test_anims[self.index].name)
+        anim = gap.test_anims[self.index]
+        name = gapnames_to_nlatrack(gap.name, anim.category, anim.name)
 
         # Reset armature pose, deactivate tracks
         for nla_track in anim_data.nla_tracks:
