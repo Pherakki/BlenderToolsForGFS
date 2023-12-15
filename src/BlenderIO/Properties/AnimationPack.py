@@ -217,10 +217,18 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
     lookat_down_factor:  bpy.props.FloatProperty(name="LookAt Down Factor")
 
-    animations: bpy.props.CollectionProperty(type=NLATrackWrapper)
-    test_anims: bpy.props.CollectionProperty(type=AnimationProperties)
-    test_anims_idx:  bpy.props.IntProperty(default=-1)
-    active_anim_idx: bpy.props.IntProperty(default=-1)
+    animations:            bpy.props.CollectionProperty(type=NLATrackWrapper)
+    active_anim_idx:       bpy.props.IntProperty(default=-1)
+    test_anims:            bpy.props.CollectionProperty(type=AnimationProperties)
+    test_anims_idx:        bpy.props.IntProperty(default=-1)
+    test_blend_anims:      bpy.props.CollectionProperty(type=AnimationProperties)
+    test_blend_anims_idx:  bpy.props.IntProperty(default=-1)
+    test_lookat_anims:     bpy.props.CollectionProperty(type=AnimationProperties)
+
+    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
+    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
+    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
+    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
 
     ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION INDEX '{idx}'"
 
