@@ -331,17 +331,33 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             out[anim.name] = anim
         return out
 
+    def blend_anims_as_dict(self):
+        out = {}
+        for i, anim in enumerate(self.test_blend_anims):
+            out[anim.name] = anim
+        return out
+
     def update_from_nla(self, bpy_object):
         if bpy_object.animation_data is None:
             return
 
         nla_tracks = self.relevant_nla_to_list(bpy_object)
-        gap_anims  = self.anims_as_dict()
+        normal_gap_anims  = self.anims_as_dict()
+        blend_gap_anims   = self.blend_anims_as_dict()
 
         # Now store the tracks on the GAP
         for nla_track in nla_tracks:
-            _, _, anim_name = gapnames_from_nlatrack(nla_track)
-            prop_anim = self.test_anims.add()
+            _, category, anim_name = gapnames_from_nlatrack(nla_track)
+            if category == "NORMAL":
+                gap_anims = normal_gap_anims
+                prop_anim = self.test_anims.add()
+            elif category == "BLEND":
+                gap_anims = blend_gap_anims
+                prop_anim = self.test_blend_anims.add()
+                prop_anim.category = "BLEND"
+            else:
+                raise NotImplementedError(f"CRITICAL INTERNAL ERROR - UNIMPLEMENTED ANIM TYPE '{category}'")
+
             prop_anim.name = anim_name
             prop_anim.node_animation.from_nla_track(nla_track, bpy_object.name)
 
@@ -351,7 +367,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             if anim_name in gap_anims:
                 gap_anim = gap_anims[anim_name]
                 for elem in ["material_animations", "camera_animations", "type4_animations", "morph_animations"]:
-                    gap_elems = getattr(gap_anim, elem)
+                    gap_elems  = getattr(gap_anim, elem)
                     prop_elems = getattr(prop_anim, elem)
                     for elem_anim in gap_elems:
                         prop_elem_anim = prop_elems.add()
@@ -360,10 +376,12 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         # Remove previous anims
         # Keep popping off front element
-        for _ in range(len(gap_anims)):
+        for _ in range(len(normal_gap_anims)):
             self.test_anims.remove(0)
-
         self.test_anims_idx = 0 if len(self.test_anims) else -1
+        for _ in range(len(blend_gap_anims)):
+            self.test_blend_anims.remove(0)
+        self.test_blend_anims_idx = 0 if len(self.test_blend_anims) else -1
 
     def remove_from_nla(self, bpy_object):
         if bpy_object.animation_data is None:
@@ -380,4 +398,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         ad = bpy_object.animation_data
         for prop_anim in self.test_anims:
+            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.category, prop_anim.name)
+
+        for prop_anim in self.test_blend_anims:
             prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.category, prop_anim.name)
