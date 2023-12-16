@@ -134,16 +134,16 @@ class EPLFlashPolygonRing(Serializable):
     def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_obj(self.unknown_0x04, version)
-        self.unknown_0x08 = self.rw_uint32(self.unknown_0x08)
-        self.unknown_0x0C = self.rw_uint32(self.unknown_0x0C)
+        self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
         
-        self.unknown_0x10 = self.rw_float32s(self.unknown_0x10, 2)
-        self.unknown_0x18 = self.rw_float32s(self.unknown_0x18, 2)
-        self.unknown_0x20 = self.rw_float32s(self.unknown_0x20, 2)
-        self.unknown_0x28 = self.rw_float32s(self.unknown_0x28, 2)
+        self.unknown_0x10 = rw.rw_float32s(self.unknown_0x10, 2)
+        self.unknown_0x18 = rw.rw_float32s(self.unknown_0x18, 2)
+        self.unknown_0x20 = rw.rw_float32s(self.unknown_0x20, 2)
+        self.unknown_0x28 = rw.rw_float32s(self.unknown_0x28, 2)
         
-        self.unknown_0x30 = self.rw_float32(self.unknown_0x30)
-        self.unknown_0x34 = self.rw_uint32(self.unknown_0x34) # Flags?
+        self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
+        self.unknown_0x34 = rw.rw_uint32(self.unknown_0x34) # Flags?
 
 
 class EPLFlashPolygonSplash(Serializable):
@@ -199,10 +199,10 @@ class EPLFlashPolygonCylinder(Serializable):
             CommonType = EPLLeafCommonData2
         self.unknown_0x04 = rw.rw_new_obj(self.unknown_0x04, lambda: CommonType(self.context.endianness), version)
 
-        self.unknown_0x08 = self.rw_float32s(self.unknown_0x08, 2)
-        self.unknown_0x10 = self.rw_float32s(self.unknown_0x10, 2)
-        self.unknown_0x18 = self.rw_float32s(self.unknown_0x18, 2)
-        self.unknown_0x20 = self.rw_float32(self.unknown_0x20)
-        self.unknown_0x24 = self.rw_float32s(self.unknown_0x24, 2)
-        self.unknown_0x2C = self.rw_float32(self.unknown_0x2C)
-        self.unknown_0x30 = self.rw_uint32(self.unknown_0x30) # Flags?
+        self.unknown_0x08 = rw.rw_float32s(self.unknown_0x08, 2)
+        self.unknown_0x10 = rw.rw_float32s(self.unknown_0x10, 2)
+        self.unknown_0x18 = rw.rw_float32s(self.unknown_0x18, 2)
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32s(self.unknown_0x24, 2)
+        self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
+        self.unknown_0x30 = rw.rw_uint32(self.unknown_0x30) # Flags?
