@@ -73,6 +73,7 @@ class BaseTypedAnimation:
         # other when they get shifted to the correct position in the track
         for prop_strip in reversed(sorted(self.strips, key=lambda strip: strip.frame_start_ui)):
             prop_strip.to_nla_strip(track)
+        return track
 
 
 class NodeAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
@@ -162,7 +163,8 @@ class AnimationProperties(bpy.types.PropertyGroup):
     active_property_idx: bpy.props.IntProperty(options={'HIDDEN'})
 
     # Animation Data
-    has_blendscale_animation:  bpy.props.BoolProperty(name="Has Scale Animation")
+    has_node_animation:        bpy.props.BoolProperty(name="Has Node Animation", default=True)
+    has_blendscale_animation:  bpy.props.BoolProperty(name="Has Scale Animation", default=False)
     node_animation:            bpy.props.PointerProperty(type=NodeAnimationProperties)
     blendscale_node_animation: bpy.props.PointerProperty(type=NodeAnimationProperties)
     material_animations:       bpy.props.CollectionProperty(type=MaterialAnimationProperties)
@@ -302,6 +304,15 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     ###########
     # NEW API #
     ###########
+    class NLAOrganizerStruct:
+        def __init__(self):
+            self.node_nla = None
+            self.node_scale_nla = None
+            self.material_nlas = []
+            self.camera_nlas = []
+            self.type4_nlas = []
+            self.morph_nlas = []
+
     def is_track_tagged_as_this_pack(self, nla_track):
         gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
         return gap_name == self.name
@@ -337,50 +348,79 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             out[anim.name] = anim
         return out
 
+    def set_anim_keyframes(self, nla_organizer, prop_anim, bpy_object):
+        if nla_organizer.node_nla is not None:
+            prop_anim.has_node_animation = True
+            prop_anim.node_animation.from_nla_track(nla_organizer.node_nla, bpy_object.name)
+        else:
+            prop_anim.has_node_animation = False
+            prop_anim.node_animation.strips.clear()
+        if nla_organizer.node_scale_nla is not None:
+            prop_anim.has_blendscale_animation = True
+            prop_anim.blendscale_node_animation.from_nla_track(nla_organizer.node_scale_nla, bpy_object.name)
+        else:
+            prop_anim.has_blendscale_animation = False
+            prop_anim.blendscale_node_animation.strips.clear()
+
+        # if anim_name in gap_anims:
+        #     gap_anim = gap_anims[anim_name]
+        #     for elem in ["material_animations", "camera_animations", "type4_animations", "morph_animations"]:
+        #         gap_elems = getattr(gap_anim, elem)
+        #         prop_elems = getattr(prop_anim, elem)
+        #         for elem_anim in gap_elems:
+        #             prop_elem_anim = prop_elems.add()
+        #             prop_elem_anim.from_nla_track(elem_anim, elem_anim.name)
+        #     prop_anim.unimported_tracks = gap_anim.unimported_tracks
+
+    def locate_anim_index(self, anim_collection, anim_name):
+        for i, anim in enumerate(anim_collection):
+            if anim.name == anim_name:
+                return i
+        return -1
+
+    def update_animation_subset(self, bpy_object, nla_packets, existing_anim_names, prop_anim_collection):
+        for i, (anim_name, org) in enumerate(nla_packets.items()):
+            if anim_name in existing_anim_names:
+                old_index = self.locate_anim_index(prop_anim_collection, anim_name)
+                prop_anim = prop_anim_collection[old_index]
+            else:
+                prop_anim = prop_anim_collection.add()
+                prop_anim.name = anim_name
+                old_index = len(prop_anim_collection)-1
+            self.set_anim_keyframes(org, prop_anim, bpy_object)
+            prop_anim_collection.move(old_index, i)
+
+        new_collection_size = len(existing_anim_names)
+        current_collection_size = len(prop_anim_collection)
+        for _ in range(current_collection_size-new_collection_size):
+            prop_anim_collection.remove(new_collection_size)
+
     def update_from_nla(self, bpy_object):
         if bpy_object.animation_data is None:
             return
 
         nla_tracks = self.relevant_nla_to_list(bpy_object)
-        normal_gap_anims  = self.anims_as_dict()
-        blend_gap_anims   = self.blend_anims_as_dict()
 
-        # Now store the tracks on the GAP
+        normal_nlas = defaultdict(self.NLAOrganizerStruct)
+        blend_nlas  = defaultdict(self.NLAOrganizerStruct)
+        lookat_nlas = {}
+
+        # Package NLAs into combined Animations
         for nla_track in nla_tracks:
             _, category, anim_name = gapnames_from_nlatrack(nla_track)
             if category == "NORMAL":
-                gap_anims = normal_gap_anims
-                prop_anim = self.test_anims.add()
+                normal_nlas[anim_name].node_nla = nla_track
             elif category == "BLEND":
-                gap_anims = blend_gap_anims
-                prop_anim = self.test_blend_anims.add()
-                prop_anim.category = "BLEND"
+                blend_nlas[anim_name].node_nla = nla_track
+            elif category == "BLENDSCALE":
+                blend_nlas[anim_name].node_scale_nla = nla_track
             else:
                 raise NotImplementedError(f"CRITICAL INTERNAL ERROR - UNIMPLEMENTED ANIM TYPE '{category}'")
 
-            prop_anim.name = anim_name
-            prop_anim.node_animation.from_nla_track(nla_track, bpy_object.name)
-
-            # TODO: BLENDSCALE ANIMS!!!!
-            # blendscale_node_animation: bpy.props.PointerProperty(type=NodeAnimationProperties)
-
-            if anim_name in gap_anims:
-                gap_anim = gap_anims[anim_name]
-                for elem in ["material_animations", "camera_animations", "type4_animations", "morph_animations"]:
-                    gap_elems  = getattr(gap_anim, elem)
-                    prop_elems = getattr(prop_anim, elem)
-                    for elem_anim in gap_elems:
-                        prop_elem_anim = prop_elems.add()
-                        prop_elem_anim.from_nla_track(elem_anim, elem_anim.name)
-                prop_anim.unimported_tracks = gap_anim.unimported_tracks
-
-        # Remove previous anims
-        # Keep popping off front element
-        for _ in range(len(normal_gap_anims)):
-            self.test_anims.remove(0)
+        self.update_animation_subset(bpy_object, normal_nlas, self.anims_as_dict(), self.test_anims)
         self.test_anims_idx = 0 if len(self.test_anims) else -1
-        for _ in range(len(blend_gap_anims)):
-            self.test_blend_anims.remove(0)
+
+        self.update_animation_subset(bpy_object, blend_nlas, self.blend_anims_as_dict(), self.test_blend_anims)
         self.test_blend_anims_idx = 0 if len(self.test_blend_anims) else -1
 
     def remove_from_nla(self, bpy_object):
@@ -397,8 +437,20 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             bpy_object.animation_data_create()
 
         ad = bpy_object.animation_data
+        # Normal anims
         for prop_anim in self.test_anims:
-            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.category, prop_anim.name)
+            track = prop_anim.node_animation.to_nla_track(ad, self.name, "NORMAL", prop_anim.name)
+            for strip in track.strips:
+                strip.blend_type = "REPLACE"
 
+        # Blend anims
         for prop_anim in self.test_blend_anims:
-            prop_anim.node_animation.to_nla_track(ad, self.name, prop_anim.category, prop_anim.name)
+            if prop_anim.has_node_animation:
+                track = prop_anim.node_animation.to_nla_track(ad, self.name, "BLEND", prop_anim.name)
+                for strip in track.strips:
+                    strip.blend_type = "COMBINE"
+            if prop_anim.has_blendscale_animation:
+                track = prop_anim.blendscale_node_animation.to_nla_track(ad, self.name, "BLENDSCALE", prop_anim.name)
+                for strip in track.strips:
+                    strip.blend_type = "ADD"
+
