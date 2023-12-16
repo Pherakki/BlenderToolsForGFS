@@ -61,7 +61,7 @@ class EplLightSceneData(Serializable):
         
     def read_write(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
-        self.unknown_0x04 = rw.rw_float32s(self.unknown_0x04)
+        self.unknown_0x04 = rw.rw_float32s(self.unknown_0x04, 2)
         self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
         self.unknown_0x10 = rw.rw_uint32(self.unknown_0x10)
         self.unknown_0x14 = rw.rw_uint32(self.unknown_0x14)
