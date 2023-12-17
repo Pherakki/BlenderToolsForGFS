@@ -410,7 +410,7 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
 
     # LookAt animations
     if gfs_anim.lookat_animations is not None:
-        prop_anim_from_gfs_anim(ap_props, prop_anim, gap_name, anim_name + "_" + anim_type, gfs_anim.lookat_animations, bpy_armature_obj, import_animations, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, gap_name, anim_name + "_" + anim_type, gfs_anim.lookat_animations, bpy_armature_obj, import_policies, gfs_to_bpy_bone_map)
 
 
 def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lookat_anims, bpy_armature_object, import_policies, gfs_to_bpy_bone_map):
@@ -418,6 +418,7 @@ def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lo
     anim_left  = f"{anim_name}_left"
     anim_up    = f"{anim_name}_up"
     anim_down  = f"{anim_name}_down"
+
     prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
     prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
     prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
