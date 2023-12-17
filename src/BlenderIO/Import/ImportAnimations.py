@@ -44,34 +44,37 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     bpy.ops.object.mode_set(mode="POSE")
 
     if get_preferences().wip_animation_import and get_preferences().developer_mode:
+        # Base Animations
         for anim_idx, anim in enumerate(gfs.animations):
-            prop_anim = ap_props.test_anims.add()
-            prop_anim.name = str(anim_idx)
-            action_name = gapnames_to_nlatrack(filename, prop_anim.category, prop_anim.name)
-            prop_anim_from_gfs_anim(action_name, prop_anim, anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
+            prop_anim_from_gfs_anim(ap_props, filename, "NORMAL", str(anim_idx), anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
 
-            # Delay this...
-            # prop_anim.node_animation.to_nla_track(bpy_armature_object.animation_data, filename, prop_anim.name)
+        # Blend Animations
         for anim_idx, anim in enumerate(gfs.blend_animations):
-            prop_anim = ap_props.test_blend_anims.add()
-            prop_anim.category = "BLEND"
-            prop_anim.name = str(anim_idx)
-            action_name = gapnames_to_nlatrack(filename, prop_anim.category, prop_anim.name)
-            prop_anim_from_gfs_anim(action_name, prop_anim, anim, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+            prop_anim_from_gfs_anim(ap_props, filename, "BLEND", str(anim_idx), anim, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+
+        # Lookat Animations
+        if gfs.lookat_animations is not None:
+            prop_anim_from_gfs_lookat_anims(ap_props, ap_props, filename, "root", gfs.lookat_animations, bpy_armature_object, import_policies, gfs_to_bpy_bone_map)
 
     else:
+        # Base Animations
         for anim_idx, anim in enumerate(gfs.animations):
             action = add_animation(f"{filename}_{anim_idx}", anim, bpy_armature_object, is_blend=False, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
 
             if anim.lookat_animations is not None:
                 import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
 
+        # Blend Animations
         for anim_idx, anim in enumerate(gfs.blend_animations):
             action = add_animation(f"{filename}_blend_{anim_idx}", anim, bpy_armature_object, is_blend=True, import_policies=import_policies, gfs_to_bpy_bone_map=gfs_to_bpy_bone_map)
 
             if anim.lookat_animations is not None:
                 import_lookat_animations(action.GFSTOOLS_AnimationProperties, bpy_armature_object, anim.lookat_animations, f"{filename}_blend_{anim_idx}", gfs_to_bpy_bone_map, import_policies=import_policies, )
-    
+
+        # Lookat Animations
+        if gfs.lookat_animations is not None:
+            import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map, import_policies=import_policies)
+
     ap_props.version = f"0x{gfs.version:0>8x}"
     ap_props.name = filename
     ap_props.flag_0  = gfs.anim_flag_0
@@ -105,12 +108,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     ap_props.flag_29 = gfs.anim_flag_29
     ap_props.flag_30 = gfs.anim_flag_30
     ap_props.flag_31 = gfs.anim_flag_31
-    
-    
-    # Lookat Animations
-    if gfs.lookat_animations is not None:
-        import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map, import_policies=import_policies)
-    
+
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.objects.active = prev_obj
 
@@ -255,13 +253,23 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def prop_anim_from_gfs_anim(anim_name, prop_anim, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
+def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
     ####################
     # SET UP VARIABLES #
     ####################
-    nodes_action = bpy.data.actions.new(anim_name)
+    if   anim_type == "NORMAL": prop_collection = ap_props.test_anims
+    elif anim_type == "BLEND":  prop_collection = ap_props.test_blend_anims
+    elif anim_type == "LOOKAT": prop_collection = ap_props.test_lookat_anims
+    else:
+        raise NotImplementedError(f"CRITICAL INTERNAL ERROR: UNKNOWN ANIM TYPE '{anim_type}'")
+
+    prop_anim = prop_collection.add()
+    prop_anim.name = anim_name
+    action_name = gapnames_to_nlatrack(gap_name, anim_type, prop_anim.name)
+
+    nodes_action = bpy.data.actions.new(action_name)
     if is_blend:
-        scale_action = bpy.data.actions.new(anim_name + "_scale")
+        scale_action = bpy.data.actions.new(action_name + "_scale")
         scale_action.GFSTOOLS_AnimationProperties.category = "BLENDSCALE"
 
     bpy_bones = bpy_armature_obj.data.bones
@@ -365,10 +373,7 @@ def prop_anim_from_gfs_anim(anim_name, prop_anim, gfs_anim, bpy_armature_obj, is
         boxprops.max_dims = np.max([maxd, mind], axis=0)
         boxprops.min_dims = np.min([maxd, mind], axis=0)
 
-    if is_blend:
-        prop_anim.category = "BLEND"
-    else:
-        prop_anim.category = "NORMAL"
+    prop_anim.category = anim_type
 
     # Store unimported data as a blob
     ai = AnimationInterface()
@@ -402,6 +407,31 @@ def prop_anim_from_gfs_anim(anim_name, prop_anim, gfs_anim, bpy_armature_obj, is
         # Add blob
         item = prop_anim.epls.add()
         item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+
+    # LookAt animations
+    if gfs_anim.lookat_animations is not None:
+        prop_anim_from_gfs_anim(ap_props, prop_anim, gap_name, anim_name + "_" + anim_type, gfs_anim.lookat_animations, bpy_armature_obj, import_animations, gfs_to_bpy_bone_map)
+
+
+def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lookat_anims, bpy_armature_object, import_policies, gfs_to_bpy_bone_map):
+    anim_right = f"{anim_name}_right"
+    anim_left  = f"{anim_name}_left"
+    anim_up    = f"{anim_name}_up"
+    anim_down  = f"{anim_name}_down"
+    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_down,  lookat_anims.down,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+
+    prop_anim.has_lookat_anims = True
+    prop_anim.test_lookat_right = anim_right
+    prop_anim.test_lookat_left  = anim_left
+    prop_anim.test_lookat_up    = anim_up
+    prop_anim.test_lookat_down  = anim_down
+    prop_anim.lookat_right_factor = lookat_anims.right_factor
+    prop_anim.lookat_left_factor  = lookat_anims.left_factor
+    prop_anim.lookat_up_factor    = lookat_anims.up_factor
+    prop_anim.lookat_down_factor  = lookat_anims.down_factor
 
 
 def add_animation(track_name, anim, armature, is_blend, import_policies, gfs_to_bpy_bone_map=None):

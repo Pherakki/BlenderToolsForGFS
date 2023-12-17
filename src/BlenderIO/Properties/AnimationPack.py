@@ -150,10 +150,10 @@ class AnimationProperties(bpy.types.PropertyGroup):
     
     # Only for Normal animations
     has_lookat_anims:    bpy.props.BoolProperty(name="LookAt Anims")
-    lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
-    lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
-    lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
-    lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
+    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
+    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
+    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
+    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
@@ -226,6 +226,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     test_blend_anims:      bpy.props.CollectionProperty(type=AnimationProperties)
     test_blend_anims_idx:  bpy.props.IntProperty(default=-1)
     test_lookat_anims:     bpy.props.CollectionProperty(type=AnimationProperties)
+    test_lookat_anims_idx: bpy.props.IntProperty(default=-1)
 
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
@@ -348,6 +349,12 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             out[anim.name] = anim
         return out
 
+    def lookat_anims_as_dict(self):
+        out = {}
+        for i, anim in enumerate(self.test_lookat_anims):
+            out[anim.name] = anim
+        return out
+
     def set_anim_keyframes(self, nla_organizer, prop_anim, bpy_object):
         if nla_organizer.node_nla is not None:
             prop_anim.has_node_animation = True
@@ -403,7 +410,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         normal_nlas = defaultdict(self.NLAOrganizerStruct)
         blend_nlas  = defaultdict(self.NLAOrganizerStruct)
-        lookat_nlas = {}
+        lookat_nlas = defaultdict(self.NLAOrganizerStruct)
 
         # Package NLAs into combined Animations
         for nla_track in nla_tracks:
@@ -414,6 +421,10 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
                 blend_nlas[anim_name].node_nla = nla_track
             elif category == "BLENDSCALE":
                 blend_nlas[anim_name].node_scale_nla = nla_track
+            elif category == "LOOKAT":
+                lookat_nlas[anim_name].node_nla = nla_track
+            elif category == "LOOKATSCALE":
+                lookat_nlas[anim_name].node_scale_nla = nla_track
             else:
                 raise NotImplementedError(f"CRITICAL INTERNAL ERROR - UNIMPLEMENTED ANIM TYPE '{category}'")
 
@@ -422,6 +433,9 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         self.update_animation_subset(bpy_object, blend_nlas, self.blend_anims_as_dict(), self.test_blend_anims)
         self.test_blend_anims_idx = 0 if len(self.test_blend_anims) else -1
+
+        self.update_animation_subset(bpy_object, lookat_nlas, self.lookat_anims_as_dict(), self.test_lookat_anims)
+        self.test_lookat_anims_idx = 0 if len(self.test_lookat_anims) else -1
 
     def remove_from_nla(self, bpy_object):
         if bpy_object.animation_data is None:
@@ -454,3 +468,13 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
                 for strip in track.strips:
                     strip.blend_type = "ADD"
 
+        # Lookat Anims
+        for prop_anim in self.test_lookat_anims:
+            if prop_anim.has_node_animation:
+                track = prop_anim.node_animation.to_nla_track(ad, self.name, "LOOKAT", prop_anim.name)
+                for strip in track.strips:
+                    strip.blend_type = "COMBINE"
+            if prop_anim.has_blendscale_animation:
+                track = prop_anim.blendscale_node_animation.to_nla_track(ad, self.name, "LOOKATSCALE", prop_anim.name)
+                for strip in track.strips:
+                    strip.blend_type = "ADD"
