@@ -341,19 +341,19 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     def anims_as_dict(self):
         out = {}
         for i, anim in enumerate(self.test_anims):
-            out[anim.name] = anim
+            out[anim.name] = i
         return out
 
     def blend_anims_as_dict(self):
         out = {}
         for i, anim in enumerate(self.test_blend_anims):
-            out[anim.name] = anim
+            out[anim.name] = i
         return out
 
     def lookat_anims_as_dict(self):
         out = {}
         for i, anim in enumerate(self.test_lookat_anims):
-            out[anim.name] = anim
+            out[anim.name] = i
         return out
 
     def set_anim_keyframes(self, nla_organizer, prop_anim, bpy_object):
