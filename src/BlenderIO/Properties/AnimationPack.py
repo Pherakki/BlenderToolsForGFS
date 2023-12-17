@@ -104,6 +104,7 @@ class MorphAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
 
 class AnimationProperties(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
+    is_active: bpy.props.BoolProperty(name="Active", default=False)  # Only used for blend/lookats
 
     category: bpy.props.EnumProperty(items=[
             ("NORMAL",     "Normal",      "Standard Animation"                                             ),

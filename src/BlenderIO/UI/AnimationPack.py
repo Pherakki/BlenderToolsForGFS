@@ -7,6 +7,7 @@ from ..modelUtilsTest.UI.UIList import UIListBase
 from ..Globals import NAMESPACE
 from ..Utils.Animation import gapnames_to_nlatrack, is_anim_restpose
 
+
 class SwitchAnimation(bpy.types.Operator):
     index: bpy.props.IntProperty()
 
@@ -27,7 +28,7 @@ class SwitchAnimation(bpy.types.Operator):
         gap = mprops.get_selected_gap()
 
         anim = gap.test_anims[self.index]
-        name = gapnames_to_nlatrack(gap.name, anim.category, anim.name)
+        name = gapnames_to_nlatrack(gap.name, "NORMAL", anim.name)
 
         # Reset armature pose, deactivate tracks
         for nla_track in anim_data.nla_tracks:
@@ -59,7 +60,105 @@ class OBJECT_UL_GFSToolsAnimationUIList(bpy.types.UIList):
         icon_name = "SOLO_ON" if index == gap.active_anim_idx else "SOLO_OFF"
         op = layout.operator(SwitchAnimation.bl_idname, icon=icon_name, emboss=False)
         op.index = index
-        layout.prop(item, "name", text="", emboss=False)
+        if gap.is_active:
+            layout.label(text=item.name)
+        else:
+            layout.prop(item, "name", text="", emboss=False)
+
+
+class ToggleBlendAnimation(bpy.types.Operator):
+    index: bpy.props.IntProperty()
+
+    bl_label   = ""
+    bl_idname = f"{NAMESPACE}.toggleblendanimation"
+    bl_options = {"UNDO", "REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        return mprops.is_selected_gap_active()
+
+    def execute(self, context):
+        bpy_armature_object = context.active_object
+        anim_data           = bpy_armature_object.animation_data
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        anim = gap.test_blend_anims[self.index]
+        anim.is_active = not anim.is_active
+        name = gapnames_to_nlatrack(gap.name, "BLEND", anim.name)
+        name2 = gapnames_to_nlatrack(gap.name, "BLENDSCALE", anim.name)
+
+        names = set((name, name2))
+
+        for nla_track in anim_data.nla_tracks:
+            if nla_track.name in names:
+                nla_track.mute = not anim.is_active
+
+        return {'FINISHED'}
+
+
+class OBJECT_UL_GFSToolsBlendAnimationUIList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        icon_name = "CHECKBOX_HLT" if gap.test_blend_anims[index].is_active else "CHECKBOX_DEHLT"
+        op = layout.operator(ToggleBlendAnimation.bl_idname, icon=icon_name, emboss=False)
+        op.index = index
+        if gap.is_active:
+            layout.label(text=item.name)
+        else:
+            layout.prop(item, "name", text="", emboss=False)
+
+
+class ToggleLookAtAnimation(bpy.types.Operator):
+    index: bpy.props.IntProperty()
+
+    bl_label   = ""
+    bl_idname = f"{NAMESPACE}.togglelookatanimation"
+    bl_options = {"UNDO", "REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        return mprops.is_selected_gap_active()
+
+    def execute(self, context):
+        bpy_armature_object = context.active_object
+        anim_data           = bpy_armature_object.animation_data
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        anim = gap.test_lookat_anims[self.index]
+        anim.is_active = not anim.is_active
+        name = gapnames_to_nlatrack(gap.name, "LOOKAT", anim.name)
+        name2 = gapnames_to_nlatrack(gap.name, "LOOKATSCALE", anim.name)
+        names = set((name, name2))
+
+        for nla_track in anim_data.nla_tracks:
+            if nla_track.name in names:
+                nla_track.mute = not anim.is_active
+
+        return {'FINISHED'}
+
+
+class OBJECT_UL_GFSToolsLookAtAnimationUIList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        bpy_armature_object = context.active_object
+        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        icon_name = "CHECKBOX_HLT" if gap.test_lookat_anims[index].is_active else "CHECKBOX_DEHLT"
+        op = layout.operator(ToggleLookAtAnimation.bl_idname, icon=icon_name, emboss=False)
+        op.index = index
+        if gap.is_active:
+            layout.label(text=item.name)
+        else:
+            layout.prop(item, "name", text="", emboss=False)
 
 
 _uilist = UIListBase(
@@ -73,6 +172,28 @@ _uilist = UIListBase(
 )
 setattr(_uilist, "poll", classmethod(lambda cls, context: get_preferences().developer_mode))
 
+_uilist_blend = UIListBase(
+    NAMESPACE,
+    "GAPBlendAnims",
+    OBJECT_UL_GFSToolsBlendAnimationUIList,
+    "test_blend_anims",
+    "test_blend_anims_idx",
+    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties.get_selected_gap(),
+    extra_collection_indices=[]
+)
+setattr(_uilist_blend, "poll", classmethod(lambda cls, context: get_preferences().developer_mode))
+
+_uilist_lookat = UIListBase(
+    NAMESPACE,
+    "GAPLookAtAnims",
+    OBJECT_UL_GFSToolsLookAtAnimationUIList,
+    "test_lookat_anims",
+    "test_lookat_anims_idx",
+    lambda ctx: ctx.armature.GFSTOOLS_ModelProperties.get_selected_gap(),
+    extra_collection_indices=[]
+)
+setattr(_uilist_lookat, "poll", classmethod(lambda cls, context: get_preferences().developer_mode))
+
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     bl_label       = "GFS Animation Pack"
@@ -83,7 +204,9 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     bl_context     = "data"
     bl_options     = {'DEFAULT_CLOSED'}
 
-    ANIM_LIST = _uilist()
+    ANIM_LIST        = _uilist()
+    BLEND_ANIM_LIST  = _uilist_blend()
+    LOOKAT_ANIM_LIST = _uilist_lookat()
 
     @classmethod
     def poll(self, context):
@@ -158,6 +281,8 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
 
         if get_preferences().developer_mode:
             self.ANIM_LIST.draw(layout, context)
+            self.BLEND_ANIM_LIST.draw(layout, context)
+            self.LOOKAT_ANIM_LIST.draw(layout, context)
 
     AnimationPackHelpWindow = defineHelpWindow("AnimationPack",
         "- 'Unknown Flags' are unknown. Only Flag 3 appears to be used and may do something.\n"\
@@ -168,12 +293,24 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     def register(cls):
         bpy.utils.register_class(cls.AnimationPackHelpWindow)
         bpy.utils.register_class(SwitchAnimation)
+        bpy.utils.register_class(ToggleBlendAnimation)
+        bpy.utils.register_class(ToggleLookAtAnimation)
         bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationUIList)
+        bpy.utils.register_class(OBJECT_UL_GFSToolsBlendAnimationUIList)
+        bpy.utils.register_class(OBJECT_UL_GFSToolsLookAtAnimationUIList)
         _uilist.register()
+        _uilist_blend.register()
+        _uilist_lookat.register()
     
     @classmethod
     def unregister(cls):
         bpy.utils.unregister_class(cls.AnimationPackHelpWindow)
         bpy.utils.unregister_class(SwitchAnimation)
+        bpy.utils.unregister_class(ToggleBlendAnimation)
+        bpy.utils.unregister_class(ToggleLookAtAnimation)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationUIList)
+        bpy.utils.unregister_class(OBJECT_UL_GFSToolsBlendAnimationUIList)
+        bpy.utils.unregister_class(OBJECT_UL_GFSToolsLookAtAnimationUIList)
         _uilist.unregister()
+        _uilist_blend.register()
+        _uilist_lookat.register()
