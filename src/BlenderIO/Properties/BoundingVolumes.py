@@ -30,8 +30,7 @@ def define_bounding_box(bbox_type):
                 row = col.row()
                 row.prop(self, "max_dims")
                 self.mesh.draw_operator(col)
-            
-    
+
     return BoundingBox
 
 
