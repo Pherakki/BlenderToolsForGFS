@@ -15,6 +15,7 @@ from .Nodes import make_node_props_class
 from .Physics import GFSToolsPhysicsProperties
 from .AnimationPack import GFSToolsAnimationPackProperties
 from .MixIns.Version import GFSVersionedProperty
+from ..Preferences import get_preferences
 
 
 def get_box_props(context):
@@ -172,7 +173,10 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
         return self._internal_get_gap(self.animation_pack_idx, "SELECTED")
 
     def is_selected_gap_active(self):
-        return self.animation_pack_idx == self.active_animation_pack_idx
+        if get_preferences().wip_animation_import and get_preferences().developer_mode:
+            return self.get_selected_gap().is_active
+        else:
+            return self.animation_pack_idx == self.active_animation_pack_idx
 
     def is_internal_gap_active(self):
         return self.active_animation_pack_idx == self.internal_animation_pack_idx
