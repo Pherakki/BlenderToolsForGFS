@@ -1,6 +1,7 @@
 import bpy
-from ..Utils.Object import get_model_props
-from ..Utils.PhysicsGen import make_collider, repair_col_material, get_col_material
+
+from ...Utils.Object import get_model_props
+from ...Utils.PhysicsGen import make_collider, repair_col_material, get_col_material
 
 
 class BoneEditBox(bpy.types.Operator):

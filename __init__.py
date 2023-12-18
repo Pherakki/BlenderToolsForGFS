@@ -78,8 +78,7 @@ def init_bpy():
     from .src.BlenderIO.UI.Materials     import OBJECT_PT_GFSToolsMaterialVertexAttributePanel
     from .src.BlenderIO.UI.Meshes        import OBJECT_PT_GFSToolsMeshAttributesPanel
     from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsModelDataPanel
-    from .src.BlenderIO.UI.Model         import OBJECT_PT_GFSToolsAnimationDataPanel
-    from .src.BlenderIO.UI.Physics       import OBJECT_PT_GFSToolsColliderPanel
+    from .src.BlenderIO.UI.Model.PhysicsSubPanel import OBJECT_PT_GFSToolsColliderPanel
     from .src.BlenderIO.UI.RegisterWindow import RegisterWindow
     from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
     from .src.BlenderIO.Globals          import ErrorLogger
@@ -142,7 +141,6 @@ def init_bpy():
         OBJECT_PT_GFSToolsMaterialVertexAttributePanel,
         OBJECT_PT_GFSToolsMeshAttributesPanel,
         OBJECT_PT_GFSToolsModelDataPanel,
-        OBJECT_PT_GFSToolsAnimationDataPanel,
         OBJECT_PT_GFSToolsAnimationPackDataPanel,
         OBJECT_PT_GFSToolsTextureRefPanel,
         OBJECT_PT_GFSToolsImagePanel,
