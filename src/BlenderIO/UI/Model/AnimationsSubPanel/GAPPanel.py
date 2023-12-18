@@ -4,8 +4,9 @@ from ....Globals import NAMESPACE
 from ....modelUtilsTest.API.Icon import icon_lookup
 from ....modelUtilsTest.UI.UIList import UIListBase
 from ....Preferences import get_preferences
-from .BaseAnimationSubPanel import OBJECT_UL_GFSToolsActivateAnimationUIList
-from .BlendAnimationSubPanel import OBJECT_UL_GFSToolsActivateBlendAnimationUIList
+from .BaseAnimationSubPanel import OBJECT_UL_GFSToolsActivateAnimationUIList, SwitchAnimation, ToggleLookAtAnimation
+from .BlendAnimationSubPanel import OBJECT_UL_GFSToolsActivateBlendAnimationUIList, ToggleBlendAnimation
+from .PropertiesSubPanel import OBJECT_PT_GFSToolsAnimationPackDataPanel
 
 BLANK_ID = icon_lookup["BLANK1"]
 INTRL_ID = icon_lookup["GROUP"]
@@ -228,6 +229,19 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
     def poll(cls, context):
         return context.armature is not None
 
+    def _draw_lookat(self, layout, gap, lookat_lookup, anim_name, icon_name):
+        row = layout.row()
+        row.scale_x = 0.6
+        row.label(icon=icon_name)
+
+        lookat_idx = lookat_lookup.get(anim_name, -1)
+        if lookat_idx > -1:
+            icon_name = "CHECKBOX_HLT" if gap.test_lookat_anims[lookat_idx].is_active else "CHECKBOX_DEHLT"
+            op = layout.operator(ToggleLookAtAnimation.bl_idname, icon=icon_name, emboss=False)
+            op.index = lookat_idx
+        else:
+            row.label(icon="CHECKBOX_DEHLT")
+
     def draw(self, context):
         armature = context.armature
         layout = self.layout
@@ -247,6 +261,16 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
 
         if get_preferences().wip_animation_import and get_preferences().developer_mode:
             gap = aprops.get_selected_gap()
+
+            lookat_row = ctr.row()
+            lookat_row.label(text="Root LookAts:")
+            lookat_lookup = gap.lookat_anims_as_dict()
+
+            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_left, "TRIA_LEFT")
+            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_up, "TRIA_UP")
+            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_right, "TRIA_RIGHT")
+            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_down, "TRIA_DOWN")
+
             ctr.label(text="Base Animations")
             ctr.template_list(OBJECT_UL_GFSToolsActivateAnimationUIList.__name__, "", gap, "test_anims", gap,
                               "test_anims_idx")
@@ -257,20 +281,28 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
 
     @classmethod
     def register(cls):
+        bpy.utils.register_class(SwitchAnimation)
+        bpy.utils.register_class(ToggleBlendAnimation)
+        bpy.utils.register_class(ToggleLookAtAnimation)
         bpy.utils.register_class(OBJECT_UL_GFSToolsAnimationPackUIList)
         bpy.utils.register_class(ToggleActiveAnimationPack)
         bpy.utils.register_class(SetActiveAnimationPack)
         bpy.utils.register_class(SetInternalAnimationPack)
         bpy.utils.register_class(OBJECT_UL_GFSToolsActivateAnimationUIList)
         bpy.utils.register_class(OBJECT_UL_GFSToolsActivateBlendAnimationUIList)
+        bpy.utils.register_class(OBJECT_PT_GFSToolsAnimationPackDataPanel)
         _uilist.register()
 
     @classmethod
     def unregister(cls):
+        bpy.utils.unregister_class(SwitchAnimation)
+        bpy.utils.unregister_class(ToggleBlendAnimation)
+        bpy.utils.unregister_class(ToggleLookAtAnimation)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsAnimationPackUIList)
         bpy.utils.unregister_class(ToggleActiveAnimationPack)
         bpy.utils.unregister_class(SetActiveAnimationPack)
         bpy.utils.unregister_class(SetInternalAnimationPack)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsActivateAnimationUIList)
         bpy.utils.unregister_class(OBJECT_UL_GFSToolsActivateBlendAnimationUIList)
+        bpy.utils.unregister_class(OBJECT_PT_GFSToolsAnimationPackDataPanel)
         _uilist.unregister()

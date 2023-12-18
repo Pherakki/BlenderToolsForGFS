@@ -236,25 +236,25 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
     ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION INDEX '{idx}'"
 
-    def get_anim(self, idx, msg="list index out of range"):
-        if not len(self.test_anims):
+    def get_anim(self, collection, idx, msg="list index out of range"):
+        if not len(collection):
             return None
         elif idx == -1:
             return None
-        elif idx < len(self.test_anims):
-            return self.test_anims[idx]
+        elif idx < len(collection):
+            return collection[idx]
         else:
             raise IndexError(msg)
 
-    def _internal_get_anim(self, idx, msg):
+    def _internal_get_anim(self, collection, idx, msg):
         err_msg = self.ERROR_TEMPLATE.format(msg=msg, idx=idx)
-        return self.get_anim(idx, err_msg)
+        return self.get_anim(collection, idx, err_msg)
 
     def get_selected_anim(self):
-        return self._internal_get_anim(self.test_anims_idx, "SELECTED")
+        return self._internal_get_anim(self.test_anims, self.test_anims_idx, "SELECTED")
 
     def get_active_anim(self):
-        return self._internal_get_anim(self.active_anim_idx, "ACTIVE")
+        return self._internal_get_anim(self.test_anims, self.active_anim_idx, "ACTIVE")
 
     def store_animation_pack(self, bpy_armature_object):
         gap_props = self
@@ -338,17 +338,26 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         return valid_tracks
 
+    def get_selected_base_anim(self):
+        return self._internal_get_anim(self.test_anims, self.test_anims_idx, "SELECTED BASE")
+
     def anims_as_dict(self):
         out = {}
         for i, anim in enumerate(self.test_anims):
             out[anim.name] = i
         return out
 
+    def get_selected_blend_anim(self):
+        return self._internal_get_anim(self.test_blend_anims, self.test_blend_anims_idx, "SELECTED BLEND")
+
     def blend_anims_as_dict(self):
         out = {}
         for i, anim in enumerate(self.test_blend_anims):
             out[anim.name] = i
         return out
+
+    def get_selected_lookat_anim(self):
+        return self._internal_get_anim(self.test_lookat_anims, self.test_lookat_anims_idx, "SELECTED LOOKAT")
 
     def lookat_anims_as_dict(self):
         out = {}

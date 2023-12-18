@@ -1,2 +1,1 @@
 from .ModelPanel import OBJECT_PT_GFSToolsModelDataPanel
-from .AnimationsSubPanel import SwitchAnimation, ToggleBlendAnimation, ToggleLookAtAnimation
