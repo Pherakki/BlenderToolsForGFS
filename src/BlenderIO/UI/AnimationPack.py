@@ -1,86 +1,11 @@
 import bpy
 from .HelpWindows import defineHelpWindow
-from .Model import OBJECT_PT_GFSToolsModelDataPanel
 from ..Preferences import get_preferences
 
 from ..modelUtilsTest.UI.UIList import UIListBase
 from ..Globals import NAMESPACE
 from ..Utils.Animation import gapnames_to_nlatrack, is_anim_restpose
-
-
-class SwitchAnimation(bpy.types.Operator):
-    index: bpy.props.IntProperty()
-
-    bl_label   = ""
-    bl_idname = f"{NAMESPACE}.switchanimation"
-    bl_options = {"UNDO", "REGISTER"}
-
-    @classmethod
-    def poll(cls, context):
-        bpy_armature_object = context.active_object
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        return mprops.is_selected_gap_active()
-
-    def execute(self, context):
-        bpy_armature_object = context.active_object
-        anim_data           = bpy_armature_object.animation_data
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        gap = mprops.get_selected_gap()
-
-        anim = gap.test_anims[self.index]
-        name = gapnames_to_nlatrack(gap.name, "NORMAL", anim.name)
-
-        # Reset armature pose, deactivate tracks
-        for nla_track in anim_data.nla_tracks:
-            nla_track.mute = True
-        for bone in bpy_armature_object.pose.bones:
-            bone.location            = (0., 0., 0.)
-            bone.rotation_quaternion = (1., 0., 0., 0.)
-            bone.rotation_euler      = (0., 0., 0.)
-            bone.scale               = (1., 1., 1.)
-
-        # Reactivate any necessary animations, set index
-        if gap.active_anim_idx == self.index:
-            gap.active_anim_idx = -1
-        else:
-            gap.active_anim_idx = self.index
-            for nla_track in anim_data.nla_tracks:
-                if nla_track.name == name or is_anim_restpose(nla_track):
-                    nla_track.mute = False
-
-        return {'FINISHED'}
-
-
-class ToggleLookAtAnimation(bpy.types.Operator):
-    index: bpy.props.IntProperty()
-
-    bl_label = ""
-    bl_idname = f"{NAMESPACE}.togglelookatanimation"
-    bl_options = {"UNDO", "REGISTER"}
-
-    @classmethod
-    def poll(cls, context):
-        bpy_armature_object = context.active_object
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        return mprops.is_selected_gap_active()
-
-    def execute(self, context):
-        bpy_armature_object = context.active_object
-        anim_data = bpy_armature_object.animation_data
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        gap = mprops.get_selected_gap()
-
-        anim = gap.test_lookat_anims[self.index]
-        anim.is_active = not anim.is_active
-        name = gapnames_to_nlatrack(gap.name, "LOOKAT", anim.name)
-        name2 = gapnames_to_nlatrack(gap.name, "LOOKATSCALE", anim.name)
-        names = set((name, name2))
-
-        for nla_track in anim_data.nla_tracks:
-            if nla_track.name in names:
-                nla_track.mute = not anim.is_active
-
-        return {'FINISHED'}
+from .Model import SwitchAnimation, ToggleBlendAnimation, ToggleLookAtAnimation
 
 
 class OBJECT_UL_GFSToolsAnimationUIList(bpy.types.UIList):
@@ -118,38 +43,6 @@ class OBJECT_UL_GFSToolsAnimationUIList(bpy.types.UIList):
             self._draw_lookat(layout, gap, lookat_lookup, item.test_lookat_right, "TRIA_RIGHT")
             self._draw_lookat(layout, gap, lookat_lookup, item.test_lookat_down , "TRIA_DOWN")
 
-
-class ToggleBlendAnimation(bpy.types.Operator):
-    index: bpy.props.IntProperty()
-
-    bl_label   = ""
-    bl_idname = f"{NAMESPACE}.toggleblendanimation"
-    bl_options = {"UNDO", "REGISTER"}
-
-    @classmethod
-    def poll(cls, context):
-        bpy_armature_object = context.active_object
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        return mprops.is_selected_gap_active()
-
-    def execute(self, context):
-        bpy_armature_object = context.active_object
-        anim_data           = bpy_armature_object.animation_data
-        mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-        gap = mprops.get_selected_gap()
-
-        anim = gap.test_blend_anims[self.index]
-        anim.is_active = not anim.is_active
-        name = gapnames_to_nlatrack(gap.name, "BLEND", anim.name)
-        name2 = gapnames_to_nlatrack(gap.name, "BLENDSCALE", anim.name)
-
-        names = set((name, name2))
-
-        for nla_track in anim_data.nla_tracks:
-            if nla_track.name in names:
-                nla_track.mute = not anim.is_active
-
-        return {'FINISHED'}
 
 
 class OBJECT_UL_GFSToolsBlendAnimationUIList(bpy.types.UIList):
@@ -218,7 +111,7 @@ setattr(_uilist_lookat, "poll", classmethod(lambda cls, context: get_preferences
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
     bl_label       = "GFS Animation Pack"
-    bl_parent_id   = OBJECT_PT_GFSToolsModelDataPanel.bl_idname
+    bl_parent_id   = "OBJECT_PT_GFSToolsAnimationDataPanel"
     bl_idname      = "OBJECT_PT_GFSToolsAnimationPackDataPanel"
     bl_space_type  = 'PROPERTIES'
     bl_region_type = 'WINDOW'
