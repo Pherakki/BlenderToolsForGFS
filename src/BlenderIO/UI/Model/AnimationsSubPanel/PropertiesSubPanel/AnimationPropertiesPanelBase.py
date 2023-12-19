@@ -98,6 +98,7 @@ def generate_panel(identifier, label, getter, collection_name, collection_idx_na
             layout = self.layout
 
             self.ANIM_LIST.draw(layout, context)
+            gap = mprops.get_selected_gap()
             props = getter(context)
             if props is not None:
                 # Flags
@@ -132,13 +133,13 @@ def generate_panel(identifier, label, getter, collection_name, collection_idx_na
                 flag_col.prop(props, "has_lookat_anims", text="Has LookAt Anims:")
                 if props.has_lookat_anims:
                     lookat_col = flag_col.column()
-                    lookat_col.prop(props, "test_lookat_up")
+                    lookat_col.prop_search(props, "test_lookat_up", gap, "test_lookat_anims")
                     lookat_col.prop(props, "lookat_up_factor")
-                    lookat_col.prop(props, "test_lookat_down")
+                    lookat_col.prop_search(props, "test_lookat_down", gap, "test_lookat_anims")
                     lookat_col.prop(props, "lookat_down_factor")
-                    lookat_col.prop(props, "test_lookat_left")
+                    lookat_col.prop_search(props, "test_lookat_left", gap, "test_lookat_anims")
                     lookat_col.prop(props, "lookat_left_factor")
-                    lookat_col.prop(props, "test_lookat_right")
+                    lookat_col.prop_search(props, "test_lookat_right", gap, "test_lookat_anims")
                     lookat_col.prop(props, "lookat_right_factor")
 
                 # EPLs
