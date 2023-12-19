@@ -187,3 +187,7 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     def has_internal_gap(self):
         return self.internal_animation_pack_idx > -1
 
+    def gaps_as_dict(self):
+        out = {}
+        for i, gap in enumerate(self.animation_packs):
+            out[gap.name] = i

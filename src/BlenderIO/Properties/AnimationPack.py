@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import bpy
 
+from ..Preferences import get_preferences
 from .Animations import poll_lookat_action
 from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
@@ -301,9 +302,42 @@ class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup
     test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="", get=define_lookat_getter("test_lookat_down"),  set=define_lookat_setter("test_lookat_down"))
 
 
+def define_gap_name_getter(lookup_name):
+    setter = define_gap_name_setter(lookup_name)
+
+    def getter(self):
+        if get_preferences().developer_mode and get_preferences().wip_animation_import:
+            if self.get("name") is None:
+                self["name"] = setter(self, "New Pack")
+        return self["name"]
+
+    return getter
+
+
+def define_gap_name_setter(lookup_name):
+    def setter(self, value):
+        if get_preferences().developer_mode and get_preferences().wip_animation_import:
+            if value == "":
+                return
+
+            bpy_armature = self.id_data
+            mprops = bpy_armature.GFSTOOLS_ModelProperties
+            gaps = mprops.gaps_as_dict()
+    
+            try:
+                while value in gaps:
+                    value = new_unique_name(value, gaps, max_idx=999, separator=".")
+            except ValueError:
+                return
+
+        self["name"] = value
+
+    return setter
+
+
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     is_active: bpy.props.BoolProperty(name="Active", default=False)
-    name:    bpy.props.StringProperty(name="Name", default="New Pack")
+    name:    bpy.props.StringProperty(name="Name", default="New Pack", get=define_gap_name_getter, set=define_gap_name_setter)
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")
     flag_3:  bpy.props.BoolProperty(name="Unknown Flag 3", default=True) # Enable morph anims?
