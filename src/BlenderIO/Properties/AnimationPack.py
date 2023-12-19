@@ -102,7 +102,82 @@ class MorphAnimationProperties(BaseTypedAnimation, bpy.types.PropertyGroup):
     pass
 
 
-class AnimationProperties(bpy.types.PropertyGroup):
+def ShowMessageBox(message="", title="Message Box", icon='INFO'):
+    """
+    https://blender.stackexchange.com/a/110112
+    """
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+
+
+def define_lookat_getter(id_name):
+    def getter(self):
+        if self.get(id_name) is None:
+            self[id_name] = ""
+        return self[id_name]
+    return getter
+
+
+def define_lookat_setter(id_name):
+    def setter(self, value):
+        if value == "":
+            self[id_name] = value
+            return
+
+        if value == self.name:
+            ShowMessageBox("Cannot assign an animation as its own LookAt animation",
+                           "Circular LookAt Reference",
+                           "ERROR")
+            return
+
+        bpy_armature = self.id_data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+
+        lookat_anims = gap.lookat_anims_as_dict()
+        idx = lookat_anims.get(value, -1)
+        if idx > -1:
+            prop_lookat = gap.test_lookat_anims[idx]
+            if not check_lookats(gap.test_lookat_anims, lookat_anims, prop_lookat, self.name):
+                ShowMessageBox(f"Assigning '{value}' to '{self.name}' would cause a circular LookAt reference.",
+                               "Circular LookAt Reference",
+                               "ERROR")
+                return
+        else:
+            ShowMessageBox(f"CRITICAL INTERNAL ERROR - LOOKAT ANIMATION '{value}' DOES NOT EXIST!",
+                           "CRITICAL INTERNAL ERROR",
+                           "ERROR")
+            return
+
+        self[id_name] = value
+
+    return setter
+
+
+def check_lookats(lookat_collection, lookat_anims, prop_anim, root_anim_name):
+    if not prop_anim.has_lookat_anims:
+        return True
+
+    for lookat_name in [prop_anim.test_lookat_left,
+                        prop_anim.test_lookat_up,
+                        prop_anim.test_lookat_right,
+                        prop_anim.test_lookat_down]:
+
+        if lookat_name == root_anim_name:
+            return False
+
+        idx = lookat_anims.get(lookat_name, -1)
+        if idx > -1:
+            prop_lookat = lookat_collection[idx]
+            if not check_lookats(lookat_collection, lookat_anims, prop_lookat, root_anim_name):
+                return False
+
+    return True
+
+
+class AnimationPropertiesBase:
     name: bpy.props.StringProperty(name="Name")
     is_active: bpy.props.BoolProperty(name="Active", default=False)  # Only used for blend/lookats
 
@@ -151,10 +226,6 @@ class AnimationProperties(bpy.types.PropertyGroup):
     
     # Only for Normal animations
     has_lookat_anims:    bpy.props.BoolProperty(name="LookAt Anims")
-    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
-    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
-    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
-    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")
@@ -173,6 +244,20 @@ class AnimationProperties(bpy.types.PropertyGroup):
     type4_animations:          bpy.props.CollectionProperty(type=Type4AnimationProperties)
     morph_animations:          bpy.props.CollectionProperty(type=MorphAnimationProperties)
     unimported_tracks:         bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
+
+
+class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
+    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
+    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
+    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
+    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
+
+
+class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
+    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="", get=define_lookat_getter("test_lookat_right"), set=define_lookat_setter("test_lookat_right"))
+    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="", get=define_lookat_getter("test_lookat_left"),  set=define_lookat_setter("test_lookat_left") )
+    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="", get=define_lookat_getter("test_lookat_up"),    set=define_lookat_setter("test_lookat_up")   )
+    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="", get=define_lookat_getter("test_lookat_down"),  set=define_lookat_setter("test_lookat_down"))
 
 
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
@@ -226,7 +311,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     test_anims_idx:        bpy.props.IntProperty(default=-1)
     test_blend_anims:      bpy.props.CollectionProperty(type=AnimationProperties)
     test_blend_anims_idx:  bpy.props.IntProperty(default=-1)
-    test_lookat_anims:     bpy.props.CollectionProperty(type=AnimationProperties)
+    test_lookat_anims:     bpy.props.CollectionProperty(type=LookAtAnimationProperties)
     test_lookat_anims_idx: bpy.props.IntProperty(default=-1)
 
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")

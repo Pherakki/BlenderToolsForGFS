@@ -26,6 +26,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Animations    import AnimBoundingBoxProps
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties, NLAStripWrapper, NLATrackWrapper
     from .src.BlenderIO.Properties.AnimationPack import AnimationProperties
+    from .src.BlenderIO.Properties.AnimationPack import LookAtAnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import NodeAnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import MaterialAnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import CameraAnimationProperties
@@ -115,6 +116,7 @@ def init_bpy():
         MeshBoundingSphere,
         MeshBoundingSphereProps,
         AnimationProperties,
+        LookAtAnimationProperties,
         GFSToolsAnimationPackProperties,
         GFSToolsBackendColliderProperties,
         GFSToolsPhysicsBoneProperties,
