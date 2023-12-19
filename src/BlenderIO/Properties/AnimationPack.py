@@ -323,7 +323,7 @@ def define_gap_name_setter(lookup_name):
             bpy_armature = self.id_data
             mprops = bpy_armature.GFSTOOLS_ModelProperties
             gaps = mprops.gaps_as_dict()
-    
+
             try:
                 while value in gaps:
                     value = new_unique_name(value, gaps, max_idx=999, separator=".")
@@ -494,7 +494,9 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         # Data validation - make sure there are no duplicate tracks
         duplicate_tracks = {nm: count for nm, count in names.items() if count > 1}
         if len(duplicate_tracks):
-            raise NotImplementedError("CRITICAL INTERNAL ERROR - UNIMPLEMENTED BEHAVIOUR - DUPLICATE NLA TRACK NAMES - POP UP A DIALOG HERE INSTEAD")
+            newline = "\n"
+            ShowMessageBox(f"Duplicate animation names for GAP '{self.name}':{newline.join(list(duplicate_tracks.keys()))}\nRemove duplicates to pack the GAP.")
+            return None
 
         return valid_tracks
 
@@ -577,6 +579,8 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             return
 
         nla_tracks = self.relevant_nla_to_list(bpy_object)
+        if nla_tracks is None:
+            return False
 
         normal_nlas = defaultdict(self.NLAOrganizerStruct)
         blend_nlas  = defaultdict(self.NLAOrganizerStruct)
@@ -596,7 +600,8 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             elif category == "LOOKATSCALE":
                 lookat_nlas[anim_name].node_scale_nla = nla_track
             else:
-                raise NotImplementedError(f"CRITICAL INTERNAL ERROR - UNIMPLEMENTED ANIM TYPE '{category}'")
+                ShowMessageBox(f"Unknown animation type '{category}'. Set to a valid type to deactivate the GAP.")
+                return False
 
         self.update_animation_subset(bpy_object, normal_nlas, self.anims_as_dict(), self.test_anims)
         self.test_anims_idx = 0 if len(self.test_anims) else -1
@@ -606,6 +611,8 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
 
         self.update_animation_subset(bpy_object, lookat_nlas, self.lookat_anims_as_dict(), self.test_lookat_anims)
         self.test_lookat_anims_idx = 0 if len(self.test_lookat_anims) else -1
+
+        return True
 
     def remove_from_nla(self, bpy_object):
         if bpy_object.animation_data is None:

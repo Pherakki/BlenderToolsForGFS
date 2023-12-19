@@ -30,13 +30,14 @@ class ToggleActiveAnimationPack(bpy.types.Operator):
 
         if selected_gap.is_active:
             # Deactivate
-            selected_gap.is_active = False
-            selected_gap.update_from_nla(bpy_armature_object)
+            if not selected_gap.update_from_nla(bpy_armature_object):
+                return {'CANCELLED'}
             selected_gap.remove_from_nla(bpy_armature_object)
+            selected_gap.is_active = False
         else:
             # Activate
-            selected_gap.is_active = True
             selected_gap.add_to_nla(bpy_armature_object)
+            selected_gap.is_active = True
 
         return {'FINISHED'}
 
