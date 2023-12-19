@@ -215,7 +215,7 @@ class SetActiveAnimationPack(bpy.types.Operator):
 
 
 class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
-    bl_label       = "Animation Packs"
+    bl_label       = "GFS Animation Packs"
     bl_idname      = "OBJECT_PT_GFSToolsAnimationDataPanel"
     bl_parent_id   = "OBJECT_PT_GFSToolsModelDataPanel"
     bl_space_type  = 'PROPERTIES'
@@ -261,6 +261,8 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
 
         if get_preferences().wip_animation_import and get_preferences().developer_mode:
             gap = aprops.get_selected_gap()
+
+            ctr.separator(factor=1.0)
 
             lookat_row = ctr.row()
             lookat_row.label(text="Root LookAts:")

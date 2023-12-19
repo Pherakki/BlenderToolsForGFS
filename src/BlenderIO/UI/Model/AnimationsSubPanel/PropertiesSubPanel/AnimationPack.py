@@ -9,7 +9,7 @@ from .LookAtAnimationProperties import OBJECT_PT_GFSToolsLookAtAnimationPropsPan
 
 
 class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
-    bl_label       = "GFS Animation Pack"
+    bl_label       = "GAP Properties"
     bl_parent_id   = "OBJECT_PT_GFSToolsAnimationDataPanel"
     bl_idname      = "OBJECT_PT_GFSToolsAnimationPackDataPanel"
     bl_space_type  = 'PROPERTIES'
