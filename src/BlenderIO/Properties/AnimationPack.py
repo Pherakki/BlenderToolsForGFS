@@ -112,6 +112,38 @@ def ShowMessageBox(message="", title="Message Box", icon='INFO'):
     bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
 
 
+def define_name_getter(lookup_name):
+    setter = define_name_setter(lookup_name)
+
+    def getter(self):
+        if self.get("name") is None:
+            self["name"] = setter(self, "New Animation")
+        return self["name"]
+
+    return getter
+
+
+def define_name_setter(lookup_name):
+    def setter(self, value):
+        if value == "":
+            return
+
+        bpy_armature = self.id_data
+        mprops = bpy_armature.GFSTOOLS_ModelProperties
+        gap = mprops.get_selected_gap()
+        collection = getattr(gap, lookup_name)()
+
+        try:
+            while value in collection:
+                value = new_unique_name(value, collection, max_idx=999, separator=".")
+        except ValueError:
+            return
+
+        self["name"] = value
+
+    return setter
+
+
 def define_lookat_getter(id_name):
     def getter(self):
         if self.get(id_name) is None:
@@ -178,7 +210,6 @@ def check_lookats(lookat_collection, lookat_anims, prop_anim, root_anim_name):
 
 
 class AnimationPropertiesBase:
-    name: bpy.props.StringProperty(name="Name")
     is_active: bpy.props.BoolProperty(name="Active", default=False)  # Only used for blend/lookats
 
     category: bpy.props.EnumProperty(items=[
@@ -247,6 +278,15 @@ class AnimationPropertiesBase:
 
 
 class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", get=define_name_getter("anims_as_dict"), set=define_name_setter("anims_as_dict"))
+    test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
+    test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
+    test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
+    test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
+
+
+class BlendAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", get=define_name_getter("blend_anims_as_dict"), set=define_name_setter("blend_anims_as_dict"))
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
@@ -254,6 +294,7 @@ class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
 
 
 class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", get=define_name_getter("lookat_anims_as_dict"), set=define_name_setter("lookat_anims_as_dict"))
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="", get=define_lookat_getter("test_lookat_right"), set=define_lookat_setter("test_lookat_right"))
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="", get=define_lookat_getter("test_lookat_left"),  set=define_lookat_setter("test_lookat_left") )
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="", get=define_lookat_getter("test_lookat_up"),    set=define_lookat_setter("test_lookat_up")   )
@@ -309,7 +350,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     active_anim_idx:       bpy.props.IntProperty(default=-1)
     test_anims:            bpy.props.CollectionProperty(type=AnimationProperties)
     test_anims_idx:        bpy.props.IntProperty(default=-1)
-    test_blend_anims:      bpy.props.CollectionProperty(type=AnimationProperties)
+    test_blend_anims:      bpy.props.CollectionProperty(type=BlendAnimationProperties)
     test_blend_anims_idx:  bpy.props.IntProperty(default=-1)
     test_lookat_anims:     bpy.props.CollectionProperty(type=LookAtAnimationProperties)
     test_lookat_anims_idx: bpy.props.IntProperty(default=-1)
