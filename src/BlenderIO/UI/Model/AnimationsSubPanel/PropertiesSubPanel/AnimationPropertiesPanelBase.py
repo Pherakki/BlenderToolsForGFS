@@ -60,8 +60,8 @@ def generate_panel(identifier, label, getter, collection_name, collection_idx_na
             scene = context.scene
             clipboard = scene.GFSTOOLS_SceneProperties.clipboard
             props = getter(context)
-            clipboard.bounding_box_min_dims = props.bounding_box.min_dims
-            clipboard.bounding_box_max_dims = props.bounding_box.max_dims
+            props.bounding_box.min_dims = clipboard.bounding_box_min_dims
+            props.bounding_box.max_dims = clipboard.bounding_box_max_dims
             return {'FINISHED'}
 
     _uilist = UIListBase(
