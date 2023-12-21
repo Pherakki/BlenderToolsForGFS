@@ -191,3 +191,4 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
         out = {}
         for i, gap in enumerate(self.animation_packs):
             out[gap.name] = i
+        return out

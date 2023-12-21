@@ -76,7 +76,7 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
             import_lookat_animations(ap_props, bpy_armature_object, gfs.lookat_animations, f"{filename}", gfs_to_bpy_bone_map, import_policies=import_policies)
 
     ap_props.version = f"0x{gfs.version:0>8x}"
-    ap_props.name = filename
+    ap_props["name"] = filename
     ap_props.flag_0  = gfs.anim_flag_0
     ap_props.flag_1  = gfs.anim_flag_1
     ap_props.flag_3  = gfs.anim_flag_3
@@ -264,7 +264,7 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
         raise NotImplementedError(f"CRITICAL INTERNAL ERROR: UNKNOWN ANIM TYPE '{anim_type}'")
 
     prop_anim = prop_collection.add()
-    prop_anim.name = anim_name
+    prop_anim["name"] = anim_name
     action_name = gapnames_to_nlatrack(gap_name, anim_type, prop_anim.name)
 
     nodes_action = bpy.data.actions.new(action_name)

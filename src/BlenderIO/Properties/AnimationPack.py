@@ -125,8 +125,13 @@ def define_name_getter(setter):
 
 def define_name_setter(lookup_name):
     def setter(self, value):
-        if value == "":
-            return
+        name = self.get("name")
+        if name is None:
+            if value == "":
+                value = "New Animation"
+        else:
+            if value == "" or value == name:
+                return
 
         bpy_armature = self.id_data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
@@ -142,6 +147,14 @@ def define_name_setter(lookup_name):
         self["name"] = value
 
     return setter
+
+
+base_name_setter   = define_name_setter("anims_as_dict")
+base_name_getter   = define_name_getter(base_name_setter)
+blend_name_setter  = define_name_setter("blend_anims_as_dict")
+blend_name_getter  = define_name_getter(blend_name_setter)
+lookat_name_setter = define_name_setter("lookat_anims_as_dict")
+lookat_name_getter = define_name_getter(lookat_name_setter)
 
 
 def define_lookat_getter(id_name):
@@ -278,7 +291,7 @@ class AnimationPropertiesBase:
 
 
 class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name")#, get=define_name_getter("anims_as_dict"), set=define_name_setter("anims_as_dict"))
+    name: bpy.props.StringProperty(name="Name", get=base_name_getter, set=base_name_setter)
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
@@ -286,7 +299,7 @@ class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
 
 
 class BlendAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name")#, get=define_name_getter("blend_anims_as_dict"), set=define_name_setter("blend_anims_as_dict"))
+    name: bpy.props.StringProperty(name="Name", get=blend_name_getter, set=blend_name_setter)
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="")
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="")
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
@@ -294,26 +307,22 @@ class BlendAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup)
 
 
 class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name")#, get=define_name_getter("lookat_anims_as_dict"), set=define_name_setter("lookat_anims_as_dict"))
+    name: bpy.props.StringProperty(name="Name", get=lookat_name_getter, set=lookat_name_setter)
     test_lookat_right:        bpy.props.StringProperty(name="LookAt Right", default="", get=define_lookat_getter("test_lookat_right"), set=define_lookat_setter("test_lookat_right"))
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="", get=define_lookat_getter("test_lookat_left"),  set=define_lookat_setter("test_lookat_left") )
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="", get=define_lookat_getter("test_lookat_up"),    set=define_lookat_setter("test_lookat_up")   )
     test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="", get=define_lookat_getter("test_lookat_down"),  set=define_lookat_setter("test_lookat_down"))
 
 
-def gap_name_getter(self):
-    setter = gap_name_setter
-
-    if get_preferences().developer_mode and get_preferences().wip_animation_import:
-        if self.get("name") is None:
-            self["name"] = setter(self, "New Pack")
-    return self["name"]
-
-
 def gap_name_setter(self, value):
     if get_preferences().developer_mode and get_preferences().wip_animation_import:
-        if value == "":
-            return
+        name = self.get("name")
+        if name is None:
+            if value == "":
+                value = "New Pack"
+        else:
+            if value == "" or value == name:
+                return
 
         bpy_armature = self.id_data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
@@ -328,10 +337,20 @@ def gap_name_setter(self, value):
     self["name"] = value
 
 
+def gap_name_getter(self):
+    setter = gap_name_setter
+
+    if get_preferences().developer_mode and get_preferences().wip_animation_import:
+        if self.get("name") is None:
+            self["name"] = ""
+            setter(self, "New Pack")
+
+    return self["name"]
+
 
 class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     is_active: bpy.props.BoolProperty(name="Active", default=False)
-    name:    bpy.props.StringProperty(name="Name", default="New Pack")#, get=gap_name_getter, set=gap_name_setter)
+    name:    bpy.props.StringProperty(name="Name", default="New Pack", get=gap_name_getter, set=gap_name_setter)
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0 (Unused?)")
     flag_1:  bpy.props.BoolProperty(name="Unknown Flag 1 (Unused?)")
     flag_3:  bpy.props.BoolProperty(name="Unknown Flag 3", default=True) # Enable morph anims?
