@@ -10,10 +10,9 @@ from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from .ImportProperties import import_properties
 from ..Utils.Animation import gapnames_to_nlatrack
 
-from ..Globals import GFS_MODEL_TRANSFORMS
+from ..Globals import GFS_MODEL_TRANSFORMS, BASE_ANIM_TYPE, BLEND_ANIM_TYPE, LOOKAT_ANIM_TYPE
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
-from ..modelUtilsTest.Skeleton.Transform.Animation import create_nla_track
 from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 
 ######################
@@ -44,11 +43,11 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
 
     # Base Animations
     for anim_idx, anim in enumerate(gfs.animations):
-        prop_anim_from_gfs_anim(ap_props, filename, "NORMAL", str(anim_idx), anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_anim(ap_props, filename, BASE_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
 
     # Blend Animations
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        prop_anim_from_gfs_anim(ap_props, filename, "BLEND", str(anim_idx), anim, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_anim(ap_props, filename, BLEND_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
 
     # Lookat Animations
     if gfs.lookat_animations is not None:
@@ -236,9 +235,9 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     ####################
     # SET UP VARIABLES #
     ####################
-    if   anim_type == "NORMAL": prop_collection = ap_props.test_anims
-    elif anim_type == "BLEND":  prop_collection = ap_props.test_blend_anims
-    elif anim_type == "LOOKAT": prop_collection = ap_props.test_lookat_anims
+    if   anim_type == BASE_ANIM_TYPE: prop_collection = ap_props.test_anims
+    elif anim_type == BLEND_ANIM_TYPE:  prop_collection = ap_props.test_blend_anims
+    elif anim_type == LOOKAT_ANIM_TYPE: prop_collection = ap_props.test_lookat_anims
     else:
         raise NotImplementedError(f"CRITICAL INTERNAL ERROR: UNKNOWN ANIM TYPE '{anim_type}'")
 
@@ -397,10 +396,10 @@ def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lo
     anim_up    = f"{anim_name}_up"
     anim_down  = f"{anim_name}_down"
 
-    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,"LOOKAT", anim_down,  lookat_anims.down,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_down,  lookat_anims.down,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
 
     prop_anim.has_lookat_anims = True
     prop_anim.test_lookat_right = anim_right
