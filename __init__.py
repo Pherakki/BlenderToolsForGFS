@@ -21,9 +21,8 @@ def init_bpy():
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export      import ExportGFS, ExportGAP, ExportPolicies
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
-    from .src.BlenderIO.Properties.Animations    import GFSToolsAnimationProperties
-    from .src.BlenderIO.Properties.Animations    import AnimBoundingBox
-    from .src.BlenderIO.Properties.Animations    import AnimBoundingBoxProps
+    from .src.BlenderIO.Properties.AnimationPack  import AnimBoundingBox
+    from .src.BlenderIO.Properties.AnimationPack  import AnimBoundingBoxProps
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties, NLAStripWrapper, NLATrackWrapper
     from .src.BlenderIO.Properties.AnimationPack import AnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import BlendAnimationProperties
@@ -60,8 +59,6 @@ def init_bpy():
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsLinkProperties
     from .src.BlenderIO.Properties.Scene         import GFSToolsSceneProperties
     from .src.BlenderIO.Properties.Textures      import GFSToolsImageProperties
-    from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationPanel
-    from .src.BlenderIO.UI.Animation             import OBJECT_PT_GFSToolsAnimationGenericPropertyPanel
     from .src.BlenderIO.UI.Bones         import OBJECT_PT_GFSToolsBonePropertiesPanel
     from .src.BlenderIO.UI.Cameras       import OBJECT_PT_GFSToolsCameraAttributesPanel
     from .src.BlenderIO.UI.GFSProperties import OBJECT_UL_GFSToolsGenericPropertyUIList
@@ -125,8 +122,6 @@ def init_bpy():
         GFSToolsPhysicsLinkProperties,
         GFSToolsPhysicsProperties,
         GFSToolsClipboard,
-        OBJECT_PT_GFSToolsAnimationPanel,
-        OBJECT_PT_GFSToolsAnimationGenericPropertyPanel,
         OBJECT_PT_GFSToolsBonePropertiesPanel,
         OBJECT_PT_GFSToolsCameraAttributesPanel,
         OBJECT_PT_GFSToolsColliderPanel,
@@ -149,7 +144,6 @@ def init_bpy():
     )
     
     PROP_GROUPS = (
-        (bpy.types.Action,   "GFSTOOLS_AnimationProperties",       GFSToolsAnimationProperties      ),
         (bpy.types.Armature, "GFSTOOLS_ModelProperties",           GFSToolsModelProperties          ),
         (bpy.types.Armature, "GFSTOOLS_NodeProperties",            GFSToolsModelNodeProperties      ),
         (bpy.types.Bone,     "GFSTOOLS_NodeProperties",            GFSToolsBoneNodeProperties       ),

@@ -86,11 +86,6 @@ def generate_panel(identifier, label, getter, collection_name, collection_idx_na
 
         ANIM_LIST = _uilist()
 
-        @classmethod
-        def poll(cls, context):
-            prefs = get_preferences()
-            return prefs.developer_mode and prefs.wip_animation_import
-
         def draw(self, context):
             bpy_armature = context.armature
             mprops = bpy_armature.GFSTOOLS_ModelProperties

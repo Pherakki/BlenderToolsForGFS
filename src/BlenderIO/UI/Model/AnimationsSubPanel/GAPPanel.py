@@ -3,7 +3,6 @@ import bpy
 from ....Globals import NAMESPACE
 from ....modelUtilsTest.API.Icon import icon_lookup
 from ....modelUtilsTest.UI.UIList import UIListBase
-from ....Preferences import get_preferences
 from .BaseAnimationSubPanel import OBJECT_UL_GFSToolsActivateAnimationUIList, SwitchAnimation, ToggleLookAtAnimation
 from .BlendAnimationSubPanel import OBJECT_UL_GFSToolsActivateBlendAnimationUIList, ToggleBlendAnimation
 from .PropertiesSubPanel import OBJECT_PT_GFSToolsAnimationPackDataPanel
@@ -60,14 +59,10 @@ class OBJECT_UL_GFSToolsAnimationPackUIList(bpy.types.UIList):
         bpy_armature        = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
 
-        if get_preferences().wip_animation_import and get_preferences().developer_mode:
-            anim = mprops.animation_packs[index]
-            active_icon = TOGON_ID if anim.is_active else TOGOFF_ID
-            op = layout.operator(ToggleActiveAnimationPack.bl_idname, text="", icon_value=active_icon, emboss=False)
-            op.index = index
-        else:
-            active_icon = ACTIV_ID if index == mprops.active_animation_pack_idx   else BLANK_ID
-            layout.prop(item, "name", text="", emboss=False, icon_value=active_icon, icon_only=True)
+        anim = mprops.animation_packs[index]
+        active_icon = TOGON_ID if anim.is_active else TOGOFF_ID
+        op = layout.operator(ToggleActiveAnimationPack.bl_idname, text="", icon_value=active_icon, emboss=False)
+        op.index = index
 
         if mprops.has_internal_gap():
             internal_icon = INTRL_ID if index == mprops.internal_animation_pack_idx else BLANK_ID
@@ -253,34 +248,30 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
         self.PACK_LIST.draw(ctr, context)
 
         op_row = ctr.row()
-        if get_preferences().wip_animation_import and get_preferences().developer_mode:
-            op = op_row.operator(ToggleActiveAnimationPack.bl_idname, text=ToggleActiveAnimationPack.getText(context))
-            op.index = aprops.animation_pack_idx
-        else:
-            op_row.operator(SetActiveAnimationPack.bl_idname)
+        op = op_row.operator(ToggleActiveAnimationPack.bl_idname, text=ToggleActiveAnimationPack.getText(context))
+        op.index = aprops.animation_pack_idx
         op_row.operator(SetInternalAnimationPack.bl_idname, text=SetInternalAnimationPack.getText(context))
 
-        if get_preferences().wip_animation_import and get_preferences().developer_mode:
-            gap = aprops.get_selected_gap()
+        gap = aprops.get_selected_gap()
 
-            ctr.separator(factor=1.0)
+        ctr.separator(factor=1.0)
 
-            lookat_row = ctr.row()
-            lookat_row.label(text="Root LookAts:")
-            lookat_lookup = gap.lookat_anims_as_dict()
+        lookat_row = ctr.row()
+        lookat_row.label(text="Root LookAts:")
+        lookat_lookup = gap.lookat_anims_as_dict()
 
-            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_left, "TRIA_LEFT")
-            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_up, "TRIA_UP")
-            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_right, "TRIA_RIGHT")
-            self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_down, "TRIA_DOWN")
+        self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_left, "TRIA_LEFT")
+        self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_up, "TRIA_UP")
+        self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_right, "TRIA_RIGHT")
+        self._draw_lookat(lookat_row, gap, lookat_lookup, gap.test_lookat_down, "TRIA_DOWN")
 
-            ctr.label(text="Base Animations")
-            ctr.template_list(OBJECT_UL_GFSToolsActivateAnimationUIList.__name__, "", gap, "test_anims", gap,
-                              "test_anims_idx")
+        ctr.label(text="Base Animations")
+        ctr.template_list(OBJECT_UL_GFSToolsActivateAnimationUIList.__name__, "", gap, "test_anims", gap,
+                          "test_anims_idx")
 
-            ctr.label(text="Blend Animations")
-            ctr.template_list(OBJECT_UL_GFSToolsActivateBlendAnimationUIList.__name__, "", gap, "test_blend_anims", gap,
-                              "test_blend_anims_idx")
+        ctr.label(text="Blend Animations")
+        ctr.template_list(OBJECT_UL_GFSToolsActivateBlendAnimationUIList.__name__, "", gap, "test_blend_anims", gap,
+                          "test_blend_anims_idx")
 
     @classmethod
     def register(cls):

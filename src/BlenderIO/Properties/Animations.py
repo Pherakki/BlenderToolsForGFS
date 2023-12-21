@@ -1,11 +1,5 @@
 import bpy
 
-from .GFSProperties import GFSToolsGenericProperty
-from .Nodes import BlobProperty
-from .BoundingVolumes import define_bounding_box
-from ..modelUtilsTest.Mesh.Managed import define_managed_mesh
-from ..Utils.BoundingVolumes import update_box
-from ..Utils.PhysicsGen import get_col_material
 
 
 def update_category(self, context):
@@ -40,12 +34,6 @@ def poll_lookat_action(self, action):
     return action.GFSTOOLS_AnimationProperties.category == "LOOKAT"
     
 
-def get_box_props(context):
-    return context.active_nla_strip.action.GFSTOOLS_AnimationProperties.bounding_box.mesh
-
-
-AnimBoundingBox      = define_managed_mesh(lambda action: f".GFSTOOLS_{action.name}Box", lambda action, ctx, obj: update_box(action.GFSTOOLS_AnimationProperties.bounding_box, ctx, obj), get_box_props, "gfstools.showanimboundingbox", get_parent=lambda context: context.active_nla_track.id_data)#, calculate_box, "gfstools.calcanimboundingbox")
-AnimBoundingBoxProps = define_bounding_box(AnimBoundingBox)
 
 
 class GFSToolsAnimationProperties(bpy.types.PropertyGroup):

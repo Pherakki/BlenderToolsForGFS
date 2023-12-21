@@ -173,10 +173,7 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
         return self._internal_get_gap(self.animation_pack_idx, "SELECTED")
 
     def is_selected_gap_active(self):
-        if get_preferences().wip_animation_import and get_preferences().developer_mode:
-            return self.get_selected_gap().is_active
-        else:
-            return self.animation_pack_idx == self.active_animation_pack_idx
+        return self.get_selected_gap().is_active
 
     def is_internal_gap_active(self):
         return self.active_animation_pack_idx == self.internal_animation_pack_idx

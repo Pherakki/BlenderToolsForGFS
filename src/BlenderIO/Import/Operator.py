@@ -83,11 +83,6 @@ class ImportPolicies(bpy.types.PropertyGroup):
     epl_tests: bpy.props.BoolProperty(
         name="EPL Tests",
         description="Imports embedded EPL models as Blender Data",
-        default=False)
-
-    wip_animation_import: bpy.props.BoolProperty(
-        name="WIP Animation Refactor",
-        description="Import animations under the WIP multigap support feature - FOR TESTING ONLY!",
         default=False
     )
 
@@ -120,7 +115,6 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
         self.policies.bone_pose            = prefs.bone_pose
         self.policies.connect_child_bones  = prefs.connect_child_bones
         self.policies.anim_boundbox_policy = prefs.anim_boundbox_policy
-        self.policies.wip_animation_import = prefs.wip_animation_import
         return super().invoke(context, event)
     
     def draw(self, context):
@@ -357,7 +351,6 @@ class CUSTOM_PT_GFSModelDeveloperImportSettings(bpy.types.Panel):
         policies = operator.policies
 
         layout.prop(policies, 'epl_tests')
-        layout.prop(policies, 'wip_animation_import')
         layout.prop(operator, 'debug_mode')
 
 

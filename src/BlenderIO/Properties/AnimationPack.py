@@ -2,13 +2,23 @@ from collections import defaultdict
 
 import bpy
 
-from ..Preferences import get_preferences
-from .Animations import poll_lookat_action
 from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
-from .GFSProperties import GFSToolsGenericProperty
-from .Animations import BlobProperty, AnimBoundingBoxProps
 from ..Utils.Animation import gapnames_from_nlatrack, gapnames_to_nlatrack, is_anim_restpose
+
+from .GFSProperties import GFSToolsGenericProperty
+from .Nodes import BlobProperty
+from .BoundingVolumes import define_bounding_box
+from ..modelUtilsTest.Mesh.Managed import define_managed_mesh
+from ..Utils.BoundingVolumes import update_box
+
+
+def get_box_props(context):
+    return context.active_nla_strip.action.GFSTOOLS_AnimationProperties.bounding_box.mesh
+
+
+AnimBoundingBox      = define_managed_mesh(lambda action: f".GFSTOOLS_{action.name}Box", lambda action, ctx, obj: update_box(action.GFSTOOLS_AnimationProperties.bounding_box, ctx, obj), get_box_props, "gfstools.showanimboundingbox", get_parent=lambda context: context.active_nla_track.id_data)#, calculate_box, "gfstools.calcanimboundingbox")
+AnimBoundingBoxProps = define_bounding_box(AnimBoundingBox)
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -315,24 +325,23 @@ class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup
 
 
 def gap_name_setter(self, value):
-    if get_preferences().developer_mode and get_preferences().wip_animation_import:
-        name = self.get("name")
-        if name is None:
-            if value == "":
-                value = "New Pack"
-        else:
-            if value == "" or value == name:
-                return
-
-        bpy_armature = self.id_data
-        mprops = bpy_armature.GFSTOOLS_ModelProperties
-        gaps = mprops.gaps_as_dict()
-
-        try:
-            while value in gaps:
-                value = new_unique_name(value, gaps, max_idx=999, separator=".")
-        except ValueError:
+    name = self.get("name")
+    if name is None:
+        if value == "":
+            value = "New Pack"
+    else:
+        if value == "" or value == name:
             return
+
+    bpy_armature = self.id_data
+    mprops = bpy_armature.GFSTOOLS_ModelProperties
+    gaps = mprops.gaps_as_dict()
+
+    try:
+        while value in gaps:
+            value = new_unique_name(value, gaps, max_idx=999, separator=".")
+    except ValueError:
+        return
 
     self["name"] = value
 
@@ -340,10 +349,9 @@ def gap_name_setter(self, value):
 def gap_name_getter(self):
     setter = gap_name_setter
 
-    if get_preferences().developer_mode and get_preferences().wip_animation_import:
-        if self.get("name") is None:
-            self["name"] = ""
-            setter(self, "New Pack")
+    if self.get("name") is None:
+        self["name"] = ""
+        setter(self, "New Pack")
 
     return self["name"]
 
@@ -384,10 +392,6 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     flag_31: bpy.props.BoolProperty(name="Unknown Flag 31 (Unused?)")
     
     has_lookat_anims: bpy.props.BoolProperty(name="Has LookAt Anims")
-    lookat_right:        bpy.props.PointerProperty(name="LookAt Right", type=bpy.types.Action, poll=poll_lookat_action)
-    lookat_left:         bpy.props.PointerProperty(name="LookAt Left",  type=bpy.types.Action, poll=poll_lookat_action)
-    lookat_up:           bpy.props.PointerProperty(name="LookAt Up",    type=bpy.types.Action, poll=poll_lookat_action)
-    lookat_down:         bpy.props.PointerProperty(name="LookAt Down",  type=bpy.types.Action, poll=poll_lookat_action)
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
     lookat_left_factor:  bpy.props.FloatProperty(name="LookAt Left Factor")
     lookat_up_factor:    bpy.props.FloatProperty(name="LookAt Up Factor")

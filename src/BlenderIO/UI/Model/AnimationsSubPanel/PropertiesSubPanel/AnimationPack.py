@@ -78,18 +78,13 @@ class OBJECT_PT_GFSToolsAnimationPackDataPanel(bpy.types.Panel):
         flag_col.prop(props, "has_lookat_anims")
         lookat_col = layout.column()
 
-        is_dev = get_preferences().developer_mode and get_preferences().wip_animation_import
-        if is_dev: lookat_col.prop_search(props, "test_lookat_up", props, "test_lookat_anims")
-        else:      lookat_col.prop(props, "lookat_up")
+        lookat_col.prop_search(props, "test_lookat_up", props, "test_lookat_anims")
         lookat_col.prop(props, "lookat_up_factor")
-        if is_dev: lookat_col.prop_search(props, "test_lookat_down", props, "test_lookat_anims")
-        else:      lookat_col.prop(props, "lookat_down")
+        lookat_col.prop_search(props, "test_lookat_down", props, "test_lookat_anims")
         lookat_col.prop(props, "lookat_down_factor")
-        if is_dev: lookat_col.prop_search(props, "test_lookat_left", props, "test_lookat_anims")
-        else:      lookat_col.prop(props, "lookat_left")
+        lookat_col.prop_search(props, "test_lookat_left", props, "test_lookat_anims")
         lookat_col.prop(props, "lookat_left_factor")
-        if is_dev: lookat_col.prop_search(props, "test_lookat_right", props, "test_lookat_anims")
-        else:      lookat_col.prop(props, "lookat_right")
+        lookat_col.prop_search(props, "test_lookat_right", props, "test_lookat_anims")
         lookat_col.prop(props, "lookat_right_factor")
         
         lookat_col.enabled = props.has_lookat_anims

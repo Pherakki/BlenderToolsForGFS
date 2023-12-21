@@ -2,7 +2,6 @@ import array
 
 import bpy
 from bpy_extras.io_utils import ExportHelper
-import numpy as np
 
 from ...FileFormats.GFS import GFSInterface
 from ..Data import version_override_options
@@ -367,17 +366,10 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         gfs = GFSInterface()
 
         prefs = get_preferences()
-        if prefs.developer_mode and prefs.wip_animation_import:
-            mprops = selected_model.data.GFSTOOLS_ModelProperties
-            active_pack = mprops.animation_packs[int(self.available_gaps)]
-            export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True, errorlog=errorlog)
-        else:
-            mprops = selected_model.data.GFSTOOLS_ModelProperties
-            active_pack = mprops.get_active_gap()
-            if active_pack is not None:
-                export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True, errorlog=errorlog)
-            else:
-                return {'CANCELLED'}
+        mprops = selected_model.data.GFSTOOLS_ModelProperties
+        active_pack = mprops.animation_packs[int(self.available_gaps)]
+        export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True, errorlog=errorlog)
+
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
@@ -448,9 +440,7 @@ class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
         if policies.version_override == "CUSTOM":
             layout.prop(policies, "version")
 
-        prefs = get_preferences()
-        if prefs.developer_mode and prefs.wip_animation_import:
-            layout.prop(operator, "available_gaps")
+        layout.prop(operator, "available_gaps")
 
 
 def find_selected_model(errorlog):
