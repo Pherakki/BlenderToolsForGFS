@@ -191,7 +191,7 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         mprops = selected_model.data.GFSTOOLS_ModelProperties
         internal_pack = mprops.get_internal_gap()
         if internal_pack is not None:
-            export_gap_props(gfs, selected_model, internal_pack, keep_unused_anims=False)
+            export_gap_props(gfs, selected_model, internal_pack, keep_unused_anims=False, errorlog=errorlog)
         
         
         # Check if any errors occurred that prevented export.
@@ -307,7 +307,18 @@ class CUSTOM_PT_GFSMeshExportSettings(bpy.types.Panel):
         layout.prop(policies, 'missing_uv_maps_policy')
         layout.prop(policies, 'triangulate_mesh_policy')
 
-    
+
+def get_exportable_gaps(self, context):
+    errorlog = ErrorLogger()
+    selected_model = find_selected_model(errorlog)
+    if len(errorlog.errors):
+        errorlog.digest_errors(self.debug_mode)
+        return {'CANCELLED'}
+
+    mprops = selected_model.data.GFSTOOLS_ModelProperties
+    return [(str(i), gap.name, "") for i, gap in enumerate(mprops.animation_packs)]
+
+
 class ExportGAP(bpy.types.Operator, ExportHelper):
     bl_idname = 'export_file.export_gap'
     bl_label = 'Persona 5 Royal - PC (.GAP)'
@@ -326,6 +337,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     filename_ext = ".GAP"
     
     policies: bpy.props.PointerProperty(type=ExportPolicies)
+    available_gaps: bpy.props.EnumProperty(items=get_exportable_gaps, name="Exportable GAPs")
 
     def invoke(self, context, event):
         prefs = get_preferences()
@@ -353,13 +365,19 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
         gfs = GFSInterface()
-        
-        mprops = selected_model.data.GFSTOOLS_ModelProperties
-        active_pack = mprops.get_active_gap()
-        if active_pack is not None:
-            export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True)
+
+        prefs = get_preferences()
+        if prefs.developer_mode and prefs.wip_animation_import:
+            mprops = selected_model.data.GFSTOOLS_ModelProperties
+            active_pack = mprops.animation_packs[int(self.available_gaps)]
+            export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True, errorlog=errorlog)
         else:
-            return {'CANCELLED'}
+            mprops = selected_model.data.GFSTOOLS_ModelProperties
+            active_pack = mprops.get_active_gap()
+            if active_pack is not None:
+                export_gap_props(gfs, selected_model, active_pack, keep_unused_anims=True, errorlog=errorlog)
+            else:
+                return {'CANCELLED'}
         # Check if any errors occurred that prevented export.
         bpy.ops.object.mode_set(mode=original_mode)
         bpy.context.view_layer.objects.active = original_obj
@@ -367,7 +385,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
-        # Need to serialise the mesh data in order to calcualte the anim
+        # Need to serialise the mesh data in order to calculate the anim
         # bounding boxes
         gfs_bbox = GFSInterface()
         export_node_tree(gfs_bbox, selected_model, None)
@@ -429,6 +447,10 @@ class CUSTOM_PT_GFSAnimExportSettings(bpy.types.Panel):
         layout.prop(policies, 'version_override')
         if policies.version_override == "CUSTOM":
             layout.prop(policies, "version")
+
+        prefs = get_preferences()
+        if prefs.developer_mode and prefs.wip_animation_import:
+            layout.prop(operator, "available_gaps")
 
 
 def find_selected_model(errorlog):
