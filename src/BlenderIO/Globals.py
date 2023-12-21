@@ -6,6 +6,9 @@ from .modelUtilsTest.Misc.Errorlog import ErrorLogBase
 bmu = blenderModelSupportUtils
 
 NAMESPACE = "gfstools"
+BASE_ANIM_TYPE   = "BASE"
+BLEND_ANIM_TYPE  = "BLEND"
+LOOKAT_ANIM_TYPE = "LOOKAT"
 
 GFS_MODEL_TRANSFORMS = bmu.ModelTransforms(world_axis=['X', 'Z', '-Y'], 
                                            bone_axis=['-Y', 'X', 'Z'])

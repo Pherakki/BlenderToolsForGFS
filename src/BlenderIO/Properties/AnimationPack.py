@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import bpy
 
+from ..Globals import NAMESPACE
 from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
 from ..Utils.Animation import gapnames_from_nlatrack, gapnames_to_nlatrack, is_anim_restpose
@@ -13,12 +14,24 @@ from ..modelUtilsTest.Mesh.Managed import define_managed_mesh
 from ..Utils.BoundingVolumes import update_box
 
 
-def get_box_props(context):
-    return context.active_nla_strip.action.GFSTOOLS_AnimationProperties.bounding_box.mesh
+def generate_bounding_box_props(identifier, anim_collection_name, anim_collection_index_name):
+    def get_anim(bpy_armature):
+        gap = bpy_armature.GFSTOOLS_ModelProperties.get_selected_gap()
+        anim_collection = getattr(gap, anim_collection_name)
+        anim_collection_index = getattr(gap, anim_collection_index_name)
+        return anim_collection[anim_collection_index]
 
+    def get_box_props(context):
+        return get_anim(context.active_object.data).bounding_box.mesh
 
-AnimBoundingBox      = define_managed_mesh(lambda action: f".GFSTOOLS_{action.name}Box", lambda action, ctx, obj: update_box(action.GFSTOOLS_AnimationProperties.bounding_box, ctx, obj), get_box_props, "gfstools.showanimboundingbox", get_parent=lambda context: context.active_nla_track.id_data)#, calculate_box, "gfstools.calcanimboundingbox")
-AnimBoundingBoxProps = define_bounding_box(AnimBoundingBox)
+    AnimBoundingBox      = define_managed_mesh(lambda bpy_armature: f".GFSTOOLS_{get_anim(bpy_armature).name}Box", lambda bpy_armature, ctx, obj: update_box(get_anim(bpy_armature).bounding_box, ctx, obj), get_box_props, f"{NAMESPACE}.show{identifier}animboundingbox", get_parent=None)
+    AnimBoundingBoxProps = define_bounding_box(AnimBoundingBox)
+
+    return AnimBoundingBox, AnimBoundingBoxProps
+
+BaseAnimBoundingBox,   BaseAnimBoundingBoxProps   = generate_bounding_box_props("base",   "test_anims",        "test_anims_idx")
+BlendAnimBoundingBox,  BlendAnimBoundingBoxProps  = generate_bounding_box_props("blend",  "test_blend_anims",  "test_blend_anims_idx")
+LookAtAnimBoundingBox, LookAtAnimBoundingBoxProps = generate_bounding_box_props("lookat", "test_lookat_anims", "test_lookat_anims_idx")
 
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
@@ -276,8 +289,6 @@ class AnimationPropertiesBase:
     flag_26: bpy.props.BoolProperty(name="Unknown Flag 26 (Unused?)", default=False)
     flag_27: bpy.props.BoolProperty(name="Unknown Flag 27 (Unused?)", default=False)
     
-    bounding_box:    bpy.props.PointerProperty(type=AnimBoundingBoxProps)
-    
     # Only for Normal animations
     has_lookat_anims:    bpy.props.BoolProperty(name="LookAt Anims")
     lookat_right_factor: bpy.props.FloatProperty(name="LookAt Right Factor")
@@ -307,6 +318,8 @@ class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
     test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
 
+    bounding_box:    bpy.props.PointerProperty(type=BaseAnimBoundingBoxProps)
+
 
 class BlendAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", get=blend_name_getter, set=blend_name_setter)
@@ -315,6 +328,8 @@ class BlendAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup)
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="")
     test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="")
 
+    bounding_box:    bpy.props.PointerProperty(type=BlendAnimBoundingBoxProps)
+
 
 class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", get=lookat_name_getter, set=lookat_name_setter)
@@ -322,6 +337,8 @@ class LookAtAnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup
     test_lookat_left:         bpy.props.StringProperty(name="LookAt Left",  default="", get=define_lookat_getter("test_lookat_left"),  set=define_lookat_setter("test_lookat_left") )
     test_lookat_up:           bpy.props.StringProperty(name="LookAt Up",    default="", get=define_lookat_getter("test_lookat_up"),    set=define_lookat_setter("test_lookat_up")   )
     test_lookat_down:         bpy.props.StringProperty(name="LookAt Down",  default="", get=define_lookat_getter("test_lookat_down"),  set=define_lookat_setter("test_lookat_down"))
+
+    bounding_box:    bpy.props.PointerProperty(type=LookAtAnimBoundingBoxProps)
 
 
 def gap_name_setter(self, value):

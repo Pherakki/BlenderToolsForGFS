@@ -21,8 +21,12 @@ def init_bpy():
     from .src.BlenderIO.Import.Menu import GFSImportSubmenu, menu_func_import
     from .src.BlenderIO.Export      import ExportGFS, ExportGAP, ExportPolicies
     from .src.BlenderIO.Export.Menu import GFSExportSubmenu, menu_func_export
-    from .src.BlenderIO.Properties.AnimationPack  import AnimBoundingBox
-    from .src.BlenderIO.Properties.AnimationPack  import AnimBoundingBoxProps
+    from .src.BlenderIO.Properties.AnimationPack  import BaseAnimBoundingBox
+    from .src.BlenderIO.Properties.AnimationPack  import BaseAnimBoundingBoxProps
+    from .src.BlenderIO.Properties.AnimationPack  import BlendAnimBoundingBox
+    from .src.BlenderIO.Properties.AnimationPack  import BlendAnimBoundingBoxProps
+    from .src.BlenderIO.Properties.AnimationPack  import LookAtAnimBoundingBox
+    from .src.BlenderIO.Properties.AnimationPack  import LookAtAnimBoundingBoxProps
     from .src.BlenderIO.Properties.AnimationPack import GFSToolsAnimationPackProperties, NLAStripWrapper, NLATrackWrapper
     from .src.BlenderIO.Properties.AnimationPack import AnimationProperties
     from .src.BlenderIO.Properties.AnimationPack import BlendAnimationProperties
@@ -103,8 +107,12 @@ def init_bpy():
         GFSToolsGenericProperty,
         RegisterWindow,
         OpenDocumentation,
-        AnimBoundingBox,
-        AnimBoundingBoxProps,
+        BaseAnimBoundingBox,
+        BaseAnimBoundingBoxProps,
+        BlendAnimBoundingBox,
+        BlendAnimBoundingBoxProps,
+        LookAtAnimBoundingBox,
+        LookAtAnimBoundingBoxProps,
         ModelBoundingBox,
         ModelBoundingBoxProps,
         ModelBoundingSphere,
