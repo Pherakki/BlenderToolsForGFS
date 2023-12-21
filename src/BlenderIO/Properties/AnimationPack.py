@@ -113,12 +113,11 @@ def ShowMessageBox(message="", title="Message Box", icon='INFO'):
     bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
 
 
-def define_name_getter(lookup_name):
-    setter = define_name_setter(lookup_name)
-
+def define_name_getter(setter):
     def getter(self):
         if self.get("name") is None:
-            self["name"] = setter(self, "New Animation")
+            self["name"] = ""
+            setter(self, "New Animation")
         return self["name"]
 
     return getter

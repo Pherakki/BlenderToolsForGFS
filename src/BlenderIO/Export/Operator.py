@@ -337,7 +337,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
     filename_ext = ".GAP"
     
     policies: bpy.props.PointerProperty(type=ExportPolicies)
-    available_gaps: bpy.props.EnumProperty(items=get_exportable_gaps, name="Exportable GAPs")
+    available_gaps: bpy.props.EnumProperty(items=get_exportable_gaps, name="GAP")
 
     def invoke(self, context, event):
         prefs = get_preferences()
