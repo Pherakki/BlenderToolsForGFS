@@ -142,7 +142,7 @@ breakatwhitespace=false,
 % ############## %
 \title{Blender Tools for GFS Documentation}
 \author{Pherakki}
-\date{v0.1}
+\date{v0.2}
 
 
 % ############## %
@@ -645,17 +645,58 @@ All animation properties are found in the \textbf{GFS Animation Packs} sub-panel
 
 \subsubsection{Animation Packs}
 \label{SECTION::Edits::Animations::AnimationPacks}
-Animations are organised in \textbf{Animation Pack}s. These are found in a list in the \textbf{GFS Animation Packs} sub-panel of the \textbf{GFS Model} panel of the Armature Properties Panel. Within this list, each imported GAP can be ``activated" or ``deactivated", where each ``active" GAP will unpack its animations in the NLA editor. Any active GAPs are identified with a ticked checkbox.
+Animations are organised in \textbf{Animation Pack}s. These are found in a list in the \textbf{GFS Animation Packs} sub-panel of the \textbf{GFS Model} panel of the Armature Properties Panel. Within this list, each imported GAP can be ``activated" or ``deactivated", where each ``active" GAP will unpack its animations in the NLA editor. Any active GAPs are identified with a ticked checkbox. The NLA tracks are named in the following fashion:\\
+\begin{center}
+GAP NAME$\vert$CATEGORY$\vert$ANIMATION NAME
+\end{center}
+The animations in the NLA must follow this \textit{strict} naming convention to be understood by the plugin. When \textbf{deactivating} a GAP, the NLA track list will be scanned for any animations which have the name ``GAP NAME" as the currently selected GAP. The category will be then be parsed, which can take any of the following values:
+\begin{itemize}
+\item BASE
+\item BLEND
+\item BLENDSCALE
+\item LOOKAT
+\item LOOKATSCALE
+\end{itemize}
+The meaning of these categories will be explained in subsequent sections.\\
+Finally, the animation name will be used to store the animation under the specified category in the GAP. If there are duplicate names, you will get an error message. If the animation name corresponds to an animation already present in the GAP, the keyframes of that animation will be overwritten and the properties of the animation will be preserved. Otherwise, a new animation will be created with default properties. If an animation present in the GAP has not counterpart in the NLA tracks, it is deleted.
 
-In addition, a model can have an \textbf{internal} GAP, which can be set or removed with the relevant button. The GAP currently set as the \textbf{internal} GAP can be identified with a box icon within the GAP list. GAPs can be added, removed, and reorganised with the buttons on the side of the list.
+A model can have an \textbf{internal} GAP, which can be set or removed with the relevant button. The GAP currently set as the \textbf{internal} GAP can be identified with a box icon within the GAP list. GAPs can be added, removed, and reorganised with the buttons on the side of the list.
 
-Below this list is the ``quick activation" menu for the animations of the selected GAP.
+Below this list is the ``quick activation" menu for the animations of the selected GAP. \textbf{This can only be used to preview animations if the selected GAP is enabled}. Enabling an animation through this menu will simultaneously enable all NLA tracks associated with that animation, to prevent you from having to manually enable them yourself.\\
+First are the ``Root LookAt" animations, which are ``Look At" animations associated with the entire GAP.\\
+Second are the ``Base Animations", of which you can activate one at a time. If a ``Base Animation" has ``LookAt" animations associated with it, these are displayed in a similar fashion to the ``Root LookAt"s.\\
+Third are the ``Blend Animations". Any number of Blend Animations can be active at once. \\\\
+You can rename animations from the ``quick activation" menu if the GAP is \textbf{inactive}.
 
 \begin{guide}{Accessing Animation Packs}
 \item Animation Pack properties can be found in the \textbf{GFS Animation Packs} sub-panel of the \textbf{GFS Model} panel of the Armature Properties Panel.
 \guideimage{images/editing_models/edits_animation_pack.png}
 \end{guide}
 
+Animation Packs have additional properties associated with them, which can be found immediately below the ``quick activation" menu in the \textbf{GAP Properties} subpanel. These properties are:
+\begin{itemize}
+\item \textbf{Version}: The version of the file the GAP was imported from. This can be changed to another valid version.
+\item \textbf{Unknown Flags}: Unknown, probably unused.
+\item \textbf{Unknown Flag 3}: Unknown.
+\item \textbf{Has LookAt Anims}: If checked, the four LookAt animations must be set on the GAP.
+\item \textbf{GAP Base Animations}: The Base Animations of the GAP. More details in \ref{SECTION::Edits::Animations::NormalAnimations}.
+\item \textbf{GAP Blend Animations}: The Blend Animations of the GAP. More details in \ref{SECTION::Edits::Animations::BlendAnimations}.
+\item \textbf{GAP LookAt Animations}: The LookAt Animations of the GAP. More details in \ref{SECTION::Edits::Animations::LookAtAnimations}.
+\end{itemize}
+
+All animations have the following properties:
+\begin{itemize}
+\item \textbf{Flag 0}: Unknown. Might signal the prescence of bone animations.
+\item \textbf{Flag 1}: Unknown. Might signal the prescence of material animations.
+\item \textbf{Flag 2}: Unknown. Might signal the prescence of camera animations.
+\item \textbf{Flag 3}: Unknown. Might signal the prescence of unknown animations.
+\item \textbf{Flag 4}: Unknown. Might signal the prescence of morph animations.
+\item \textbf{Unknown Flags}: Unknown, probably unused.
+\item \textbf{Has LookAt Anims}: If checked, LookAt animations can be set for this animation.
+\item \textbf{EPLs}: The number of EPLs attached to the animation. Currently non-interactable and just shown for information.
+\item \textbf{Bounding Box}: The bounding box of the animation. Identical in operation to that for Meshes and Models.
+\item \textbf{Properties}: A list of GFS Properties. See section~\ref{SECTION::GfsProperties} for more information.
+\end{itemize}
 
 \subsubsection{Base Animations}
 \label{SECTION::Edits::Animations::NormalAnimations}
@@ -664,77 +705,59 @@ Below this list is the ``quick activation" menu for the animations of the select
 \item The Strip Blending should be set to \textbf{REPLACE}.
 \item The keyframe interpolation should be set to \textbf{LINEAR} for all animations except for \textbf{rotation\_quaterion}, which should be set to \textbf{BEZIER}.
 \end{itemize}
-%See Section~\ref{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}, Subitem ``Auto-Correcting Actions" for information on how to apply these settings automatically.
 
-\textbf{Base Animations} have a set of properties that also need to be exported. Details on these are given below.
-
-\begin{guide}{Accessing Normal Animation Properties}
-\item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
-\item The \textbf{Category} should be set to ``Normal". Most of the \textbf{Unknown Flags} are unused. The first five flags are usually ticked if the following animations are present:
-\begin{enumerate}
-\item Flag 0 - Bone animations
-\item Flag 1 - Material animations
-\item Flag 2 - Camera animations
-\item Flag 3 - Unknown animations
-\item Flag 4 - Morph animations
-\end{enumerate}
-but since these do not seem to influence how animations are displayed and do not have an exact correspondence to these types of animation being present, they are left as unnamed flags for now.
+\begin{guide}{Accessing Base Animation Properties}
+\item The properties for a Base Animation can be found by navigating to the \textbf{GAP Base Animations} sub-panel of the \textbf{GAP Properties} sub-panel of the \textbf{GFS Animation Pack} subpanel of the \textbf{GFS Model} panel and selecting the appropriate animation.
 \guideimage{images/editing_models/edits_normal_animations_1.png}
-\item Further down, you can set ``Look At" animations for a Normal Animation. A \textbf{LookAt animation} is a kind of \textbf{Blend Animation} that makes a character look up, down, left, and right. Further details can be found in sections~\ref{SECTION::Edits::Animations::BlendAnimations} and \ref{SECTION::Edits::Animations::LookAtAnimations}. If you tick the box saying that an animation has lookat animations, you \textbf{must select all four animations you want to use as lookats} in order to successfully export. You can do this by clicking the animation boxes and selecting the animation that pops up. The only available animations are those that have been given the \textbf{LookAt} category.
-The role of the LookAt factors is unknown.
-In addition, animations can have GFS Properties like bones can. See section~\ref{SECTION::GfsProperties} for more information.
-\guideimage{images/editing_models/edits_normal_animations_2.png}
 \end{guide}
 
 \subsubsection{Blend Animations}
 \label{SECTION::Edits::Animations::BlendAnimations}
-\textbf{Blend Animations} are animations that are overlaid on \textbf{Normal Animations}. The animations are combined by combining each transformation channel individually. Positions and scales are added, and quaternions are combined with quaternion multiplication. Therefore, the Strip Blending type should be set to \textbf{COMBINE}. Keyframe interpolation should be handlded the same as the \textbf{Normal Animations}. However, Blender will attempt to \textbf{multiply} scale channels instead of adding them under the \textbf{COMBINE} Strip Blending mode. For this reason, scales should be separated to their own action with the \textbf{ADD} Strip Blending mode, and given the special \textbf{Blend Scale} category rather than the \textbf{Blend} category. Details on this are given in the Blend Properties Step-By-Step below, which also discusses other Blend animation properties. This means that any scales present in a \textbf{Blend Animation} will be ignored on export, and instead taken from a linked \textbf{Blend Scale Animation} if one is present.
+\textbf{Blend Animations} are animations that are overlaid on \textbf{Blend Animations}. The animations are combined by combining each transformation channel individually. Positions and scales are added, and quaternions are combined with quaternion multiplication. Therefore, the Strip Blending type should be set to \textbf{COMBINE}. Keyframe interpolation should be handlded the same as the \textbf{Base Animations}. However, Blender will attempt to \textbf{multiply} scale channels instead of adding them under the \textbf{COMBINE} Strip Blending mode. For this reason, scales should be separated to their own action with the \textbf{ADD} Strip Blending mode, and given the special \textbf{BLENDSCALE} category rather than the \textbf{BLEND} category. This means that any scales present in a \textbf{Blend Animation} will be ignored on export, and instead taken from a linked \textbf{Blend Scale Animation} if one is present.
 \begin{guide}{Accessing Blend Animation Properties}
-\item The \textbf{category} for Blend animations is \textbf{Blend}. The \textbf{Unknown Flags} are the same as the \textbf{Normal Animations}.
+\item The properties for a Blend Animation can be found by navigating to the \textbf{GAP Blend Animations} sub-panel of the \textbf{GAP Properties} sub-panel of the \textbf{GFS Animation Pack} subpanel of the \textbf{GFS Model} panel and selecting the appropriate animation.
 \guideimage{images/editing_models/edits_blend_animations_1.png}
-\item Instead of \textbf{LookAt} animations, \textbf{Blend} animations can link to a \textbf{Blend Scale} animation as described above. To link a \textbf{Blend Scale} animation, select one from the dropdown.
-\guideimage{images/editing_models/edits_blend_animations_2.png}
 \end{guide}
 
 \subsubsection{LookAt Animations}
 \label{SECTION::Edits::Animations::LookAtAnimations}
-A \textbf{LookAt} animation is a special \textbf{Blend} animation used to represent looking left, right, up, and down. This is typically just a single frame representing the pose. \textbf{Normal Animations} can link to a \textbf{LookAt} animation from their properties panel. If the \textbf{LookAt} animation is not linked to a \textbf{Normal Animation}, it will not be exported.
+A \textbf{LookAt} animation is a special \textbf{Blend} animation used to represent looking left, right, up, and down. This is typically just a single frame representing the pose. \textbf{All animations} can link to \textbf{LookAt} animations from their properties panel, including other \textbf{LookAt} animations, although this probably does absolutely nothing. If you attempt to create a loop of LookAt animations in the properties, this should be prevented with a safety check. If the \textbf{LookAt} animation is not linked to a \textbf{GAP} or \textbf{Animation}, it will not be exported.
 \begin{guide}{Accessing LookAt Animation Properties}
-\item The \textbf{category} for a \textbf{LookAt} animation is \textbf{LookAt}. All properties are the same as \textbf{Blend Animations}.
+\item The properties for a LookAt Animation can be found by navigating to the \textbf{GAP LookAt Animations} sub-panel of the \textbf{GAP Properties} sub-panel of the \textbf{GFS Animation Pack} subpanel of the \textbf{GFS Model} panel and selecting the appropriate animation.
 \guideimage{images/editing_models/edits_lookat_animations.png}
 \end{guide}
 
-\subsubsection{Tips for Editing Animations in Blender}
-\label{SECTION::Edits::Animations::TipsForEditing}
+%\subsubsection{Tips for Editing Animations in Blender}
+%\label{SECTION::Edits::Animations::TipsForEditing}
 
-\paragraph{Auto-Correcting Actions}
-\label{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}
-\begin{guide}{Auto-Correcting Actions}
-\item The interpolation and strip blending of an NLA strip and action can be automatically set when switching the action type. Do this inside the Animation Properties.
-\item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
-\item Check the \textbf{Auto-Correct Action} box.
-\guideimage{images/editing_models/edits_autocorrect_animations.png}
-\item Changing the animation \textbf{category} will now automatically change the interpolation and strip blending types for those appropriate for the selected category. This will not be done when first checking the box, so switch to a different category and back to apply the changes.
-\end{guide}
+%\paragraph{Auto-Correcting Actions}
+%\label{SECTION::Editing::Animations::TipsForEditing::AutoCorrect}
+%\begin{guide}{Auto-Correcting Actions}
+%\item The interpolation and strip blending of an NLA strip and action can be automatically set when switching the action type. Do this inside the Animation Properties.
+%\item The animation properties can be found by selecting a strip in the NLA editor and navigating to the ``GFS Animation" panel in the ``Strip" sidebar panel. You can use the \keystroke{N} key to open and close the sidebar whilst the mouse cursor is inside the NLA editor.
+%\item Check the \textbf{Auto-Correct Action} box.
+%\guideimage{images/editing_models/edits_autocorrect_animations.png}
+%\item Changing the animation \textbf{category} will now automatically change the interpolation and strip blending types for those appropriate for the selected category. This will not be done when first checking the box, so switch to a different category and back to apply the changes.
+%\end{guide}
 
-\paragraph{Previewing with the NLA Editor}
-\label{SECTION::Editing::Animations::TipsForEditing::PreviewingNLA}
-\begin{guide}{Previewing with the NLA Editor}
-\item Unmute whichever animations you want to preview. You should unmute a \textbf{single} \textbf{Normal Animation} plus whatever \textbf{Blend Animation}s you want to see overlaid on it.
-\item The \textbf{Rest Pose} should \textbf{always} be unmuted.
-\item Actions at the \textbf{top} of the editor have the highest priority. Should should have the \textbf{Rest Pose} at the bottom, followed by the \textbf{Normal Animations}, and then any \textbf{Blend Animations}.
-\guideimage{images/editing_models/edits_previewing_blends_1.png}
-\end{guide}
+%\paragraph{Previewing with the NLA Editor}
+%\label{SECTION::Editing::Animations::TipsForEditing::PreviewingNLA}
+%\begin{guide}{Previewing with the NLA Editor}
+%\item Unmute whichever animations you want to preview. You should unmute a \textbf{single} \textbf{Normal Animation} plus whatever \textbf{Blend Animation}s you want to see overlaid on it.
+%\item The \textbf{Rest Pose} should \textbf{always} be unmuted.
+%\item Actions at the \textbf{top} of the editor have the highest priority. Should should have the \textbf{Rest Pose} at the bottom, followed by the \textbf{Normal Animations}, and then any \textbf{Blend Animations}.
+%\guideimage{images/editing_models/edits_previewing_blends_1.png}
+%\end{guide}
 
-\paragraph{Previewing Blend Animations during Editing}
-\label{SECTION::Editing::Animations::TipsForEditing::PreviewingBlends}
-\begin{guide}{Previewing Blend Animations during Editing}
-\item Unmute whichever \textbf{Normal Animation} you want to use as a base, and the \textbf{Blend Animation} you want to edit in the NLA editor.
-\guideimage{images/editing_models/edits_previewing_blends_1.png}
-\item Press \keystroke{Tab} to pin the action to the Action Editor.
-\guideimage{images/editing_models/edits_previewing_blends_2.png}
-\item You can now edit the action in the Action Editor whilst previewing the full effect of the other umutued NLA tracks.
-\end{guide}
+%\paragraph{Previewing Blend Animations during Editing}
+%\label{SECTION::Editing::Animations::TipsForEditing::PreviewingBlends}
+%\begin{guide}{Previewing Blend Animations during Editing}
+%\item Unmute whichever \textbf{Normal Animation} you want to use as a base, and the %\textbf{Blend Animation} you want to edit in the NLA editor.
+%\guideimage{images/editing_models/edits_previewing_blends_1.png}
+%\item Press \keystroke{Tab} to pin the action to the Action Editor.
+%\guideimage{images/editing_models/edits_previewing_blends_2.png}
+%\item You can now edit the action in the Action Editor whilst previewing the full effect of the other umutued NLA tracks.
+%\end{guide}
 
 \clearpage
 
@@ -770,11 +793,22 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 \guideimage{images/export/export_gmd.png}
 \item From the export options on the right, choose:
 \begin{itemize}
-\item Whether to export animations packed into the model.
-\item Whether to strip any vertex groups from the export that do not correspond to a bone in the armature. Leaving this option unticked means that undefined vertex groups will cause an error when attempting to export.
-\item Whether to recalculate tangents on export if a mesh needs to be exported with tangents. This can be useful if an imported model has incorrect tangent vectors, and if the Blender tangent calculator gives better results. This is active by default.
-\item Whether to throw an error us any vertices in a rigged mesh are unrigged. A warning will be displayed if this is turned off, and if it is turned on then the export will stop on the first mesh that raises this error and Blender will display all vertices that are unrigged.
-\item Which file version to export as.
+\item \textbf{Export Version}: This has three options.
+\begin{itemize}
+\item \textbf{Default}: Use the version specified in the model properties as the export version.
+\item \textbf{P5R}: Export with a version compatible with Persona 5 Royal (0x01105100).
+\item \textbf{Custom}: Export with a version specified at export.
+\end{itemize}
+\item \textbf{Combine New Mesh Nodes}: For any meshes exported to new nodes, merge these nodes into a single node. This is an optimisation.
+\item \textbf{Strip EPLs}: Remove any EPLs stored inside the model.
+\item \textbf{Strip Missing Vertex Groups}: If vertex groups with no corresponding bones exist, remove them from the exported model.
+\item \textbf{Recalculate Tangents}: Recalculate model tangent vectors before export.
+\item \textbf{Raise Error for Unrigged Vertices}: If any unrigged vertices on a rigged mesh, by default a warning will be issued. Ticking this box will instead raise an error and highlight which vertices are unrigged.
+\item \textbf{>6192 Vertices per Mesh}: Choose if you want to be warned or prevent export if more than 6192 vertices exist on a mesh. Animation issues can occur if there are more vertices on a mesh than something around this limit.
+\item \textbf{Vertex Group Limits}: Choose whether to warn and auto-strip excess vertex groups, or to prevent export and highlight the problematic vertices, if any vertices have more than 4 vertex groups.
+\item \textbf{Multiple Materials per Mesh}: Choose whether to be warned and export the active material on a mesh, or to prevent export and highlight the problematic meshes, if a mesh has more than one material.
+\item \textbf{Missing UV Maps}: Choose whether to warn and export blank UV maps, or prevent export and highlight the problematic meshes, if a mesh uses a material that requires UV maps the mesh does not possess.
+\item \textbf{Triangulate Meshes}: Choose whether to throw an error, or warn and triangulate the meshes within Blender, if any non-triangular polygons are detected on a mesh.
 \end{itemize}
 \guideimage{images/export/export_gmd_properties.png}
 \item Set a filename and export.
@@ -785,7 +819,16 @@ If sections of EPLs can be sensibly imported and exported from Blender, such as 
 \begin{guide}{Accessing the Animation Export Menu}
 \item Open the File menu and navigate to the \textbf{Export} \textgreater\space \textbf{GFS} \textgreater\space \textbf{GAP Animation} submenu item.
 \guideimage{images/export/export_gap.png}
-\item From the export options on the right, choose which file version to export as.
+\item From the export options on the right, choose:
+\begin{itemize}
+\item \textbf{Export Version}: This has three options.
+\begin{itemize}
+\item \textbf{Default}: Use the version specified in the GAP properties as the export version.
+\item \textbf{P5R}: Export with a version compatible with Persona 5 Royal (0x01105100).
+\item \textbf{Custom}: Export with a version specified at export.
+\end{itemize}
+\item \textbf{GAP}: Which GAP on the model to export.
+\end{itemize}
 \guideimage{images/export/export_gap_properties.png}
 \item Set a filename and export.
 \end{guide}
