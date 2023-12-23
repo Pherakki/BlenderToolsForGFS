@@ -65,8 +65,8 @@ class MaterialBinary(Serializable):
         self.flags        = MaterialFlags(endianness)
         self.ambient      = None
         self.diffuse      = None
-        self.specular     = None
         self.emissive     = None
+        self.specular     = None
         self.reflectivity = None
         self.outline_idx  = None
         self.draw_method  = None
@@ -117,7 +117,7 @@ class MaterialBinary(Serializable):
         return f"[GFD::Material] {self.name} "                                                     \
                f"{safe_format(self.flags._value, hex32_format)} "                                  \
                f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "             \
-               f"{safe_format(self.specular, list)} {safe_format(self.emissive, list)} "           \
+               f"{safe_format(self.emissive, list)} {safe_format(self.specular, list)} "           \
                f"{self.reflectivity} {self.outline_idx} "                                          \
                f"{self.draw_method} {self.unknown_0x51} {self.unknown_0x52} {self.unknown_0x53} "  \
                f"{self.unknown_0x54} {self.unknown_0x55} {self.unknown_0x56} "                     \
@@ -132,8 +132,8 @@ class MaterialBinary(Serializable):
         
         self.ambient      = rw.rw_float32s(self.ambient, 4)
         self.diffuse      = rw.rw_float32s(self.diffuse, 4)
-        self.specular     = rw.rw_float32s(self.specular, 4)
         self.emissive     = rw.rw_float32s(self.emissive, 4)
+        self.specular     = rw.rw_float32s(self.specular, 4)
         self.reflectivity = rw.rw_float32(self.reflectivity)
         self.outline_idx  = rw.rw_float32(self.outline_idx)
         
