@@ -32,8 +32,7 @@ The plugin comes bundled with documentation. In the source repository, this is j
 
 ## Plugin Usage
 BlenderToolsForGFS makes a few idiomatic choices, such as, but not limited to:
-- UV maps must be named UV0 through to UV7, in order to preserve texture coordinate animations.
-- Imported meshes can be parented under other meshes to represent the fact that they share a node transform.
+- UV maps must be named UV0 through to UV6, in order to preserve texture coordinate animations.
 - Cameras and Lights are attached to bones using `ChildOf` constraints.
 - Blend Animations must be split into two Actions - one for Translations and Rotations, and one for Scales.
 
@@ -45,31 +44,19 @@ All data from the GFS or GAP file should be preserved from import to export, but
 - Camera aspect ratios are not displayed in Blender.
 - Most aspects of Lights are not displayed in Blender.
 - Materials are only implemented as using the Diffuse Texture. All Material data is imported, but most is not rendered in order to not be misleading.
-- Physics data is not displayed.
+- Physics bones are not previewable.
 - EPL data is not displayed.
 - All animations other than Node/Bone animations are not displayed.
 
 ## Known Bugs
 - Names not decodable as UTF-8 will cause import errors. Since all vanilla models use UTF-8, this bug can only be triggered by edited files.
-- Meshes rigged or attached to the root bone will import and export incorrectly.
-- The following vanilla P5R models will fail to re-export:
-    - MODEL/CHARACTER/0006/C0006_103_00.GMD
-    - MODEL/CHARACTER/5905/C5905_001_00.GMD
-    - MODEL/FIELD_TEX/OBJECT/M051_040.GMD
-    - MODEL/FIELD_TEX/OBJECT/M062_078.GMD
-    - MODEL/FIELD_TEX/OBJECT/M062_080.GMD
-    - MODEL/FIELD_TEX/OBJECT/M062_081.GMD
 
 ## Future Development
 The highest-priority features are, in order of importance:
 1) A custom Material Node that faithfully reproduces the material rendering.
-2) Ability to import, manipulate, and export multiple animations packs simultaneously.
-3) Ability to link multiple Blender Actions together into a single GFS animation.
-4) Ability to activate and deactivate "combined" Actions from a UI panel.
-5) Import and editability of material, camera, and morph animations (requires all prior features to be implemented first).
-6) Import, manipulation, and export of physics colliders.
-7) Import, manipulation, and export of submodels in EPL data.
-8) Import, manupulation, and export of the model data in EPL files.
+2) Import and editability of material, camera, and morph animations.
+3) Import, manipulation, and export of submodels in EPL data.
+4) Import, manupulation, and export of the model data in EPL files.
 
 ## Acknowledgements
 This is a Blender importer for the GFS file format. The GFS format code has been heavily derived from [GFD Studio](https://github.com/tge-was-taken/GFD-Studio), tge's [3DS Max importer](https://github.com/tge-was-taken/GFD-Studio/tree/master/Resources/GfdImporter), and the [010 Editor templates](https://github.com/CherryCreamSoda/010-Editor-Templates/blob/master/templates/p5_gfd.bt). Deep thanks are given to all those who have contributed to the understanding of the format.
