@@ -94,10 +94,10 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     flag_30:         bpy.props.BoolProperty(name="Unknown Flag 30",      default=False)
     flag_31:         bpy.props.BoolProperty(name="Unknown Flag 31",      default=False)
     
-    ambient:         bpy.props.FloatVectorProperty(name="Ambient Color",  size=4, default=(1., 1., 1., 1.))
-    diffuse:         bpy.props.FloatVectorProperty(name="Diffuse Color",  size=4, default=(1., 1., 1., 1.))
-    specular:        bpy.props.FloatVectorProperty(name="Specular Color", size=4, default=(1., 1., 1., 1.))
-    emissive:        bpy.props.FloatVectorProperty(name="Emissive Color", size=4, default=(1., 1., 1., 1.))
+    ambient:         bpy.props.FloatVectorProperty(name="Ambient Color",  size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
+    diffuse:         bpy.props.FloatVectorProperty(name="Diffuse Color",  size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
+    specular:        bpy.props.FloatVectorProperty(name="Specular Color", size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
+    emissive:        bpy.props.FloatVectorProperty(name="Emissive Color", size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
     reflectivity:    bpy.props.FloatProperty      (name="Reflectivity",   default=0.)
     outline_idx:     bpy.props.FloatProperty      (name="Outline Idx.",   default=0.)
     draw_method:     bpy.props.IntProperty        (name="Draw Method",    default=0, min=0, max=65535) # Change to enum later
@@ -147,7 +147,7 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     
     has_toon:  bpy.props.BoolProperty(name="Active")
     
-    toon_colour:           bpy.props.FloatVectorProperty(name="Color", default=[1., 1., 1., 1.], size=4)
+    toon_colour:           bpy.props.FloatVectorProperty(name="Color", default=[1., 1., 1., 1.], size=4, subtype="COLOR", soft_min=0., soft_max=1.)
     toon_light_threshold:  bpy.props.FloatProperty(name="Light Threshold")
     toon_light_factor:     bpy.props.FloatProperty(name="Light Factor")
     toon_light_brightness: bpy.props.FloatProperty(name="Light Brightness")
