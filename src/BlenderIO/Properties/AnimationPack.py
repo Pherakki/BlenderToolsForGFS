@@ -36,7 +36,8 @@ LookAtAnimBoundingBox, LookAtAnimBoundingBoxProps = generate_bounding_box_props(
 
 class NLAStripWrapper(bpy.types.PropertyGroup):
     name:                bpy.props.StringProperty(name="Name", default="New Strip")
-    frame_start_ui:      bpy.props.FloatProperty(default=1.)
+    frame_start:         bpy.props.FloatProperty(default=1.)
+    frame_end:           bpy.props.FloatProperty(default=1.)
     action_frame_start:  bpy.props.FloatProperty()
     action_frame_end:    bpy.props.FloatProperty()
     scale:               bpy.props.FloatProperty(default=1.)
@@ -45,7 +46,8 @@ class NLAStripWrapper(bpy.types.PropertyGroup):
 
     def from_action(self, action):
         self.name                = action.name
-        self.frame_start_ui      = 1.
+        self.frame_start         = 1.
+        self.frame_end           = action.frame_range[1] - action.frame_range[0]
         self.action_frame_start, \
         self.action_frame_end    = action.frame_range
         self.scale               = 1.
@@ -54,7 +56,8 @@ class NLAStripWrapper(bpy.types.PropertyGroup):
 
     def from_nla_strip(self, nla_strip):
         self.name                = nla_strip.name
-        self.frame_start_ui      = nla_strip.frame_start_ui
+        self.frame_start         = nla_strip.frame_start
+        self.frame_end           = nla_strip.frame_end
         self.action_frame_start  = nla_strip.action_frame_start
         self.action_frame_end    = nla_strip.action_frame_end
         self.scale               = nla_strip.scale
@@ -66,7 +69,8 @@ class NLAStripWrapper(bpy.types.PropertyGroup):
                                          1,
                                          self.action)
         
-        nla_strip.frame_start_ui     = self.frame_start_ui
+        nla_strip.frame_start        = self.frame_start
+        nla_strip.frame_end          = self.frame_end
         nla_strip.action_frame_start = self.action_frame_start
         nla_strip.action_frame_end   = self.action_frame_end
         nla_strip.scale              = self.scale
@@ -95,7 +99,7 @@ class BaseTypedAnimation:
         track.mute = True
         # Import strips in reverse start order so they don't bump into each
         # other when they get shifted to the correct position in the track
-        for prop_strip in reversed(sorted(self.strips, key=lambda strip: strip.frame_start_ui)):
+        for prop_strip in reversed(sorted(self.strips, key=lambda strip: strip.frame_start)):
             prop_strip.to_nla_strip(track)
         return track
 
@@ -479,7 +483,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             nla_track.mute = True
             # Import strips in reverse start order so they don't bump into each
             # other when they get shifted to the correct position in the track
-            for prop_strip in reversed(sorted(prop_track.strips, key=lambda strip: strip.frame_start_ui)):
+            for prop_strip in reversed(sorted(prop_track.strips, key=lambda strip: strip.frame_start)):
                 prop_strip.to_nla_strip(nla_track)
 
     @classmethod
