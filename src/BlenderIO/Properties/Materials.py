@@ -50,8 +50,8 @@ class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
     enable_anims: bpy.props.BoolProperty(name="Animatable", default=False)#update=update_unknown_0x04)
     unknown_0x08: bpy.props.BoolProperty(default=True)
     has_texture_filtering: bpy.props.BoolProperty(name="Filter Texture", default=True)
-    unknown_0x0A: bpy.props.IntProperty(default=0) # 0, 1, 2
-    unknown_0x0B: bpy.props.IntProperty(default=0) # 0, 1, 2
+    wrap_mode_u:  bpy.props.IntProperty(default=0) # 0, 1, 2
+    wrap_mode_v:  bpy.props.IntProperty(default=0) # 0, 1, 2
     unknown_0x0C: bpy.props.FloatProperty(default=1.) # -1, 0, 1, 1.3, 2, 5
     unknown_0x10: bpy.props.FloatProperty(default=-0.) # -1, 0
     unknown_0x14: bpy.props.FloatProperty(default=0.)

@@ -572,8 +572,8 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
             tex_node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
             tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
             tex_node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0A,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0B,
+            tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u,
+            tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v,
             [
                 tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C,
                 tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10,

@@ -556,8 +556,8 @@ def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, texture
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
         node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering = texture.has_texture_filtering
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0A = texture.unknown_0x0A
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0B = texture.unknown_0x0B
+        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u  = texture.wrap_mode_u
+        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v  = texture.wrap_mode_v
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C = texture.unknown_0x0C[0]
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10 = texture.unknown_0x0C[1]
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14 = texture.unknown_0x0C[2]

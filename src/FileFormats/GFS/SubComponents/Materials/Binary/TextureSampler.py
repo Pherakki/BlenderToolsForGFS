@@ -11,18 +11,18 @@ class TextureSamplerBinary(Serializable):
         self.unknown_0x04          = None
         self.unknown_0x08          = None
         self.has_texture_filtering = None
-        self.unknown_0x0A          = None
-        self.unknown_0x0B          = None
+        self.wrap_mode_u           = None
+        self.wrap_mode_v           = None
         self.unknown_0x0C          = None
         
     def __repr__(self):
-        return f"[GFD::Material::TextureSampler] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.unknown_0x0A} {self.unknown_0x0B} {self.unknown_0x0C}"
+        return f"[GFD::Material::TextureSampler] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.wrap_mode_u} {self.wrap_mode_v} {self.unknown_0x0C}"
         
     def read_write(self, rw, version):
         self.name                  = rw.rw_obj(self.name, version, encoding="shift-jis")
         self.unknown_0x04          = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08          = rw.rw_uint8(self.unknown_0x08)
         self.has_texture_filtering = rw.rw_uint8(self.has_texture_filtering)
-        self.unknown_0x0A          = rw.rw_uint8(self.unknown_0x0A)
-        self.unknown_0x0B          = rw.rw_uint8(self.unknown_0x0B)
+        self.wrap_mode_u           = rw.rw_uint8(self.wrap_mode_u)  # 0 = repeat, 1 = mirror
+        self.wrap_mode_v           = rw.rw_uint8(self.wrap_mode_v)
         self.unknown_0x0C          = rw.rw_float32s(self.unknown_0x0C, 0x10)
