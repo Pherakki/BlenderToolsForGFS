@@ -32,7 +32,7 @@ def import_physics(gfs, bpy_obj):
             # Remove this later...
             c = make_collider(cldr.has_name,
                              collider_types[cldr.collider_type],
-                              cldr.capsule_height/2 if cldr.capsule_height is not None else 0.,
+                              cldr.capsule_height if cldr.capsule_height is not None else 0.,
                               cldr.capsule_radius,
                               cldr.unknown_0x0A, # ibpm
                               cldr.name.string,  # bone name
@@ -49,7 +49,7 @@ def import_physics(gfs, bpy_obj):
             b_col.detached = cldr.has_name
             b_col.dtype  = collider_types[cldr.collider_type]
             b_col.radius = cldr.capsule_radius
-            b_col.height = cldr.capsule_height/2 if cldr.capsule_height is not None else 0.
+            b_col.height = cldr.capsule_height if cldr.capsule_height is not None else 0.
         
         for link in gfs_phys.physics_bone_links:
             b_link = props.links.add()

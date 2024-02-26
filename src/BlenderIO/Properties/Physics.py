@@ -50,7 +50,7 @@ class GFSToolsBackendColliderProperties(bpy.types.PropertyGroup):
         
         make_collider(self.detached,
                       self.dtype,
-                      self.height,
+                      self.height/2,
                       self.radius,
                       [*self.ibpm_0, *self.ibpm_1, *self.ibpm_2, *self.ibpm_3],
                       self.bone,

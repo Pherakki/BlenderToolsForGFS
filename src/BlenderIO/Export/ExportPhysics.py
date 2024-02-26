@@ -75,7 +75,7 @@ def export_physics(gfs, bpy_obj, errorlog):
                 cldr.name = cldr.name.from_name(bone_name)
                 cldr.collider_type = 0 if col_props.dtype == "Sphere" else 1
                 cldr.capsule_radius = col_props.radius*max(obj.scale)
-                cldr.capsule_height = col_props.height*max(obj.scale)*2
+                cldr.capsule_height = col_props.height*max(obj.scale)
                 
                 ibpm = (parent_matrix.inverted() @ obj.matrix_world @ colY_to_colX_matrix.inverted()).transposed()
                 cldr.unknown_0x0A = [*ibpm[0], *ibpm[1], *ibpm[2], *ibpm[3]]
