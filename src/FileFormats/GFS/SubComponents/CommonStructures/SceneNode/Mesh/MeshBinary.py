@@ -84,7 +84,7 @@ class MeshBinary(Serializable):
         self.tri_count = 0
         self.index_type  = None
         self.vertex_count = None
-        self.unknown_0x12 = None
+        self.unknown_0x12 = 0
         self.vertices = None
         self.__morph_data = MorphDataBinary()
         self.indices = None
@@ -113,7 +113,9 @@ class MeshBinary(Serializable):
             self.index_type = rw.rw_uint16(self.index_type)
         
         self.vertex_count = rw.rw_uint32(self.vertex_count)
-        self.unknown_0x12 = rw.rw_uint32(self.unknown_0x12)
+        
+        if version > 0x01103020:
+            self.unknown_0x12 = rw.rw_uint32(self.unknown_0x12)
         
         rw_funcs = []
         if self.vertex_format.has_positions:  rw_funcs.append(VertexAttributes.rw_position)
@@ -146,7 +148,7 @@ class MeshBinary(Serializable):
                 self.indices = rw.rw_uint32s(self.indices, self.tri_count*3)
             else:
                 raise NotImplementedError(f"Unknown Index Type '{self.index_type}'")
-                
+        
         # Do materials
         if self.flags.has_material:
             rw.rw_obj(self.material_name, version)

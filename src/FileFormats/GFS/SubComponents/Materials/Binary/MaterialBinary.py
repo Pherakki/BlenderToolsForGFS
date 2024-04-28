@@ -74,7 +74,7 @@ class MaterialBinary(Serializable):
         self.unknown_0x52 = None
         self.unknown_0x53 = None
         self.unknown_0x54 = None
-        self.unknown_0x55 = None # Highlight map blend mode: 1 -> Normal, 2 -> dodge, 4 -> multiply
+        self.unknown_0x55 = 1 # Highlight map blend mode: 1 -> Normal, 2 -> dodge, 4 -> multiply
         self.unknown_0x56 = None
         self.unknown_0x58 = None
         self.unknown_0x5A = 1
@@ -83,7 +83,7 @@ class MaterialBinary(Serializable):
         self.texture_indices_1 = TextureMapIndices()
         self.texture_indices_2 = TextureMapIndices()
         self.disable_backface_culling = None
-        self.unknown_0x6A = None
+        self.unknown_0x6A = -1
 
         # Unknown 0x56 - Unknown, [0, 1, 2, 5, 7, 10, 15, 20, 25, 30, 31, 32, 50, 60, 64, 65, 80, 90, 99, 100, 110, 112, 120, 125, 128, 129, 150, 160, 180, 200, 253, 255]
         # Unknown 0x58 - Unknown, [0, 1, 3, 4, 5, 6, 7]
@@ -169,8 +169,11 @@ class MaterialBinary(Serializable):
         self.texture_indices_2 = rw.rw_obj(self.texture_indices_2)
         
         self.disable_backface_culling = rw.rw_int16(self.disable_backface_culling)
-        self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
         
+        # Not sure about this check!!!
+        if version >= 0x01100000:
+            self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
+
         # Handle textures
         if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureSamplerBinary, version)
         if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     TextureSamplerBinary, version)
@@ -221,7 +224,6 @@ class MaterialAttributeBinary(Serializable):
     def read_write(self, rw, version):
         self.flags = rw.rw_obj(self.flags)
         self.ID = rw.rw_uint16(self.ID)
-    
         if self.ID == 0:
             dtype = ToonShadingProperty
         elif self.ID == 1:
@@ -309,11 +311,24 @@ class ToonShadingProperty(Serializable):
         self.colour           = rw.rw_float32s(self.colour, 4)
         self.light_threshold  = rw.rw_float32(self.light_threshold)
         self.light_factor     = rw.rw_float32(self.light_factor)
-        self.light_brightness = rw.rw_float32(self.light_brightness)
+        
+        if version <= 0x01104220:
+            self.light_brightness = 1.
+        else:
+            self.light_brightness = rw.rw_float32(self.light_brightness)
+        
         self.shadow_threshold = rw.rw_float32(self.shadow_threshold)
         self.shadow_factor    = rw.rw_float32(self.shadow_factor)
-        self.flags            = rw.rw_obj(self.flags, version)
         
+        if 0x01104220 < version < 0x01104500:
+            self.flags.flag_0 = rw.rw_uint8(self.flags.flag_0)
+            self.flags.flag_1 = rw.rw_uint8(self.flags.flag_1)
+            self.flags.flag_2 = rw.rw_uint8(self.flags.flag_2)
+            if version > 0x01104260:
+                self.flags.flag_3 = rw.rw_uint8(self.flags.flag_3)
+        else:
+            self.flags = rw.rw_obj(self.flags, version)
+
 
 class Property1Flags(MaterialAttributeSubTypeFlags):
     flag_0  = BitVector.DEF_FLAG(0x00)
@@ -381,7 +396,19 @@ class Property1(Serializable):
         self.unknown_0x24 = rw.rw_float32(self.unknown_0x24)
         self.unknown_0x28 = rw.rw_float32(self.unknown_0x28)
         self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
-        self.flags        = rw.rw_obj(self.flags, version)
+        
+        if version <= 0x01104500:
+            self.flags.flag_0 = rw.rw_uint8(self.flags.flag_0)
+            if version > 0x01104180:
+                self.flags.flag_1 = rw.rw_uint8(self.flags.flag_1)
+            if version > 0x01104210:
+                self.flags.flag_2 = rw.rw_uint8(self.flags.flag_2)
+            if version > 0x1104400:
+                self.flags.flag_3 = rw.rw_uint8(self.flags.flag_3)
+        else:
+            self.flags = rw.rw_obj(self.flags, version)
+
+
 
 class OutlineProperty(Serializable):
     def __init__(self, endianness='>'):
@@ -619,7 +646,8 @@ class Property5(Serializable):
         self.unknown_0x2C = rw.rw_float32(self.unknown_0x2C)
         self.unknown_0x30 = rw.rw_float32(self.unknown_0x30)
         self.flags        = rw.rw_obj(self.flags, version)
-        
+
+
 class Property6(Serializable):
     def __init__(self, endianness='>'):
         super().__init__()
@@ -632,6 +660,7 @@ class Property6(Serializable):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
+
 
 class Property7(Serializable):
     def __init__(self, endianness='>'):

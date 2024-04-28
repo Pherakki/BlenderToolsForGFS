@@ -38,8 +38,9 @@ class GFS0ContainerBinary(Serializable):
         self.size         = rw.rw_uint32(self.size)
         
         # Need to be extremely careful here...
-        if self.version < 0x01104800 and (rw.mode() == "read" or rw.mode() == "write"):
-            raise UnsupportedVersionError(f"GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
+        # print(f"VERSION: {self.version:0>8x}, TYPE: {hex(self.type)}, SIZE: {self.size}")
+        # if self.version < 0x01104030 and (rw.mode() == "read" or rw.mode() == "write"):
+        #     raise UnsupportedVersionError(f"GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
 
         args = []
         if self.type == 0x00000000:

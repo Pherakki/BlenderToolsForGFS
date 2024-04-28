@@ -13,6 +13,7 @@ class SceneNodeBinary(Serializable):
         self.position = None
         self.rotation = None
         self.scale = None
+        self.unknown_byte = 1
         self.attachment_count = 0
         self.attachments = []
         self.has_properties = None
@@ -30,12 +31,18 @@ class SceneNodeBinary(Serializable):
         self.rotation    = rw.rw_float32s(self.rotation, 4)
         self.scale       = rw.rw_float32s(self.scale, 3)
         
+        if version <= 0x01090000:
+            self.unknown_byte = rw.rw_uint8(self.unknown_byte)
+            rw.assert_equal(self.unknown_byte, 1)
+        
         self.attachment_count = rw.rw_uint32(self.attachment_count)
         self.attachments = rw.rw_obj_array(self.attachments, NodeAttachmentBinary, self.attachment_count, type(self), version)
         self.has_properties = rw.rw_uint8(self.has_properties)
         if self.has_properties:
             rw.rw_obj(self.properties, version)
-        self.float = rw.rw_float32(self.float)
+            
+        if version > 0x01104230:
+            self.float = rw.rw_float32(self.float)
         
         rw.rw_obj(self.children, version)
     
