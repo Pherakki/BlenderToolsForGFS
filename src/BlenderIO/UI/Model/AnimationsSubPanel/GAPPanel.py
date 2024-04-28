@@ -25,6 +25,7 @@ class ToggleActiveAnimationPack(bpy.types.Operator):
         bpy_armature_object = context.active_object
         bpy_armature = bpy_armature_object.data
         mprops = bpy_armature.GFSTOOLS_ModelProperties
+        
         selected_gap = mprops.animation_packs[self.index]
 
         if selected_gap.is_active:
@@ -47,6 +48,9 @@ class ToggleActiveAnimationPack(bpy.types.Operator):
         mprops = bpy_armature.GFSTOOLS_ModelProperties
         selected_gap = mprops.get_selected_gap()
 
+        if selected_gap is None:
+            return "No GAPs"
+        
         if selected_gap.is_active:
             return "Deactivate GAP"
         else:
@@ -254,6 +258,9 @@ class OBJECT_PT_GFSToolsAnimationDataPanel(bpy.types.Panel):
 
         gap = aprops.get_selected_gap()
 
+        if gap is None:
+            return
+        
         ctr.separator(factor=1.0)
 
         lookat_row = ctr.row()
