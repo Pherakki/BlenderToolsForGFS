@@ -533,7 +533,8 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     # FINALISE MESH #
     #################
     bpy_mesh.validate(verbose=True, clean_customdata=False)
-    bpy_mesh.use_auto_smooth = True
+    if not bpy_at_least(4, 1, 0):
+        bpy_mesh.use_auto_smooth = True
     
     bpy_mesh.update()
     bpy_mesh.update()

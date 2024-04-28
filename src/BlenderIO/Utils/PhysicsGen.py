@@ -3,6 +3,7 @@ import math
 import bpy
 from mathutils import Matrix
 
+from ..modelUtilsTest.API.Version import bpy_at_least
 from .Maths import boneY_to_boneX_matrix, upY_to_upZ_matrix, colY_to_colX_matrix
 
 COLLIDER_MATERIAL_NAME = ".GFSTOOLS_ColliderMaterial"
@@ -139,15 +140,23 @@ def make_collider_mesh(collider_name, mat, height, radius, is_capsule):
     bpy_mesh_object.active_material = mat
     return bpy_mesh_object
 
-
-def rebuild_collider(bpy_mesh, radius, height, is_capsule):
-    complexity = 4
-    
-    bpy_mesh.clear_geometry()
-    bpy_mesh.from_pydata(*make_capsule(complexity, radius, is_capsule*height/2))
-    bpy_mesh.use_auto_smooth = True
-    for poly in bpy_mesh.polygons:
-        poly.use_smooth = True
+if bpy_at_least(4, 1, 0):
+    def rebuild_collider(bpy_mesh, radius, height, is_capsule):
+        complexity = 4
+        
+        bpy_mesh.clear_geometry()
+        bpy_mesh.from_pydata(*make_capsule(complexity, radius, is_capsule*height/2))
+        for poly in bpy_mesh.polygons:
+            poly.use_smooth = True
+else:
+    def rebuild_collider(bpy_mesh, radius, height, is_capsule):
+        complexity = 4
+        
+        bpy_mesh.clear_geometry()
+        bpy_mesh.from_pydata(*make_capsule(complexity, radius, is_capsule*height/2))
+        bpy_mesh.use_auto_smooth = True
+        for poly in bpy_mesh.polygons:
+            poly.use_smooth = True
 
 
 def make_collider(has_name, dtype, height, radius, ibpm, parent_bone, armature):
