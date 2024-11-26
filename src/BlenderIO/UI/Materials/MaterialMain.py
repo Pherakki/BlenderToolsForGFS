@@ -41,18 +41,10 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_30")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_31")
         
-        # Colours
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "ambient")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "diffuse")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "enable_specular")
-        if mat.GFSTOOLS_MaterialProperties.enable_specular:
-            layout.prop(mat.GFSTOOLS_MaterialProperties, "specular")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "enable_emissive")
-        if mat.GFSTOOLS_MaterialProperties.enable_emissive:
-            layout.prop(mat.GFSTOOLS_MaterialProperties, "emissive")
-            
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "reflectivity")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "outline_idx")
+        layout.prop(mat.GFSTOOLS_MaterialProperties, "shader_type")
+        mat.GFSTOOLS_MaterialProperties.shader_params.draw(layout, mat.GFSTOOLS_MaterialProperties)
         layout.prop(mat.GFSTOOLS_MaterialProperties, "draw_method")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x51")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x52")
@@ -65,6 +57,7 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5C")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x5E")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x6A")
+        layout.prop(mat.GFSTOOLS_MaterialProperties, "unknown_0x6C")
         
         props = mat.GFSTOOLS_MaterialProperties
         

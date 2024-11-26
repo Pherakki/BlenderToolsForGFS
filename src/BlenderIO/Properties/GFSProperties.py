@@ -1,4 +1,5 @@
 import bpy
+from ..Utils.String import set_name_string
 
 
 class GFSToolsGenericProperty(bpy.types.PropertyGroup):
@@ -26,7 +27,7 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
     bytes_data:       bpy.props.StringProperty(name="", default="0x00")
     
     @staticmethod
-    def extract_data(prop):
+    def extract_data(prop, errorlog):
         if   prop.dtype == "INT32":
             dtype = 1; prop_data = prop.int32_data
         elif prop.dtype == "FLOAT32":
@@ -34,7 +35,7 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
         elif prop.dtype == "UINT8":
             dtype = 3; prop_data = prop.uint8_data
         elif prop.dtype == "STRING":
-            dtype = 4; prop_data = prop.string_data
+            dtype = 4; prop_data = set_name_string("Property String Data", prop.string_data, "utf8", errorlog)
         elif prop.dtype == "UINT8VEC3":
             dtype = 5; prop_data = prop.uint8vec3_data
         elif prop.dtype == "UINT8VEC4":
@@ -53,5 +54,5 @@ class GFSToolsGenericProperty(bpy.types.PropertyGroup):
             
             dtype = 9
             prop_data = prop.bytes_data
-            
+        
         return prop.dname, dtype, prop_data

@@ -52,6 +52,8 @@ def export_lights(gfs, armature):
         light.unknown_0x7C = props.unknown_0x7C
         light.unknown_0x80 = props.unknown_0x80
         light.unknown_0x84 = props.unknown_0x84
+        light.unknown_0x88 = props.unknown_0x88
+        light.unknown_0x8C = props.unknown_0x8C
         
         light.flags.flag_0  = props.flag_0
         light.flags.unk_setting = props.unk_setting

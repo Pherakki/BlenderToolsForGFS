@@ -4,7 +4,7 @@ import bpy
 
 from ...FileFormats.GFS.Interface import EPLInterface
 from ...FileFormats.GFS.SubComponents.CommonStructures.SceneNode.EPL.EPLBinary import EPLBinary
-from ...serialization.parsers import GFSReader
+from ..Utils.Serialization import unpack_object
 
 
 def export_epls(gfs, armature, errorlog, export_policies):
@@ -29,12 +29,5 @@ def export_epls(gfs, armature, errorlog, export_policies):
     
 
 def unpack_epl_binary(epl_prop):
-    stream = io.BytesIO()
-    stream.write(bytes.fromhex(epl_prop.blob))
-    stream.seek(0)
-    rdr = Reader(None)
-    rdr.bytestream = stream
-    epl_binary = EPLBinary(endianness=">")
-    rdr.rw_obj(epl_binary, 0x01105100)
-    
+    epl_binary = unpack_object(epl_prop.blob, EPLBinary)
     return epl_binary

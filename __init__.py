@@ -44,6 +44,18 @@ def init_bpy():
     from .src.BlenderIO.Properties.Lights        import GFSToolsLightProperties
     from .src.BlenderIO.Properties.Materials     import GFSToolsTextureRefPanelProperties
     from .src.BlenderIO.Properties.Materials     import GFSToolsMaterialProperties
+    from .src.BlenderIO.Properties.MaterialShader import GFSToolsMaterialShaderPropsProperties
+    from .src.BlenderIO.Properties.MaterialShader import Type0Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type2Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type4Flags
+    from .src.BlenderIO.Properties.MaterialShader import WaterFlags
+    from .src.BlenderIO.Properties.MaterialShader import Type6Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type7Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type9Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type10Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type12Flags
+    from .src.BlenderIO.Properties.MaterialShader import Type15Flags
+    from .src.BlenderIO.Properties.MaterialShader.V2Type15 import V2Type15Layer
     from .src.BlenderIO.Properties.Meshes        import MeshBoundingBox
     from .src.BlenderIO.Properties.Meshes        import MeshBoundingSphere
     from .src.BlenderIO.Properties.Meshes        import MeshBoundingBoxProps
@@ -86,7 +98,7 @@ def init_bpy():
     from .src.BlenderIO.UI.RegisterWindow import RegisterWindow
     from .src.BlenderIO.UI.ShaderNodes   import OBJECT_PT_GFSToolsTextureRefPanel, OBJECT_PT_GFSToolsImagePanel
     from .src.BlenderIO.Globals          import ErrorLogger
-    
+
     CLASSES = (
         AddonPreferences,
         ImportPolicies,
@@ -100,6 +112,18 @@ def init_bpy():
         GFSExportSubmenu,
         NLAStripWrapper,
         NLATrackWrapper,
+        V2Type15Layer,
+        Type15Flags,
+        Type12Flags,
+        Type10Flags,
+        Type9Flags,
+        Type7Flags,
+        Type6Flags,
+        WaterFlags,
+        Type4Flags,
+        Type2Flags,
+        Type0Flags,
+        GFSToolsMaterialShaderPropsProperties,
         NodeAnimationProperties,
         MaterialAnimationProperties,
         CameraAnimationProperties,

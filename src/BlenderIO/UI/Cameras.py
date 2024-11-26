@@ -24,6 +24,9 @@ class OBJECT_PT_GFSToolsCameraAttributesPanel(bpy.types.Panel):
         
         ctr.prop(light.GFSTOOLS_CameraProperties, "aspect_ratio")
         ctr.prop(light.GFSTOOLS_CameraProperties, "unknown_0x50")
+        ctr.prop(light.GFSTOOLS_CameraProperties, "unknown_0x54")
+        ctr.prop(light.GFSTOOLS_CameraProperties, "unknown_0x55")
+        ctr.prop(light.GFSTOOLS_CameraProperties, "unknown_0x59")
 
     CameraHelpWindow = defineHelpWindow("Camera",
         "- 'Lens Unit' must be set to 'Field of View'.\n"\

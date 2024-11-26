@@ -24,6 +24,8 @@ class OBJECT_PT_GFSToolsLightAttributesPanel(bpy.types.Panel):
         ctr.prop(light.GFSTOOLS_LightProperties, "alpha")
         ctr.prop(light.GFSTOOLS_LightProperties, "color_1")
         ctr.prop(light.GFSTOOLS_LightProperties, "color_3")
+        ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x88")
+        ctr.prop(light.GFSTOOLS_LightProperties, "unknown_0x8C")
         
         ctr.prop(light.GFSTOOLS_LightProperties, "dtype")
         if light.GFSTOOLS_LightProperties.dtype == "TYPE1":

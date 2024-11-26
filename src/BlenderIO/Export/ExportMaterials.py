@@ -2,17 +2,41 @@ import os
 
 import bpy
 
+from ...FileFormats.TexBin.Metaphor import MetaphorTextureBin
 from ..Data import dummy_image_data
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
+from ..Utils.String import set_name_string
 
+PARAMS_TYPE_LOOKUP = {
+    "V1": -1,
+    "V2Type0": 0,
+    "V2Type1": 1,
+    "V2Type2": 2,
+    "V2Type3": 3,
+    "V2Type4": 4,
+    "V2Water": 5,
+    "V2Type6": 6,
+    "V2Type7": 7,
+    "V2Type8": 8,
+    "V2Type9": 9,
+    "V2Type10": 10,
+    "V2Type11": 11,
+    "V2Type12": 12,
+    "V2Type13": 13,
+    "V2Type14": 14,
+    "V2Type15": 15,
+    "V2Type16": 16
+}
 
-def export_materials_and_textures(gfs, bpy_material_names, errorlog):
+def export_materials_and_textures(gfs, bpy_material_names, texture_mode, errorlog):
     texture_names = set()
     for bpy_material_name in bpy_material_names:
         bpy_material = bpy.data.materials[bpy_material_name]
-        mat_name = bpy_material.name
+        mat_name_bytes = set_name_string("Material Name", bpy_material.name, "utf8", errorlog)
+        mat_name = mat_name_bytes.decode('utf8')
         
         mat = gfs.add_material(mat_name)
+        mprops = bpy_material.GFSTOOLS_MaterialProperties
         mat.flag_0              = bpy_material.GFSTOOLS_MaterialProperties.flag_0
         mat.flag_1              = bpy_material.GFSTOOLS_MaterialProperties.flag_1
         mat.enable_specular     = bpy_material.GFSTOOLS_MaterialProperties.enable_specular
@@ -35,12 +59,9 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
         mat.flag_30             = bpy_material.GFSTOOLS_MaterialProperties.flag_30
         mat.flag_31             = bpy_material.GFSTOOLS_MaterialProperties.flag_31
 
-        mat.ambient      = bpy_material.GFSTOOLS_MaterialProperties.ambient
-        mat.diffuse      = bpy_material.GFSTOOLS_MaterialProperties.diffuse
-        mat.specular     = bpy_material.GFSTOOLS_MaterialProperties.specular
-        mat.emissive     = bpy_material.GFSTOOLS_MaterialProperties.emissive
-        mat.reflectivity = bpy_material.GFSTOOLS_MaterialProperties.reflectivity
-        mat.outline_idx  = bpy_material.GFSTOOLS_MaterialProperties.outline_idx
+     
+        mat.params_type   = PARAMS_TYPE_LOOKUP[mprops.shader_type]
+        mat.shader_params = mprops.shader_params.to_params(mprops)
         mat.draw_method  = bpy_material.GFSTOOLS_MaterialProperties.draw_method
         mat.unknown_0x51 = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x51
         mat.unknown_0x52 = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x52
@@ -53,6 +74,7 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
         mat.unknown_0x5C = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5C
         mat.unknown_0x5E = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x5E
         mat.unknown_0x6A = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x6A
+        mat.unknown_0x6C = bpy_material.GFSTOOLS_MaterialProperties.unknown_0x6C
         
         mat.disable_backface_culling = int(not bpy_material.use_backface_culling)
 
@@ -482,16 +504,31 @@ def export_materials_and_textures(gfs, bpy_material_names, errorlog):
     # Export textures
     if None in texture_names:
         texture_names.remove(None)
+    
+    texbin = None
     texture_names = sorted(texture_names)
-    for (texture_name, mat_name, node_name) in texture_names:
-        export_texture(gfs, texture_name, mat_name, node_name, errorlog)
+    if texture_mode == "EMBEDDED":
+        for (texture_name, mat_name, node_name) in texture_names:
+            export_texture(gfs, texture_name, mat_name, node_name, False, errorlog)
+    elif texture_mode == "MULTIFILE":
+        texbin = MetaphorTextureBin()
+        for (texture_name, mat_name, node_name) in texture_names:
+            bname = texture_name.encode('shift-jis', errors='replace')
+            texbin.add_texture(bname, export_texture(gfs, texture_name, mat_name, node_name, True, errorlog))
+    elif texture_mode == "BORROW":
+        for (texture_name, mat_name, node_name) in texture_names:
+            export_texture(gfs, texture_name, mat_name, node_name, True, errorlog)
+    else:
+        raise NotImplementedError(f"CRITICAL INTERNAL ERROR: '{texture_mode}' IS NOT A VALID TEXTURE MODE!")
+    
+    return texbin
 
 
-def export_texture(gfs, texture_name, mat_name, node_name, errorlog):
+def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, errorlog):
     # Retreive image data block from Blender
     if texture_name == "dummy" and texture_name not in bpy.data.images:
         gfs.add_texture("dummy", dummy_image_data, 1, 1, 0, 0)
-        return
+        return dummy_image_data
     else:
         bpy_image = bpy.data.images[texture_name]
     
@@ -525,11 +562,20 @@ def export_texture(gfs, texture_name, mat_name, node_name, errorlog):
         errorlog.log_warning_message(f"Attempted to export image '{bpy_image.name}' used by material '{mat_name}' on texture node '{node_name}', but it is not a DDS texture. This will be replaced with a dummy texture.")
         image_data = dummy_image_data
     
+    # Now create the texture definition in the GFS file
     tex_names = set(tex.name for tex in gfs.textures)
     if texture_name not in tex_names:
         props = bpy_image.GFSTOOLS_ImageProperties
-        gfs.add_texture(texture_name, image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
-    
+        try:
+            bname = texture_name.encode('shift-jis')
+        except UnicodeEncodeError:   
+            bname = texture_name.encode('shift-jis', errors='replace')
+            errorlog.log_warning_message(f"Attempted to export image '{texture_name}' which has a name unencodable as shift-jis. Exporting with bad characters replaced.")
+        
+        gfs.add_texture(bname.decode('shift-jis'), dummy_image_data if embed_dummy_image else image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
+
+    return image_data
+            
         
 def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_idx, errorlog):
     if name in nodes:
@@ -568,7 +614,7 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
         
         in_idx  = 7 if in_idx  == "None" else int(in_idx)
         out_idx = 7 if out_idx == "None" else int(out_idx)
-        create_sampler(in_idx, out_idx, image_name,
+        create_sampler(in_idx, out_idx, set_name_string("Texture name", image_name, "shift-jis", errorlog),
             tex_node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
             tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
             tex_node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,

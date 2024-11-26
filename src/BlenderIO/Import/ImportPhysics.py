@@ -1,10 +1,10 @@
 from ..Utils.PhysicsGen import make_collider
-
+from ..Utils.String import get_name_string
 
 collider_types = {0: "Sphere", 1: "Capsule"}
 
 
-def import_physics(gfs, bpy_obj):
+def import_physics(gfs, bpy_obj, errorlog):
     if gfs.physics_data is not None:
         props = bpy_obj.data.GFSTOOLS_ModelProperties.physics
         gfs_phys = gfs.physics_data
@@ -19,7 +19,10 @@ def import_physics(gfs, bpy_obj):
         for bone in gfs_phys.physics_bones:
             b_bone = props.bones.add()
             b_bone.has_name = bone.has_name
-            b_bone.name = bone.name.string if bone.name.string is not None else ""
+            if bone.name.string is not None:
+                b_bone.name = get_name_string("Physics Bone", bone.name.string, "utf8", errorlog)
+            else:
+                b_bone.name = ""
             b_bone.unknown_0x00 = bone.unknown_0x00
             b_bone.unknown_0x04 = bone.unknown_0x04
             b_bone.unknown_0x08 = bone.unknown_0x08
@@ -28,20 +31,12 @@ def import_physics(gfs, bpy_obj):
                 b_bone.nameless_data = bone.unknown_0x14
             
         for cldr in gfs_phys.colliders:
-            # Create collider meshes
-            # Remove this later...
-            c = make_collider(cldr.has_name,
-                             collider_types[cldr.collider_type],
-                              cldr.capsule_height if cldr.capsule_height is not None else 0.,
-                              cldr.capsule_radius,
-                              cldr.unknown_0x0A, # ibpm
-                              cldr.name.string,  # bone name
-                              bpy_obj) # armature
-            c.hide_set(True)
-            
             # Gonna keep this around though
             b_col = props.colliders.add()
-            b_col.bone   = "" if cldr.name.string is None else cldr.name.string
+            if cldr.name.string is not None:
+                b_col.bone = get_name_string("Collider Bone", cldr.name.string, "utf8", errorlog)
+            else:
+                b_col.bone = ""
             b_col.ibpm_0 = cldr.unknown_0x0A[0:4]
             b_col.ibpm_1 = cldr.unknown_0x0A[4:8]
             b_col.ibpm_2 = cldr.unknown_0x0A[8:12]
@@ -50,6 +45,18 @@ def import_physics(gfs, bpy_obj):
             b_col.dtype  = collider_types[cldr.collider_type]
             b_col.radius = cldr.capsule_radius
             b_col.height = cldr.capsule_height if cldr.capsule_height is not None else 0.
+        
+            # Create collider meshes
+            # Remove this later...
+            c = make_collider(cldr.has_name,
+                             collider_types[cldr.collider_type],
+                              cldr.capsule_height if cldr.capsule_height is not None else 0.,
+                              cldr.capsule_radius,
+                              cldr.unknown_0x0A, # ibpm
+                              b_col.bone if len(b_col.bone) else None,  # bone name
+                              bpy_obj) # armature
+            c.hide_set(True)
+            
         
         for link in gfs_phys.physics_bone_links:
             b_link = props.links.add()

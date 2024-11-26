@@ -139,6 +139,9 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     flag_3:           bpy.props.BoolProperty(name="Unknown Flag 3", default=False) 
     root_node_name:   bpy.props.StringProperty(name="Root Node Name", default="RootNode")
     has_external_emt: bpy.props.BoolProperty(name="External EMT", default=False)    
+    texture_mode:     bpy.props.EnumProperty(items=[("EMBEDDED",  "Embedded",  "Textures are embedded within the model file"), 
+                                                    ("MULTIFILE", "Multifile", "Textures are stored in a separate texture file"), 
+                                                    ("BORROW",    "Borrow",    "Borrows textures from another external texture file")], name="Texture File", description="Where textures are written during export")
     physics:          bpy.props.PointerProperty(name="Physics", type=GFSToolsPhysicsProperties)
     physics_blob:     bpy.props.StringProperty(name="SECRET PHYSICS BLOB - DO NOT TOUCH", default='', options={'HIDDEN'})
 

@@ -1,6 +1,6 @@
 import bpy
+from ..Utils.String import natural_sort
 from ..Utils.UVMapManagement import make_uv_map_name
-
 
 def get_armature(bpy_mesh_object):
     if bpy_mesh_object.parent is None:
@@ -39,7 +39,7 @@ class GFSToolsObjectProperties(bpy.types.PropertyGroup):
             raise ValueError("Is not a GFS Model")
             
         meshes = []
-        for c in self.id_data.children:
+        for c in natural_sort(self.id_data.children, lambda obj: obj.name):
             if not c.GFSTOOLS_ObjectProperties.is_mesh():
                 continue
             if not c.data.GFSTOOLS_MeshProperties.is_mesh():

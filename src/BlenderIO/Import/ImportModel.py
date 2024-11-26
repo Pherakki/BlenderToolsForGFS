@@ -116,7 +116,7 @@ def build_bones_from_rest_pose(gfs, main_armature, bones_to_ignore, raw_gfs):
         
     # Now let's replace the mesh vertex data with transformed data
     gb = GFSBinary()
-    gb.unpack(raw_gfs)
+    gb.frombytes(raw_gfs)
     model_binary = gb.get_model_block().data
     
     bones,   \
@@ -332,7 +332,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
             import_mesh(mesh_name, bpy_node_names[node_idx], i, mesh, bone_transforms[node_idx], bone_rest_transforms[node_idx], bpy_node_names, main_armature, materials, material_vertex_attributes, errorlog, is_vertex_merge_allowed)
     
     set_material_vertex_attributes(materials, material_vertex_attributes, errorlog)
-        
+    
     # Import cameras
     for i, cam in enumerate(gfs.cameras):
         import_camera("camera", i, cam, main_armature, bpy_node_names)
@@ -533,11 +533,10 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     #################
     # FINALISE MESH #
     #################
-    bpy_mesh.validate(verbose=True, clean_customdata=False)
+    # bpy_mesh.validate(verbose=True, clean_customdata=False)
     if not bpy_at_least(4, 1, 0):
         bpy_mesh.use_auto_smooth = True
     
-    bpy_mesh.update()
     bpy_mesh.update()
 
     # Activate rigging
@@ -582,6 +581,7 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
 
     # Unknowns
     mprops.unknown_0x12  = mesh.unknown_0x12
+    mprops.stride_type   = mesh.stride_type
     if mesh.unknown_float_1 is not None and mesh.unknown_float_2 is not None:
         mprops.has_unknown_floats = True
         mprops.unknown_float_1  = mesh.unknown_float_1
@@ -701,6 +701,9 @@ def import_camera(name, i, camera, armature, bpy_node_names):
     # Custom properties
     bpy_camera.GFSTOOLS_CameraProperties.aspect_ratio = camera.binary.aspect_ratio # Can hook into Blender scene callback
     bpy_camera.GFSTOOLS_CameraProperties.unknown_0x50 = camera.binary.unknown_0x50 # Always 0...
+    bpy_camera.GFSTOOLS_CameraProperties.unknown_0x54 = camera.binary.unknown_0x54
+    bpy_camera.GFSTOOLS_CameraProperties.unknown_0x55 = camera.binary.unknown_0x55 
+    bpy_camera.GFSTOOLS_CameraProperties.unknown_0x59 = camera.binary.unknown_0x59
 
     # Create the object
     bpy_camera_object = bpy.data.objects.new(bpy_camera.name, bpy_camera)
@@ -789,6 +792,8 @@ def import_light(name, i, light, armature, bpy_node_names):
     if light.binary.unknown_0x7C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x7C = light.binary.unknown_0x7C
     if light.binary.unknown_0x80 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x80 = light.binary.unknown_0x80
     if light.binary.unknown_0x84 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x84 = light.binary.unknown_0x84
+    if light.binary.unknown_0x88 is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x88 = light.binary.unknown_0x88
+    if light.binary.unknown_0x8C is not None: bpy_light.GFSTOOLS_LightProperties.unknown_0x8C = light.binary.unknown_0x8C
     
     # Create the object
     bpy_light_object = bpy.data.objects.new(bpy_light.name, bpy_light)
@@ -821,12 +826,12 @@ def rig_mesh(bpy_mesh_object, bpy_node_names, new_verts, mprops):
     for bone_idx, vg in groups.items():
         vertex_group = bpy_mesh_object.vertex_groups.new(name=bpy_node_names[bone_idx])
         for vert_idx, vert_weight in vg:
-            vertex_group.add([vert_idx], vert_weight, 'REPLACE')
+            vertex_group.add([vert_idx], vert_weight, 'ADD')
 
 
 def attach_mesh(bpy_mesh_object, parent_node_name, new_verts, mprops):
     vertex_group = bpy_mesh_object.vertex_groups.new(name=parent_node_name)
-    vertex_group.add([i for i in range(len(new_verts))], 1., 'REPLACE')
+    vertex_group.add([i for i in range(len(new_verts))], 1., 'ADD')
     mprops.permit_unrigged_export = True
     
     

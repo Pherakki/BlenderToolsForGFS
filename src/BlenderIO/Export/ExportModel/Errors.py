@@ -56,8 +56,8 @@ class PartiallyUnriggedMeshError(DisplayableVerticesError):
 
 
 class TooManyIndicesError(DisplayableVerticesError):
-    def __init__(self, bpy_mesh_object, vertex_indices):
-        msg = f"Mesh '{bpy_mesh_object.name}' has {len(vertex_indices)} vertices that belong to more than 4 vertex groups. Ensure that all vertices belong to, at most, 4 groups before exporting. Alternatively, switch the export setting to 'Warn' to automatically strip the least influential groups."
+    def __init__(self, bpy_mesh_object, vertex_indices, limit):
+        msg = f"Mesh '{bpy_mesh_object.name}' has {len(vertex_indices)} vertices that belong to more than {limit} vertex groups. Ensure that all vertices belong to, at most, {limit} groups before exporting. Alternatively, switch the export setting to 'Warn' to automatically strip the least influential groups."
         super().__init__(msg, bpy_mesh_object, vertex_indices)
 
 

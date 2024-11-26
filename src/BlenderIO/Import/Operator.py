@@ -5,6 +5,7 @@ from bpy_extras.io_utils import ImportHelper
 
 from ...FileFormats.GFS import GFSInterface, NotAGFSFileError
 from ...FileFormats.GFS.Interface import EPLFileInterface
+from ...FileFormats.TexBin.Metaphor import MetaphorTextureBin
 from ..Data import bone_pose_enum_options
 from ..Data import anim_boundbox_policy_options
 from ..Preferences import get_preferences
@@ -119,6 +120,25 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
     
     def draw(self, context):
         pass
+    
+    def load_external_textures(self, filepath):
+        stem = os.path.splitext(filepath)[0]
+        
+        # TODO: Need to do better case sensitivity checks
+        if os.path.exists(stem + ".TEX"):
+            texbin_fp = stem + ".TEX"
+        elif os.path.exists(stem + ".tex"):
+            texbin_fp = stem + ".tex"
+        else:
+            return {}
+        
+        # Create texture library
+        out = {}
+        texbin = MetaphorTextureBin()
+        texbin.read(texbin_fp)
+        for texture in texbin.textures:
+            out[texture.name.rstrip(b'\x00')] = texture.payload
+        return out
 
     @ErrorLogger.display_exceptions("The file you are trying to import.")
     def import_file(self, context, filepath):
@@ -145,9 +165,10 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
 
-        # Now import file data to Blender
+        # Now load the model
+        external_textures = self.load_external_textures(filepath)
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_gfs_object(gfs, raw_gfs, filename, errorlog, self.policies)
+        import_gfs_object(gfs, raw_gfs, filename, external_textures, errorlog, self.policies)
         
         set_fps(self, context)
         set_clip(self, context)
@@ -248,8 +269,6 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
             gfs = GFSInterface.from_file(filepath, warnings=warnings)
         except NotAGFSFileError as e:
             errorlog.log_error_message(str(e))
-        except UnsupportedVersionError as e:
-            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
 
         # Add any file-loading warnings to the warnings list
         for warning_msg in warnings:
@@ -262,7 +281,7 @@ class ImportGAP(bpy.types.Operator, ImportHelper):
         
         # Now import file data to Blender
         filename = os.path.splitext(os.path.split(filepath)[1])[0]
-        import_animations(gfs, armature, filename, is_external=True, import_policies=self.policies)
+        import_animations(gfs, armature, filename, is_external=True, import_policies=self.policies, errorlog=errorlog)
         
         # Report any warnings that were logged
         errorlog.digest_warnings(self.debug_mode)
@@ -434,8 +453,6 @@ class ImportEPL(bpy.types.Operator, ImportHelper):
             epl = EPLFileInterface.from_file(filepath)
         except NotAGFSFileError as e:
             errorlog.log_error_message(str(e))
-        except UnsupportedVersionError as e:
-            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
 
 
         # Now import file data to Blender

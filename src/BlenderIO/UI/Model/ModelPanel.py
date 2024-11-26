@@ -49,6 +49,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
 
         ctr.prop(aprops, 'version')
         ctr.prop(aprops, "has_external_emt")
+        ctr.prop(aprops, "texture_mode")
         ctr.prop(aprops, "flag_3")
 
         ctr.operator(AutonameMeshUVs.bl_idname)

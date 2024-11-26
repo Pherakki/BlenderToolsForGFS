@@ -76,6 +76,7 @@ class GFSToolsMeshProperties(bpy.types.PropertyGroup):
     permit_unrigged_export: bpy.props.BoolProperty(name="Permit Export as Unrigged", description="Allow the mesh to be exported as an unrigged mesh if all vertices are rigged to one or zero vertex groups. This will lower the rigged bone count by 1 if no other mesh is rigged to that bone, freeing up more of the 256 rigging slots for use elsewhere", default=True)
     
     unknown_0x12:    bpy.props.IntProperty(name="unknown 0x12")
+    stride_type:     bpy.props.IntProperty(name="Stride Type", default=3)
     unknown_float_1: bpy.props.FloatProperty(name="Unknown Float 1")
     unknown_float_2: bpy.props.FloatProperty(name="Unknown Float 2")
     

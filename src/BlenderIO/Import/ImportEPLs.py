@@ -4,7 +4,6 @@ import bpy
 from mathutils import Quaternion, Matrix
 
 from ...FileFormats.GFS import GFSInterface, GFSBinary
-from ...serialization.parsers import GFSWriter
 from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch
 from ..modelUtilsTest.Context.ActiveObject import set_active_obj
@@ -12,13 +11,14 @@ from ..modelUtilsTest.Context.ActiveObject import get_active_obj
 from ..modelUtilsTest.Context.ActiveObject import set_mode
 from . import ImportGFS
 from .Utils.BoneConstruction import construct_bone, resize_bone_length
+from ..Utils.Serialization import pack_object
 
 
 def import_epls(gfs, armature, gfs_to_bpy_bone_map, errorlog, import_policies):
     for epl in gfs.epls:
-        import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, import_policies)
+        import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, gfs.version, import_policies)
 
-def import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, import_policies):
+def import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, version, import_policies):
     if epl.node == 0:
         props = armature.data.GFSTOOLS_NodeProperties
     else:
@@ -28,15 +28,9 @@ def import_child_epl(gfs, epl, armature, gfs_to_bpy_bone_map, errorlog, import_p
         props        = bpy_bone.GFSTOOLS_NodeProperties
         
     # Write the EPL to a blob
-    stream = io.BytesIO()
-    wtr = Writer(None)
-    wtr.bytestream = stream
-    wtr.rw_obj(epl.to_binary(), 0x01105100)
-    stream.seek(0)
-    
     # Add blob
     item = props.epls.add()
-    item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+    item.blob = pack_object(epl.to_binary(), version)
     
     
     if import_policies.epl_tests:

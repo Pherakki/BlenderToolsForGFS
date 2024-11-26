@@ -176,6 +176,7 @@ class OBJECT_PT_GFSToolsMeshAttributesPanel(bpy.types.Panel):
         ctr.prop(mprops, "flag_31")
 
         ctr.prop(mprops, "unknown_0x12")
+        ctr.prop(mprops, "stride_type")
 
     @classmethod
     def register(cls):

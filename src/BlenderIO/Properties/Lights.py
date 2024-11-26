@@ -44,6 +44,8 @@ class GFSToolsLightProperties(bpy.types.PropertyGroup):
     unknown_0x7C : bpy.props.FloatProperty(name="Unknown 0x7C", default=0.)
     unknown_0x80 : bpy.props.FloatProperty(name="Unknown 0x80", default=0.)
     unknown_0x84 : bpy.props.FloatProperty(name="Unknown 0x84", default=0.)
+    unknown_0x88 : bpy.props.FloatProperty(name="Unknown 0x88", default=0.)
+    unknown_0x8C : bpy.props.FloatProperty(name="Unknown 0x8C", default=0.)
     
     flag_0:  bpy.props.BoolProperty(name="Unknown Flag 0",            default=True )
     flag_2:  bpy.props.BoolProperty(name="Unknown Flag 2   (Unused?)", default=False)

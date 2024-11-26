@@ -1,4 +1,5 @@
 import array
+import os
 
 import bpy
 from bpy_extras.io_utils import ExportHelper
@@ -99,13 +100,10 @@ class ExportPolicies(GFSVersionedProperty, bpy.types.PropertyGroup):
     
     def get_version(self, default_version):
         if self.version_override == "DEFAULT":
-            print("RETURNING DEFAULT:", default_version)
             return default_version
         elif self.version_override == "P5R":
-            print("RETURNING P5R:", 0x01105100)
             return 0x01105100
         elif self.version_override == "CUSTOM":
-            print("RETURNING CUSTOM:", self.int_version)
             return self.int_version
         else:
             raise NotImplementedError(f"CRITICAL INTERNAL ERROR: Unknown VERSION_OVERRIDE policy '{self.version_override}'")
@@ -177,17 +175,19 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
         # probably not good.
         # Any exceptions that interrupt model export in this block should be
         # reported as bugs, and this should be communicated to the user.
+        mprops = selected_model.data.GFSTOOLS_ModelProperties
         gfs = GFSInterface()
+        gfs.version = self.policies.get_version(selected_model.data.GFSTOOLS_ModelProperties.int_version)
+        
         bpy_to_gfs_nodes, full_rest_pose_matrices = export_node_tree(gfs, selected_model, errorlog)
         bpy_material_names = export_mesh_data(gfs, selected_model, bpy_to_gfs_nodes, full_rest_pose_matrices, errorlog, self.policies)
-        export_materials_and_textures(gfs, bpy_material_names, errorlog)
+        texbin = export_materials_and_textures(gfs, bpy_material_names, mprops.texture_mode, errorlog)
         export_lights(gfs, selected_model)
         export_cameras(gfs, selected_model, errorlog)
         export_physics(gfs, selected_model, errorlog)
         export_0x000100F8(gfs, selected_model)
         export_epls(gfs, selected_model, errorlog, self.policies)
         
-        mprops = selected_model.data.GFSTOOLS_ModelProperties
         internal_pack = mprops.get_internal_gap()
         if internal_pack is not None:
             export_gap_props(gfs, selected_model, internal_pack, keep_unused_anims=False, errorlog=errorlog)
@@ -200,7 +200,6 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
-        gfs.version = self.policies.get_version(selected_model.data.GFSTOOLS_ModelProperties.int_version)
         gfs.has_end_container = True # Put this somewhere else
         gb = gfs.to_binary()
         model_bin = gb.get_model_block()
@@ -212,7 +211,10 @@ class ExportGFS(bpy.types.Operator, ExportHelper):
             errorlog.digest_errors(self.debug_mode)
             return {'CANCELLED'}
         
-        gb.write(filepath)
+        gb.write(filepath, endianness="<" if gfs.version > 0x02000000 else ">")
+        if texbin is not None:
+            tex_fp = os.path.splitext(filepath)[0] + os.path.extsep + "TEX"
+            texbin.write(tex_fp)
         
         # Tell the user if there are any warnings they should be aware of.
         if len(errorlog.warnings):
@@ -385,7 +387,7 @@ class ExportGAP(bpy.types.Operator, ExportHelper):
         gfs.version           = self.policies.get_version(active_pack.int_version)
         gfs.has_end_container = False # Put this somewhere else
         gb = gfs.to_binary(anim_model_binary=gfs_bbox.to_binary(active_pack.int_version).get_model_block().data)
-        gb.write(filepath)
+        gb.write(filepath, endianness="<" if gfs.version > 0x02000000 else ">")
         
         # Tell the user if there are any warnings they should be aware of.
         if len(errorlog.warnings):

@@ -3,7 +3,6 @@ import io
 import numpy as np
 from mathutils import Quaternion
 
-from ...serialization.parsers import GFSReader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
 from ...FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import EPLEntry
 
@@ -13,7 +12,7 @@ from ..modelUtilsTest.Skeleton.Transform.Animation.Extract import synchronised_q
 from ..modelUtilsTest.Skeleton.Transform.Animation.Extract import synchronised_quat_object_transforms_from_fcurves
 from ..modelUtilsTest.Skeleton.Transform.Animation.Extract import extract_fcurves
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
-
+from ..Utils.Serialization import unpack_object
 
 def export_gap_props(gfs, bpy_armature_object, ap_props, keep_unused_anims, errorlog):
     mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
@@ -269,13 +268,7 @@ def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unus
     # Export extra track + other data
     unimported_tracks = AnimationInterface()
     if len(props.unimported_tracks):
-        stream = io.BytesIO()
-        stream.write(bytes.fromhex(props.unimported_tracks))
-        stream.seek(0)
-        rdr = Reader(None)
-        rdr.bytestream = stream
-        ab = AnimationBinary()
-        rdr.rw_obj(ab, 0x01105100)
+        ab = unpack_object(props.unimported_tracks, AnimationBinary)
         unimported_tracks = AnimationInterface.from_binary(ab)
 
     gfs_anim.extra_track_data = unimported_tracks.extra_track_data
@@ -327,12 +320,5 @@ def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unus
 
     # Export bone epls
     for epl_prop in props.epls:
-        stream = io.BytesIO()
-        stream.write(bytes.fromhex(epl_prop.blob))
-        stream.seek(0)
-        rdr = Reader(None)
-        rdr.bytestream = stream
-        epl_entry = EPLEntry(endianness=">")
-        rdr.rw_obj(epl_entry, 0x01105100)
-
+        epl_entry = unpack_object(epl_prop.blob, EPLEntry)
         gfs_anim.epls.append(epl_entry)

@@ -16,6 +16,27 @@ def format_texindex(idx):
         return "None"
 
 
+PARAMS_TYPE_LOOKUP = {
+    -1: "V1",
+    0: "V2Type0",
+    1: "V2Type1",
+    2: "V2Type2",
+    3: "V2Type3",
+    4: "V2Type4",
+    5: "V2Water",
+    6: "V2Type6",
+    7: "V2Type7",
+    8: "V2Type8",
+    9: "V2Type9",
+    10: "V2Type10",
+    11: "V2Type11",
+    12: "V2Type12",
+    13: "V2Type13",
+    14: "V2Type14",
+    15: "V2Type15",
+    16: "V2Type16"
+}
+
 def import_materials(gfs, textures, errorlog):
     materials = {}
 
@@ -79,12 +100,8 @@ def import_materials(gfs, textures, errorlog):
         props.flag_30         = mat.flag_30
         props.flag_31         = mat.flag_31
         
-        # props.ambient      = mat.ambient
-        # props.diffuse      = mat.diffuse
-        # props.specular     = mat.specular
-        # props.emissive     = mat.emissive
-        # props.reflectivity = mat.reflectivity
-        # props.outline_idx  = mat.outline_idx
+        props.shader_type = PARAMS_TYPE_LOOKUP.get(mat.params_type, "ERRORTYPE")
+        props.shader_params.from_params(mat.shader_params, props)
         props.draw_method  = mat.draw_method
         props.unknown_0x51 = mat.unknown_0x51
         props.unknown_0x52 = mat.unknown_0x52
@@ -97,6 +114,7 @@ def import_materials(gfs, textures, errorlog):
         props.unknown_0x5C = mat.unknown_0x5C
         props.unknown_0x5E = mat.unknown_0x5E
         props.unknown_0x6A = mat.unknown_0x6A
+        props.unknown_0x6C = mat.unknown_0x6C
         
         # props.diffuse_uv_in     = format_texindex(mat.texture_indices_1.diffuse)
         props.diffuse_uv_out    = format_texindex(mat.texture_indices_2.diffuse)

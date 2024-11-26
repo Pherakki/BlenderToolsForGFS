@@ -26,7 +26,7 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
                                   bm[2][0], bm[2][1], bm[2][2], bm[2][3],
                               ])
     for prop in rn_props.properties:
-        root_node.add_property(*prop.extract_data(prop))
+        root_node.add_property(*prop.extract_data(prop, errorlog))
     
     bind_pose_matrices.append(bm)
     full_rest_pose_matrices = [armature_rest_pose]
@@ -63,7 +63,7 @@ def export_node_tree(gfs, bpy_armature_object, errorlog):
         
         # Export the custom properties
         for prop in bone.GFSTOOLS_NodeProperties.properties:
-            node.add_property(*prop.extract_data(prop))
+            node.add_property(*prop.extract_data(prop, errorlog))
             
         bind_pose_matrices.append(bm)
         full_rest_pose_matrices.append((full_rest_pose_matrices[parent_id] @ parent_relative_pose))

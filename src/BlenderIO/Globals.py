@@ -15,6 +15,7 @@ LOOKATSCALE_ANIM_TYPE = "LOOKATSCALE"
 GFS_MODEL_TRANSFORMS = bmu.ModelTransforms(world_axis=['X', 'Z', '-Y'], 
                                            bone_axis=['-Y', 'X', 'Z'])
 
+
 ErrorLogger = ErrorLogBase(NAMESPACE, "BlenderToolsForGFS", 
     "BlenderToolsForGFS has encountered an unhandled error. The exception is:\n\n"               \
     "{exception_msg}\n\n"                                                                        \

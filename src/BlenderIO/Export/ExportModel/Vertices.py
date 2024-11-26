@@ -13,7 +13,7 @@ from .Errors import PartiallyUnriggedMeshError
 from .Errors import TooManyIndicesError
 
 
-def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_policies):
+def extract_vertices(bpy_mesh_obj, material_idx, bone_names, version, errorlog, export_policies):
     bpy_mesh     = bpy_mesh_obj.data
 
     if not len(bpy_mesh_obj.material_slots):
@@ -57,11 +57,11 @@ def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_po
         fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv0, make_uv_map_name(0), 6, errorlog, missing_uv_maps_policy),
         fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv1, make_uv_map_name(1), 6, errorlog, missing_uv_maps_policy),
         fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv2, make_uv_map_name(2), 6, errorlog, missing_uv_maps_policy),
-        fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv3, make_uv_map_name(3), 6, errorlog, missing_uv_maps_policy),
-        fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv4, make_uv_map_name(4), 6, errorlog, missing_uv_maps_policy),
-        fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv5, make_uv_map_name(5), 6, errorlog, missing_uv_maps_policy),
-        fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv6, make_uv_map_name(6), 6, errorlog, missing_uv_maps_policy),
-        fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv7, make_uv_map_name(7), 6, errorlog, missing_uv_maps_policy),
+        # fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv3, make_uv_map_name(3), 6, errorlog, missing_uv_maps_policy),
+        # fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv4, make_uv_map_name(4), 6, errorlog, missing_uv_maps_policy),
+        # fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv5, make_uv_map_name(5), 6, errorlog, missing_uv_maps_policy),
+        # fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv6, make_uv_map_name(6), 6, errorlog, missing_uv_maps_policy),
+        # fetch_uv(bpy_mesh_obj,      used_attributes.requires_uv7, make_uv_map_name(7), 6, errorlog, missing_uv_maps_policy),
         get_colors(bpy_mesh_obj,    used_attributes.requires_color0, make_color_map_name(0), "BYTE", errorlog, transform=lambda x,l: [x[3], x[0], x[1], x[2]]),
         get_colors(bpy_mesh_obj,    used_attributes.requires_color1, make_color_map_name(1), "BYTE", errorlog, transform=lambda x,l: [x[3], x[0], x[1], x[2]]),    
     ]
@@ -71,7 +71,11 @@ def extract_vertices(bpy_mesh_obj, material_idx, bone_names, errorlog, export_po
         vertex_getter = GFSUnriggedVertexGetter()
     else:
         vertex_group_idx_to_name_map = {g.index: g.name for g in bpy_mesh_obj.vertex_groups}
-        vertex_getter = GFSVertexGetter(bone_names, vertex_group_idx_to_name_map, export_policies, errorlog)
+        if version > 0x02040000:
+            max_groups = 8
+        else:
+            max_groups = 4
+        vertex_getter = GFSVertexGetter(bone_names, vertex_group_idx_to_name_map, max_groups, export_policies, errorlog)
     mesh_buffers = bpy_mesh_to_VBO_IBO(bpy_mesh, vertex_getter, loop_data, construct_vertex)
     vertex_getter.log_errors(bpy_mesh_obj, mesh_buffers.vertices)
     
@@ -215,13 +219,13 @@ def construct_vertex(vertex_data, loop_data):
     vb.texcoord0 = next(loop_data)
     vb.texcoord1 = next(loop_data)
     vb.texcoord2 = next(loop_data)
-    vb.texcoord3 = next(loop_data)
-    vb.texcoord4 = next(loop_data)
-    vb.texcoord5 = next(loop_data)
-    vb.texcoord6 = next(loop_data)
-    vb.texcoord7 = next(loop_data)
+    # vb.texcoord3 = next(loop_data)
+    # vb.texcoord4 = next(loop_data)
+    # vb.texcoord5 = next(loop_data)
+    # vb.texcoord6 = next(loop_data)
+    # vb.texcoord7 = next(loop_data)
+    vb.color0    = next(loop_data)
     vb.color1    = next(loop_data)
-    vb.color2    = next(loop_data)
     
     vb.indices = skin_indices
     vb.weights = skin_weights
@@ -244,7 +248,7 @@ class GFSUnriggedVertexGetter:
 
     
 class GFSVertexGetter:
-    def __init__(self, bone_names, vertex_group_idx_to_name_map, export_policies, errorlog):
+    def __init__(self, bone_names, vertex_group_idx_to_name_map, max_groups, export_policies, errorlog):
         # Vertex group data
         self.bone_names                   = bone_names
         self.vertex_group_idx_to_name_map = vertex_group_idx_to_name_map
@@ -253,6 +257,7 @@ class GFSVertexGetter:
         self.log_missing_weights           = not export_policies.strip_missing_vertex_groups
         self.too_many_vertex_groups_policy = export_policies.too_many_vertex_groups_policy
         self.throw_missing_weight_errors   = export_policies.throw_missing_weight_errors
+        self.max_groups                    = max_groups
         
         # Error-tracking variables
         self.errorlog = errorlog
@@ -268,7 +273,7 @@ class GFSVertexGetter:
         group_weights  = [0, 0, 0, 0]
         
         has_missing_weights = False
-        if len(group_indices) > 4:
+        if len(group_indices) > self.max_groups:
             self.too_many_indices_verts.append(vert_idx)
         elif len(group_indices) == 0:
             self.unrigged_verts.append(vert_idx)
@@ -304,7 +309,7 @@ class GFSVertexGetter:
             if self.too_many_vertex_groups_policy == "WARN":
                 self.errorlog.log_warning_message(f"{len(self.too_many_indices_verts)} vertices on mesh '{bpy_mesh_obj.name}' had too many vertex groups. The least influential groups were removed. Change the export policy to 'Throw Error' if you want to see which vertices have this problem instead.")
             elif self.too_many_vertex_groups_policy == "ERROR":
-                self.errorlog.log_error(TooManyIndicesError(bpy_mesh_obj, self.too_many_indices_verts))
+                self.errorlog.log_error(TooManyIndicesError(bpy_mesh_obj, self.too_many_indices_verts, self.max_groups))
             else:
                 raise NotImplementedError(f"CRITICAL INTERNAL ERROR: UNKNOWN TOO_MANY_VERTEX_GROUPS_POLICY '{self.too_many_vertex_groups_policy}'")
         if 0 < len(self.unrigged_verts) < len(vertices):

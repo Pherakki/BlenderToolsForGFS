@@ -5,10 +5,11 @@ import bpy
 from mathutils import Matrix, Quaternion, Vector
 import numpy as np
 
-from ...serialization.parsers import GFSWriter
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from .ImportProperties import import_properties
 from ..Utils.Animation import gapnames_to_nlatrack
+from ..Utils.String import get_name_string
+from ..Utils.Serialization import pack_object
 
 from ..Globals import GFS_MODEL_TRANSFORMS, BASE_ANIM_TYPE, BLEND_ANIM_TYPE, LOOKAT_ANIM_TYPE
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
@@ -20,7 +21,7 @@ from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 ######################
 
 
-def import_animations(gfs, bpy_armature_object, filename, is_external, import_policies, gfs_to_bpy_bone_map=None):
+def import_animations(gfs, bpy_armature_object, filename, is_external, import_policies, errorlog, gfs_to_bpy_bone_map=None):
     if not is_external and not(len(gfs.animations)) and not(len(gfs.blend_animations)) and gfs.lookat_animations is None:
         return
     
@@ -43,15 +44,15 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
 
     # Base Animations
     for anim_idx, anim in enumerate(gfs.animations):
-        prop_anim_from_gfs_anim(ap_props, filename, BASE_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, False, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_anim(ap_props, filename, BASE_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, False, import_policies, errorlog, gfs.version, gfs_to_bpy_bone_map)
 
     # Blend Animations
     for anim_idx, anim in enumerate(gfs.blend_animations):
-        prop_anim_from_gfs_anim(ap_props, filename, BLEND_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_anim(ap_props, filename, BLEND_ANIM_TYPE, str(anim_idx), anim, bpy_armature_object, True, import_policies, errorlog, gfs.version, gfs_to_bpy_bone_map)
 
     # Lookat Animations
     if gfs.lookat_animations is not None:
-        prop_anim_from_gfs_lookat_anims(ap_props, ap_props, filename, "root", gfs.lookat_animations, bpy_armature_object, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_lookat_anims(ap_props, ap_props, filename, "root", gfs.lookat_animations, bpy_armature_object, import_policies, errorlog, gfs.version, gfs_to_bpy_bone_map)
 
     ap_props.version = f"0x{gfs.version:0>8x}"
     ap_props["name"] = filename
@@ -231,7 +232,7 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, bpy_armature_obj, is_blend, import_policies, gfs_to_bpy_bone_map=None):
+def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, bpy_armature_obj, is_blend, import_policies, errorlog, version, gfs_to_bpy_bone_map=None):
     ####################
     # SET UP VARIABLES #
     ####################
@@ -267,7 +268,7 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     fcurve_bank = {}
     for track_idx, data_track in enumerate(gfs_anim.node_animations):
         if gfs_to_bpy_bone_map is None:
-            bone_name = available_names.get(data_track.name)
+            bone_name = available_names.get(get_name_string("Animation Track", data_track.name, "utf8", errorlog))
         else:
             if data_track.id in gfs_to_bpy_bone_map:
                 bone_name = bpy_bones[gfs_to_bpy_bone_map[data_track.id]].name
@@ -360,46 +361,35 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     ai.morph_animations    = gfs_anim.morph_animations
     ai.unknown_animations  = gfs_anim.unknown_animations
     ai.extra_track_data    = gfs_anim.extra_track_data
-    ab = ai.to_binary(None, None)
+    ab = ai.to_binary(None, None, version)
 
-    stream = io.BytesIO()
-    wtr = Writer(None)
-    wtr.bytestream = stream
-    wtr.rw_obj(ab, 0x01105100)
-    stream.seek(0)
-    prop_anim.unimported_tracks = ''.join(f"{elem:0>2X}" for elem in stream.read())
+    prop_anim.unimported_tracks = pack_object(ab, version)
 
     # Import properties
-    import_properties(gfs_anim.properties, prop_anim.properties)
+    import_properties(gfs_anim.properties, prop_anim.properties, errorlog)
 
     # Import EPLs
     # Write the EPL to a blob
     for epl_entry in ai.epls:
-        stream = io.BytesIO()
-        wtr = Writer(None)
-        wtr.bytestream = stream
-        wtr.rw_obj(epl_entry.binary, 0x01105100)
-        stream.seek(0)
-
         # Add blob
         item = prop_anim.epls.add()
-        item.blob = ''.join(f"{elem:0>2X}" for elem in stream.read())
+        item.blob = pack_object(epl_entry.binary, version)
 
     # LookAt animations
     if gfs_anim.lookat_animations is not None:
-        prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, gap_name, anim_name + "_" + anim_type, gfs_anim.lookat_animations, bpy_armature_obj, import_policies, gfs_to_bpy_bone_map)
+        prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, gap_name, anim_name + "_" + anim_type, gfs_anim.lookat_animations, bpy_armature_obj, import_policies, errorlog, version, gfs_to_bpy_bone_map)
 
 
-def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lookat_anims, bpy_armature_object, import_policies, gfs_to_bpy_bone_map):
+def prop_anim_from_gfs_lookat_anims(ap_props, prop_anim, filename, anim_name, lookat_anims, bpy_armature_object, import_policies, errorlog, version, gfs_to_bpy_bone_map):
     anim_right = f"{anim_name}_right"
     anim_left  = f"{anim_name}_left"
     anim_up    = f"{anim_name}_up"
     anim_down  = f"{anim_name}_down"
 
-    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
-    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_down,  lookat_anims.down,  bpy_armature_object, True, import_policies, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_right, lookat_anims.right, bpy_armature_object, True, import_policies, errorlog, version, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_left,  lookat_anims.left,  bpy_armature_object, True, import_policies, errorlog, version, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_up,    lookat_anims.up,    bpy_armature_object, True, import_policies, errorlog, version, gfs_to_bpy_bone_map)
+    prop_anim_from_gfs_anim(ap_props, filename,LOOKAT_ANIM_TYPE, anim_down,  lookat_anims.down,  bpy_armature_object, True, import_policies, errorlog, version, gfs_to_bpy_bone_map)
 
     prop_anim.has_lookat_anims = True
     prop_anim.test_lookat_right = anim_right

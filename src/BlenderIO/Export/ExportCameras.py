@@ -34,5 +34,8 @@ def export_cameras(gfs, armature, errorlog):
                        bpy_camera_object.data.clip_end,
                        math.degrees(bpy_camera_object.data.angle),
                        props.aspect_ratio,
-                       props.unknown_0x50)
+                       props.unknown_0x50,
+                       props.unknown_0x54,
+                       props.unknown_0x55,
+                       props.unknown_0x59)
         

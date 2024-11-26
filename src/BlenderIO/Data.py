@@ -34,6 +34,7 @@ def version_override_options():
     return [
         ("DEFAULT", "Default", "Use the version specin the Custom Properties of the exported data"),
         ("P5R",     "P5R",     "Export to a version compatible with Persona 5 Royal (0x01105100)"),
+       # ("MR",      "Metaphor: Refantazio", "Export to a version compatible with Metaphor: Refantazio")
         ("CUSTOM",  "Custom",  "Use a custom version number")
     ]
 

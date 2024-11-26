@@ -35,13 +35,18 @@ class SwitchAnimation(bpy.types.Operator):
             bone.rotation_euler      = (0., 0., 0.)
             bone.scale               = (1., 1., 1.)
 
+        bpy.context.scene.frame_end = 250
         # Reactivate any necessary animations, set index
         if gap.active_anim_idx == self.index:
             gap.active_anim_idx = -1
         else:
             gap.active_anim_idx = self.index
             for nla_track in anim_data.nla_tracks:
-                if nla_track.name == name or is_anim_restpose(nla_track):
+                if nla_track.name == name:
+                    nla_track.mute = False
+                    if len(nla_track.strips):
+                        bpy.context.scene.frame_end = int(nla_track.strips[-1].frame_end)
+                if is_anim_restpose(nla_track):
                     nla_track.mute = False
 
         return {'FINISHED'}

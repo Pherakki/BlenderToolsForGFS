@@ -21,6 +21,7 @@ COMBINED_NODE_NAME = "mesh"
 
 
 def export_mesh_data(gfs, armature, bpy_to_gfs_node, full_rest_pose_matrices, errorlog, export_policies):
+    version = gfs.version
     too_many_vertices_policy      = export_policies.too_many_vertices_policy
     multiple_materials_policy     = export_policies.multiple_materials_policy
     combine_new_mesh_nodes        = export_policies.combine_new_mesh_nodes
@@ -50,7 +51,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, full_rest_pose_matrices, er
 
         # Convert bpy meshes -> gfs meshes
         gfs_meshes = []
-        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, errorlog, export_policies))
+        gfs_meshes.append(create_mesh(gfs, bpy_mesh_object, armature, node_id, material_names, material_index, version, errorlog, export_policies))
         
         if len(gfs_meshes[-1].vertices) > VERTEX_LIMIT:
             bad_meshes.append(bpy_mesh_object)
@@ -59,7 +60,7 @@ def export_mesh_data(gfs, armature, bpy_to_gfs_node, full_rest_pose_matrices, er
         # These will have identical properties to the original mesh
         new_meshes = set(o.name for o in bpy.data.objects) - existing_meshes
         for new_mesh_object in sorted(new_meshes):
-            gfs_meshes.append(create_mesh(gfs, new_mesh_object, armature, node_id, material_names, 0, errorlog, export_policies))
+            gfs_meshes.append(create_mesh(gfs, new_mesh_object, armature, node_id, material_names, 0, version, errorlog, export_policies))
 
         # Yeet the vertex weights if unrigged
         if oprops.is_unrigged():
@@ -215,7 +216,7 @@ def extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert):
     return out
 
 
-def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, material_index, errorlog, export_policies):
+def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, material_index, version, errorlog, export_policies):
     triangulate_mesh_policy = export_policies.triangulate_mesh_policy
 
     # Check if any of the mesh data is invalid... we'll accumulate these
@@ -237,7 +238,7 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
     # Extract vertex and polygon data from the bpy struct
     bone_names = {bn.name: i for i, bn in enumerate(gfs.bones)}
     
-    mesh_buffers = extract_vertices(bpy_mesh_object, material_index, bone_names, errorlog, export_policies)
+    mesh_buffers = extract_vertices(bpy_mesh_object, material_index, bone_names, version, errorlog, export_policies)
     if mesh_buffers is None:
         return gfs.add_mesh(node_id, [], "", [], [], 0, 0., 0., False, False)
     
@@ -259,7 +260,8 @@ def create_mesh(gfs, bpy_mesh_object, armature, node_id, export_materials, mater
                             material_name,
                             [fidx for face in indices for fidx in face], 
                             extract_morphs(bpy_mesh_object, gfs_vert_to_bpy_vert),
-                            mesh_props.unknown_0x12, 
+                            mesh_props.unknown_0x12,
+                            mesh_props.stride_type,
                             mesh_props.unknown_float_1 if mesh_props.has_unknown_floats else None,
                             mesh_props.unknown_float_2 if mesh_props.has_unknown_floats else None, 
                             bbox.export_policy != "NONE" if len(vertices) else False, 

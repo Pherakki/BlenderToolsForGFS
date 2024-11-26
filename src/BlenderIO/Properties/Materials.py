@@ -1,5 +1,6 @@
 import bpy
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
+from .MaterialShader import GFSToolsMaterialShaderPropsProperties
 
 def gen_tex_prop(name, getter=None):
     description = "" if getter is None else "This UV map is determined from the appropriate node in the shader tree"
@@ -94,12 +95,25 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     flag_30:         bpy.props.BoolProperty(name="Unknown Flag 30",      default=False)
     flag_31:         bpy.props.BoolProperty(name="Unknown Flag 31",      default=False)
     
-    ambient:         bpy.props.FloatVectorProperty(name="Ambient Color",  size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
-    diffuse:         bpy.props.FloatVectorProperty(name="Diffuse Color",  size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
-    specular:        bpy.props.FloatVectorProperty(name="Specular Color", size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
-    emissive:        bpy.props.FloatVectorProperty(name="Emissive Color", size=4, default=(1., 1., 1., 1.), subtype="COLOR", soft_min=0., soft_max=1.)
-    reflectivity:    bpy.props.FloatProperty      (name="Reflectivity",   default=0.)
-    outline_idx:     bpy.props.FloatProperty      (name="Outline Idx.",   default=0.)
+    shader_type:     bpy.props.EnumProperty(items=(
+        ("V1",      "Version 1", ""),
+        ("V2Type0", "Type 0 [Version 2]", ""),
+        ("V2Type1", "Type 1 [Version 2]", ""),
+        ("V2Type2", "Type 2 [Version 2]", ""),
+        ("V2Type4", "Type 4 [Version 2]", ""),
+        ("V2Water", "Water [Version 2]", ""),
+        ("V2Type6", "Type 6 [Version 2]", ""),
+        ("V2Type7", "Type 7 [Version 2]", ""),
+        ("V2Type8", "Type 8 [Version 2]", ""),
+        ("V2Type9", "Type 9 [Version 2]", ""),
+        ("V2Type10", "Type 10 [Version 2]", ""),
+        ("V2Type11", "Type 11 [Version 2]", ""),
+        ("V2Type12", "Type 12 [Version 2]", ""),
+        ("V2Type14", "Type 14 [Version 2]", ""),
+        ("V2Type15", "Type 15 [Version 2]", ""),
+        ("V2Type16", "Type 16 [Version 2]", ""),
+        ("ERRORTYPE", "ERROR", "")), name="Parameter Type")
+    shader_params:   bpy.props.PointerProperty(type=GFSToolsMaterialShaderPropsProperties, name="Shader Params")
     draw_method:     bpy.props.IntProperty        (name="Draw Method",    default=0, min=0, max=65535) # Change to enum later
     unknown_0x51:    bpy.props.IntProperty        (name="Unknown 0x51",   default=0, min=0, max=65535)
     unknown_0x52:    bpy.props.IntProperty        (name="Unknown 0x52",   default=0, min=0, max=65535)
@@ -112,6 +126,7 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     unknown_0x5C:    bpy.props.IntProperty        (name="Unknown 0x5C",   default=0, min=-32768, max=32767) # Flags?
     unknown_0x5E:    bpy.props.IntProperty        (name="Unknown 0x5E",   default=0, min=-32768, max=32767) # Flags?
     unknown_0x6A:    bpy.props.IntProperty        (name="Unknown 0x6A",   default=-1, min=-2147483648, max=2147483647) # Always -1
+    unknown_0x6C:    bpy.props.FloatProperty      (name="Unknown 0x6C")
 
     # Required vertex attributes
     requires_normals:   bpy.props.BoolProperty(name="Requires Normals",      default=True )
