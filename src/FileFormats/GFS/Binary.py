@@ -1,4 +1,5 @@
-from ...serialization.Serializable import Serializable
+import struct
+from ...serialization.serializable import GFSSerializable
 from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
 from .SubComponents.Textures.Binary import TexturePayload
 from .SubComponents.Materials.Binary import MaterialPayload
@@ -12,56 +13,63 @@ class NotAGFSFileError(Exception):
     def __init__(self, magic):
         super().__init__(f"Not a GFS file - found incorrect magic value '{magic}'")
 
+GFS_MAGIC_BE = struct.unpack('<I', b'GFS0')[0]
+GFS_MAGIC_LE = struct.unpack('>I', b'GFS0')[0]
 
-class GFSBinary(Serializable):
-    def __init__(self, endianness='>'):
+class RwContainers:
+    def deserialize(rw, self, warnings):
+        while rw.peek_bytestring(1) != b'':
+            start_offset = rw.tell()
+            
+            ctr = GFS0ContainerBinary()
+            self.containers.append(ctr)
+            rw.rw_obj(ctr)
+            
+            if ctr.size:
+                if warnings is None:
+                    remainder = ctr.size - (rw.tell() - start_offset)
+                    # if remainder > 0:
+                    #     print(rw.peek_bytestring(remainder))
+                    rw.assert_equal(ctr.size, rw.tell() - start_offset)
+                elif ctr.size != rw.tell() - start_offset:
+                    warnings.append(f"Size of container {hex(ctr.type)} is {rw.tell() - start_offset}, expected {ctr.size}")
+    
+    def serialize(rw, self, warnings):
+        for ctr in self.containers:
+            rw.rw_obj(ctr)
+            
+    def count(rw, self, warnings):
+        for ctr in self.containers:
+            rw.rw_obj(ctr)
+
+
+class GFSBinary(GFSSerializable):
+    def __init__(self):
         super().__init__()
-        self.context.endianness = endianness
         
-        self.magic = b'GFS0'
+        self.magic = GFS_MAGIC_LE
         self.containers = []
         
     def __repr__(self):
         return f"[GFS] Has {len(self.containers)} container{'' if len(self.containers) == 1 else 's'}"
         
-    def read_write(self, rw, warnings=None):
-        self.magic      = rw.rw_bytestring(self.magic, 4)
-        if (self.magic != b'GFS0'):
-            raise NotAGFSFileError(self.magic)
-        
-        if rw.mode() == "read":
-            finished = False
-            while not finished:
-                # Validation variable
-                start_offset = rw.tell()
-                
-                # Read the data
-                ctr = GFS0ContainerBinary()
-                self.containers.append(ctr)
-                rw.rw_obj(ctr)
-                
-                # Validate container size
-                if ctr.size:
-                    if warnings is None:
-                        rw.assert_equal(ctr.size, rw.tell() - start_offset)
-                    elif ctr.size != rw.tell() - start_offset:
-                        warnings.append(f"Size of container {hex(ctr.type)} is {rw.tell() - start_offset}, expected {ctr.size}")
-                
-                # Check if final container
-                if rw.peek_bytestring(1) == b'':
-                    finished = True
-            
-            # Check there's no more data
-            if warnings is None:
-                rw.assert_at_eof()
+    def exbip_rw(self, rw, endianness=None, warnings=None):
+        # Use the magic value to check the file endianness.
+        if endianness is None:
+            with rw.as_littleendian():
+                self.magic      = rw.rw_uint32(self.magic)
+            if (self.magic == GFS_MAGIC_BE):
+                endianness = ">"
+            elif self.magic == GFS_MAGIC_LE:
+                endianness = "<"
             else:
-                if rw.peek_bytestring(1) != b'':
-                    warnings.append("Reached the end of the GFS file, but more data remains in the file")
-                
+                raise NotAGFSFileError(struct.pack("I", self.magic))
         else:
-            for ctr in self.containers:
-                rw.rw_obj(ctr)
-
+            self.magic = rw.rw_uint32_e(self.magic, endianness)
+        
+        # Parse file body.
+        with rw.as_endian(endianness):
+            rw.rw_descriptor(RwContainers, self, warnings)
 
     def get_container(self, ctr_type):
         for ctr in self.containers:
@@ -77,22 +85,28 @@ class GFSBinary(Serializable):
     def get_0x000100F8_block(self): return self.get_container(0x000100F8)
     
 
-class EPLFileBinary(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.magic = b'GFS0'
-        self.start_block = GFS0ContainerBinary(endianness)
+class EPLFileBinary(GFSSerializable):
+    def __init__(self):
+        self.magic = GFS_MAGIC_BE
+        self.start_block = GFS0ContainerBinary()
         self.epl = None
-        
-        
+    
     def __repr__(self):
         return f"[EPL]"
         
-    def read_write(self, rw):
-        self.magic      = rw.rw_bytestring(self.magic, 4)
-        rw.assert_equal(self.magic, b'GFS0')
-        rw.rw_obj(self.start_block)
-        self.epl = rw.rw_new_obj(self.epl, lambda: EPLObjBinary(self.context.endianness), self.start_block.version)
+    def exbip_rw(self, rw):
+        # Use the magic value to check the file endianness.
+        with rw.as_littleendian():
+            self.magic      = rw.rw_uint32(self.magic)
+        if (self.magic == GFS_MAGIC_BE):
+            endianness = ">"
+        elif self.magic == GFS_MAGIC_LE:
+            endianness = "<"
+        else:
+            raise NotAGFSFileError(struct.pack("I", self.magic))
         
+        # Parse file body.
+        with rw.as_endian(endianness):
+            rw.rw_obj(self.start_block)
+            self.epl = rw.rw_dynamic_obj(self.epl, EPLObjBinary, self.start_block.version)
+            

@@ -3,7 +3,7 @@ from mathutils import Vector
 
 from ..Data import dummy_image_data
 from ..Utils.UVMapManagement import make_uv_map_name
-
+from ..Utils.String import get_name_string
 
 class NodePositioningData:
     def __init__(self):
@@ -21,8 +21,9 @@ def import_materials(gfs, textures, errorlog):
 
     # Load materials
     for mat in gfs.materials:
-        bpy_material = bpy.data.materials.new(mat.name)
-        materials[mat.name] = (bpy_material, mat)
+        name         = get_name_string("Material object", mat.name_bytes, "utf8", errorlog)
+        bpy_material = bpy.data.materials.new(name)
+        materials[name] = (bpy_material, mat)
         
         bpy_material.use_nodes = True
         
@@ -78,12 +79,12 @@ def import_materials(gfs, textures, errorlog):
         props.flag_30         = mat.flag_30
         props.flag_31         = mat.flag_31
         
-        props.ambient      = mat.ambient
-        props.diffuse      = mat.diffuse
-        props.specular     = mat.specular
-        props.emissive     = mat.emissive
-        props.reflectivity = mat.reflectivity
-        props.outline_idx  = mat.outline_idx
+        # props.ambient      = mat.ambient
+        # props.diffuse      = mat.diffuse
+        # props.specular     = mat.specular
+        # props.emissive     = mat.emissive
+        # props.reflectivity = mat.reflectivity
+        # props.outline_idx  = mat.outline_idx
         props.draw_method  = mat.draw_method
         props.unknown_0x51 = mat.unknown_0x51
         props.unknown_0x52 = mat.unknown_0x52
@@ -545,13 +546,12 @@ def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, texture
         node.name = name
         node.label = name
         
-        tex_name = texture.name.string
+        tex_name = get_name_string("Texture Reference", texture.name.string, "shift-jis", errorlog)
         if tex_name in textures:
             node.image = textures[tex_name]
         else:
             errorlog.log_warning_message(f"Texture file '{tex_name}' for slot '{name}' on material '{bpy_material.name}' does not exist inside the file. Falling back to a dummy texture.")
-            make_dummy_img_if_doesnt_exist()
-            node.image = bpy.data.images["dummy"]
+            node.image = make_dummy_img_if_doesnt_exist()
         
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
         node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
@@ -609,4 +609,6 @@ def make_dummy_img_if_doesnt_exist():
             img.GFSTOOLS_ImageProperties.unknown_4 = 0
         finally:
             os.remove(filepath)
-        
+        return img
+    return bpy.data.images["dummy"]
+    

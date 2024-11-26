@@ -1,23 +1,57 @@
 from .Binary import PropertyBinary
 
 
-class PropertyInterface:
+def _decode_name(name, encoding, errors='strict'):
+    try:
+        out = name.decode(encoding, errors=errors)
+    except UnicodeDecodeError as e:
+        if name[-28:] == b'DirectX \xe3\x83\x9e\xe3\x83\x8d\xe3\x83\xbc\xe3\x82\xb8\xe3\x83\xa3.\x97L\x8c\xf8':
+            out = name[:-4].decode("utf-8") + name[-4:].decode("shift-jis")
+        else:
+            raise Exception(f"Unable to decode '{name}' with encoding '{encoding}': {e}")
+    return out
+
+
+def _encode_name(name, encoding, errors='strict'):
+    if name[-16:] == "DirectX マネージャ.有効":
+        return name[:-2].encode("utf-8") + name[-2:].encode('shift-jis')
+    else:
+        return name.encode(encoding, errors)
+
+
+class GFSProperty:
     def __init__(self):
-        self.name = None
+        self.name_bytes = None
         self.type = None
         self.data = None
+    
+    @property
+    def name(self):
+        return _decode_name(self.name_bytes, "utf8")
+
+    @name.setter
+    def name(self, value):
+        self.name_bytes = _encode_name(value, "utf8")
+
+    @property
+    def name_safe(self):
+        return _decode_name(self.name_bytes, "utf8", 'replace')
         
+    @name_safe.setter
+    def name_safe(self, value):
+        self.name_bytes = _encode_name(value, "utf8", 'replace')
+    
     @classmethod
     def from_binary(cls, binary):
         instance = cls()
-        instance.name = binary.name.string
+        instance.name_bytes = binary.name.string
         instance.type = binary.type
         instance.data = binary.data
         return instance
     
     def to_binary(self):
         binary = PropertyBinary()
-        binary.name = binary.name.from_name(self.name)
+        binary.name = binary.name.from_bytestring(self.name_bytes)
         binary.type = self.type
         binary.data = self.data
         
@@ -38,9 +72,9 @@ class PropertyInterface:
             binary.size = 1
             
         elif binary.type == 4:
-            if type(binary.data) != str:
-                raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected str")
-            binary.size = len(binary.data.encode(PropertyBinary.ENCODING)) + 1
+            if type(binary.data) is not bytes:
+                raise ValueError(f"Attempted to convert a 'type {self.type}' PropertyInterface, but the contents are of type {type(self.data)}: expected bytes")
+            binary.size = len(binary.data) + 1
             
         elif binary.type == 5:
             if not hasattr(binary.data, "__len__"):

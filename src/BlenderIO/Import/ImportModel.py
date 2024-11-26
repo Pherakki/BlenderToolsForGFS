@@ -14,6 +14,7 @@ from ..modelUtilsTest.Mesh.Import.LoopImport    import create_uv_map
 from ..modelUtilsTest.Mesh.Import.LoopImport    import create_color_map
 from ..Utils.Maths import MayaBoneToBlenderBone, convert_Yup_to_Zup, decomposableToTRS
 from ..Utils.Object import lock_obj_transforms
+from ..Utils.String import get_name_string
 from ..Utils.UVMapManagement import make_uv_map_name
 from ..Utils.UVMapManagement import make_color_map_name
 from .Utils.BoneConstruction import construct_bone, resize_bone_length
@@ -273,7 +274,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
     if len(gfs.bones):
         node = gfs.bones[0]
         main_armature.data.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
-        import_properties(gfs.bones[0].properties, main_armature.data.GFSTOOLS_NodeProperties.properties)
+        import_properties(gfs.bones[0].properties, main_armature.data.GFSTOOLS_NodeProperties.properties, errorlog)
     
     # Now import other nodes
     for i, node in enumerate(gfs.bones):
@@ -284,7 +285,7 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
         bpy_bone = main_armature.data.bones[gfs_to_bpy_bone_map[i]]
         bpy_bone.GFSTOOLS_NodeProperties.unknown_float = node.unknown_float
         
-        import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties)
+        import_properties(node.properties, bpy_bone.GFSTOOLS_NodeProperties.properties, errorlog)
     
     
     #######################
@@ -439,23 +440,23 @@ class MergeVertexWrapper:
     @property
     def texcoord0(self): return self.v.texcoord0
     @property
-    def texcoord1(self): return self.v.texcoord0
+    def texcoord1(self): return self.v.texcoord1
     @property
-    def texcoord2(self): return self.v.texcoord0
+    def texcoord2(self): return self.v.texcoord2
     @property
-    def texcoord3(self): return self.v.texcoord0
+    def texcoord3(self): return self.v.texcoord3
     @property
-    def texcoord4(self): return self.v.texcoord0
+    def texcoord4(self): return self.v.texcoord4
     @property
-    def texcoord5(self): return self.v.texcoord0
+    def texcoord5(self): return self.v.texcoord5
     @property
-    def texcoord6(self): return self.v.texcoord0
+    def texcoord6(self): return self.v.texcoord6
     @property
-    def texcoord7(self): return self.v.texcoord0
+    def texcoord7(self): return self.v.texcoord7
+    @property
+    def color0(self): return self.v.color0
     @property
     def color1(self): return self.v.color1
-    @property
-    def color2(self): return self.v.color2
     @property
     def morph_offsets(self): return [m for offset in self._morph_offsets for m in offset]
 
@@ -506,15 +507,15 @@ def import_mesh(mesh_name, parent_node_name, idx, mesh, bind_transform, rest_tra
     create_uv_map_if_exists(bpy_mesh, make_uv_map_name(0), [v.texcoord0 for v in loop_data])
     create_uv_map_if_exists(bpy_mesh, make_uv_map_name(1), [v.texcoord1 for v in loop_data])
     create_uv_map_if_exists(bpy_mesh, make_uv_map_name(2), [v.texcoord2 for v in loop_data])
-    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(3), [v.texcoord3 for v in loop_data])
-    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(4), [v.texcoord4 for v in loop_data])
-    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(5), [v.texcoord5 for v in loop_data])
-    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(6), [v.texcoord6 for v in loop_data])
-    create_uv_map_if_exists(bpy_mesh, make_uv_map_name(7), [v.texcoord7 for v in loop_data])
+    # create_uv_map_if_exists(bpy_mesh, make_uv_map_name(3), [v.texcoord3 for v in loop_data])
+    # create_uv_map_if_exists(bpy_mesh, make_uv_map_name(4), [v.texcoord4 for v in loop_data])
+    # create_uv_map_if_exists(bpy_mesh, make_uv_map_name(5), [v.texcoord5 for v in loop_data])
+    # create_uv_map_if_exists(bpy_mesh, make_uv_map_name(6), [v.texcoord6 for v in loop_data])
+    # create_uv_map_if_exists(bpy_mesh, make_uv_map_name(7), [v.texcoord7 for v in loop_data])
 
     # Create Vertex Colours
-    create_color_map_if_exists(bpy_mesh, make_color_map_name(0), [v.color1 for v in loop_data], "BYTE")
-    create_color_map_if_exists(bpy_mesh, make_color_map_name(1), [v.color2 for v in loop_data], "BYTE")
+    create_color_map_if_exists(bpy_mesh, make_color_map_name(0), [v.color0 for v in loop_data], "BYTE")
+    create_color_map_if_exists(bpy_mesh, make_color_map_name(1), [v.color1 for v in loop_data], "BYTE")
 
     # Rig
     if is_rigged: rig_mesh   (bpy_mesh_object, bpy_node_names,   new_verts, mprops)
@@ -649,8 +650,9 @@ def create_color_map_if_exists(bpy_mesh, name, color_data, datatype):
 def set_material(bpy_mesh_object, gfs_mesh, materials, material_vertex_attributes, errorlog):
     bpy_mesh = bpy_mesh_object.data
 
-    if gfs_mesh.material_name is not None:
-        active_material, gfs_material = materials.get(gfs_mesh.material_name)
+    matname = get_name_string("Mesh Material Name", gfs_mesh.material_name, "utf8", errorlog)
+    if matname is not None:
+        active_material, gfs_material = materials.get(matname)
         
         if active_material is not None:
             bpy_mesh.materials.append(active_material)
@@ -658,13 +660,13 @@ def set_material(bpy_mesh_object, gfs_mesh, materials, material_vertex_attribute
             if not len(gfs_mesh.vertices):
                 return
             
-            vas = material_vertex_attributes[gfs_mesh.material_name]
+            vas = material_vertex_attributes[matname]
             
             vas.normals  .append(gfs_mesh.vertices[0].normal   is not None)
             vas.tangents .append(gfs_mesh.vertices[0].tangent  is not None)
             vas.binormals.append(gfs_mesh.vertices[0].binormal is not None)
-            vas.color0s  .append(gfs_mesh.vertices[0].color1   is not None)
-            vas.color1s  .append(gfs_mesh.vertices[0].color2   is not None)
+            vas.color0s  .append(gfs_mesh.vertices[0].color0   is not None)
+            vas.color1s  .append(gfs_mesh.vertices[0].color1   is not None)
             
             if gfs_mesh.vertices[0].tangent is not None:
                 if len(bpy_mesh.uv_layers):

@@ -40,7 +40,6 @@ class ModelInterface:
         cameras, \
         lights,  \
         epls     = NodeInterface.binary_node_tree_to_list(binary.root_node)
-
         # Find which nodes have BPMs, and which meshes give them context
         nodes_with_ibpms = {}
         has_bad_vidxs = False
@@ -52,8 +51,8 @@ class ModelInterface:
                     # Remap indices from local indices to global indices
                     palette_indices = set()
                     for v in mesh.vertices:
-                        indices = [0, 0, 0, 0]
-                        for idx_idx, (idx, wgt) in enumerate(zip(v.indices[::-1], v.weights)):
+                        indices = [0 for _ in range(len(v.indices))]
+                        for idx_idx, (idx, wgt) in enumerate(zip(v.indices, v.weights)):
                             if wgt > 0:
                                 palette_indices.add(idx)
                             if idx < len(binary.skinning_data.matrix_palette):
@@ -194,7 +193,10 @@ class ModelInterface:
                         for wgt_idx, wgt in enumerate(v.weights):
                             if wgt == 0:
                                 indices[wgt_idx] = 0
-                        v.indices = indices[::-1]
+                        v.indices = indices
+        
+        max_weights = [mb.weight_count for mb,node_idx in mesh_binaries if mb.flags.has_weights]
+        binary.max_weights = max(max_weights) if len(max_weights) else 8
         
         if keep_bounding_box:
             binary.flags.has_bounding_box = True

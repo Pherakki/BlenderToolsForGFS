@@ -1,4 +1,3 @@
-from ......serialization.Serializable import Serializable
 from . import Mesh
 from . import Morph
 from . import Camera
@@ -7,28 +6,31 @@ from . import EPL
 from . import EPLLeaf
 
 
-class NodeAttachmentBinary(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
+class AttachmentLUT:
+    ATTACHMENT_LOOKUP = {
+        4: Mesh.MeshBinary,
+        5: Camera.CameraBinary,
+        6: Light.LightBinary,
+        7: EPL.EPLBinary,
+        8: EPLLeaf.EPLLeafBinary,
+        9: Morph.MorphBinary
+    }
+
+    def __class_getitem__(cls, index):
+        res = cls.ATTACHMENT_LOOKUP.get(index)
+        if res is None:
+            raise NotImplementedError(f"Unrecognised NodeAttachment type: '{index}'")
+        return res
+
+
+class NodeAttachmentBinary:    
+    def __init__(self):
         self.type = None
         self.data = None
         
     def __repr__(self):
         return f"[GFD::SceneContainer::SceneNode::Attachment] {self.type}"
         
-    def read_write(self, rw, node_type, version):
+    def exbip_rw(self, rw, node_type, version):
         self.type = rw.rw_uint32(self.type)
-        
-        if rw.mode() == "read":
-            if   self.type == 4: dtype = Mesh.MeshBinary
-            elif self.type == 5: dtype = Camera.CameraBinary 
-            elif self.type == 6: dtype = Light.LightBinary
-            elif self.type == 7: dtype = EPL.EPLBinary
-            elif self.type == 8: dtype = EPLLeaf.EPLLeafBinary
-            elif self.type == 9: dtype = Morph.MorphBinary
-            else: raise NotImplementedError(f"Unrecognised NodeAttachment type: '{self.type}'")
-            self.data = dtype()
-            
-        rw.rw_obj(self.data, version)
+        self.data = rw.rw_dynamic_obj(self.data, AttachmentLUT[self.type], version)

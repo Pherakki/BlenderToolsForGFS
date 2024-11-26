@@ -1,23 +1,19 @@
-from .......serialization.Serializable import Serializable
-from ....CommonStructures import ObjectName
-from .Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
+from ....ObjectNameModule import ObjectName
+from ..Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
 
 
-class EPLLeafPostEffect(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.type = None
+class EPLLeafPostEffect:
+    def __init__(self):
+        self.type         = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
         
         self.post_effect = None
         self.has_embedded_file = None
-        self.embedded_file = EPLEmbeddedFile(endianness)
+        self.embedded_file = EPLEmbeddedFile()
 
-    def read_write(self, rw, version):
-        self.type = rw.rw_uint32(self.type)
+    def exbip_rw(self, rw, version):
+        self.type         = rw.rw_uint32(self.type)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
         
@@ -38,34 +34,37 @@ class EPLLeafPostEffect(Serializable):
         elif self.type == 8:
             PostEffectType = EplPostEffectMonotoneData
         elif self.type == 9:
-            PostEffectType = EplPostEffectLensFlareMake
+            if version >= 0x02000000:
+                PostEffectType = EplPostEffectChromaticAberration
+            else:
+                PostEffectType = EplPostEffectLensFlareMake
         elif self.type == 10:
-            PostEffectType = EplPostEffectMotionBlur
+            if version >= 0x02000000:
+                PostEffectType = EplPostEffectColorCorrectionExcludeToon
+            else:
+                PostEffectType = EplPostEffectMotionBlur
         elif self.type == 11:
             PostEffectType = EplPostEffectAfterImageBlur
         else:
             raise NotImplementedError(f"Unknown PostEffect type '{self.type}'")
         
-        self.post_effect = rw.rw_new_obj(self.post_effect, lambda: PostEffectType(self.context.endianness), version)
+        self.post_effect = rw.rw_dynamic_obj(self.post_effect, PostEffectType, version)
         self.has_embedded_file = rw.rw_uint8(self.has_embedded_file)
         if self.has_embedded_file:
             rw.rw_obj(self.embedded_file, version)
 
 
-class EplPostEffectRadiationBlurData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectRadiationBlurData:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = EPLLeafCommonData2()
         self.unknown_0x0C = None
         self.unknown_0x10 = None
         self.unknown_0x14 = None
         self.unknown_0x18 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         rw.rw_obj(self.unknown_0x08, version)
@@ -77,35 +76,29 @@ class EplPostEffectRadiationBlurData(Serializable):
             self.unknown_0x18 = rw.rw_uint8(self.unknown_0x18)
 
 
-class EplPostEffectStraightBlurData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectStraightBlurData:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = EPLLeafCommonData2()
         self.unknown_0x0C = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         rw.rw_obj(self.unknown_0x08, version)
         self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
 
 
-class EplPostEffectNoiseBlurData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectNoiseBlurData:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
-        self.unknown_0x0C = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = EPLLeafCommonData2()
+        self.unknown_0x0C = EPLLeafCommonData2()
         self.unknown_0x10 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         rw.rw_obj(self.unknown_0x08, version)
@@ -114,21 +107,18 @@ class EplPostEffectNoiseBlurData(Serializable):
             self.unknown_0x10 = rw.rw_uint8(self.unknown_0x10)
 
 
-class EplPostEffectDistortionBlurData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectDistortionBlurData:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
-        self.unknown_0x0C = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = EPLLeafCommonData2()
+        self.unknown_0x0C = EPLLeafCommonData2()
         self.unknown_0x10 = None
         self.unknown_0x14 = None
         self.unknown_0x18 = None
         self.unknown_0x1C = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         rw.rw_obj(self.unknown_0x08, version)
@@ -140,18 +130,15 @@ class EplPostEffectDistortionBlurData(Serializable):
         self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
 
 
-class EplPostEffectFillData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
-        self.unknown_0x04 = EPLLeafCommonData2(endianness)
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
-        self.unknown_0x0C = EPLLeafCommonData2(endianness)
+class EplPostEffectFillData:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
+        self.unknown_0x04 = EPLLeafCommonData2()
+        self.unknown_0x08 = EPLLeafCommonData2()
+        self.unknown_0x0C = EPLLeafCommonData2()
         self.unknown_0x10 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         rw.rw_obj(self.unknown_0x04, version)
         rw.rw_obj(self.unknown_0x08, version)
@@ -160,18 +147,15 @@ class EplPostEffectFillData(Serializable):
         self.unknown_0x10 = rw.rw_uint32(self.unknown_0x10)
 
 
-class EplPostEffectLensFlareData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EplPostEffectLensFlareData:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
-        self.unknown_0x0C = EPLLeafCommonData2(endianness)
+        self.unknown_0x0C = EPLLeafCommonData2()
         self.unknown_0x10 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
@@ -180,11 +164,8 @@ class EplPostEffectLensFlareData(Serializable):
         self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
 
 
-class EplPostEffectColorCorrectionData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EplPostEffectColorCorrectionData:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -193,7 +174,7 @@ class EplPostEffectColorCorrectionData(Serializable):
         self.unknown_0x14 = None
         self.unknown_0x18 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -204,27 +185,37 @@ class EplPostEffectColorCorrectionData(Serializable):
         self.unknown_0x18 = rw.rw_float32s(self.unknown_0x18, 2)
 
 
-class EplPostEffectMonotoneData(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EplPostEffectMonotoneData:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32s(self.unknown_0x04, 2)
 
 
-class EplPostEffectLensFlareMake(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
+class EplPostEffectChromaticAberration:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x14 = None
+    
+    def exbip_rw(self, rw, version):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32s(self.unknown_0x0C, 2)
+        self.unknown_0x14 = rw.rw_float32s(self.unknown_0x14, 2)
+
+
+class EplPostEffectLensFlareMake:
+    def __init__(self):
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+        self.unknown_0x08 = EPLLeafCommonData2()
         self.unknown_0x0C = None
         self.unknown_0x10 = None
         self.unknown_0x14 = None
@@ -242,7 +233,7 @@ class EplPostEffectLensFlareMake(Serializable):
         self.unknown_0x44 = None
         self.unknown_0x48 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_obj(self.unknown_0x00, version)
@@ -264,18 +255,43 @@ class EplPostEffectLensFlareMake(Serializable):
         self.unknown_0x48 = rw.rw_float32(self.unknown_0x48)
 
 
-class EplPostEffectMotionBlur(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectColorCorrectionExcludeToon:
+    def __init__(self):
+        self.unknown_0x00 = None
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = None
+        self.unknown_0x0C = None
+        self.unknown_0x10 = None
+        self.unknown_0x14 = None
+        self.unknown_0x18 = None
+        self.unknown_0x1C = None
+        self.unknown_0x20 = None
+        self.unknown_0x24 = None
+    
+    def exbip_rw(self, rw, version):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
+        self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
+        self.unknown_0x0C = rw.rw_float32(self.unknown_0x0C)
+        
+        self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
+        self.unknown_0x14 = rw.rw_float32(self.unknown_0x14)
+        self.unknown_0x18 = rw.rw_float32(self.unknown_0x18)
+        self.unknown_0x1C = rw.rw_float32(self.unknown_0x1C)
+        
+        self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
+        self.unknown_0x24 = rw.rw_float32s(self.unknown_0x24, 2)
+
+
+class EplPostEffectMotionBlur:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
+        self.unknown_0x04 = None
+        self.unknown_0x08 = EPLLeafCommonData2()
         self.unknown_0x0C = None
         self.unknown_0x10 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_obj(self.unknown_0x08, version)
@@ -283,17 +299,14 @@ class EplPostEffectMotionBlur(Serializable):
         self.unknown_0x10 = rw.rw_float32(self.unknown_0x10)
 
 
-class EplPostEffectAfterImageBlur(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown_0x00 = EPLLeafCommonData2(endianness)
+class EplPostEffectAfterImageBlur:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData2()
         self.unknown_0x04 = None
-        self.unknown_0x08 = EPLLeafCommonData2(endianness)
+        self.unknown_0x08 = EPLLeafCommonData2()
         self.unknown_0x0C = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_obj(self.unknown_0x08, version)

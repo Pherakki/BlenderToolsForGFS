@@ -1,7 +1,44 @@
-from ......serialization.Serializable import Serializable
-from ......serialization.utils import safe_format, hex32_format
+from ......serialization.formatters import HEX32_formatter, list_formatter
 from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20, BitChunkVector
 from .TextureSampler import TextureSamplerBinary
+from .ShaderParameters import CompatibilityParameterSet
+from .ShaderParameters import ShaderParametersType0
+from .ShaderParameters import ShaderParametersType1
+from .ShaderParameters import ShaderParametersType2
+from .ShaderParameters import ShaderParametersType4
+from .ShaderParameters import WaterShaderParameters
+from .ShaderParameters import ShaderParametersType6
+from .ShaderParameters import ShaderParametersType7
+from .ShaderParameters import ShaderParametersType8
+from .ShaderParameters import ShaderParametersType9
+from .ShaderParameters import ShaderParametersType10
+from .ShaderParameters import ShaderParametersType11
+from .ShaderParameters import ShaderParametersType12
+from .ShaderParameters import ShaderParametersType14
+from .ShaderParameters import ShaderParametersType15
+from .ShaderParameters import ShaderParametersType16
+
+
+SHPARAMS_LOOKUP = {
+  -1:  CompatibilityParameterSet,
+   0:  ShaderParametersType0,
+   1:  ShaderParametersType1,
+   2:  ShaderParametersType2,
+   3:  ShaderParametersType2, # This is intentionally type 2
+   4:  ShaderParametersType4,
+   5:  WaterShaderParameters,
+   6:  ShaderParametersType6,
+   7:  ShaderParametersType7,
+   8:  ShaderParametersType8,
+   9:  ShaderParametersType9,
+   10: ShaderParametersType10,
+   11: ShaderParametersType11,
+   12: ShaderParametersType12,
+   13: ShaderParametersType2, # This is intentionally type 2
+   14: ShaderParametersType14,
+   15: ShaderParametersType15,
+   16: ShaderParametersType16
+}
 
 
 class TextureMapIndices(BitChunkVector):
@@ -19,6 +56,7 @@ class TextureMapIndices(BitChunkVector):
     night      = BitChunkVector.DEF_CHUNK(6)
     detail     = BitChunkVector.DEF_CHUNK(7)
     shadow     = BitChunkVector.DEF_CHUNK(8)
+    texture_10 = BitChunkVector.DEF_CHUNK(9)
 
 
 class MaterialFlags(BitVector0x20):
@@ -51,39 +89,33 @@ class MaterialFlags(BitVector0x20):
     has_night_texture      = BitVector.DEF_FLAG(0x1A)
     has_detail_texture     = BitVector.DEF_FLAG(0x1B)
     has_shadow_texture     = BitVector.DEF_FLAG(0x1C)
-    flag_29                = BitVector.DEF_FLAG(0x1D)
-    flag_30                = BitVector.DEF_FLAG(0x1E)
+    has_texture_10         = BitVector.DEF_FLAG(0x1D)
+    extra_distortion       = BitVector.DEF_FLAG(0x1E)
     flag_31                = BitVector.DEF_FLAG(0x1F)
 
 
-class MaterialBinary(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.name         = ObjectName(endianness)
-        self.flags        = MaterialFlags(endianness)
-        self.ambient      = None
-        self.diffuse      = None
-        self.emissive     = None
-        self.specular     = None
-        self.reflectivity = None
-        self.outline_idx  = None
-        self.draw_method  = None
-        self.unknown_0x51 = None
-        self.unknown_0x52 = None
-        self.unknown_0x53 = None
-        self.unknown_0x54 = None
-        self.unknown_0x55 = 1 # Highlight map blend mode: 1 -> Normal, 2 -> dodge, 4 -> multiply
-        self.unknown_0x56 = None
-        self.unknown_0x58 = None
-        self.unknown_0x5A = 1
-        self.unknown_0x5C = None
-        self.unknown_0x5E = None # 0, 2?
+class MaterialBinary:
+    def __init__(self):
+        self.params_type       = -1
+        self.name              = ObjectName()
+        self.flags             = MaterialFlags()
+        self.shader_params     = None
+        self.draw_method       = None
+        self.unknown_0x51      = None
+        self.unknown_0x52      = None
+        self.unknown_0x53      = None
+        self.unknown_0x54      = None
+        self.unknown_0x55      = 1 # Highlight map blend mode: 1 -> Normal, 2 -> dodge, 4 -> multiply
+        self.unknown_0x56      = None
+        self.unknown_0x58      = None
+        self.unknown_0x5A      = 1
+        self.unknown_0x5C      = None
+        self.unknown_0x5E      = None # 0, 2?
         self.texture_indices_1 = TextureMapIndices()
         self.texture_indices_2 = TextureMapIndices()
         self.disable_backface_culling = None
         self.unknown_0x6A = -1
+        self.unknown_0x6C = 0
 
         # Unknown 0x56 - Unknown, [0, 1, 2, 5, 7, 10, 15, 20, 25, 30, 31, 32, 50, 60, 64, 65, 80, 90, 99, 100, 110, 112, 120, 125, 128, 129, 150, 160, 180, 200, 253, 255]
         # Unknown 0x58 - Unknown, [0, 1, 3, 4, 5, 6, 7]
@@ -110,32 +142,37 @@ class MaterialBinary(Serializable):
         self.night_texture      = None
         self.detail_texture     = None
         self.shadow_texture     = None
+        self.texture_10         = None
         
         self.attributes = SizedObjArray(MaterialAttributeBinary)
         
     def __repr__(self):
         return f"[GFD::Material] {self.name} "                                                     \
-               f"{safe_format(self.flags._value, hex32_format)} "                                  \
-               f"{safe_format(self.ambient, list)} {safe_format(self.diffuse, list)} "             \
-               f"{safe_format(self.emissive, list)} {safe_format(self.specular, list)} "           \
-               f"{self.reflectivity} {self.outline_idx} "                                          \
+               f"{HEX32_formatter(self.flags._value)} "                                            \
                f"{self.draw_method} {self.unknown_0x51} {self.unknown_0x52} {self.unknown_0x53} "  \
                f"{self.unknown_0x54} {self.unknown_0x55} {self.unknown_0x56} "                     \
                f"{self.unknown_0x58} {self.unknown_0x5A} {self.unknown_0x5C} {self.unknown_0x5E} " \
-               f"{safe_format(self.texture_indices_1._value, hex32_format)} "                      \
-               f"{safe_format(self.texture_indices_2._value, hex32_format)} "                      \
+               f"{HEX32_formatter(self.texture_indices_1._value)} "                                \
+               f"{HEX32_formatter(self.texture_indices_2._value)} "                                \
                f"{self.disable_backface_culling} {self.unknown_0x6A} {len(self.attributes)}"
 
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
+        if version >= 0x02000000:
+            self.params_type = rw.rw_int16(self.params_type)
+        
         self.name         = rw.rw_obj(self.name, version)
         self.flags        = rw.rw_obj(self.flags)
         
-        self.ambient      = rw.rw_float32s(self.ambient, 4)
-        self.diffuse      = rw.rw_float32s(self.diffuse, 4)
-        self.emissive     = rw.rw_float32s(self.emissive, 4)
-        self.specular     = rw.rw_float32s(self.specular, 4)
-        self.reflectivity = rw.rw_float32(self.reflectivity)
-        self.outline_idx  = rw.rw_float32(self.outline_idx)
+        # print(self.name, f"0x{self.flags._value:0>8x}")
+        # print(">>", self.flags.flag_0, self.flags.flag_1, self.flags.enable_specular, self.flags.flag_3, self.flags.use_vertex_colors, self.flags.flag_5, self.flags.flag_6, self.flags.enable_uv_animation)
+        # print(">>", self.flags.enable_emissive, self.flags.flag_9, self.flags.flag_10, self.flags.use_light_2, self.flags.purple_wireframe, self.flags.flag_13, self.flags.receive_shadow, self.flags.cast_shadow)
+        # print(">>", self.flags.has_attributes, self.flags.has_outline, self.flags.flag_18, self.flags.disable_bloom)
+        # print(">>", self.flags.has_diffuse_texture, self.flags.has_normal_texture, self.flags.has_specular_texture, self.flags.has_reflection_texture, self.flags.has_highlight_texture, self.flags.has_glow_texture, self.flags.has_night_texture, self.flags.has_detail_texture, self.flags.has_shadow_texture, self.flags.has_texture_10)
+        # print(">>", self.flags.extra_distortion, self.flags.flag_31)
+        if self.params_type in SHPARAMS_LOOKUP:
+            self.shader_params = rw.rw_dynamic_obj(self.shader_params, SHPARAMS_LOOKUP[self.params_type], version)
+        else:
+            raise ValueError(f"Unrecognized shader parameters type: '{self.params_type}'")
         
         if version < 0x01103040:
             self.draw_method  = rw.rw_uint16(self.draw_method)
@@ -156,7 +193,6 @@ class MaterialBinary(Serializable):
         self.unknown_0x56 = rw.rw_uint16(self.unknown_0x56)
         self.unknown_0x58 = rw.rw_uint16(self.unknown_0x58)
         
-        
         if version <= 0x01104800:
             self.unknown_0x5A = 1
             self.unknown_0x5C = rw.rw_int32(self.unknown_0x5C)
@@ -164,27 +200,29 @@ class MaterialBinary(Serializable):
             self.unknown_0x5A = rw.rw_int16(self.unknown_0x5A) # 1 = Bloom, 0x0100 = Refl map something, 0x0002 = ???, 0x0004 = ???
             self.unknown_0x5C = rw.rw_int16(self.unknown_0x5C)
             
-        self.unknown_0x5E = rw.rw_int16(self.unknown_0x5E)
+        self.unknown_0x5E      = rw.rw_int16(self.unknown_0x5E)
         self.texture_indices_1 = rw.rw_obj(self.texture_indices_1)
         self.texture_indices_2 = rw.rw_obj(self.texture_indices_2)
         
         self.disable_backface_culling = rw.rw_int16(self.disable_backface_culling)
         
-        # Not sure about this check!!!
-        if version >= 0x01100000:
+        if version >= 0x01103040:
             self.unknown_0x6A = rw.rw_int32(self.unknown_0x6A)
-
-        # Handle textures
-        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_new_obj(self.diffuse_texture,    TextureSamplerBinary, version)
-        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_new_obj(self.normal_texture,     TextureSamplerBinary, version)
-        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_new_obj(self.specular_texture,   TextureSamplerBinary, version)
-        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_new_obj(self.reflection_texture, TextureSamplerBinary, version)
-        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_new_obj(self.highlight_texture,  TextureSamplerBinary, version)
-        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_new_obj(self.glow_texture,       TextureSamplerBinary, version)
-        if self.flags.has_night_texture:      self.night_texture      = rw.rw_new_obj(self.night_texture,      TextureSamplerBinary, version)
-        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_new_obj(self.detail_texture,     TextureSamplerBinary, version)
-        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_new_obj(self.shadow_texture,     TextureSamplerBinary, version)
+        if version > 0x02110160:
+            self.unknown_0x6C = rw.rw_float32(self.unknown_0x6C)
             
+        # Handle textures
+        if self.flags.has_diffuse_texture:    self.diffuse_texture    = rw.rw_dynamic_obj(self.diffuse_texture,    TextureSamplerBinary, version)
+        if self.flags.has_normal_texture:     self.normal_texture     = rw.rw_dynamic_obj(self.normal_texture,     TextureSamplerBinary, version)
+        if self.flags.has_specular_texture:   self.specular_texture   = rw.rw_dynamic_obj(self.specular_texture,   TextureSamplerBinary, version)
+        if self.flags.has_reflection_texture: self.reflection_texture = rw.rw_dynamic_obj(self.reflection_texture, TextureSamplerBinary, version)
+        if self.flags.has_highlight_texture:  self.highlight_texture  = rw.rw_dynamic_obj(self.highlight_texture,  TextureSamplerBinary, version)
+        if self.flags.has_glow_texture:       self.glow_texture       = rw.rw_dynamic_obj(self.glow_texture,       TextureSamplerBinary, version)
+        if self.flags.has_night_texture:      self.night_texture      = rw.rw_dynamic_obj(self.night_texture,      TextureSamplerBinary, version)
+        if self.flags.has_detail_texture:     self.detail_texture     = rw.rw_dynamic_obj(self.detail_texture,     TextureSamplerBinary, version)
+        if self.flags.has_shadow_texture:     self.shadow_texture     = rw.rw_dynamic_obj(self.shadow_texture,     TextureSamplerBinary, version)
+        if self.flags.has_texture_10:         self.texture_10         = rw.rw_dynamic_obj(self.texture_10,         TextureSamplerBinary, version)
+        
         # Attributes
         if self.flags.has_attributes:
             rw.rw_obj(self.attributes, version)
@@ -209,19 +247,16 @@ class MaterialAttributeFlags(BitVector0x10):
     flag_15 = BitVector.DEF_FLAG(0x0F)
     
     
-class MaterialAttributeBinary(Serializable):
-    def __init__(self, endianness=">"):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.flags = MaterialAttributeFlags(endianness)
+class MaterialAttributeBinary:
+    def __init__(self):
+        self.flags = MaterialAttributeFlags()
         self.ID    = None
-        self.data  = []
+        self.data  = None
         
     def __repr__(self):
-        return f"[GFD::Material::AttributeBinary] {safe_format(self.flags._value, hex32_format)} {self.ID}"
+        return f"[GFD::Material::AttributeBinary] {HEX32_formatter(self.flags._value)} {self.ID}"
     
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.flags = rw.rw_obj(self.flags)
         self.ID = rw.rw_uint16(self.ID)
         if self.ID == 0:
@@ -240,22 +275,21 @@ class MaterialAttributeBinary(Serializable):
             dtype = Property6
         elif self.ID == 7:
             dtype = Property7
+        elif self.ID == 8:
+            dtype = Property8
         else:
             raise NotImplementedError(f"Unrecognised Attribute ID: {self.ID}")
             
-        if rw.mode() == "read":
-            self.data = dtype()
-        
-        if type(self.data) is not dtype:
+        if self.data is not None and type(self.data) is not dtype:
             raise ValueError(f"Unexpected Material Attribute type: expected '{dtype}', found '{type(self.data)}")
-        rw.rw_obj(self.data, version)
+        self.data = rw.rw_dynamic_obj(self.data, dtype, version)
 
 
 class MaterialAttributeSubTypeFlags(BitVector):
     MAXFLAGS = 0x20
     
     # Are the flags different for different versions?
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         # RW different values depending on the version
         self._value = rw.rw_uint32(self._value)
 
@@ -295,19 +329,17 @@ class ToonShadingPropertyFlags(MaterialAttributeSubTypeFlags):
     flag_31 = BitVector.DEF_FLAG(0x1F)
 
 
-class ToonShadingProperty(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class ToonShadingProperty:
+    def __init__(self):
         self.colour = None
         self.light_threshold  = None
         self.light_factor     = None
         self.light_brightness = None
         self.shadow_threshold = None
         self.shadow_factor    = None
-        self.flags            = ToonShadingPropertyFlags(endianness)
+        self.flags            = ToonShadingPropertyFlags()
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.colour           = rw.rw_float32s(self.colour, 4)
         self.light_threshold  = rw.rw_float32(self.light_threshold)
         self.light_factor     = rw.rw_float32(self.light_factor)
@@ -365,10 +397,8 @@ class Property1Flags(MaterialAttributeSubTypeFlags):
     flag_31 = BitVector.DEF_FLAG(0x1F)
 
 
-class Property1(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class Property1:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -381,9 +411,9 @@ class Property1(Serializable):
         self.unknown_0x24 = None
         self.unknown_0x28 = None
         self.unknown_0x2C = None
-        self.flags        = Property1Flags(endianness)
+        self.flags        = Property1Flags()
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -410,15 +440,13 @@ class Property1(Serializable):
 
 
 
-class OutlineProperty(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class OutlineProperty:
+    def __init__(self):
         
         self.type   = None
         self.colour = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.type   = rw.rw_uint32(self.type)
         self.colour = rw.rw_uint32(self.colour)
 
@@ -458,10 +486,8 @@ class Property3Flags(MaterialAttributeSubTypeFlags):
     flag_31 = BitVector.DEF_FLAG(0x1F)
 
 
-class Property3(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class Property3:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -474,9 +500,9 @@ class Property3(Serializable):
         self.unknown_0x24 = None
         self.unknown_0x28 = None
         self.unknown_0x2C = None
-        self.flags        = Property3Flags(endianness)
+        self.flags        = Property3Flags()
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -527,10 +553,8 @@ class Property4Flags(MaterialAttributeSubTypeFlags):
     flag_31 = BitVector.DEF_FLAG(0x1F)
     
     
-class Property4(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class Property4:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -551,9 +575,9 @@ class Property4(Serializable):
         self.unknown_0x44 = None
         self.unknown_0x45 = None
         self.unknown_0x49 = None
-        self.flags        = Property4Flags(endianness)
+        self.flags        = Property4Flags()
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -612,10 +636,8 @@ class Property5Flags(MaterialAttributeSubTypeFlags):
     flag_31 = BitVector.DEF_FLAG(0x1F)
 
 
-class Property5(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class Property5:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -629,9 +651,9 @@ class Property5(Serializable):
         self.unknown_0x28 = None
         self.unknown_0x2C = None
         self.unknown_0x30 = None
-        self.flags        = Property5Flags(endianness)
+        self.flags        = Property5Flags()
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -648,24 +670,31 @@ class Property5(Serializable):
         self.flags        = rw.rw_obj(self.flags, version)
 
 
-class Property6(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
+class Property6:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_uint32(self.unknown_0x00)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_uint32(self.unknown_0x08)
 
 
-class Property7(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-    def read_write(self, rw, version):
+class Property7:
+    def __init__(self):
         pass
+        
+    def exbip_rw(self, rw, version):
+        pass
+
+
+class Property8:
+    def __init__(self):
+        self.unknown_0x00 = None
+        self.unknown_0x04 = None
+
+    def exbip_rw(self, rw, version):
+        self.unknown_0x00 = rw.rw_float32(self.unknown_0x00)
+        self.unknown_0x04 = rw.rw_float32(self.unknown_0x04)

@@ -1,7 +1,10 @@
-def import_properties(gfs_properties, bpy_properties):
+from ..Utils.String import get_name_string
+
+
+def import_properties(gfs_properties, bpy_properties, errorlog):
     for prop in gfs_properties:
         item = bpy_properties.add()
-        item.dname = prop.name
+        item.dname = get_name_string("GFS Property", prop.name_bytes, "utf8", errorlog)
         if prop.type == 1:
             item.dtype = "INT32"
             item.int32_data = prop.data
@@ -13,7 +16,7 @@ def import_properties(gfs_properties, bpy_properties):
             item.uint8_data = prop.data
         elif prop.type == 4:
             item.dtype = "STRING"
-            item.string_data = prop.data   
+            item.string_data = get_name_string(f"String GFS Property '{item.dname}' data", prop.data, "utf8", errorlog)
         elif prop.type == 5:
             item.dtype = "UINT8VEC3"
             item.uint8vec3_data = prop.data  

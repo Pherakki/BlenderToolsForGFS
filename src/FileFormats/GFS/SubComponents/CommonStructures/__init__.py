@@ -1,6 +1,13 @@
-from .BitVector import BitVector, BitVector0x10, BitVector0x20, BitChunkVector
-from .Blob import Blob
-from .CustomProperty import PropertyBinary
-from .ObjectName import ObjectName
-from .SceneNode import SceneNodeBinary, NodeInterface, MeshInterface, CameraInterface, LightInterface, EPLInterface
+from .BitVectorModule     import BitVector
+from .BitVectorModule     import BitVector0x10
+from .BitVectorModule     import BitVector0x20
+from .BitVectorModule     import BitChunkVector
+from .ObjectNameModule    import ObjectName
+from .SceneNode           import SceneNodeBinary
 from .SizedObjArrayModule import SizedObjArray
+from .Blob                import Blob
+from .SceneNode           import NodeInterface
+from .SceneNode.Mesh      import MeshInterface
+from .SceneNode.Light     import LightInterface
+from .SceneNode.Camera    import CameraInterface
+from .SceneNode.EPL       import EPLInterface

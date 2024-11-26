@@ -1,12 +1,12 @@
-from ....serialization.Serializable import Serializable
-from ....serialization.utils import safe_format, hex32_format
+from ....serialization.serializable import GFSSerializable
+from ....serialization.formatters import HEX32_formatter
 from .Materials.Binary import MaterialPayload
 from .Model.Binary import ModelPayload
 from .Textures.Binary import TexturePayload
 from .Animations.Binary import AnimationPayload
 from .Physics.Binary import PhysicsPayload
 from .CommonStructures import Blob
-
+from ....serialization.formatters import HEX32_formatter
 
 class HasAnimationsError(Exception):
     pass
@@ -14,43 +14,55 @@ class HasAnimationsError(Exception):
 class UnsupportedVersionError(Exception):
     pass
 
-class GFS0ContainerBinary(Serializable):
+
+class ValidatePayloadType:
+    def deserialize(binary_parser, data, dtype, typecode):
+        pass
+    
+    def serialize(binary_parser, data, dtype, typecode):
+        if type(data) != dtype:
+            raise ValueError(f"Container '{HEX32_formatter(typecode)}' has the wrong data type ('{type(data)}'), expected '{dtype}'")
+
+    def count(binary_parser, data, dtype, typecode):
+        pass
+
+
+class GFS0ContainerBinary(GFSSerializable):
     SIZE = 0x0C
     
-    def __init__(self, endianness='>'):
+    def __init__(self):
         super().__init__()
-        self.context.endianness = endianness
         
         self.version = None
         self.type = None
         self.size = None
         self.padding_0x0C = 0
         self.count = None
-        self.data = []
+        self.data  = None
         
     def __repr__(self):
-        return f"[GFS::Container] {safe_format(self.version, hex32_format)} {safe_format(self.type, hex32_format)} {self.size}"
+        return f"GFS0ContainerBinary({HEX32_formatter(self.version)} {HEX32_formatter(self.type)} {self.size})"
 
 
-    def read_write(self, rw):
+    def exbip_rw(self, rw):
         self.version      = rw.rw_uint32(self.version)
         self.type         = rw.rw_uint32(self.type)
         self.size         = rw.rw_uint32(self.size)
-        
-        # Need to be extremely careful here...
-        # print(f"VERSION: {self.version:0>8x}, TYPE: {hex(self.type)}, SIZE: {self.size}")
-        # if self.version < 0x01104030 and (rw.mode() == "read" or rw.mode() == "write"):
-        #     raise UnsupportedVersionError(f"GFS file version '{safe_format(self.version, hex32_format)}' is not currently supported")
 
         args = []
-        if self.type == 0x00000000:
-            pass
-        elif self.type == 0x00000001:
-            pass
+        if self.type == 0x00000000: # EOF
+            self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
+            rw.assert_equal(self.padding_0x0C, 0) 
+            return
+        elif self.type == 0x00000001: # Persona Start
+            return
+        elif self.type == 0x00000008: # ReFantazio Start
+            return
         elif self.type == 0x00010003: # Model
             dtype = ModelPayload
         elif self.type == 0x000100F8: # Unknown
             dtype = Blob
+            args = [self.size - 0x10]
         elif self.type == 0x000100F9: # Physics
             dtype = PhysicsPayload
         elif self.type == 0x000100FB: # Materials
@@ -60,21 +72,12 @@ class GFS0ContainerBinary(Serializable):
         elif self.type == 0x000100FD: # Animations
             dtype = AnimationPayload
         else:
-            raise NotImplementedError(f"Unrecognised GFS Container Type: '{safe_format(self.type, hex32_format)}'")
-            
+            self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
+            rw.assert_equal(self.padding_0x0C, 0)
+            raise NotImplementedError(f"Unrecognised GFS Container Type: '{HEX32_formatter(self.type)}'")
 
-        if self.type == 0x00000001:
-            return
-        elif self.type in [0x000100F8]: # Can be removed later
-            args = [self.size - 0x10]
-        
         self.padding_0x0C = rw.rw_uint32(self.padding_0x0C)
         rw.assert_equal(self.padding_0x0C, 0) 
-        
-        if self.type == 0x00000000:
-            return
-        
-        if rw.mode() == "read":
-            self.data = dtype()
-        assert type(self.data) == type(dtype()), f"{type(self.data)}, {type(dtype())}"
-        rw.rw_obj(self.data, self.version, *args) # Can remove *args when Blob can be removed
+
+        rw.rw_descriptor(ValidatePayloadType, self.data, dtype, self.type)
+        self.data = rw.rw_dynamic_obj(self.data, dtype, self.version, *args) # Can remove *args when Blob can be removed

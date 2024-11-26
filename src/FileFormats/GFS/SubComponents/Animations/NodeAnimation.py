@@ -15,6 +15,7 @@ from .Binary.AnimTrack import NodeRHalf
 from .Binary.AnimTrack import NodeSHalf
 from .Binary.AnimTrack import NodeTSHalf
 from .Binary.AnimTrack import NodeRSHalf
+from .Binary.AnimTrack import NodeTR31
 
 import numpy as np
 
@@ -82,11 +83,18 @@ class NodeAnimation:
                 anim.scales    = {f: base_scale             for f     in track_binary.frames}
                 anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 31:
-                anim.compress = True
-                anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
-                # WRONG but will do for now
-                anim.scales    = {f: base_scale             for f     in track_binary.frames}
-                anim.track_groups.append([0, 2])
+                if isinstance(track_binary, NodeTHalf):
+                    anim.compress = True
+                    anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
+                    # WRONG but will do for now
+                    anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                    anim.track_groups.append([0, 2])
+                else:
+                    anim.positions = {f: kf.position for f, kf in zip(track_binary.frames, track_binary.values)}
+                    anim.rotations = {f: kf.rotation for f, kf in zip(track_binary.frames, track_binary.values)}
+                    # WRONG but will do for now
+                    anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                    anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 32:
                 anim.compress = True
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
@@ -135,7 +143,7 @@ class NodeAnimation:
         
         return anim
     
-    def to_controller(self, old_node_id_to_new_node_id_map):        
+    def to_controller(self, old_node_id_to_new_node_id_map, version):        
         track_binary = AnimationTrackBinary()
         has_trans    = len(self.positions)
         has_rot      = len(self.rotations)
@@ -234,6 +242,8 @@ class NodeAnimation:
                         kf_values = construct_frames((self.rotations, slerp),
                                                      (apply_scale_to_keyframes(self.scales,    scale_scale   ), lerp ))
                     elif has_trans:
+                        if version > 0x02000000:
+                            raise NotImplementedError("No compressed translation keyframe after version 2")
                         kf_type = NodeTHalf
                         
                         position_scale = extract_scale(self.positions, 3)
@@ -265,7 +275,10 @@ class NodeAnimation:
                                                      (self.rotations, slerp),
                                                      (self.scales,    lerp ))
                     elif has_trans and has_rot:
-                        kf_type = NodeTR
+                        if version > 0x02000000:
+                            kf_type = NodeTR31
+                        else:
+                            kf_type = NodeTR
                         
                         frames,\
                         kf_values = construct_frames((self.positions, lerp),

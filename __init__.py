@@ -1,10 +1,11 @@
 from .src.FileFormats.GFS import GFSBinary, GFSInterface
+from .src.FileFormats.GFS import EPLFileBinary
     
 bl_info = {
         "name": "GFS Import/Export (.GMD/.GAP/.GFS)",
         "description": "Imports GFS files.",
         "author": "Pherakki",
-        "version": (0, 2, "0"),
+        "version": (0, 3, "dev"),
         "blender": (2, 81, 0),
         "location": "File > Import, File > Export",
         "warning": "",
@@ -54,6 +55,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Model         import ModelBoundingSphere
     from .src.BlenderIO.Properties.Model         import ModelBoundingBoxProps
     from .src.BlenderIO.Properties.Model         import ModelBoundingSphereProps
+    # from .src.BlenderIO.Properties.Model         import UnusedTexture
     from .src.BlenderIO.Properties.Nodes         import BlobProperty
     from .src.BlenderIO.Properties.Object        import GFSToolsObjectProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsProperties
@@ -113,6 +115,7 @@ def init_bpy():
         BlendAnimBoundingBoxProps,
         LookAtAnimBoundingBox,
         LookAtAnimBoundingBoxProps,
+        # UnusedTexture,
         ModelBoundingBox,
         ModelBoundingBoxProps,
         ModelBoundingSphere,

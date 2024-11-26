@@ -8,7 +8,7 @@ from . import ImportEPLs
 
 
 def import_gfs_object(gfs, raw_gfs, name, errorlog, import_policies):
-    textures  = import_textures(gfs)
+    textures  = import_textures(gfs, errorlog)
     materials = import_materials(gfs, textures, errorlog)
     armature, gfs_to_bpy_bone_map = ImportModel.import_model(gfs, name, materials, errorlog, import_policies.merge_vertices, import_policies.bone_pose, raw_gfs, import_policies)
     

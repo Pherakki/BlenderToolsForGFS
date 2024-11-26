@@ -1,13 +1,9 @@
-from .......serialization.Serializable import Serializable
-from ....CommonStructures import ObjectName
-from .Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2
+from ....ObjectNameModule import ObjectName
+from ..Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2
 
 
-class EPLLeafLightningPolygon(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EPLLeafLightningPolygon:
+    def __init__(self):
         self.type = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -31,8 +27,8 @@ class EPLLeafLightningPolygon(Serializable):
         
         self.polygon = None
         
-    def read_write(self, rw, version):
-        self.type = rw.rw_uint32(self.type)
+    def exbip_rw(self, rw, version):
+        self.type         = rw.rw_uint32(self.type)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
         self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
@@ -65,26 +61,20 @@ class EPLLeafLightningPolygon(Serializable):
         else:
             raise NotImplementedError(f"Unimplemented EPLLeafLightningPolygon type: '{self.type}'")
 
-        self.polygon = rw.rw_new_obj(self.polygon, lambda: PolygonType(self.context.endianness), version)        
+        self.polygon = rw.rw_dynamic_obj(self.polygon, PolygonType, version)        
 
 
-class EPLLightningPolygonRod(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
+class EPLLightningPolygonRod:
+    def __init__(self):
         self.unknown_0x00 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32s(self.unknown_0x00, 2)
 
 
-class EPLLightningPolygonBall(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-        
-        self.unknown_0x00 = EPLLeafCommonData(endianness)
+class EPLLightningPolygonBall:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData()
         self.unknown_0x04 = None
         self.unknown_0x0C = None
         self.unknown_0x14 = None
@@ -93,7 +83,7 @@ class EPLLightningPolygonBall(Serializable):
         self.unknown_0x24 = None
         self.unknown_0x28 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_float32s(self.unknown_0x04, 2)
         self.unknown_0x0C = rw.rw_float32s(self.unknown_0x0C, 2)

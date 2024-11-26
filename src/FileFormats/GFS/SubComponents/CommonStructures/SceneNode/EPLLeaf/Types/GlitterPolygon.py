@@ -1,13 +1,9 @@
-from .......serialization.Serializable import Serializable
-from ....CommonStructures import ObjectName
-from .Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
+from ....ObjectNameModule import ObjectName
+from ..Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
 
 
-class EPLLeafGlitterPolygon(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EPLLeafGlitterPolygon:
+    def __init__(self):
         self.type = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -18,11 +14,11 @@ class EPLLeafGlitterPolygon(Serializable):
         self.unknown_0x18 = None
         
         self.unknown_0x20 = None
-        self.unknown_0x28 = EPLLeafCommonData(endianness)
+        self.unknown_0x28 = EPLLeafCommonData()
         self.unknown_0x2C = None
         
-        self.unknown_0x30 = EPLLeafCommonData2(endianness)
-        self.unknown_0x34 = EPLLeafCommonData2(endianness)
+        self.unknown_0x30 = EPLLeafCommonData2()
+        self.unknown_0x34 = EPLLeafCommonData2()
         self.unknown_0x38 = None
         self.unknown_0x3C = None
         
@@ -31,10 +27,10 @@ class EPLLeafGlitterPolygon(Serializable):
         self.has_embedded_file = None
             
         self.polygon = None
-        self.embedded_file = EPLEmbeddedFile(endianness)
+        self.embedded_file = EPLEmbeddedFile()
     
     
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.type = rw.rw_uint32(self.type)
         self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)
         self.unknown_0x08 = rw.rw_float32(self.unknown_0x08)
@@ -67,7 +63,7 @@ class EPLLeafGlitterPolygon(Serializable):
         else:
             raise NotImplementedError(f"Unknown EPLLeafGlitterPolygon type '{self.type}'")
         
-        self.polygon = rw.rw_new_obj(self.polygon, lambda: PolygonType(self.context.endianness), version)
+        self.polygon = rw.rw_dynamic_obj(self.polygon, PolygonType, version)
         self.has_embedded_file = rw.rw_uint8(self.has_embedded_file)
         if self.has_embedded_file:
             rw.rw_obj(self.embedded_file, version)
@@ -75,18 +71,15 @@ class EPLLeafGlitterPolygon(Serializable):
 class EPLLeafGlitterPolygon2(EPLLeafGlitterPolygon):
     pass
 
-class EPLGlitterPolygonExplosion(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EPLGlitterPolygonExplosion:
+    def __init__(self):
         self.unknown_0x00 = None
         self.unknown_0x08 = None
         self.unknown_0x10 = None
         self.unknown_0x18 = None
         self.unknown_0x20 = None
         
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.unknown_0x00 = rw.rw_float32s(self.unknown_0x00, 2)
         self.unknown_0x08 = rw.rw_float32s(self.unknown_0x08, 2)
         self.unknown_0x10 = rw.rw_float32s(self.unknown_0x10, 2)
@@ -94,19 +87,16 @@ class EPLGlitterPolygonExplosion(Serializable):
         self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
         
 
-class EPLGlitterPolygonSplash(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData(endianness)
-        self.unknown_0x04 = EPLLeafCommonData(endianness)
+class EPLGlitterPolygonSplash:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData()
+        self.unknown_0x04 = EPLLeafCommonData()
         self.unknown_0x08 = None
         self.unknown_0x10 = None
         self.unknown_0x18 = None
         self.unknown_0x20 = None
     
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         rw.rw_obj(self.unknown_0x04, version)
         self.unknown_0x08 = rw.rw_float32s(self.unknown_0x08, 2)
@@ -115,12 +105,9 @@ class EPLGlitterPolygonSplash(Serializable):
         self.unknown_0x20 = rw.rw_float32(self.unknown_0x20)
 
 
-class EPLGlitterPolygonCylinder(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData(endianness)
+class EPLGlitterPolygonCylinder:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData()
         self.unknown_0x04 = None
         self.unknown_0x0C = None
         self.unknown_0x14 = None
@@ -129,7 +116,7 @@ class EPLGlitterPolygonCylinder(Serializable):
         self.unknown_0x28 = None
         self.unknown_0x2C = None
     
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         rw.rw_obj(self.unknown_0x00, version)
         self.unknown_0x04 = rw.rw_float32s(self.unknown_0x04, 2)
         self.unknown_0x0C = rw.rw_float32s(self.unknown_0x0C, 2)
@@ -141,12 +128,9 @@ class EPLGlitterPolygonCylinder(Serializable):
         self.unknown_0x2C = rw.rw_uint32(self.unknown_0x2C)
 
 
-class EPLGlitterPolygonWall(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
-        self.unknown_0x00 = EPLLeafCommonData(endianness)
+class EPLGlitterPolygonWall:
+    def __init__(self):
+        self.unknown_0x00 = EPLLeafCommonData()
         self.unknown_0x04 = None
         self.unknown_0x0C = None
         self.unknown_0x14 = None

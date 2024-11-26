@@ -1,2 +1,2 @@
 from .ContainerPayload import TexturePayload
-from .TextureBinary import TextureBinary
+from .TextureBinary    import TextureBinary

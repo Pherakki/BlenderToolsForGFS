@@ -1,3 +1,4 @@
-from .Binary import GFSBinary, NotAGFSFileError
+from .Binary import GFSBinary
+from .Binary import EPLFileBinary
 from .Interface import GFSInterface
-from .Interface import UnsupportedVersionError, ParticlesError
+from .Binary import NotAGFSFileError

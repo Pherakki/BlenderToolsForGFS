@@ -1,13 +1,9 @@
-from .......serialization.Serializable import Serializable
-from ....CommonStructures import ObjectName
-from .Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
+from ....ObjectNameModule import ObjectName
+from ..Common import EPLEmbeddedFile, EPLLeafCommonData, EPLLeafCommonData2, ParticleEmitter
 
 
-class EPLLeafTrajectoryPolygon(Serializable):
-    def __init__(self, endianness='>'):
-        super().__init__()
-        self.context.endianness = endianness
-
+class EPLLeafTrajectoryPolygon:
+    def __init__(self):
         self.type = None
         self.unknown_0x04 = None
         self.unknown_0x08 = None
@@ -18,15 +14,15 @@ class EPLLeafTrajectoryPolygon(Serializable):
         self.unknown_0x1C = None
         self.unknown_0x20 = None
         self.unknown_0x24 = None
-        self.unknown_0x28 = EPLLeafCommonData2(endianness)
-        self.unknown_0x2C = EPLLeafCommonData2(endianness)
-        self.unknown_0x30 = EPLLeafCommonData(endianness)
+        self.unknown_0x28 = EPLLeafCommonData2()
+        self.unknown_0x2C = EPLLeafCommonData2()
+        self.unknown_0x30 = EPLLeafCommonData()
         
-        self.particle_emitter = ParticleEmitter(endianness)
+        self.particle_emitter = ParticleEmitter()
         self.has_embedded_file = None
-        self.embedded_file = EPLEmbeddedFile(endianness)
+        self.embedded_file = EPLEmbeddedFile()
 
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
         self.type = rw.rw_uint32(self.type)
         if version < 0x01104170:
             self.unknown_0x04 = rw.rw_uint32(self.unknown_0x04)

@@ -1,2 +1,3 @@
-from .Binary import PropertyBinary
-from .Interface import PropertyInterface
+from .Binary    import PropertyBinary
+from .Interface import GFSProperty
+

@@ -1,4 +1,4 @@
-from ..CustomProperty import PropertyInterface
+from ..CustomProperty import GFSProperty
 from . import NodeAttachmentBinary
 from . import NodeBinary
 from .Mesh    import MeshInterface
@@ -15,7 +15,7 @@ def generate_morphs(node_list, mesh_list):
         if len(mesh.morphs):
             mi = MorphInterface()
             mi.node = mesh.node
-            binary = MorphBinary(endianness='>')
+            binary = MorphBinary()
             binary.target_count = len(mesh.morphs)
             binary.targets      = [0]*binary.target_count  # Always seems to be 0...
             binary.parent_name  = binary.parent_name.from_name(node_list[mi.node].name)
@@ -27,13 +27,27 @@ def generate_morphs(node_list, mesh_list):
 class NodeInterface:
     def __init__(self):
         self.parent_idx       = None
-        self.name             = None
+        self.name_bytes       = None
         self.position         = None
         self.rotation         = None
         self.scale            = None
         self.bind_pose_matrix = None
         self.unknown_float    = None
         self.properties       = [] # Property interfaces?
+    
+    @property
+    def name(self):
+        return self.name_bytes.decode('utf8')
+    @name.setter
+    def name(self, value):
+        self.name_bytes = value.encode('utf8')
+            
+    @property
+    def name_safe(self):
+        return self.name_bytes.decode('utf8', errors="replace")
+    @name_safe.setter
+    def name_safe(self, value):
+        self.name_bytes = value.encode('utf8', errors="replace")
     
     @classmethod
     def binary_node_tree_to_list(cls, binary):
@@ -130,20 +144,20 @@ class NodeInterface:
         instance = cls()
         
         instance.parent_idx = parent_idx
-        instance.name = binary.name.string
+        instance.name_bytes = binary.name.string
         instance.position = binary.position
         instance.rotation = binary.rotation
         instance.scale = binary.scale
         instance.bind_pose_matrix = bind_pose_matrix
         instance.unknown_float = binary.float
-        instance.properties = [PropertyInterface.from_binary(prop) for prop in binary.properties.data]
+        instance.properties = [GFSProperty.from_binary(prop) for prop in binary.properties.data]
         
         return instance
     
     def to_binary(self):
         binary = NodeBinary.SceneNodeBinary()
         
-        binary.name = binary.name.from_name(self.name)
+        binary.name = binary.name.from_name(self.name_bytes)
         binary.position = self.position
         binary.rotation = self.rotation
         binary.scale = self.scale
@@ -155,7 +169,7 @@ class NodeInterface:
         return binary
     
     def add_property(self, name, dtype, data):
-        prop = PropertyInterface()
+        prop = GFSProperty()
         prop.name = name
         prop.type = dtype
         prop.data = data

@@ -1,6 +1,6 @@
 import io
 
-from ...serialization.BinaryTargets import Reader
+from ...serialization.parsers import GFSReader
 from ...FileFormats.GFS.SubComponents.CommonStructures.Blob import Blob
 
 

@@ -1,6 +1,6 @@
 import io
 
-from ...serialization.BinaryTargets import Reader
+from ...serialization.parsers import GFSReader
 from ...FileFormats.GFS.SubComponents.Physics.Binary.ContainerPayload import PhysicsPayload
 from ...FileFormats.GFS.SubComponents.Physics.Binary.PhysicsBoneBinary import PhysicsBoneBinary
 from ...FileFormats.GFS.SubComponents.Physics.Binary.ColliderBinary import ColliderBinary

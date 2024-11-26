@@ -4,7 +4,7 @@ import bpy
 from mathutils import Quaternion, Matrix
 
 from ...FileFormats.GFS import GFSInterface, GFSBinary
-from ...serialization.BinaryTargets import Writer
+from ...serialization.parsers import GFSWriter
 from ..Globals import GFS_MODEL_TRANSFORMS
 from ..modelUtilsTest.Context.ActiveObject import safe_active_object_switch
 from ..modelUtilsTest.Context.ActiveObject import set_active_obj

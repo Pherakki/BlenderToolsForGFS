@@ -31,11 +31,12 @@ class MeshInterface:
         self.flag_30 = None
         self.flag_31 = None
     
-        self.vertices = None
-        self.material_name = None
-        self.indices = None
-        self.morphs = []
-        self.unknown_0x12 = None
+        self.vertices        = None
+        self.stride_type     = None
+        self.material_name   = None
+        self.indices         = None
+        self.morphs          = []
+        self.unknown_0x12    = None
         self.unknown_float_1 = None
         self.unknown_float_2 = None
         
@@ -100,6 +101,8 @@ class MeshInterface:
         instance.unknown_float_1 = binary.unknown_float_1
         instance.unknown_float_2 = binary.unknown_float_2
         
+        instance.stride_type          = binary.stride_type
+        
         instance.overrides.bounding_box.max_dims  = binary.bounding_box_max_dims
         instance.overrides.bounding_box.min_dims  = binary.bounding_box_min_dims
         instance.overrides.bounding_sphere.center = binary.bounding_sphere_centre
@@ -118,16 +121,17 @@ class MeshInterface:
             # Empty - 0x00000008 # << 3
             binary.vertex_format.has_normals    = (self.vertices[0].normal    is not None) # 0x00000010
             # Empty - 0x00000020 # << 5
-            binary.vertex_format.has_color1     = (self.vertices[0].color1    is not None) # 0x00000040
+            binary.vertex_format.has_color0     = (self.vertices[0].color0    is not None) # 0x00000040
+            binary.vertex_format.has_color1     = (self.vertices[0].color1    is not None)
             # Empty - 0x00000080 # << 7
-            binary.vertex_format.has_texcoord_0 = (self.vertices[0].texcoord0 is not None) # 0x00000100
-            binary.vertex_format.has_texcoord_1 = (self.vertices[0].texcoord1 is not None) # 0x00000200
-            binary.vertex_format.has_texcoord_2 = (self.vertices[0].texcoord2 is not None) # 0x00000400
-            binary.vertex_format.has_texcoord_3 = (self.vertices[0].texcoord3 is not None) # 0x00000800
-            binary.vertex_format.has_texcoord_4 = (self.vertices[0].texcoord4 is not None) # 0x00001000
-            binary.vertex_format.has_texcoord_5 = (self.vertices[0].texcoord5 is not None) # 0x00002000
-            binary.vertex_format.has_texcoord_6 = (self.vertices[0].texcoord6 is not None) # 0x00004000
-            binary.vertex_format.has_texcoord_7 = (self.vertices[0].texcoord7 is not None) # 0x00008000
+            binary.vertex_format.has_texcoord0 = (self.vertices[0].texcoord0 is not None) # 0x00000100
+            binary.vertex_format.has_texcoord1 = (self.vertices[0].texcoord1 is not None) # 0x00000200
+            binary.vertex_format.has_texcoord2 = (self.vertices[0].texcoord2 is not None) # 0x00000400
+            
+            # Empty - 0x00001000 # << 12
+            # Empty - 0x00002000 # << 13
+            # Empty - 0x00004000 # << 14
+            # Empty - 0x00008000 # << 15
             # Empty - 0x00010000 # << 16
             # Empty - 0x00020000 # << 17
             # Empty - 0x00040000 # << 18
@@ -142,7 +146,7 @@ class MeshInterface:
             # Empty - 0x08000000 # << 27
             binary.vertex_format.has_tangents    = (self.vertices[0].tangent  is not None) # 0x10000000
             binary.vertex_format.has_binormals   = (self.vertices[0].binormal is not None) # 0x20000000
-            binary.vertex_format.has_color2      = (self.vertices[0].color2   is not None) # 0x40000000
+            # Dealt with earlier - 0x40000000 # << 30
             # Empty - 0x80000000 # << 31
             
             binary.flags.has_weights = (self.vertices[0].indices is not None)
@@ -195,14 +199,19 @@ class MeshInterface:
             raise ValueError("Mesh contains {len(self.indices)} indices; must be a multiple of 3")
         binary.tri_count     = len(self.indices) // 3
         binary.index_type    = self.index_type
+        binary.stride_type   = self.stride_type
         binary.vertex_count  = len(self.vertices)
         binary.unknown_0x12  = self.unknown_0x12
         binary.vertices      = self.vertices
+        if binary.vertices is not None and len(binary.vertices):
+            binary.weight_count = max(sum(w!=0 for w in v.weights) for v in binary.vertices)
+        else:
+            binary.weight_count = 0
         if len(self.morphs):
             binary.morph_data.flags = 2
             binary.morph_data.count = 0
             for position_deltas in self.morphs:
-                binary.morph_data.add_target(2, position_deltas)
+                binary.morph_data.add_target(position_deltas)
         binary.indices       = self.indices
         if self.material_name is not None:
             binary.material_name = binary.material_name.from_name(self.material_name)

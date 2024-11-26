@@ -1,4 +1,4 @@
-from ..CommonStructures.CustomProperty import PropertyInterface
+from ..CommonStructures.CustomProperty import GFSProperty
 from .Binary import AnimationBinary, LookAtAnimationsBinary
 from .Binary.AnimController import AnimationControllerBinary
 from .Binary.AnimTrack import AnimationTrackBinary
@@ -17,8 +17,8 @@ from .Binary.AnimTrack import EmissiveRGB
 from .Binary.AnimTrack import KeyframeType15
 from .Binary.AnimTrack import Tex1UV
 from .Binary.AnimTrack import Tex0UVSnap
-from .Binary.AnimTrack import KeyframeType23
-from .Binary.AnimTrack import KeyframeType24
+from .Binary.AnimTrack import CameraFOV
+from .Binary.AnimTrack import CameraRoll
 from .Binary.AnimTrack import OpacitySnap
 from .Binary.AnimTrack import KeyframeType29
 from .Binary.AnimTrack import KeyframeType30
@@ -55,12 +55,12 @@ class LookAtAnimationsInterface:
         
         return instance
         
-    def to_binary(self, model_binary, old_node_id_to_new_node_id_map):
+    def to_binary(self, model_binary, old_node_id_to_new_node_id_map, version):
         binary = LookAtAnimationsBinary()
-        binary.right = self.right.to_binary(model_binary, old_node_id_to_new_node_id_map)
-        binary.left  = self.left.to_binary(model_binary, old_node_id_to_new_node_id_map)
-        binary.up    = self.up.to_binary(model_binary, old_node_id_to_new_node_id_map)
-        binary.down  = self.down.to_binary(model_binary, old_node_id_to_new_node_id_map)
+        binary.right = self.right.to_binary(model_binary, old_node_id_to_new_node_id_map, version)
+        binary.left  = self.left.to_binary(model_binary, old_node_id_to_new_node_id_map, version)
+        binary.up    = self.up.to_binary(model_binary, old_node_id_to_new_node_id_map, version)
+        binary.down  = self.down.to_binary(model_binary, old_node_id_to_new_node_id_map, version)
         
         binary.right_factor = self.right_factor
         binary.left_factor  = self.left_factor
@@ -144,7 +144,7 @@ class AnimationInterface:
         instance.overrides.bounding_box.max_dims = binary.bounding_box_max_dims
         instance.overrides.bounding_box.min_dims = binary.bounding_box_min_dims
         instance.speed                           = binary.speed
-        instance.properties = [PropertyInterface.from_binary(prop) for prop in binary.properties.data]
+        instance.properties = [GFSProperty.from_binary(prop) for prop in binary.properties.data]
 
         # These should be removable...?
         # Maybe these say which channels are activated..?!
@@ -213,7 +213,7 @@ class AnimationInterface:
             if track_binary.keyframe_type == 23:
                 anim.fov = {f: kf.camera_fov for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 24:
-                anim.unknown_24 = {f: kf.unknown_float for f, kf in zip(track_binary.frames, track_binary.values)}
+                anim.roll = {f: kf.roll for f, kf in zip(track_binary.frames, track_binary.values)}
             else:
                 raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Camera Animation exists")
 
@@ -245,7 +245,7 @@ class AnimationInterface:
     
         return anim
     
-    def to_binary(self, model_binary, old_node_id_to_new_node_id_map):
+    def to_binary(self, model_binary, old_node_id_to_new_node_id_map, version):
         binary = AnimationBinary()
         
         binary.flags.has_node_anims     = len(self.node_animations)
@@ -293,19 +293,18 @@ class AnimationInterface:
             binary.epls.data            = self.epls
             binary.epls.count           = len(self.epls)
         if binary.flags.has_lookat_anims:
-            binary.lookat_animations = self.lookat_animations.to_binary(model_binary, old_node_id_to_new_node_id_map)
+            binary.lookat_animations = self.lookat_animations.to_binary(model_binary, old_node_id_to_new_node_id_map, version)
         binary.extra_track_data      = self.extra_track_data
         binary.speed                 = self.speed
         binary.properties.data       = [prop.to_binary() for prop in self.properties]
         binary.properties.count      = len(self.properties)
         
         # Order of controllers here is probably done in global node order...
-        binary.controllers.data.extend([a.to_controller(old_node_id_to_new_node_id_map) for a in self.node_animations]) # Nodes are first
-        binary.controllers.data.extend([a.to_controller() for a in self.camera_animations  ]) # Then cameras - SOMETIMES MIXED WITH NODES?!
-        binary.controllers.data.extend([a.to_controller() for a in self.material_animations]) # Then materials
-        binary.controllers.data.extend([a.to_controller() for a in self.morph_animations   ]) # Then... ??
-        binary.controllers.data.extend([a.to_controller() for a in self.unknown_animations ])
-        binary.controllers.count     = len(binary.controllers.data)
+        binary.controllers.extend([a.to_controller(old_node_id_to_new_node_id_map, version) for a in self.node_animations]) # Nodes are first
+        binary.controllers.extend([a.to_controller() for a in self.camera_animations  ]) # Then cameras - SOMETIMES MIXED WITH NODES?!
+        binary.controllers.extend([a.to_controller() for a in self.material_animations]) # Then materials
+        binary.controllers.extend([a.to_controller() for a in self.morph_animations   ]) # Then... ??
+        binary.controllers.extend([a.to_controller() for a in self.unknown_animations ])
         
         tracks = [track for ctlr in binary.controllers for track in ctlr.tracks]
         if len(tracks):
@@ -315,6 +314,9 @@ class AnimationInterface:
         else:
             binary.duration = 0
         
+        binary.controller_count = len(binary.controllers)
+        binary.unknown_int_1 = 0 # Should be len(tracks) but is sometimes 0
+        binary.unknown_int_2 = 0 # Something to do with the total amount of track data...
         if self.keep_bounding_box:
             bounding_box = self.overrides.bounding_box
             if bounding_box.enabled:
@@ -349,7 +351,7 @@ class AnimationInterface:
         return la_a.up, la_a.down, la_a.left, la_a.right
     
     def add_property(self, name, dtype, data):
-        prop = PropertyInterface()
+        prop = GFSProperty()
         prop.name = name
         prop.type = dtype
         prop.data = data
@@ -434,14 +436,14 @@ class CameraAnimation:
     def __init__(self, id, name):
         self.name = name
         self.id   = id
-        self.fov        = {}
-        self.unknown_24 = {}
+        self.fov  = {}
+        self.roll = {}
 
     def to_controller(self):
         tracks = []
         for dataset, keyframe_type in [
-                (self.fov,         KeyframeType23),
-                (self.unknown_24,  KeyframeType24)
+                (self.fov,   CameraFOV),
+                (self.roll,  CameraRoll)
             ]:
             if len(dataset):
                 kf_type = keyframe_type

@@ -1,10 +1,6 @@
-from ......serialization.Serializable import Serializable
-
-
-class TextureBinary(Serializable):
-    def __init__(self, endianness='>'):
+class TextureBinary:
+    def __init__(self):
         super().__init__()
-        self.context.endianness = endianness
         
         self.name = None
         self.filetype = 1 # DDS = 1, TGA = 2, TMX = 3, GXT = 6, GNF = 9, EPT = 12
@@ -18,8 +14,8 @@ class TextureBinary(Serializable):
     def __repr__(self):
         return f"[GFD::TextureBinary] {self.name} {self.filetype} {self.data_size}"
 
-    def read_write(self, rw, version):
-        self.name      = rw.rw_uint16_sized_str(self.name, encoding="shift-jis")
+    def exbip_rw(self, rw, version):
+        self.name      = rw.rw_uint16_sized_bstr(self.name)  # Shift-JIS encoded
         self.filetype  = rw.rw_uint16(self.filetype)
         self.data_size = rw.rw_uint32(self.data_size)
         

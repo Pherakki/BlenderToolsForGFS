@@ -1,14 +1,15 @@
 import os
+from ..Utils.String import get_name_string
 
 
 import bpy
 
 
-def import_textures(gfs):
+def import_textures(gfs, errorlog):
     textures = {}
     for tex in gfs.textures:
         # safety check... split off any paths from name
-        name = tex.name.split("/")[-1].split("\\")[-1]
+        name = get_name_string("Texture", tex.name_bytes, "shift-jis", errorlog).split("/")[-1].split("\\")[-1]
         filepath = os.path.join(bpy.app.tempdir, name)
         # Try/finally seems to prevent a race condition between Blender and 
         # Python forming

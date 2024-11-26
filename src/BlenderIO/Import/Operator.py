@@ -3,7 +3,7 @@ import os
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from ...FileFormats.GFS import GFSInterface, UnsupportedVersionError, NotAGFSFileError
+from ...FileFormats.GFS import GFSInterface, NotAGFSFileError
 from ...FileFormats.GFS.Interface import EPLFileInterface
 from ..Data import bone_pose_enum_options
 from ..Data import anim_boundbox_policy_options
@@ -135,8 +135,6 @@ class ImportGFS(bpy.types.Operator, ImportHelper):
             gfs = GFSInterface.from_bytes(raw_gfs, warnings=warnings)
         except NotAGFSFileError as e:
             errorlog.log_error_message(str(e))
-        except UnsupportedVersionError as e:
-            errorlog.log_error_message(f"The file you attempted to load is an unsupported version: {str(e)}.")
 
         # Add any file-loading warnings to the warnings list
         for warning_msg in warnings:

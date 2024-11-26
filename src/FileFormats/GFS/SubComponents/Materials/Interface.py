@@ -38,13 +38,15 @@ class MaterialInterface:
         self.flag_31             = None
         
         # Presumably some of these can be removed...
-        self.name         = None
-        self.ambient      = None
-        self.diffuse      = None
-        self.specular     = None
-        self.emissive     = None
-        self.reflectivity = None
-        self.outline_idx  = None
+        self.name_bytes    = None
+        # self.ambient      = None
+        # self.diffuse      = None
+        # self.specular     = None
+        # self.emissive     = None
+        # self.reflectivity = None
+        # self.outline_idx  = None
+        self.params_type   = None
+        self.shader_params = None
         self.draw_method  = None
         self.unknown_0x51 = None
         self.unknown_0x52 = None
@@ -60,6 +62,7 @@ class MaterialInterface:
         self.texture_indices_2 = TextureMapIndices() # Change later...
         self.disable_backface_culling = None
         self.unknown_0x6A = None
+        self.unknown_0x6C = None
         
         # Need to come up with a better way of assigning the extra data to these
         self.diffuse_texture    = None
@@ -74,19 +77,28 @@ class MaterialInterface:
         
         self.attributes = []
     
+    @property
+    def name(self):
+        return self.name_bytes.decode('utf8')
+    @name.setter
+    def name(self, value):
+        self.name_bytes = value.encode('utf8')
+    
+    @property
+    def name_safe(self):
+        return self.name_bytes.decode('utf8', errors='replace')
+    @name_safe.setter
+    def name_safe(self, value):
+        self.name_bytes = value.encode('utf8', errors='replace')
+        
     @classmethod
     def from_binary(cls, binary):
         instance = cls()
         
-        instance.name = binary.name.string
+        instance.name_bytes = binary.name.string
+        instance.params_type   = binary.params_type
+        instance.shader_params = binary.shader_params
         
-        # Can at least remove the flags for now
-        instance.ambient = binary.ambient
-        instance.diffuse = binary.diffuse
-        instance.specular = binary.specular
-        instance.emissive = binary.emissive
-        instance.reflectivity = binary.reflectivity
-        instance.outline_idx = binary.outline_idx
         instance.draw_method  = binary.draw_method
         instance.unknown_0x51 = binary.unknown_0x51
         instance.unknown_0x52 = binary.unknown_0x52
@@ -102,6 +114,7 @@ class MaterialInterface:
         instance.texture_indices_2 = binary.texture_indices_2
         instance.disable_backface_culling = binary.disable_backface_culling
         instance.unknown_0x6A = binary.unknown_0x6A
+        instance.unknown_0x6C = binary.unknown_0x6C
         
         # Need to come up with a better way of assigning the extra data to these
         # Since it's unclear what this extra data does... leave it for now
@@ -179,14 +192,10 @@ class MaterialInterface:
         binary.flags.flag_30                = self.flag_30
         binary.flags.flag_31                = self.flag_31
         
-        binary.name                     = binary.name.from_name(self.name)
-        binary.ambient                  = self.ambient
-        binary.diffuse                  = self.diffuse
-        binary.specular                 = self.specular
-        binary.emissive                 = self.emissive
-        binary.reflectivity             = self.reflectivity
-        binary.outline_idx              = self.outline_idx
-        binary.draw_method              = self.draw_method # 0 - opaque, 1 - translucent, 2 - ?
+        binary.name                     = binary.name.from_bytestring(self.name_bytes)
+        binary.params_type              = self.params_type
+        binary.shader_params            = self.shader_params
+        binary.draw_method              = self.draw_method
         binary.unknown_0x51             = self.unknown_0x51
         binary.unknown_0x52             = self.unknown_0x52
         binary.unknown_0x53             = self.unknown_0x53
@@ -201,6 +210,7 @@ class MaterialInterface:
         binary.texture_indices_2        = self.texture_indices_2
         binary.disable_backface_culling = self.disable_backface_culling
         binary.unknown_0x6A             = self.unknown_0x6A
+        binary.unknown_0x6C             = self.unknown_0x6C
         
         binary.diffuse_texture    = self.diffuse_texture
         binary.normal_texture     = self.normal_texture
@@ -289,6 +299,7 @@ class MaterialInterface:
         
         self.attributes.append(attr)
         return attr
+
 
     def add_attribute_1(self, unknown_0x00, unknown_0x04, unknown_0x08, unknown_0x0C, 
                               unknown_0x10, unknown_0x14, unknown_0x18, unknown_0x1C,

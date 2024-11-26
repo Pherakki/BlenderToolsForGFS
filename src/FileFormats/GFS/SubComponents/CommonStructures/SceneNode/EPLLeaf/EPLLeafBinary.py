@@ -1,78 +1,48 @@
-from .......serialization.Serializable import Serializable
-from .......serialization.utils import safe_format, hex32_format
-from ....CommonStructures import ObjectName, BitVector0x20
-from .Particle             import EPLLeafParticle
-from .FlashPolygon         import EPLLeafFlashPolygon
-from .CirclePolygon        import EPLLeafCirclePolygon
-from .LightningPolygon     import EPLLeafLightningPolygon
-from .TrajectoryPolygon    import EPLLeafTrajectoryPolygon, EPLLeafTrajectoryPolygon2
-from .WindPolygon          import EPLLeafWindPolygon
-from .Model                import EPLLeafModel
-from .BoardPolygon         import EPLLeafBoardPolygon
-from .ObjectParticles      import EPLLeafObjectParticles
-from .GlitterPolygon       import EPLLeafGlitterPolygon, EPLLeafGlitterPolygon2
-from .DirectionalParticles import EPLLeafDirectionalParticles
-from .Camera               import EPLLeafCamera
-from .Light                import EPLLeafLight
-from .PostEffect           import EPLLeafPostEffect
-from .Helper               import EPLLeafHelper
+from .......serialization.formatters import HEX32_formatter
+from ....CommonStructures.ObjectNameModule import ObjectName
+from ....CommonStructures.BitVectorModule  import BitVector0x20
+from .Types.Particle             import EPLLeafParticle
+from .Types.FlashPolygon         import EPLLeafFlashPolygon
+from .Types.CirclePolygon        import EPLLeafCirclePolygon
+from .Types.LightningPolygon     import EPLLeafLightningPolygon
+from .Types.TrajectoryPolygon    import EPLLeafTrajectoryPolygon, EPLLeafTrajectoryPolygon2
+from .Types.WindPolygon          import EPLLeafWindPolygon
+from .Types.Model                import EPLLeafModel
+from .Types.BoardPolygon         import EPLLeafBoardPolygon
+from .Types.ObjectParticles      import EPLLeafObjectParticles
+from .Types.GlitterPolygon       import EPLLeafGlitterPolygon, EPLLeafGlitterPolygon2
+from .Types.DirectionalParticles import EPLLeafDirectionalParticles
+from .Types.Camera               import EPLLeafCamera
+from .Types.Light                import EPLLeafLight
+from .Types.PostEffect           import EPLLeafPostEffect
+from .Types.Helper               import EPLLeafHelper
 
 
 class EPLLeafFlags(BitVector0x20):
-    flag_0      = BitVector0x20.DEF_FLAG(0x00)
-    flag_1      = BitVector0x20.DEF_FLAG(0x01)
-    flag_2      = BitVector0x20.DEF_FLAG(0x02)
-    flag_3      = BitVector0x20.DEF_FLAG(0x03)
-    flag_4      = BitVector0x20.DEF_FLAG(0x04)
-    flag_5      = BitVector0x20.DEF_FLAG(0x05)
-    flag_6      = BitVector0x20.DEF_FLAG(0x06)
-    flag_7      = BitVector0x20.DEF_FLAG(0x07)
-    flag_8      = BitVector0x20.DEF_FLAG(0x08)
-    flag_9      = BitVector0x20.DEF_FLAG(0x09)
-    flag_10     = BitVector0x20.DEF_FLAG(0x0A)
-    flag_11     = BitVector0x20.DEF_FLAG(0x0B)
-    flag_12     = BitVector0x20.DEF_FLAG(0x0C)
-    flag_13     = BitVector0x20.DEF_FLAG(0x0D)
-    flag_14     = BitVector0x20.DEF_FLAG(0x0E)
-    flag_15     = BitVector0x20.DEF_FLAG(0x0F)
-    flag_16     = BitVector0x20.DEF_FLAG(0x10)
-    flag_17     = BitVector0x20.DEF_FLAG(0x11)
-    flag_18     = BitVector0x20.DEF_FLAG(0x12)
-    flag_19     = BitVector0x20.DEF_FLAG(0x13)
-    flag_20     = BitVector0x20.DEF_FLAG(0x14)
-    flag_21     = BitVector0x20.DEF_FLAG(0x15)
-    flag_22     = BitVector0x20.DEF_FLAG(0x16)
-    flag_23     = BitVector0x20.DEF_FLAG(0x17)
-    flag_24     = BitVector0x20.DEF_FLAG(0x18)
-    flag_25     = BitVector0x20.DEF_FLAG(0x19)
-    flag_26     = BitVector0x20.DEF_FLAG(0x1A)
-    flag_27     = BitVector0x20.DEF_FLAG(0x1B)
-    flag_28     = BitVector0x20.DEF_FLAG(0x1C)
-    flag_29     = BitVector0x20.DEF_FLAG(0x1D)
-    flag_30     = BitVector0x20.DEF_FLAG(0x1E)
-    flag_31     = BitVector0x20.DEF_FLAG(0x1F)
+    pass
 
-
-class EPLLeafBinary(Serializable):
-    def __init__(self, endianness=">"):
-        super().__init__()
-        self.context.endianness = endianness
-        
+class EPLLeafBinary:
+    def __init__(self):
+        self.unknown_0x00 = None
+        self.unknown_0x08 = None
         self.flags = EPLLeafFlags()
-        self.name = ObjectName(endianness)
+        self.name = ObjectName()
         self.type = None
-        self.unknown_0x0C = None
+        self.unknown_0x1C = None
         
         self.payload = None
         
     def __repr__(self):
-        return f"[GFSBinary::Scene::Node::EPL::Leaf {safe_format(self.flags._value, hex32_format)}] {self.name.string} {self.type} {self.unknown_0x0C}"
+        return f"[GFSBinary::Scene::Node::EPL::Leaf {HEX32_formatter(self.flags._value)}] {self.name.string} {self.type} {self.unknown_0x1C}"
     
-    def read_write(self, rw, version):
+    def exbip_rw(self, rw, version):
+        if version > 0x02110060:
+            self.unknown_0x00 = rw.rw_float32s(self.unknown_0x00, 2)
+            self.unknown_0x08 = rw.rw_float32s(self.unknown_0x08, 2)
         rw.rw_obj(self.flags)
         rw.rw_obj(self.name, version)
         self.type = rw.rw_uint32(self.type)
-        self.unknown_0x0C = rw.rw_uint32(self.unknown_0x0C)
+        self.unknown_0x1C = rw.rw_uint32(self.unknown_0x1C)
         
         if   self.type == 0:  return
         elif self.type == 1:  PayloadType = EPLLeafParticle
@@ -95,5 +65,5 @@ class EPLLeafBinary(Serializable):
         else:
             raise NotImplementedError(f"Unknown EPLLeaf type '{self.type}'")
         
-        self.payload = rw.rw_new_obj(self.payload, lambda: PayloadType(self.context.endianness), version)
+        self.payload = rw.rw_dynamic_obj(self.payload, PayloadType, version)
 

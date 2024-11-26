@@ -1,4 +1,4 @@
-from ...serialization.BinaryTargets import OffsetTracker
+from ...serialization.parsers import GFSOffsetTracker
 from .Binary import GFSBinary, EPLFileBinary
 from .SubComponents.GFS0ContainerBinary import GFS0ContainerBinary
 
@@ -20,15 +20,14 @@ class GFSInterface:
         self.keep_bounding_box    = False
         self.keep_bounding_sphere = False
         
-        self.flag_3 = False
-        self.meshes = []
-        self.cameras = []
-        self.lights = []
-        #self.morphs = []  # Should be able to just auto-create these
-        self.epls   = []
-        self.bones = []
+        self.flag_3    = False
+        self.meshes    = []
+        self.cameras   = []
+        self.lights    = []
+        self.epls      = []
+        self.bones     = []
         self.materials = []
-        self.textures = []
+        self.textures  = []
         
         self.anim_flag_0 = False
         self.anim_flag_1 = False
@@ -63,7 +62,7 @@ class GFSInterface:
         self.anim_flag_31 = False
         self.animations        = []
         self.blend_animations  = []
-        self.lookat_animations = None #UnknownAnimations()
+        self.lookat_animations = None
         
         self.overrides = ModelOverrides()
         
@@ -83,7 +82,7 @@ class GFSInterface:
     @classmethod
     def from_bytes(cls, bytes_, warnings=None):
         binary = GFSBinary()
-        binary.unpack(bytes_, warnings=warnings)
+        binary.frombytes(bytes_, warnings=warnings)
         return cls.from_binary(binary, duplicate_data=False, warnings=warnings)
 
     @classmethod
@@ -92,7 +91,7 @@ class GFSInterface:
         
         instance.has_end_container = False
         for ctr in binary.containers:
-            if ctr.type == 0x00000001:
+            if ctr.type == 0x00000001 or ctr.type == 0x00000008:
                 # All blocks must have a version, but this is always the same
                 # and the "start" block must always exist... so get it from here
                 instance.version = ctr.version
@@ -165,25 +164,27 @@ class GFSInterface:
                 instance.has_end_container = True
         
         return instance
-    
 
-    def to_file(self, filepath, anim_model_binary=None):
+    def to_file(self, filepath, endianness, anim_model_binary=None):
         binary = self.to_binary(duplicate_data=True, anim_model_binary=anim_model_binary)
-        binary.write(filepath)
+        binary.write(filepath, endianness)
 
-    def to_bytes(self, anim_model_binary=None):
+    def to_bytes(self, endianness, anim_model_binary=None):
         binary = self.to_binary(duplicate_data=True, anim_model_binary=anim_model_binary)
-        return binary.pack()
+        return binary.tobytes(endianness)
 
     def to_binary(self, duplicate_data=False, anim_model_binary=None):
         binary = GFSBinary()
         
-        ot = OffsetTracker()
+        ot = GFSOffsetTracker()
         
         # Start container
         start_ctr = GFS0ContainerBinary()
         start_ctr.version = self.version
-        start_ctr.type = 0x00000001
+        if self.version >= 0x02000000:
+            start_ctr.type = 0x00000008
+        else:
+            start_ctr.type = 0x00000001
         ot.rw_obj(start_ctr)
         start_ctr.size = 0
         binary.containers.append(start_ctr)
@@ -278,11 +279,11 @@ class GFSInterface:
             if anim_model_binary is None:
                 anim_model_binary = model_binary
             anm_ctr.data.animations.count = len(self.animations)
-            anm_ctr.data.animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map) for a in self.animations]
+            anm_ctr.data.animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map, self.version) for a in self.animations]
             anm_ctr.data.blend_animations.count = len(self.blend_animations)
-            anm_ctr.data.blend_animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map) for a in self.blend_animations]
+            anm_ctr.data.blend_animations.data  = [a.to_binary(anim_model_binary, old_node_id_to_new_node_id_map, self.version) for a in self.blend_animations]
             if anm_ctr.data.flags.has_lookat_anims:
-                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(anim_model_binary, old_node_id_to_new_node_id_map)
+                anm_ctr.data.lookat_animations = self.lookat_animations.to_binary(anim_model_binary, old_node_id_to_new_node_id_map, self.version)
   
             ot.rw_obj(anm_ctr)
             anm_ctr.size = ot.tell() - offset
@@ -338,7 +339,7 @@ class GFSInterface:
         self.bones.append(node)
         return node
         
-    def add_mesh(self, node_id, vertices, material_name, indices, morphs, unknown_0x12, unknown_float_1, unknown_float_2, keep_bounding_box, keep_bounding_sphere):
+    def add_mesh(self, node_id, vertices, material_name, indices, morphs, unknown_0x12, stride_type, unknown_float_1, unknown_float_2, keep_bounding_box, keep_bounding_sphere):
         mesh = MeshInterface()
         mesh.node            = node_id
         mesh.vertices        = vertices
@@ -346,10 +347,11 @@ class GFSInterface:
         mesh.indices         = indices
         mesh.morphs = morphs
         mesh.unknown_0x12    = unknown_0x12
+        mesh.stride_type     = stride_type
         mesh.unknown_float_1 = unknown_float_1
         mesh.unknown_float_2 = unknown_float_2
         
-        if len(indices): mesh.index_type = 2 if max(indices) >= 2**16 else 1
+        if len(indices): mesh.index_type = 2 if len(vertices) >= 2**16 else 1
         else:            mesh.index_type = 1
         mesh.keep_bounding_box    = keep_bounding_box
         mesh.keep_bounding_sphere = keep_bounding_sphere
@@ -385,7 +387,7 @@ class GFSInterface:
         self.lights.append(li)
         return li.binary
 
-    def add_camera(self, node_id, view_matrix, zNear, zFar, fov, aspect_ratio, unknown_0x50):
+    def add_camera(self, node_id, view_matrix, zNear, zFar, fov, aspect_ratio, unknown_0x50, unknown_0x54, unknown_0x55, unknown_0x59):
         cam = CameraInterface()
         
         cam.node                = node_id
@@ -395,6 +397,9 @@ class GFSInterface:
         cam.binary.fov          = fov
         cam.binary.aspect_ratio = aspect_ratio
         cam.binary.unknown_0x50 = unknown_0x50
+        cam.binary.unknown_0x54 = unknown_0x54
+        cam.binary.unknown_0x55 = unknown_0x55
+        cam.binary.unknown_0x59 = unknown_0x59
         self.cameras.append(cam)
         return cam
     
@@ -477,18 +482,18 @@ class EPLFileInterface(EPLInterface):
         binary.read(filepath)
         return cls.from_binary(binary)
 
-    def to_file(self, filepath, endianness=">"):
-        binary = self.to_binary(endianness)
-        binary.write(filepath)
+    def to_file(self, filepath, endianness):
+        binary = self.to_binary()
+        binary.write(filepath, endianness)
 
-    def to_binary(self, endianness=">"):
+    def to_binary(self):
         if self.version is None:
             raise ValueError("EPL version is None. Ensure that this is set to an appropriate value, such as 0x01105100")
         
-        binary = EPLFileBinary(endianness)
+        binary = EPLFileBinary()
         binary.start_block.version = self.version
         binary.start_block.type    = 0x00000001
         binary.start_block.size    = 0
-        binary.epl = super().to_binary(endianness)
+        binary.epl = super().to_binary()
         
         return binary

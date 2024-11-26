@@ -5,7 +5,7 @@ import bpy
 from mathutils import Matrix, Quaternion, Vector
 import numpy as np
 
-from ...serialization.BinaryTargets import Writer
+from ...serialization.parsers import GFSWriter
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
 from .ImportProperties import import_properties
 from ..Utils.Animation import gapnames_to_nlatrack

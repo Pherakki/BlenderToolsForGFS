@@ -3,7 +3,7 @@ import io
 import numpy as np
 from mathutils import Quaternion
 
-from ...serialization.BinaryTargets import Reader
+from ...serialization.parsers import GFSReader
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface, AnimationBinary
 from ...FileFormats.GFS.SubComponents.Animations.Binary.AnimationBinary import EPLEntry
 

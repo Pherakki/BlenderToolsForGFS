@@ -43,8 +43,8 @@ class EPLInterface:
         
         return instance
     
-    def to_binary(self, endianness=">"):
-        binary = EPLBinary(endianness)
+    def to_binary(self):
+        binary = EPLBinary()
         binary.flags = self.flags
         binary.root_node = self._scenegraph.packed()[0]
         if self.animation is not None:
