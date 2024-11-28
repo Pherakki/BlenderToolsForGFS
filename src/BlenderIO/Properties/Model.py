@@ -122,6 +122,11 @@ def calculate_sphere(context):
     sphprops.center = sphere_centre
     sphprops.radius = radius
 
+class UnusedTexture(bpy.types.PropertyGroup):
+    name:     bpy.props.StringProperty(name="Name")
+    texture:  bpy.props.PointerProperty(type=bpy.types.Image)
+    export:   bpy.props.BoolProperty(name="Export")
+
 
 ModelBoundingBox    = define_managed_mesh(lambda arm: f".GFSTOOLS_{arm.name}Box",    lambda arm, ctx, obj: update_box   (arm.GFSTOOLS_ModelProperties.bounding_box,    ctx, obj), get_box_props,    "gfstools.showmodelboundingbox"   , calculate_box,    "gfstools.calcmodelboundingbox")
 ModelBoundingSphere = define_managed_mesh(lambda arm: f".GFSTOOLS_{arm.name}Sphere", lambda arm, ctx, obj: update_sphere(arm.GFSTOOLS_ModelProperties.bounding_sphere, ctx, obj), get_sphere_props, "gfstools.showmodelboundingsphere", calculate_sphere, "gfstools.calcmodelboundingsphere")
@@ -149,6 +154,8 @@ class GFSToolsModelProperties(GFSVersionedProperty, bpy.types.PropertyGroup):
     internal_animation_pack_idx: bpy.props.IntProperty(default=-1, options={'HIDDEN'})
     animation_pack_idx:          bpy.props.IntProperty(default= 0, options={'HIDDEN'})
     animation_packs:             bpy.props.CollectionProperty(type=GFSToolsAnimationPackProperties)
+    unused_textures:             bpy.props.CollectionProperty(type=UnusedTexture)
+    unused_textures_idx:         bpy.props.IntProperty(default=0)
     
     ERROR_TEMPLATE = "CRITICAL INTERNAL ERROR: INVALID {msg} ANIMATION PACK INDEX '{idx}'"
     

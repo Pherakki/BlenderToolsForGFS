@@ -28,7 +28,7 @@ PARAMS_TYPE_LOOKUP = {
     "V2Type16": 16
 }
 
-def export_materials_and_textures(gfs, bpy_material_names, texture_mode, errorlog):
+def export_materials_and_textures(gfs, bpy_material_names, texture_mode, unused_textures, errorlog):
     texture_names = set()
     for bpy_material_name in bpy_material_names:
         bpy_material = bpy.data.materials[bpy_material_name]
@@ -506,7 +506,7 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, errorlo
         texture_names.remove(None)
     
     texbin = None
-    texture_names = sorted(texture_names)
+    texture_names = sorted(texture_names, key=lambda x: x[0].lower())
     if texture_mode == "EMBEDDED":
         for (texture_name, mat_name, node_name) in texture_names:
             export_texture(gfs, texture_name, mat_name, node_name, False, errorlog)
@@ -514,7 +514,6 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, errorlo
         texbin = MetaphorTextureBin()
         for (texture_name, mat_name, node_name) in texture_names:
             bname = texture_name.encode('shift-jis', errors='replace')
-            texbin.add_texture(bname, export_texture(gfs, texture_name, mat_name, node_name, True, errorlog))
     elif texture_mode == "BORROW":
         for (texture_name, mat_name, node_name) in texture_names:
             export_texture(gfs, texture_name, mat_name, node_name, True, errorlog)
@@ -524,19 +523,16 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, errorlo
     return texbin
 
 
-def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, errorlog):
-    # Retreive image data block from Blender
-    if texture_name == "dummy" and texture_name not in bpy.data.images:
-        gfs.add_texture("dummy", dummy_image_data, 1, 1, 0, 0)
-        return dummy_image_data
-    else:
-        bpy_image = bpy.data.images[texture_name]
-    
+
+def extract_payload_from_image(bpy_image, errorlog, mat_name, node_name):
     # Check that the image is a file; if it is then we can just
     # embed it in the model
     # If it isn't... need to convert it to DDS, which we won't support currently
     if bpy_image.type != "FILE" and bpy_image.type != "IMAGE":
-        errorlog.log_error_message(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} used by material '{mat_name}' on texture node '{node_name}'")
+        if mat_name is not None:
+            errorlog.log_error_message(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} used by material '{mat_name}' on texture node '{node_name}'")
+        else:
+            errorlog.log_error_message(f"Cannot currently export non-file and non-packed textures: {bpy_image.name} {bpy_image.type} stored as an unused texture on the selected model")
     
     # Check if the file is packed in the blend or external;
     # get data depending on which is the case
@@ -552,6 +548,23 @@ def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, er
     else:
         image_data = bpy_image.packed_file.data
         
+    return image_data
+
+
+def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, errorlog):
+    tex_names = set(tex.name for tex in gfs.textures)
+    if texture_name in tex_names:
+        return
+    
+    # Retreive image data block from Blender
+    if texture_name == "dummy" and texture_name not in bpy.data.images:
+        gfs.add_texture("dummy", dummy_image_data, 1, 1, 0, 0)
+        return dummy_image_data
+    else:
+        bpy_image = bpy.data.images[texture_name]
+    
+    image_data = extract_payload_from_image(bpy_image, errorlog, mat_name, node_name)
+        
     # Check that it's a DDS
     # Not sure what to do with non-DDS data currently
     # Should add support later
@@ -563,16 +576,14 @@ def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, er
         image_data = dummy_image_data
     
     # Now create the texture definition in the GFS file
-    tex_names = set(tex.name for tex in gfs.textures)
-    if texture_name not in tex_names:
-        props = bpy_image.GFSTOOLS_ImageProperties
-        try:
-            bname = texture_name.encode('shift-jis')
-        except UnicodeEncodeError:   
-            bname = texture_name.encode('shift-jis', errors='replace')
-            errorlog.log_warning_message(f"Attempted to export image '{texture_name}' which has a name unencodable as shift-jis. Exporting with bad characters replaced.")
-        
-        gfs.add_texture(bname.decode('shift-jis'), dummy_image_data if embed_dummy_image else image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
+    props = bpy_image.GFSTOOLS_ImageProperties
+    try:
+        bname = texture_name.encode('shift-jis')
+    except UnicodeEncodeError:   
+        bname = texture_name.encode('shift-jis', errors='replace')
+        errorlog.log_warning_message(f"Attempted to export image '{texture_name}' which has a name unencodable as shift-jis. Exporting with bad characters replaced.")
+    
+    gfs.add_texture(bname.decode('shift-jis'), dummy_image_data if embed_dummy_image else image_data, props.unknown_1, props.unknown_2, props.unknown_3, props.unknown_4)
 
     return image_data
             

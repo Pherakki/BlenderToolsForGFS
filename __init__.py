@@ -67,7 +67,7 @@ def init_bpy():
     from .src.BlenderIO.Properties.Model         import ModelBoundingSphere
     from .src.BlenderIO.Properties.Model         import ModelBoundingBoxProps
     from .src.BlenderIO.Properties.Model         import ModelBoundingSphereProps
-    # from .src.BlenderIO.Properties.Model         import UnusedTexture
+    from .src.BlenderIO.Properties.Model         import UnusedTexture
     from .src.BlenderIO.Properties.Nodes         import BlobProperty
     from .src.BlenderIO.Properties.Object        import GFSToolsObjectProperties
     from .src.BlenderIO.Properties.Physics       import GFSToolsPhysicsProperties
@@ -139,7 +139,7 @@ def init_bpy():
         BlendAnimBoundingBoxProps,
         LookAtAnimBoundingBox,
         LookAtAnimBoundingBoxProps,
-        # UnusedTexture,
+        UnusedTexture,
         ModelBoundingBox,
         ModelBoundingBoxProps,
         ModelBoundingSphere,
