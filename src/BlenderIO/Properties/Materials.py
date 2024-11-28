@@ -73,7 +73,6 @@ class GFSToolsTextureRefPanelProperties(bpy.types.PropertyGroup):
 
 
 class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
-    flag_30:         bpy.props.BoolProperty(name="Unknown Flag 30",      default=False)
     flag_0:           bpy.props.BoolProperty(name="Unknown Flag 0",       default=True )
     flag_1:           bpy.props.BoolProperty(name="Unknown Flag 1",       default=True )
     enable_specular:  bpy.props.BoolProperty(name="Enable Specular",      default=False)
@@ -155,6 +154,8 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     detail_uv_out:     gen_tex_prop("")
     shadow_uv_in:      gen_tex_prop("", lambda self: get_in_tex(self, "Shadow Texture"))
     shadow_uv_out:     gen_tex_prop("")
+    tex10_uv_in:       gen_tex_prop("", lambda self: get_in_tex(self, "Texture 10"))
+    tex10_uv_out:      gen_tex_prop("")
     
     ##################
     # TOON ATTRIBUTE #

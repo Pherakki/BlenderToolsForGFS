@@ -37,7 +37,6 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "cast_shadow")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_18")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "disable_bloom")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_30")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "extra_distortion")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_31")
         
@@ -75,6 +74,7 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         label_col.label(text="Night")
         label_col.label(text="Detail")
         label_col.label(text="Shadow")
+        label_col.label(text="Texture 10")
         in_uv_col.label(text="In UV")
         in_uv_col.prop(props,  "diffuse_uv_in")
         in_uv_col.prop(props,  "normal_uv_in")
@@ -85,6 +85,7 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         in_uv_col.prop(props,  "night_uv_in")
         in_uv_col.prop(props,  "detail_uv_in")
         in_uv_col.prop(props,  "shadow_uv_in")
+        in_uv_col.prop(props,  "tex10_uv_in")
         out_uv_col.label(text="Out UV")
         out_uv_col.prop(props, "diffuse_uv_out")
         out_uv_col.prop(props, "normal_uv_out")
@@ -95,6 +96,7 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         out_uv_col.prop(props, "night_uv_out")
         out_uv_col.prop(props, "detail_uv_out")
         out_uv_col.prop(props, "shadow_uv_out")
+        out_uv_col.prop(props, "tex10_uv_out")
     
     MaterialHelpWindow = defineHelpWindow("Material", 
         "Materials are very complicated and are better described by the documentation rather than a tooltip."

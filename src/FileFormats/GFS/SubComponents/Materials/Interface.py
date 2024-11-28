@@ -33,7 +33,6 @@ class MaterialInterface:
         self.cast_shadow         = None
         self.flag_18             = None
         self.disable_bloom       = None
-        self.flag_30             = None
         self.extra_distortion    = None
         self.flag_31             = None
         
@@ -74,6 +73,7 @@ class MaterialInterface:
         self.night_texture      = None
         self.detail_texture     = None
         self.shadow_texture     = None
+        self.texture_10         = None
         
         self.attributes = []
     
@@ -127,6 +127,7 @@ class MaterialInterface:
         instance.night_texture      = binary.night_texture
         instance.detail_texture     = binary.detail_texture
         instance.shadow_texture     = binary.shadow_texture
+        instance.texture_10         = binary.texture_10
         
         # Attributes
         instance.attributes = binary.attributes.data
@@ -188,8 +189,8 @@ class MaterialInterface:
         binary.flags.has_night_texture      = self.night_texture      is not None
         binary.flags.has_detail_texture     = self.detail_texture     is not None
         binary.flags.has_shadow_texture     = self.shadow_texture     is not None
-        binary.flags.flag_29                = self.flag_29
         binary.flags.flag_31                = self.flag_31
+        binary.flags.has_texture_10         = self.texture_10         is not None
         binary.flags.extra_distortion       = self.extra_distortion
         
         binary.name                     = binary.name.from_bytestring(self.name_bytes)
@@ -221,6 +222,7 @@ class MaterialInterface:
         binary.night_texture      = self.night_texture
         binary.detail_texture     = self.detail_texture
         binary.shadow_texture     = self.shadow_texture
+        binary.texture_10         = self.texture_10
         
         binary.attributes.data = self.attributes
         binary.attributes.count = len(self.attributes)
@@ -240,50 +242,95 @@ class MaterialInterface:
         
         return ts
     
+    def set_diffuse_indices(self, in_tex, out_tex):
+        self.texture_indices_1.diffuse = in_tex
+        self.texture_indices_2.diffuse = out_tex
+        
     def set_diffuse_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.diffuse = tex_idx_1
         self.texture_indices_2.diffuse = tex_idx_2
         self.diffuse_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
-    
+        
+    def set_normal_indices(self, in_tex, out_tex):
+        self.texture_indices_1.normal = in_tex
+        self.texture_indices_2.normal = out_tex
+        
     def set_normal_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.normal = tex_idx_1
         self.texture_indices_2.normal = tex_idx_2
         self.normal_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
+    
+    def set_specular_indices(self, in_tex, out_tex):
+        self.texture_indices_1.specular = in_tex
+        self.texture_indices_2.specular = out_tex
     
     def set_specular_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.specular = tex_idx_1
         self.texture_indices_2.specular = tex_idx_2
         self.specular_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
     
+    def set_reflection_indices(self, in_tex, out_tex):
+        self.texture_indices_1.reflection = in_tex
+        self.texture_indices_2.reflection = out_tex
+    
     def set_reflection_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.reflection = tex_idx_1
         self.texture_indices_2.reflection = tex_idx_2
         self.reflection_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
+    
+    def set_highlight_indices(self, in_tex, out_tex):
+        self.texture_indices_1.highlight = in_tex
+        self.texture_indices_2.highlight = out_tex
     
     def set_highlight_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.highlight = tex_idx_1
         self.texture_indices_2.highlight = tex_idx_2
         self.highlight_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
     
+    def set_glow_indices(self, in_tex, out_tex):
+        self.texture_indices_1.glow = in_tex
+        self.texture_indices_2.glow = out_tex
+        
     def set_glow_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.glow = tex_idx_1
         self.texture_indices_2.glow = tex_idx_2
         self.glow_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
     
+    def set_night_indices(self, in_tex, out_tex):
+        self.texture_indices_1.night = in_tex
+        self.texture_indices_2.night = out_tex
+        
     def set_night_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.night = tex_idx_1
         self.texture_indices_2.night = tex_idx_2
         self.night_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
     
+    def set_detail_indices(self, in_tex, out_tex):
+        self.texture_indices_1.detail = in_tex
+        self.texture_indices_2.detail = out_tex
+        
     def set_detail_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.detail = tex_idx_1
         self.texture_indices_2.detail = tex_idx_2
         self.detail_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
     
+    def set_shadow_indices(self, in_tex, out_tex):
+        self.texture_indices_1.shadow = in_tex
+        self.texture_indices_2.shadow = out_tex
+        
     def set_shadow_texture(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
         self.texture_indices_1.shadow = tex_idx_1
         self.texture_indices_2.shadow = tex_idx_2
         self.shadow_texture = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
+    
+    def set_texture_10_indices(self, in_tex, out_tex):
+        self.texture_indices_1.texture_10 = in_tex
+        self.texture_indices_2.texture_10 = out_tex
+        
+    def set_texture_10(self, tex_idx_1, tex_idx_2, name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C):
+        self.texture_indices_1.texture_10 = tex_idx_1
+        self.texture_indices_2.texture_10 = tex_idx_2
+        self.texture_10 = self._make_texture_sampler(name, unknown_0x04, unknown_0x08, has_texture_filtering, wrap_mode_u, wrap_mode_v, unknown_0x0C)
 
     def add_toon_shading_attribute(self, colour, light_threshold, light_factor, light_brightness, shadow_threshold, shadow_factor):
         attr = MaterialAttributeBinary()

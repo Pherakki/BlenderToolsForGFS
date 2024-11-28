@@ -72,6 +72,7 @@ def import_materials(gfs, textures, errorlog):
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Night Texture",      mat.night_texture,      mat.texture_indices_1.night,      errorlog)
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Detail Texture",     mat.detail_texture,     mat.texture_indices_1.detail,     errorlog)
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Shadow Texture",     mat.shadow_texture,     mat.texture_indices_1.shadow,     errorlog)
+        add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Texture 10",         mat.texture_10,         mat.texture_indices_1.texture_10, errorlog)
 
 
         # Register currently-unrepresentable data
@@ -96,7 +97,6 @@ def import_materials(gfs, textures, errorlog):
         props.cast_shadow     = mat.cast_shadow
         props.flag_18         = mat.flag_18
         props.disable_bloom   = mat.disable_bloom
-        props.flag_30         = mat.flag_30
         props.extra_distortion = mat.extra_distortion
         props.flag_31         = mat.flag_31
         
@@ -134,6 +134,7 @@ def import_materials(gfs, textures, errorlog):
         props.detail_uv_out     = format_texindex(mat.texture_indices_2.detail)
         # props.shadow_uv_in      = format_texindex(mat.texture_indices_1.shadow)
         props.shadow_uv_out     = format_texindex(mat.texture_indices_2.shadow)
+        props.tex10_uv_out      = format_texindex(mat.texture_indices_2.texture_10)
         
         bpy_material.use_backface_culling = not bool(mat.disable_backface_culling)
         
@@ -559,39 +560,10 @@ def import_materials(gfs, textures, errorlog):
 def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, name, texture, texcoord_id, errorlog):
     nodes = bpy_material.node_tree.nodes
     reference_pos = bsdf_node.location
-    if texture is not None:
+    if texcoord_id < 7:
         node = nodes.new('ShaderNodeTexImage')
         node.name = name
         node.label = name
-        
-        tex_name = get_name_string("Texture Reference", texture.name.string, "shift-jis", errorlog)
-        if tex_name in textures:
-            node.image = textures[tex_name]
-        else:
-            errorlog.log_warning_message(f"Texture file '{tex_name}' for slot '{name}' on material '{bpy_material.name}' does not exist inside the file. Falling back to a dummy texture.")
-            node.image = make_dummy_img_if_doesnt_exist()
-        
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
-        node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering = texture.has_texture_filtering
-        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u  = texture.wrap_mode_u
-        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v  = texture.wrap_mode_v
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C = texture.unknown_0x0C[0]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10 = texture.unknown_0x0C[1]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14 = texture.unknown_0x0C[2]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18 = texture.unknown_0x0C[3]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C = texture.unknown_0x0C[4]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20 = texture.unknown_0x0C[5]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24 = texture.unknown_0x0C[6]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28 = texture.unknown_0x0C[7]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C = texture.unknown_0x0C[8]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30 = texture.unknown_0x0C[9]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34 = texture.unknown_0x0C[10]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38 = texture.unknown_0x0C[11]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C = texture.unknown_0x0C[12]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40 = texture.unknown_0x0C[13]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44 = texture.unknown_0x0C[14]
-        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48 = texture.unknown_0x0C[15]
         
         connect = bpy_material.node_tree.links.new
         uv_map_node = nodes.new("ShaderNodeUVMap")
@@ -602,6 +574,37 @@ def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, texture
         uv_map_node.location = node.location - Vector([150 + 50, 0]) - Vector([0, 170])
         
         node_pos_data.tex_count += 1
+        
+        # Texture names
+        if texture is not None:
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
+            node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering = texture.has_texture_filtering
+            node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u  = texture.wrap_mode_u
+            node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v  = texture.wrap_mode_v
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C = texture.unknown_0x0C[0]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10 = texture.unknown_0x0C[1]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14 = texture.unknown_0x0C[2]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18 = texture.unknown_0x0C[3]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C = texture.unknown_0x0C[4]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20 = texture.unknown_0x0C[5]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24 = texture.unknown_0x0C[6]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28 = texture.unknown_0x0C[7]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C = texture.unknown_0x0C[8]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30 = texture.unknown_0x0C[9]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34 = texture.unknown_0x0C[10]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38 = texture.unknown_0x0C[11]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C = texture.unknown_0x0C[12]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40 = texture.unknown_0x0C[13]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44 = texture.unknown_0x0C[14]
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48 = texture.unknown_0x0C[15]
+        
+            tex_name = get_name_string("Texture Reference", texture.name.string, "shift-jis", errorlog)
+            if tex_name in textures:
+                node.image = textures[tex_name]
+            else:
+                errorlog.log_warning_message(f"Texture file '{tex_name}' for slot '{name}' on material '{bpy_material.name}' does not exist inside the file. Falling back to a dummy texture.")
+                node.image = make_dummy_img_if_doesnt_exist()
         
         return node
     return None

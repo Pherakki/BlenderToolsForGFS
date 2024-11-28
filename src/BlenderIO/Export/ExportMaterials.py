@@ -55,7 +55,6 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, unused_
         mat.cast_shadow         = bpy_material.GFSTOOLS_MaterialProperties.cast_shadow
         mat.flag_18             = bpy_material.GFSTOOLS_MaterialProperties.flag_18
         mat.disable_bloom       = bpy_material.GFSTOOLS_MaterialProperties.disable_bloom
-        mat.flag_30             = bpy_material.GFSTOOLS_MaterialProperties.flag_30
         mat.extra_distortion    = bpy_material.GFSTOOLS_MaterialProperties.extra_distortion
         mat.flag_31             = bpy_material.GFSTOOLS_MaterialProperties.flag_31
 
@@ -82,16 +81,17 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, unused_
         nodes = bpy_material.node_tree.nodes
         props = bpy_material.GFSTOOLS_MaterialProperties
       
-        texture_names.add(export_texture_node_data(mat_name, "Diffuse Texture",    nodes, mat.set_diffuse_texture   , props.diffuse_uv_in,    props.diffuse_uv_out,    errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Normal Texture",     nodes, mat.set_normal_texture    , props.normal_uv_in,     props.normal_uv_out,     errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Specular Texture",   nodes, mat.set_specular_texture  , props.specular_uv_in,   props.specular_uv_out,   errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Reflection Texture", nodes, mat.set_reflection_texture, props.reflection_uv_in, props.reflection_uv_out, errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Highlight Texture",  nodes, mat.set_highlight_texture , props.highlight_uv_in,  props.highlight_uv_out,  errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Glow Texture",       nodes, mat.set_glow_texture      , props.glow_uv_in,       props.glow_uv_out,       errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Night Texture",      nodes, mat.set_night_texture     , props.night_uv_in,      props.night_uv_out,      errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Detail Texture",     nodes, mat.set_detail_texture    , props.detail_uv_in,     props.detail_uv_out,     errorlog))
-        texture_names.add(export_texture_node_data(mat_name, "Shadow Texture",     nodes, mat.set_shadow_texture    , props.shadow_uv_in,     props.shadow_uv_out,     errorlog))
-          
+        texture_names.add(export_texture_node_data(mat_name, "Diffuse Texture",    nodes, mat.set_diffuse_indices,    mat.set_diffuse_texture   , props.diffuse_uv_in,    props.diffuse_uv_out,    gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Normal Texture",     nodes, mat.set_normal_indices,     mat.set_normal_texture    , props.normal_uv_in,     props.normal_uv_out,     gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Specular Texture",   nodes, mat.set_specular_indices,   mat.set_specular_texture  , props.specular_uv_in,   props.specular_uv_out,   gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Reflection Texture", nodes, mat.set_reflection_indices, mat.set_reflection_texture, props.reflection_uv_in, props.reflection_uv_out, gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Highlight Texture",  nodes, mat.set_highlight_indices,  mat.set_highlight_texture , props.highlight_uv_in,  props.highlight_uv_out,  gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Glow Texture",       nodes, mat.set_glow_indices,       mat.set_glow_texture      , props.glow_uv_in,       props.glow_uv_out,       gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Night Texture",      nodes, mat.set_night_indices,      mat.set_night_texture     , props.night_uv_in,      props.night_uv_out,      gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Detail Texture",     nodes, mat.set_detail_indices,     mat.set_detail_texture    , props.detail_uv_in,     props.detail_uv_out,     gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Shadow Texture",     nodes, mat.set_shadow_indices,     mat.set_shadow_texture    , props.shadow_uv_in,     props.shadow_uv_out,     gfs.version, errorlog))
+        texture_names.add(export_texture_node_data(mat_name, "Texture 10",         nodes, mat.set_texture_10_indices, mat.set_texture_10        , props.tex10_uv_in,      props.tex10_uv_out,      gfs.version, errorlog))
+            
         # Export attributes
         # TOON
         if props.has_toon:
