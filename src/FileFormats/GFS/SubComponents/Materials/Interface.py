@@ -33,8 +33,8 @@ class MaterialInterface:
         self.cast_shadow         = None
         self.flag_18             = None
         self.disable_bloom       = None
-        self.flag_29             = None
         self.flag_30             = None
+        self.extra_distortion    = None
         self.flag_31             = None
         
         # Presumably some of these can be removed...
@@ -151,7 +151,7 @@ class MaterialInterface:
         instance.flag_18             = binary.flags.flag_18
         instance.disable_bloom       = binary.flags.disable_bloom
         instance.flag_29             = binary.flags.flag_29
-        instance.flag_30             = binary.flags.flag_30
+        instance.extra_distortion    = binary.flags.extra_distortion
         instance.flag_31             = binary.flags.flag_31
         
         return instance
@@ -189,8 +189,8 @@ class MaterialInterface:
         binary.flags.has_detail_texture     = self.detail_texture     is not None
         binary.flags.has_shadow_texture     = self.shadow_texture     is not None
         binary.flags.flag_29                = self.flag_29
-        binary.flags.flag_30                = self.flag_30
         binary.flags.flag_31                = self.flag_31
+        binary.flags.extra_distortion       = self.extra_distortion
         
         binary.name                     = binary.name.from_bytestring(self.name_bytes)
         binary.params_type              = self.params_type

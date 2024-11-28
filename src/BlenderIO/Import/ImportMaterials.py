@@ -96,8 +96,8 @@ def import_materials(gfs, textures, errorlog):
         props.cast_shadow     = mat.cast_shadow
         props.flag_18         = mat.flag_18
         props.disable_bloom   = mat.disable_bloom
-        props.flag_29         = mat.flag_29
         props.flag_30         = mat.flag_30
+        props.extra_distortion = mat.extra_distortion
         props.flag_31         = mat.flag_31
         
         props.shader_type = PARAMS_TYPE_LOOKUP.get(mat.params_type, "ERRORTYPE")

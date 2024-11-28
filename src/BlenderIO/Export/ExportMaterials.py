@@ -55,8 +55,8 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, unused_
         mat.cast_shadow         = bpy_material.GFSTOOLS_MaterialProperties.cast_shadow
         mat.flag_18             = bpy_material.GFSTOOLS_MaterialProperties.flag_18
         mat.disable_bloom       = bpy_material.GFSTOOLS_MaterialProperties.disable_bloom
-        mat.flag_29             = bpy_material.GFSTOOLS_MaterialProperties.flag_29
         mat.flag_30             = bpy_material.GFSTOOLS_MaterialProperties.flag_30
+        mat.extra_distortion    = bpy_material.GFSTOOLS_MaterialProperties.extra_distortion
         mat.flag_31             = bpy_material.GFSTOOLS_MaterialProperties.flag_31
 
      
@@ -514,6 +514,12 @@ def export_materials_and_textures(gfs, bpy_material_names, texture_mode, unused_
         texbin = MetaphorTextureBin()
         for (texture_name, mat_name, node_name) in texture_names:
             bname = texture_name.encode('shift-jis', errors='replace')
+            texdata = export_texture(gfs, texture_name, mat_name, node_name, True, errorlog)
+            if texdata is not None:
+                texbin.add_texture(bname, texdata)
+        for utex in unused_textures:
+            if utex.export:
+                texbin.add_texture(utex.name.encode('shift-jis', errors='replace'), extract_payload_from_image(utex.texture, errorlog, None, None))
     elif texture_mode == "BORROW":
         for (texture_name, mat_name, node_name) in texture_names:
             export_texture(gfs, texture_name, mat_name, node_name, True, errorlog)
@@ -588,7 +594,7 @@ def export_texture(gfs, texture_name, mat_name, node_name, embed_dummy_image, er
     return image_data
             
         
-def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_idx, errorlog):
+def export_texture_node_data(mat_name, name, nodes, register_indices, create_sampler, in_idx, out_idx, version, errorlog):
     if name in nodes:
         tex_node = nodes[name]
         if tex_node.type != "TEX_IMAGE":
@@ -598,8 +604,11 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
         connections = tex_node.inputs["Vector"].links
         
         if tex_node.image is None:
-            image_name = "dummy"
-            errorlog.log_warning_message(f"No image found for image texture node '{name}' on material '{mat_name}'. Defaulting to a dummy texture.")
+            if version < 0x02000000:
+                image_name = "dummy"
+                errorlog.log_warning_message(f"No image found for image texture node '{name}' on material '{mat_name}'. Defaulting to a dummy texture.")
+            else:
+                image_name = None
         else:
             image_name = tex_node.image.name
         
@@ -625,31 +634,34 @@ def export_texture_node_data(mat_name, name, nodes, create_sampler, in_idx, out_
         
         in_idx  = 7 if in_idx  == "None" else int(in_idx)
         out_idx = 7 if out_idx == "None" else int(out_idx)
-        create_sampler(in_idx, out_idx, set_name_string("Texture name", image_name, "shift-jis", errorlog),
-            tex_node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u,
-            tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v,
-            [
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44,
-                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48
-            ]
-        )
-        
-        return (image_name, mat_name, name)
+        if image_name is not None:
+            create_sampler(in_idx, out_idx, set_name_string("Texture name", image_name, "shift-jis", errorlog),
+                tex_node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
+                tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
+                tex_node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,
+                tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u,
+                tex_node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v,
+                [
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44,
+                    tex_node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48
+                ]
+            )
+            return (image_name, mat_name, name)
+        else:
+            register_indices(in_idx, out_idx)
+    
     return None

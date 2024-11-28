@@ -37,8 +37,8 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout.prop(mat.GFSTOOLS_MaterialProperties, "cast_shadow")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_18")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "disable_bloom")
-        layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_29")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_30")
+        layout.prop(mat.GFSTOOLS_MaterialProperties, "extra_distortion")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_31")
         
         layout.prop(mat.GFSTOOLS_MaterialProperties, "enable_specular")
