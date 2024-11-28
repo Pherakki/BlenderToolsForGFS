@@ -151,7 +151,6 @@ class MaterialInterface:
         instance.cast_shadow         = binary.flags.cast_shadow
         instance.flag_18             = binary.flags.flag_18
         instance.disable_bloom       = binary.flags.disable_bloom
-        instance.flag_29             = binary.flags.flag_29
         instance.extra_distortion    = binary.flags.extra_distortion
         instance.flag_31             = binary.flags.flag_31
         
