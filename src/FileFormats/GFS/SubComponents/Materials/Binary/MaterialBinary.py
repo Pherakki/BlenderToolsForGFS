@@ -1,4 +1,5 @@
 from ......serialization.formatters import HEX32_formatter, list_formatter
+from ......serialization.serializable import GFSSerializable
 from ...CommonStructures import ObjectName, SizedObjArray, BitVector, BitVector0x10, BitVector0x20, BitChunkVector
 from .TextureSampler import TextureSamplerBinary
 from .ShaderParameters import CompatibilityParameterSet
@@ -94,7 +95,7 @@ class MaterialFlags(BitVector0x20):
     flag_31                = BitVector.DEF_FLAG(0x1F)
 
 
-class MaterialBinary:
+class MaterialBinary(GFSSerializable):
     def __init__(self):
         self.params_type       = -1
         self.name              = ObjectName()
