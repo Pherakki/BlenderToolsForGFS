@@ -18,7 +18,7 @@ class V2Type4Support:
     def to_V2_type4_params(self):
         params = ShaderParametersType4()
         params.base_color           = self.base_color
-        params.emissive_color       = self.base_color
+        params.emissive_color       = self.emissive_color
         params.distortion_power     = self.distortion_power
         params.distortion_threshold = self.distortion_threshold
         params.unknown_0x28         = self.type4_unknown_0x28
