@@ -20,6 +20,8 @@ class OBJECT_PT_GFSToolsMaterialPanel(bpy.types.Panel):
         layout = self.layout
         
         layout.operator(self.MaterialHelpWindow.bl_idname)
+        layout.prop(mat.GFSTOOLS_MaterialProperties, "display_vertex_colours")
+        layout.separator()
         
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_0")
         layout.prop(mat.GFSTOOLS_MaterialProperties, "flag_1")

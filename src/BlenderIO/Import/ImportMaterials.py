@@ -54,6 +54,7 @@ def import_materials(gfs, textures, errorlog):
         # Construct basic output
         nodes.clear()
         bsdf_node = nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf_node.name = "BSDF"
         output_node = nodes.new("ShaderNodeOutputMaterial")
         output_node.location = (280, 0)
         connect(bsdf_node.outputs[0], output_node.inputs[0])
@@ -61,8 +62,9 @@ def import_materials(gfs, textures, errorlog):
         
         node_pos_data = NodePositioningData()
         node = add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Diffuse Texture", mat.diffuse_texture, mat.texture_indices_1.diffuse,   errorlog)
-        if node is not None:
-            connect(node.outputs["Color"], bsdf_node.inputs["Base Color"])
+        # if node is not None:
+        #     connect(node.outputs["Color"], bsdf_node.inputs["Base Color"])
+        #     connect(node.outputs["Alpha"], bsdf_node.inputs["Alpha"])
         
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Normal Texture",     mat.normal_texture,     mat.texture_indices_1.normal,     errorlog)
         add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, textures, "Specular Texture",   mat.specular_texture,   mat.texture_indices_1.specular,   errorlog)
@@ -567,6 +569,8 @@ def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, texture
         
         connect = bpy_material.node_tree.links.new
         uv_map_node = nodes.new("ShaderNodeUVMap")
+        uv_map_node.name  = name + " UV"
+        uv_map_node.label = name + " UV"
         uv_map_node.uv_map = make_uv_map_name(texcoord_id)
         connect(uv_map_node.outputs["UV"], node.inputs["Vector"])
         

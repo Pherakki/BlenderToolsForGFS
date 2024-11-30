@@ -34,4 +34,7 @@ def import_gfs_object(gfs, raw_gfs, name, external_textures, errorlog, import_po
     
     ImportEPLs.import_epls(gfs, armature, gfs_to_bpy_bone_map, errorlog, import_policies)
 
+    for nm, (bpy_material, gfs_material) in materials.items():
+        bpy_material.GFSTOOLS_MaterialProperties.build_default_nodetree()
+
     return armature

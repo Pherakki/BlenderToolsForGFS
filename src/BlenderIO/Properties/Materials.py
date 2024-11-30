@@ -1,6 +1,19 @@
 import bpy
+from mathutils import Vector
 from ..Utils.UVMapManagement import is_valid_uv_map, get_uv_idx_from_name
 from .MaterialShader import GFSToolsMaterialShaderPropsProperties
+
+
+class NodePositioningData:
+    def __init__(self):
+        self.tex_count = 0
+        self.width     = 0
+        
+def format_texindex(idx):
+    if 0 <= idx < 7:
+        return str(idx)
+    else:
+        return "None"
 
 def gen_tex_prop(name, getter=None):
     description = "" if getter is None else "This UV map is determined from the appropriate node in the shader tree"
@@ -93,6 +106,8 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     disable_bloom:    bpy.props.BoolProperty(name="Disable Bloom",        default=False)
     extra_distortion: bpy.props.BoolProperty(name="Extra Distortion",     default=False)
     flag_31:          bpy.props.BoolProperty(name="Unknown Flag 31",      default=False)
+    
+    display_vertex_colours: bpy.props.BoolProperty(name="Display Vertex Colors", default=False, update=lambda self, ctx: self.build_default_nodetree())
     
     shader_type:     bpy.props.EnumProperty(items=(
         ("V1",      "Version 1", ""),
@@ -581,3 +596,163 @@ class GFSToolsMaterialProperties(bpy.types.PropertyGroup):
     a7_ctr_flag_13: bpy.props.BoolProperty(name="Unknown Attr. Flag 13 (Unused?)", default=False)
     a7_ctr_flag_14: bpy.props.BoolProperty(name="Unknown Attr. Flag 14 (Unused?)", default=False)
     a7_ctr_flag_15: bpy.props.BoolProperty(name="Unknown Attr. Flag 15 (Unused?)", default=False)
+
+    ##############################################################
+    # THESE METHODS WILL BE DEPRECATED IN THE MATERIALS REFACTOR #
+    ##############################################################
+    def _fetch_tex_info(self, name):
+        texnode = self.id_data.node_tree.nodes.get(name)
+        uvnode  = self.id_data.node_tree.nodes.get(name + " UV")
+        
+        if texnode is not None and texnode.type == "TEX_IMAGE":
+            if uvnode is not None:
+                mapname = uvnode.uv_map
+                return name, texnode.image, mapname, self._get_node_props(texnode)
+        return None
+    
+    def _get_node_props(self, node):
+            return (node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
+            node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,
+            node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u,
+            node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44,
+            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48)
+    
+    def _set_node_props(self, node, props):
+        (node.GFSTOOLS_TextureRefPanelProperties.enable_anims,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08,
+        node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering,
+        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u,
+        node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_v,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x0C,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x10,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x14,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x18,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x1C,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x20,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x24,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x28,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x2C,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x30,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x34,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x38,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x3C,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x40,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x44,
+        node.GFSTOOLS_TextureRefPanelProperties.unknown_0x48) = props
+
+    def _place_texnode(self, nps, texprops):
+        if texprops is None:
+            return
+        name, img, mapname, props = texprops
+        nodes = self.id_data.node_tree.nodes
+        node = nodes.new('ShaderNodeTexImage')
+        node.name = name
+        node.label = name
+        node.image = img
+        self._set_node_props(node, props)
+        
+        connect = self.id_data.node_tree.links.new
+        uv_map_node = nodes.new("ShaderNodeUVMap")
+        uv_map_node.name  = name + " UV"
+        uv_map_node.label = name + " UV"
+        uv_map_node.uv_map = mapname
+        connect(uv_map_node.outputs["UV"], node.inputs["Vector"])
+        
+        node.location        = - Vector([240 + 50, 0]) - Vector([0, nps.tex_count*(277 + 50)])
+        uv_map_node.location = node.location - Vector([150 + 50, 0]) - Vector([0, 170])
+        nps.tex_count += 1
+        
+        return node
+
+    def _place_colornode(self, nps, diffnode, color, alpha, cname):
+        if diffnode is None:
+            return
+        
+        nodes = self.id_data.node_tree.nodes
+        connect = self.id_data.node_tree.links.new
+        
+        cmap = nodes.new("ShaderNodeVertexColor")
+        cmap.layer_name = cname
+        cmap.location = diffnode.location + Vector([100, 100])
+        
+        vmath = nodes.new("ShaderNodeMix")
+        vmath.data_type = "RGBA"
+        vmath.location = diffnode.location + Vector([(nps.width+1)*280, 50])
+        connect(cmap.outputs[1], vmath.inputs[0])
+        connect(cmap.outputs[0], vmath.inputs[7])
+        connect(color,           vmath.inputs[6])
+        
+        nps.width += 1
+        
+        return (vmath.outputs[2], alpha)
+
+    def _finalize_shader(self, nps, c, a):
+        nodes = self.id_data.node_tree.nodes
+        connect = self.id_data.node_tree.links.new
+        bsdf_node = nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf_node.name = "BSDF"
+        bsdf_node.location = ((nps.width)*280, 0)
+        connect(c, bsdf_node.inputs["Base Color"])
+        connect(a, bsdf_node.inputs["Alpha"])
+        
+        output_node = nodes.new("ShaderNodeOutputMaterial")
+        output_node.location = ((nps.width+1)*280, 0)
+        connect(bsdf_node.outputs[0], output_node.inputs[0])
+        
+
+    def build_default_nodetree(self):
+        diffuse_tex    = self._fetch_tex_info("Diffuse Texture")
+        normal_tex     = self._fetch_tex_info("Normal Texture")
+        specular_tex   = self._fetch_tex_info("Specular Texture")
+        reflection_tex = self._fetch_tex_info("Reflection Texture")
+        highlight_tex  = self._fetch_tex_info("Highlight Texture")
+        glow_tex       = self._fetch_tex_info("Glow Texture")
+        night_tex      = self._fetch_tex_info("Night Texture")
+        detail_tex     = self._fetch_tex_info("Detail Texture")
+        shadow_tex     = self._fetch_tex_info("Shadow Texture")
+        tex_10         = self._fetch_tex_info("Texture 10")
+        
+        self.id_data.node_tree.nodes.clear()
+        
+        nps = NodePositioningData()
+        dnode = self._place_texnode(nps, diffuse_tex)
+        self._place_texnode(nps, normal_tex)
+        self._place_texnode(nps, specular_tex)
+        self._place_texnode(nps, reflection_tex)
+        self._place_texnode(nps, highlight_tex)
+        self._place_texnode(nps, glow_tex)
+        self._place_texnode(nps, night_tex)
+        self._place_texnode(nps, detail_tex)
+        self._place_texnode(nps, shadow_tex)
+        self._place_texnode(nps, tex_10)
+        
+        if dnode is not None:
+            c, a = dnode.outputs[0], dnode.outputs[1]
+            
+            if self.display_vertex_colours:
+                if self.requires_color0s:
+                    c, a = self._place_colornode(nps, dnode, c, a, "Map0")
+                if self.requires_color1s:
+                    c, a = self._place_colornode(nps, dnode, c, a, "Map1")
+                
+            self._finalize_shader(nps, c, a)
+        
+        
+        
+        
