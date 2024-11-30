@@ -45,22 +45,22 @@ class OBJECT_PT_GFSToolsTextureRefPanel(bpy.types.Panel):
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x40")
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x44")
         layout.prop(node.GFSTOOLS_TextureRefPanelProperties, "unknown_0x48")
+
+    TextureSamplerHelpWindow = defineHelpWindow("TextureSampler", 
+        "- Animatable will allow the UV coordinates to be animated."\
+        "- The purpose of unknown_0x08 is unknown."\
+        "- Texture Filtering has no effect."\
+        "- The purpose of the remaining attributes is unknown."
+    )
+
+    @classmethod
+    def register(cls):
+        bpy.utils.register_class(cls.TextureSamplerHelpWindow)
     
-        TextureSamplerHelpWindow = defineHelpWindow("TextureSampler", 
-            "- Animatable will allow the UV coordinates to be animated."\
-            "- The purpose of unknown_0x08 is unknown."\
-            "- Texture Filtering has no effect."\
-            "- The purpose of the remaining attributes is unknown."
-        )
+    @classmethod
+    def unregister(cls):
+        bpy.utils.unregister_class(cls.TextureSamplerHelpWindow)
     
-        @classmethod
-        def register(cls):
-            bpy.utils.register_class(cls.TextureSamplerHelpWindow)
-        
-        @classmethod
-        def unregister(cls):
-            bpy.utils.unregister_class(cls.TextureSamplerHelpWindow)
-        
 
 class OBJECT_PT_GFSToolsImagePanel(bpy.types.Panel):
     bl_label       = "GFS Texture"
