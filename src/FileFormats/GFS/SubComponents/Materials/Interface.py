@@ -232,7 +232,7 @@ class MaterialInterface:
         ts = TextureSamplerBinary()
         
         ts.name = ts.name.from_name(name, encoding="shift-jis")
-        ts.unknown_0x04          = unknown_0x04
+        ts.enable_anims          = unknown_0x04
         ts.unknown_0x08          = unknown_0x08
         ts.has_texture_filtering = has_texture_filtering
         ts.wrap_mode_u           = wrap_mode_u

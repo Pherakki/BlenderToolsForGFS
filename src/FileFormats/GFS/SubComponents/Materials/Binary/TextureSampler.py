@@ -4,7 +4,7 @@ from ...CommonStructures import ObjectName
 class TextureSamplerBinary:
     def __init__(self):
         self.name                  = ObjectName()
-        self.unknown_0x04          = None
+        self.enable_anims          = None
         self.unknown_0x08          = None
         self.has_texture_filtering = None
         self.wrap_mode_u           = None
@@ -16,7 +16,7 @@ class TextureSamplerBinary:
         
     def exbip_rw(self, rw, version):
         self.name                  = rw.rw_obj(self.name, version)  # Shift-jis encoded
-        self.unknown_0x04          = rw.rw_uint32(self.unknown_0x04)
+        self.enable_anims          = rw.rw_uint32(self.enable_anims)
         self.unknown_0x08          = rw.rw_uint8(self.unknown_0x08)
         self.has_texture_filtering = rw.rw_uint8(self.has_texture_filtering)
         self.wrap_mode_u           = rw.rw_uint8(self.wrap_mode_u)  # 0 = repeat, 1 = mirror

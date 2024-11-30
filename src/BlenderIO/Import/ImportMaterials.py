@@ -577,7 +577,7 @@ def add_texture_to_material_node(bpy_material, bsdf_node, node_pos_data, texture
         
         # Texture names
         if texture is not None:
-            node.GFSTOOLS_TextureRefPanelProperties.unknown_0x04 = texture.unknown_0x04
+            node.GFSTOOLS_TextureRefPanelProperties.enable_anims = texture.enable_anims
             node.GFSTOOLS_TextureRefPanelProperties.unknown_0x08 = texture.unknown_0x08
             node.GFSTOOLS_TextureRefPanelProperties.has_texture_filtering = texture.has_texture_filtering
             node.GFSTOOLS_TextureRefPanelProperties.wrap_mode_u  = texture.wrap_mode_u
