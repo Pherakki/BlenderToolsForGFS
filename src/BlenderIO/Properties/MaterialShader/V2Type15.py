@@ -244,6 +244,7 @@ class V2Type15Support:
         params.layer_count = self.type15_layer_count
         params.triplanar_scale = self.type15_triplanar_scale
         params.flags = self.type15_flags.to_flags()
+        return params
     
     def draw_V2_type15_params(self, layout):
         self.type15_flags.draw(layout)

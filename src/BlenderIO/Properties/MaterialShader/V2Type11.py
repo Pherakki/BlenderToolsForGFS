@@ -12,6 +12,7 @@ class V2Type11Support:
         params = ShaderParametersType11()
         params.unknown_0x00 = self.type11_unknown_0x00
         params.unknown_0x10 = self.type11_unknown_0x10
+        return params
 
     def draw_V2_type11_params(self, layout):
         layout.prop(self, "type11_unknown_0x00")

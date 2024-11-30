@@ -32,7 +32,7 @@ class V2Type12Support:
         self.shadow_factor      = params.shadow_factor
 
     
-    def from_V2_type12_params(self):
+    def to_V2_type12_params(self):
         params = ShaderParametersType12()
         params.flags              = self.type12_flags.to_flags()
         params.base_color         = self.base_color
@@ -57,6 +57,7 @@ class V2Type12Support:
         params.shadow_color       = self.shadow_color
         params.shadow_threshold   = self.shadow_threshold
         params.shadow_factor      = self.shadow_factor
+        return params
 
     def draw_V2_type12_params(self, layout):
         self.type12_flags.draw(layout)

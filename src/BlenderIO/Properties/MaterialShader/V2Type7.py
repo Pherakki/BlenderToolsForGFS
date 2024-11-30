@@ -59,6 +59,7 @@ class V2Type7Support:
         params.layer3_unknown_5 = self.type7_layer3_unknown_5
         params.unknown_0x60     = self.type7_unknown_0x60
         params.flags = self.type7_flags.to_flags()
+        return params
     
     def draw_V2_type7_params(self, layout):
         layout.prop(self, "type7_layer0_unknown_0")

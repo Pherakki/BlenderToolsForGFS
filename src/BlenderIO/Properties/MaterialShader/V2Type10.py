@@ -16,6 +16,7 @@ class V2Type10Support:
         params.unknown_0x10 = self.type10_unknown_0x10
         params.unknown_0x14 = self.type10_unknown_0x14
         params.flags = self.type10_flags.to_flags()
+        return params
 
     def draw_V2_type10_params(self, layout):
         self.type10_flags.draw(layout)

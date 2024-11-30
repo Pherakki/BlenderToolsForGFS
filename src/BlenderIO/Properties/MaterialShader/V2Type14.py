@@ -12,6 +12,7 @@ class V2Type14Support:
         params = ShaderParametersType14()
         params.unknown_0x00 = self.type14_unknown_0x00
         params.unknown_0x10 = self.type14_unknown_0x10
+        return params
         
     def draw_V2_type14_params(self, layout):
         layout.prop(self, "type14_unknown_0x00")
