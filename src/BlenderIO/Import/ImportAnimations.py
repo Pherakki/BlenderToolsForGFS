@@ -333,6 +333,9 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     prop_anim.flag_26 = gfs_anim.flag_26
     prop_anim.flag_27 = gfs_anim.flag_27
 
+    prop_anim.unknown_int_1 = gfs_anim.unknown_int_1
+    prop_anim.unknown_int_2 = gfs_anim.unknown_int_2
+
     # Bounding box
     boxprops = prop_anim.bounding_box
     if import_policies.anim_boundbox_policy == "AUTO":

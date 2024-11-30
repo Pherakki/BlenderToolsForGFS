@@ -116,6 +116,9 @@ class AnimationInterface:
         self.flag_24 = False
         self.flag_26 = False
         self.flag_27 = False
+        
+        self.unknown_int_1 = 0
+        self.unknown_int_2 = 0
     
     @classmethod
     def from_binary(cls, binary):
@@ -145,7 +148,9 @@ class AnimationInterface:
         instance.overrides.bounding_box.min_dims = binary.bounding_box_min_dims
         instance.speed                           = binary.speed
         instance.properties = [GFSProperty.from_binary(prop) for prop in binary.properties.data]
-
+        instance.unknown_int_1 = binary.unknown_int_1
+        instance.unknown_int_2 = binary.unknown_int_2
+        
         # These should be removable...?
         # Maybe these say which channels are activated..?!
         instance.flag_0 = binary.flags.has_node_anims
@@ -315,8 +320,8 @@ class AnimationInterface:
             binary.duration = 0
         
         binary.controller_count = len(binary.controllers)
-        binary.unknown_int_1 = 0 # Should be len(tracks) but is sometimes 0
-        binary.unknown_int_2 = 0 # Something to do with the total amount of track data...
+        binary.unknown_int_1 = self.unknown_int_1 # Should be len(tracks) but is sometimes 0
+        binary.unknown_int_2 = self.unknown_int_2 # Something to do with the total amount of track data...
         if self.keep_bounding_box:
             bounding_box = self.overrides.bounding_box
             if bounding_box.enabled:

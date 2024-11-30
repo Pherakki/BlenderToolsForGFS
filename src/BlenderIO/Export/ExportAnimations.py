@@ -322,3 +322,6 @@ def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unus
     for epl_prop in props.epls:
         epl_entry = unpack_object(epl_prop.blob, EPLEntry)
         gfs_anim.epls.append(epl_entry)
+        
+    gfs_anim.unknown_int_1 = props.unknown_int_1
+    gfs_anim.unknown_int_2 = props.unknown_int_2
