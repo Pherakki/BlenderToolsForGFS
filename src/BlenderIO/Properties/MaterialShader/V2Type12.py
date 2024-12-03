@@ -22,7 +22,7 @@ class V2Type12Support:
         self.type12_unknown_0x5C = params.unknown_0x5C
         self.type12_unknown_0x60 = params.unknown_0x60
         self.type12_unknown_0x64 = params.unknown_0x64
-        copy_list(self.specular_color, params.specular_color, 3)
+        copy_list(self.specular_color3, params.specular_color, 3)
         self.specular_threshold = params.specular_threshold
         self.specular_power     = params.specular_power
         self.roughness          = params.roughness
@@ -49,7 +49,7 @@ class V2Type12Support:
         params.unknown_0x5C       = self.type12_unknown_0x5C
         params.unknown_0x60       = self.type12_unknown_0x60
         params.unknown_0x64       = self.type12_unknown_0x64
-        params.specular_color     = self.specular_color
+        params.specular_color     = self.specular_color3
         params.specular_threshold = self.specular_threshold
         params.specular_power     = self.specular_power
         params.roughness          = self.roughness
