@@ -12,7 +12,7 @@ class V2Type0Support:
         self.multi_alpha       = params.multi_alpha
         self.bloom_intensity   = params.bloom_intensity
         self.type0_flags.from_flags(params.flags)
-        self.unused_param      = params.type0_unused
+        self.type0_unused      = params.unused_param
         
     def to_V2_type0_params(self, params):
         params = ShaderParametersType0()
