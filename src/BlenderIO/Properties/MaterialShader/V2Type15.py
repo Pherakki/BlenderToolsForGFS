@@ -19,7 +19,7 @@ class V2Type15Layer(bpy.types.PropertyGroup):
         self.unknown_0x0C = layer.unknown_0x0C
         self.unknown_0x10 = layer.unknown_0x10
         self.unknown_0x14 = layer.unknown_0x14
-        copy_list(self.unknown_0x18, layer.unknown_0x18)
+        copy_list(self.unknown_0x18, layer.unknown_0x18, 3)
     
     def to_layer(self):
         layer = ShaderParametersType15Layer()
