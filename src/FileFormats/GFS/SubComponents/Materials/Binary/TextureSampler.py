@@ -12,7 +12,7 @@ class TextureSamplerBinary:
         self.unknown_0x0C          = None
         
     def __repr__(self):
-        return f"[GFD::Material::TextureSampler] {self.name.string} {self.unknown_0x04} {self.unknown_0x08} {self.has_texture_filtering} {self.wrap_mode_u} {self.wrap_mode_v} {self.unknown_0x0C}"
+        return f"[GFD::Material::TextureSampler] {self.name.string} {self.enable_anims} {self.unknown_0x08} {self.has_texture_filtering} {self.wrap_mode_u} {self.wrap_mode_v} {self.unknown_0x0C}"
         
     def exbip_rw(self, rw, version):
         self.name                  = rw.rw_obj(self.name, version)  # Shift-jis encoded
