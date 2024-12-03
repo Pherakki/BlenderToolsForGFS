@@ -98,7 +98,7 @@ class Type2Flags(bpy.types.PropertyGroup):
     flag_7:  bpy.props.BoolProperty(name="Flag 7")
     flag_8:  bpy.props.BoolProperty(name="Flag 8")
     flag_9:  bpy.props.BoolProperty(name="Flag 9")
-    flag_10: bpy.props.BoolProperty(name="Flag 0")
+    flag_10: bpy.props.BoolProperty(name="Flag 10")
     flag_11: bpy.props.BoolProperty(name="Flag 11")
     flag_12: bpy.props.BoolProperty(name="Flag 12")
     flag_13: bpy.props.BoolProperty(name="Flag 13")

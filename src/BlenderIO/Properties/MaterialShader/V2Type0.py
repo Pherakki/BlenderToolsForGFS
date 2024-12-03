@@ -48,7 +48,7 @@ class Type0Flags(bpy.types.PropertyGroup):
     multi_texture_mask:    bpy.props.BoolProperty(name="Multi Texture Mask")
     remove_diffuse_shadow: bpy.props.BoolProperty(name="Remove Diffuse Shadow")
     billboard_shadow_map:  bpy.props.BoolProperty(name="Billboard Shadow Map")
-    flag_10:               bpy.props.BoolProperty(name="Flag 0")
+    flag_10:               bpy.props.BoolProperty(name="Flag 10")
     flag_11:               bpy.props.BoolProperty(name="Flag 11")
     flag_12:               bpy.props.BoolProperty(name="Flag 12")
     flag_13:               bpy.props.BoolProperty(name="Flag 13")
