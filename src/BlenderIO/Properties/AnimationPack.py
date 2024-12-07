@@ -313,10 +313,7 @@ class AnimationPropertiesBase:
     type4_animations:          bpy.props.CollectionProperty(type=Type4AnimationProperties)
     morph_animations:          bpy.props.CollectionProperty(type=MorphAnimationProperties)
     unimported_tracks:         bpy.props.StringProperty(name="HiddenUnimportedTracks", default="", options={"HIDDEN"})
-
     
-    unknown_int_1: bpy.props.IntProperty(name="Unknown Int 1")
-    unknown_int_2: bpy.props.IntProperty(name="Unknown Int 2")
 
 class AnimationProperties(AnimationPropertiesBase, bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", get=base_name_getter, set=base_name_setter)

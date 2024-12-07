@@ -92,7 +92,8 @@ class NodeAnimation:
                 else:
                     anim.positions = {f: kf.position for f, kf in zip(track_binary.frames, track_binary.values)}
                     anim.rotations = {f: kf.rotation for f, kf in zip(track_binary.frames, track_binary.values)}
-                    anim.track_groups.append([0, 1])
+                    anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                    anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 32:
                 anim.compress = True
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
@@ -146,6 +147,14 @@ class NodeAnimation:
         has_trans    = len(self.positions)
         has_rot      = len(self.rotations)
         has_scale    = len(self.scales)
+        if has_scale:
+            scale_vals = list(self.scales.values())
+            ref_scale = scale_vals[0]
+            min_scales = [s - 1e-4 for s in ref_scale]
+            max_scales = [s + 1e-4 for s in ref_scale]
+            has_const_scale = all(all(ms < ss < mxs for ms,ss,mxs in zip(min_scales,s,max_scales)) for s in scale_vals)
+        else:
+            has_const_scale = False
         has_byte     = len(self.byte_data)
         has_floats   = len(self.unknown_floats)
         
@@ -265,22 +274,27 @@ class NodeAnimation:
                     else:
                         raise NotImplementedError
                 else:
-                    if has_trans and has_rot and has_scale:
-                        kf_type = NodeTRS
-                        
-                        frames,\
-                        kf_values = construct_frames((self.positions, lerp ),
-                                                     (self.rotations, slerp),
-                                                     (self.scales,    lerp ))
-                    elif has_trans and has_rot:
-                        if version > 0x02000000:
+                    if has_trans and has_rot:
+                        if has_const_scale and version > 0x02000000 and len(self.scales) > 1:
                             kf_type = NodeTR31
+                            
+                            frames,\
+                            kf_values = construct_frames((self.positions, lerp),
+                                                         (self.rotations, slerp))
+                            scale_scale = ref_scale
+                        elif has_scale:        
+                            kf_type = NodeTRS
+                            frames,\
+                            kf_values = construct_frames((self.positions, lerp ),
+                                                         (self.rotations, slerp),
+                                                         (self.scales,    lerp ))
                         else:
                             kf_type = NodeTR
-                        
-                        frames,\
-                        kf_values = construct_frames((self.positions, lerp),
-                                                     (self.rotations, slerp))
+                            
+                            frames,\
+                            kf_values = construct_frames((self.positions, lerp),
+                                                         (self.rotations, slerp))
+                    
                     elif has_floats:
                         kf_type = KeyframeType16
                         

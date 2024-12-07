@@ -651,7 +651,7 @@ class NodeRHalf:
         self.rotation = rw.rw_float16s(self.rotation, 4)
 
     def size(self):
-        return 8
+        return 20 # Why 20??
 
 
 class NodeSHalf:

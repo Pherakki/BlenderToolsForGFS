@@ -35,8 +35,8 @@ class AnimationBinary:
         self.duration    = None
         
         self.controller_count = 0
-        self.unknown_int_1    = 0
-        self.unknown_int_2    = 0
+        self.track_count      = 0
+        self.anim_buffer_size = 0
         self.controllers      = []
         
         self.epls = SizedObjArray(EPLEntry)
@@ -57,8 +57,8 @@ class AnimationBinary:
         self.duration    = rw.rw_float32(self.duration)
         self.controller_count = rw.rw_uint32(self.controller_count)
         if version >= 0x02000000:
-            self.unknown_int_1 = rw.rw_uint32(self.unknown_int_1)  # Total track count; sometimes 0???
-            self.unknown_int_2 = rw.rw_uint32(self.unknown_int_2)
+            self.track_count      = rw.rw_uint32(self.track_count)
+            self.anim_buffer_size = rw.rw_uint32(self.anim_buffer_size)
             
         self.controllers = rw.rw_dynamic_objs(self.controllers, AnimationControllerBinary, self.controller_count, version)
         # Only certain flags used for certain chunk versions..?
