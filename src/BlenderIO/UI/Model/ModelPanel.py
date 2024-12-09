@@ -63,7 +63,7 @@ class OBJECT_PT_GFSToolsModelDataPanel(bpy.types.Panel):
         aprops.bounding_box.draw(ctr)
         aprops.bounding_sphere.draw(ctr)
         
-        layout.label(text="Additional Textures:")
+        ctr.label(text="Additional Textures:")
         ctr.template_list(OBJECT_UL_GFSToolsUnusedTextureUIList.__name__, "", aprops, "unused_textures", aprops, "unused_textures_idx")
 
 
