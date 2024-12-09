@@ -124,9 +124,6 @@ def generate_panel(identifier, label, getter, collection_name, collection_idx_na
                 flag_col.prop(props, "flag_26")
                 flag_col.prop(props, "flag_27")
                 
-                flag_col.prop(props, "unknown_int_1")
-                flag_col.prop(props, "unknown_int_2")
-
                 # LookAts
                 flag_col.prop(props, "has_lookat_anims", text="Has LookAt Anims:")
                 if props.has_lookat_anims:
