@@ -14,7 +14,7 @@ class V2Type0Support:
         self.type0_flags.from_flags(params.flags)
         self.type0_unused      = params.unused_param
         
-    def to_V2_type0_params(self, params):
+    def to_V2_type0_params(self):
         params = ShaderParametersType0()
         params.base_color        = self.base_color
         params.emissive_strength = self.emissive_strength
@@ -22,7 +22,7 @@ class V2Type0Support:
         params.metallic          = self.metallic
         params.multi_alpha       = self.multi_alpha
         params.bloom_intensity   = self.bloom_intensity
-        params.flags             = params.type0_flags.to_flags()
+        params.flags             = self.type0_flags.to_flags()
         params.unused_param      = self.type0_unused
         return params
 

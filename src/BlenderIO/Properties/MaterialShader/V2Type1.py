@@ -5,10 +5,10 @@ from .Utils import copy_list
 
 class V2Type1Support:
     def from_V2_type1_params(self, params):
-        copy_list(self.ambient_color,  params.ambient,  4)
-        copy_list(self.diffuse_color,  params.diffuse,  4)
-        copy_list(self.emissive_color, params.emissive, 4)
-        copy_list(self.specular_color, params.specular, 4)
+        copy_list(self.ambient_color,  params.ambient_color,  4)
+        copy_list(self.diffuse_color,  params.diffuse_color,  4)
+        copy_list(self.emissive_color, params.emissive_color, 4)
+        copy_list(self.specular_color, params.specular_color, 4)
         self.reflectivity    = params.reflectivity
         self.lerp_blend_rate = params.lerp_blend_rate
     
