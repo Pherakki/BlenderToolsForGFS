@@ -10,7 +10,7 @@ class V2Type10Support:
         self.type10_unknown_0x14 = params.unknown_0x14
         self.type10_flags.from_flags(params.flags)
     
-    def from_V2_type10_params(self):
+    def to_V2_type10_params(self):
         params = ShaderParametersType10()
         params.unknown_0x00 = self.type10_unknown_0x00
         params.unknown_0x10 = self.type10_unknown_0x10

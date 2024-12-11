@@ -12,7 +12,7 @@ class V2Type1Support:
         self.reflectivity    = params.reflectivity
         self.lerp_blend_rate = params.lerp_blend_rate
     
-    def to_V2_type1_params(self, params):
+    def to_V2_type1_params(self):
         params = ShaderParametersType1()
         params.ambient_color   = self.ambient_color
         params.diffuse_color   = self.diffuse_color

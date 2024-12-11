@@ -13,7 +13,7 @@ class V2Type6Support:
         self.bloom_intensity = params.bloom_intensity
         self.type6_unknown   = params.unknown
         
-        copy_list(self.overlay_base_color, params.overlay_base_color, 4)
+        copy_list(self.layer1_base_color, params.overlay_base_color, 4)
         self.layer1_emissive        = params.overlay_emissive
         self.layer1_roughness       = params.overlay_roughness
         self.layer1_bloom_intensity = params.overlay_bloom_intensity
@@ -36,7 +36,7 @@ class V2Type6Support:
         params.overlay_emissive        = self.layer1_emissive
         params.overlay_roughness       = self.layer1_roughness
         params.overlay_bloom_intensity = self.layer1_bloom_intensity
-        params.overlay_unknown         = self.layer1_unknown
+        params.overlay_unknown         = self.type6_layer1_unknown
         
         params.unknown_0x40 = self.type6_unknown_0x40
         params.unknown_0x44 = self.type6_unknown_0x44
