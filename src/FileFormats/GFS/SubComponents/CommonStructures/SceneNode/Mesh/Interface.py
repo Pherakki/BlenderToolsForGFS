@@ -203,7 +203,7 @@ class MeshInterface:
         binary.vertex_count  = len(self.vertices)
         binary.unknown_0x12  = self.unknown_0x12
         binary.vertices      = self.vertices
-        if binary.vertices is not None and len(binary.vertices):
+        if binary.vertices is not None and len(binary.vertices) and (binary.vertices[0].weights is not None):
             binary.weight_count = max(sum(w!=0 for w in v.weights) for v in binary.vertices)
         else:
             binary.weight_count = 0
