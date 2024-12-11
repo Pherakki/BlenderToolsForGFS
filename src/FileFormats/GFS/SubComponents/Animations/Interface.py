@@ -207,7 +207,7 @@ class AnimationInterface:
             elif track_binary.keyframe_type == 29: anim.unknown_29   = {f: kf.unknown                                                            for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 30: anim.unknown_30   = {f: kf.unknown_float                                                      for f, kf in zip(track_binary.frames, track_binary.values)}
             elif track_binary.keyframe_type == 36: anim.tex1_uv_snap = {f: [kf.translate_u, kf.translate_v, kf.scale_u, kf.scale_v, kf.rotation] for f, kf in zip(track_binary.frames, track_binary.values)}
-            else: raise NotImplementedError("fNo instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
+            else: raise NotImplementedError(f"No instruction to convert keyframe type '{track_binary.keyframe_type}' to a Material Animation exists")
         
         return anim
 
