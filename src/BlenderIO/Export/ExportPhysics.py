@@ -24,6 +24,7 @@ def export_physics(gfs, bpy_obj, errorlog):
     physics.unknown_0x10 = props.unknown_0x10
     
     # Export bone chains
+    bad_physics_bones = []
     for b_bone in props.bones:
         bone = PhysicsBoneBinary()
         bone.has_name = b_bone.has_name
@@ -33,6 +34,9 @@ def export_physics(gfs, bpy_obj, errorlog):
         bone.unknown_0x08 = b_bone.unknown_0x08
         bone.unknown_0x0C = b_bone.unknown_0x0C
         bone.unknown_0x14 = b_bone.nameless_data
+        if bone.has_name and b_bone.name not in bone_names:
+            bad_physics_bones.append((len(physics.physics_bones), b_bone.name))
+            
         physics.physics_bones.append(bone)
     physics.physics_bone_count = len(physics.physics_bones)
     
@@ -57,6 +61,7 @@ def export_physics(gfs, bpy_obj, errorlog):
     physics.physics_bone_link_count = len(physics.physics_bone_links)
 
     # Export colliders
+    bad_colliders = []
     for obj in bpy_obj.children:
         if obj.type == "MESH":
             if obj.data.GFSTOOLS_MeshProperties.is_collider():
@@ -80,36 +85,35 @@ def export_physics(gfs, bpy_obj, errorlog):
                 ibpm = (parent_matrix.inverted() @ obj.matrix_world @ colY_to_colX_matrix.inverted()).transposed()
                 cldr.unknown_0x0A = [*ibpm[0], *ibpm[1], *ibpm[2], *ibpm[3]]
                 
+                if has_name and bone_name not in bone_names:
+                    bad_colliders.append((len(physics_colliders), bone_name))
                 physics.colliders.append(cldr)
     physics.collider_count = len(physics.colliders)
 
     # Remove physics bones for which the bone no longer exists
-    for i, pbone in reversed(list(enumerate(physics.physics_bones))):
-        if pbone.has_name:
-            if pbone.name.string not in bone_names:
-                errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has bone physics attached to the non-existent bone '{pbone.name.string}'. This has not been exported")
-                # OK to delete at index because we're traversing the list backwards
-                del physics.physics_bones[i]
-                physics.physics_bone_count -= 1
-                for j, blink in reversed(list(enumerate(physics.physics_bone_links))):
-                    if blink.parent_physics_bone == i or blink.child_physics_bone == i:
-                        del physics.physics_bone_links[j]
-                        physics.physics_bone_link_count -= 1
+    for i, pbone_name in reversed(bad_physics_bones):
+        errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has bone physics attached to the non-existent bone '{pbone_name}'. This has not been exported")
+        # OK to delete at index because we're traversing the list backwards
+        del physics.physics_bones[i]
+        physics.physics_bone_count -= 1
+        for j, blink in reversed(list(enumerate(physics.physics_bone_links))):
+            if blink.parent_physics_bone == i or blink.child_physics_bone == i:
+                del physics.physics_bone_links[j]
+                physics.physics_bone_link_count -= 1
                         
-                    if blink.parent_physics_bone >= i:
-                        blink.parent_physics_bone -= 1
-                    if blink.child_physics_bone >= i:
-                        blink.child_physics_bone -= 1
+            if blink.parent_physics_bone >= i:
+                blink.parent_physics_bone -= 1
+            if blink.child_physics_bone >= i:
+                blink.child_physics_bone -= 1
 
     # Remove colliders for which the bone no longer exists
-    for i, collider in reversed(list(enumerate(physics.colliders))):
-        if collider.has_name:
-            if collider.name.string not in bone_names:
-                errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has collider physics attached to the non-existent bone '{collider.name.string}'. This has not been exported")
-                # OK to delete at index because we're traversing the list backwards
-                del physics.colliders[i]
-                physics.collider_count -= 1
+    for i, col_name in reversed(bad_colliders):
+        errorlog.log_warning_message(f"Armature '{bpy_obj.name}' has collider physics attached to the non-existent bone '{col_name}'. This has not been exported")
+        # OK to delete at index because we're traversing the list backwards
+        del physics.colliders[i]
+        physics.collider_count -= 1
                 
     # If there's any physics to export, put it on the container
     if physics.physics_bone_count or physics.collider_count or physics.physics_bone_link_count:
         gfs.physics_data = physics
+
