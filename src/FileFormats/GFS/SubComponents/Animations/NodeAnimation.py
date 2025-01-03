@@ -83,17 +83,18 @@ class NodeAnimation:
                 anim.scales    = {f: base_scale             for f     in track_binary.frames}
                 anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 31:
-                if isinstance(track_binary, NodeTHalf):
-                    anim.compress = True
-                    anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
-                    # WRONG but will do for now
-                    anim.scales    = {f: base_scale             for f     in track_binary.frames}
-                    anim.track_groups.append([0, 2])
-                else:
-                    anim.positions = {f: kf.position for f, kf in zip(track_binary.frames, track_binary.values)}
-                    anim.rotations = {f: kf.rotation for f, kf in zip(track_binary.frames, track_binary.values)}
-                    anim.scales    = {f: base_scale             for f     in track_binary.frames}
-                    anim.track_groups.append([0, 1, 2])
+                if len(track_binary.values):
+                    if isinstance(track_binary.values[0], NodeTHalf):
+                        anim.compress = True
+                        anim.positions = {f: scale_pos(kf.position) for f, kf in zip(track_binary.frames, track_binary.values)}
+                        # WRONG but will do for now
+                        anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                        anim.track_groups.append([0, 2])
+                    else:
+                        anim.positions = {f: kf.position for f, kf in zip(track_binary.frames, track_binary.values)}
+                        anim.rotations = {f: kf.rotation for f, kf in zip(track_binary.frames, track_binary.values)}
+                        anim.scales    = {f: base_scale             for f     in track_binary.frames}
+                        anim.track_groups.append([0, 1, 2])
             elif track_binary.keyframe_type == 32:
                 anim.compress = True
                 anim.rotations = {f: kf.rotation            for f, kf in zip(track_binary.frames, track_binary.values)}
