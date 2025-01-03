@@ -94,7 +94,7 @@ class MeshBinary:
         return self.__morph_data
         
     def __repr__(self):
-        return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {HEX32_formatter(self.flags._value)} {HEX32_formatter(self.vertex_format.as_uint())}"
+        return f"[GFD::SceneContainer::SceneNode::Attachment::Mesh] {HEX32_formatter(self.flags._value)}"
     
     def exbip_rw(self, rw, version):
         self.flags         = rw.rw_obj(self.flags)
