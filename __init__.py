@@ -5,7 +5,7 @@ bl_info = {
         "name": "GFS Import/Export (.GMD/.GAP/.GFS)",
         "description": "Imports GFS files.",
         "author": "Pherakki",
-        "version": (0, 3, 0),
+        "version": (0, 3, 1),
         "blender": (2, 81, 0),
         "location": "File > Import, File > Export",
         "warning": "",
