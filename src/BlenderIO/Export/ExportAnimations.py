@@ -131,7 +131,7 @@ def export_prop_to_anim(gfs_obj, gfs_anim, prop_anim, bpy_armature_object, looka
         animated_nodes = extractor(gfs_anim, prop_anim, bpy_armature_object)
     else:
         animated_nodes = set()
-    init_gfs_anim_properties(gfs_obj, gfs_anim, prop_anim, animated_nodes, keep_unused_anims)
+    init_gfs_anim_properties(gfs_obj, gfs_anim, prop_anim, animated_nodes, keep_unused_anims, errorlog)
     export_prop_lookat_anims(gfs_obj, bpy_armature_object, prop_anim, gfs_anim, lookat_collection, lookat_map, keep_unused_anims, errorlog, lookat_stack)
 
 
@@ -236,7 +236,7 @@ def extract_blend_anim_keyframes(gfs_anim, prop_anim, bpy_armature_object):
     return animated_nodes
 
 
-def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unused_anims):
+def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unused_anims, errorlog):
     # Export extra data
     gfs_anim.flag_0 = props.flag_0
     gfs_anim.flag_1 = props.flag_1
@@ -316,7 +316,7 @@ def init_gfs_anim_properties(gfs_obj, gfs_anim, props, animated_nodes, keep_unus
 
     # Export the custom properties
     for prop in props.properties:
-        gfs_anim.add_property(*prop.extract_data(prop))
+        gfs_anim.add_property(*prop.extract_data(prop, errorlog))
 
     # Export bone epls
     for epl_prop in props.epls:
