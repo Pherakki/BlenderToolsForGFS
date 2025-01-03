@@ -1,2 +1,2 @@
 from .MorphBinary    import MorphBinary
-from .MorphInterface import GFSMorph
+from .MorphInterface import MorphInterface

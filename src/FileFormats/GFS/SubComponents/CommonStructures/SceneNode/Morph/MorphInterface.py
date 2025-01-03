@@ -1,4 +1,4 @@
-class GFSMorph:
+class MorphInterface:
     # This attachment should actually be redundant since the data is always the same
     def __init__(self):
         self.node = None
