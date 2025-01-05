@@ -1,6 +1,6 @@
 import bpy
 
-from ....Globals import NAMESPACE, BLEND_ANIM_TYPE, BLENDSCALE_ANIM_TYPE
+from ....Globals import NAMESPACE, BLEND_ANIM_TYPE
 from ....Utils.Animation import gapnames_to_nlatrack
 
 
@@ -26,12 +26,9 @@ class ToggleBlendAnimation(bpy.types.Operator):
         anim = gap.test_blend_anims[self.index]
         anim.is_active = not anim.is_active
         name = gapnames_to_nlatrack(gap.name, BLEND_ANIM_TYPE, anim.name)
-        name2 = gapnames_to_nlatrack(gap.name, BLENDSCALE_ANIM_TYPE, anim.name)
-
-        names = set((name, name2))
-
+            
         for nla_track in anim_data.nla_tracks:
-            if nla_track.name in names:
+            if nla_track.name == name:
                 nla_track.mute = not anim.is_active
 
         return {'FINISHED'}

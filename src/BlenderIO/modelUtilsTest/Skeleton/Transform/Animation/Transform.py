@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from mathutils import Euler
 
 from .Translation      import parent_to_bind_translation
 from .Translation      import bind_to_parent_translation
@@ -51,6 +52,17 @@ def fix_quaternion_signs(q_rotations, b_rotations):
     return [sgn*v for (v, sgn) in zip(b_rotations, flip_signs)]
 
 
+def align_eulers(eulers):
+    out = [eulers[0]]
+    for i, e in enumerate(eulers[1:]):
+        prev = out[i]
+        x_shift = 2*math.pi*round((prev.x - e.x)/(2*math.pi), 0)
+        y_shift = 2*math.pi*round((prev.y - e.y)/(2*math.pi), 0)
+        z_shift = 2*math.pi*round((prev.z - e.z)/(2*math.pi), 0)
+        out.append(Euler([e.x+x_shift,e.y+y_shift,e.z+z_shift]))
+    return out
+    
+
 def align_quaternion_signs(quats):
     if len(quats) > 0:
         to_return = [quats[0]]
@@ -66,6 +78,7 @@ def align_quaternion_sign(comparison_quat, quat):
     sign = np.sign(dp)
 
     return sign * quat
+
 
 
 def _transform_func(bpy_bone, translations, rotations, scales, model_transforms, 

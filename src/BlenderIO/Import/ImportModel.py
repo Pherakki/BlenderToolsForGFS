@@ -314,7 +314,12 @@ def import_model(gfs, name, materials, errorlog, is_vertex_merge_allowed, bone_p
                 
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.mode_set(mode="EDIT")
-        
+    
+    ##############################
+    # SWITCH ROTATIONS TO EULERS #
+    ##############################
+    for bone in main_armature.pose.bones:
+        bone.rotation_mode = "XYZ"
     
     ######################
     # IMPORT ATTACHMENTS #

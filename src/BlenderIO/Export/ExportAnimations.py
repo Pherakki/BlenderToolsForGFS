@@ -127,7 +127,7 @@ def get_action_data(action, bpy_armature_obj, is_blend):
 
 
 def export_prop_to_anim(gfs_obj, gfs_anim, prop_anim, bpy_armature_object, lookat_collection, lookat_map, keep_unused_anims, errorlog, lookat_stack, extractor):
-    if len(prop_anim.node_animation.strips) or prop_anim.has_blendscale_animation:
+    if len(prop_anim.node_animation.strips):
         animated_nodes = extractor(gfs_anim, prop_anim, bpy_armature_object)
     else:
         animated_nodes = set()
@@ -198,25 +198,10 @@ def extract_blend_anim_keyframes(gfs_anim, prop_anim, bpy_armature_object):
         action = prop_anim.node_animation.strips[0].action
         node_transforms, root_transform = get_action_data(action, bpy_armature_object, True)
 
-        for (bidx, bname, t, r, _) in sorted(node_transforms, key=lambda x: x[0]):
-            full_node_transforms[bidx] = [bname, t, r, []]
+        for (bidx, bname, t, r, s) in sorted(node_transforms, key=lambda x: x[0]):
+            full_node_transforms[bidx] = [bname, t, r, s]
         full_root_transform = root_transform
 
-    if prop_anim.has_blendscale_animation:
-        # Iterate over strips...
-        action = prop_anim.blendscale_node_animation.strips[0].action
-        node_transforms, root_transform = get_action_data(action, bpy_armature_object, True)
-
-        for (bidx, bname, _, _, s) in sorted(node_transforms, key=lambda x: x[0]):
-            if bidx in full_node_transforms:
-                full_node_transforms[bidx][3] = s
-            else:
-                full_node_transforms[bidx] = [bname, [], [], s]
-
-        if full_root_transform is None:
-            full_root_transform = root_transform
-        elif root_transform is not None:
-            full_root_transform[4] = root_transform[4]
 
     for bidx, (bname, t, r, s) in full_node_transforms.items():
         anim = gfs_anim.add_node_animation(bidx, bname)

@@ -2,7 +2,7 @@ import io
 import math
 
 import bpy
-from mathutils import Matrix, Quaternion, Vector
+from mathutils import Matrix, Quaternion, Vector, Euler
 import numpy as np
 
 from ...FileFormats.GFS.SubComponents.Animations import AnimationInterface
@@ -14,6 +14,7 @@ from ..Utils.Serialization import pack_object
 from ..Globals import GFS_MODEL_TRANSFORMS, BASE_ANIM_TYPE, BLEND_ANIM_TYPE, LOOKAT_ANIM_TYPE
 from ..modelUtilsTest.Skeleton.Transform.Animation import parent_to_bind, parent_to_bind_blend
 from ..modelUtilsTest.Skeleton.Transform.Animation import fix_quaternion_signs
+from ..modelUtilsTest.Skeleton.Transform.Animation import align_eulers
 from ..modelUtilsTest.Skeleton.Transform.Animation import align_quaternion_signs
 
 ######################
@@ -181,6 +182,24 @@ def build_object_fcurves(action, object, fps, positions, rotations, scales):
     create_fcurves(action, actiongroup, 'scale',               "LINEAR", fps, scales,      [0, 1, 2]   , {})
 
 
+def quaternion_to_euler(q):
+    x = q.x
+    y = q.y
+    z = q.z
+    w = q.w
+    
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll = math.atan2(t0, t1) # One discontinuity
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch = math.asin(t2)
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw = math.atan2(t3, t4) # A second discontinuity
+    return [roll, pitch, yaw]
+
 def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank, align_quats):
     # Set up action data
     actiongroup = action.groups.new(bone_name)
@@ -199,17 +218,21 @@ def build_transformed_fcurves(action, armature, bone_name, fps, positions, rotat
     if align_quats:
         b_rotations = {k: v for k, v in zip(b_rotations.keys(), align_quaternion_signs(list(b_rotations.values())))}
     
+    e_rotations = {k: Euler(quaternion_to_euler(v)) for k, v in b_rotations.items()}
+    # e_rotations = {k: v.to_euler() for k, v in b_rotations.items()}
+    e_rotations = {k: v for k,v in zip(e_rotations.keys(), align_eulers(list(e_rotations.values())))}
+    
     # Create animations
     # This typically takes up ~90% of execution time
-    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
+    # create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_euler',      "LINEAR", fps, e_rotations, [0, 1, 2]   , fcurve_bank)
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
     create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
-def build_blend_fcurves(action, scale_action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank, align_quats):
+def build_blend_fcurves(action, armature, bone_name, fps, positions, rotations, scales, fcurve_bank, align_quats):
     # Set up action data
     actiongroup       = action      .groups.new(bone_name)
-    scale_actiongroup = scale_action.groups.new(bone_name)
 
     # Get the matrices required to convert animations from GFS -> Blender
     bpy_bone = armature.data.bones[bone_name]
@@ -225,11 +248,14 @@ def build_blend_fcurves(action, scale_action, armature, bone_name, fps, position
     if align_quats:
         b_rotations = {k: v for k, v in zip(b_rotations.keys(), align_quaternion_signs(list(b_rotations.values())))}
     
+    e_rotations = {k: v.to_euler() for k, v in b_rotations.items()}
+    
     # Create animations
     # This typically takes up ~90% of execution time
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
-    create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].location',            "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
-    create_fcurves(scale_action, scale_actiongroup, f'pose.bones["{bone_name}"].scale',               "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
+    # create_fcurves(action,       actiongroup,       f'pose.bones["{bone_name}"].rotation_quaternion', "BEZIER", fps, b_rotations, [0, 1, 2, 3], fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].rotation_euler', "LINEAR", fps, e_rotations, [0, 1, 2]   , fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].location',       "LINEAR", fps, b_positions, [0, 1, 2]   , fcurve_bank)
+    create_fcurves(action, actiongroup, f'pose.bones["{bone_name}"].scale',          "LINEAR", fps, b_scales,    [0, 1, 2]   , fcurve_bank)
 
 
 def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, bpy_armature_obj, is_blend, import_policies, errorlog, version, gfs_to_bpy_bone_map=None):
@@ -247,8 +273,6 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     action_name = gapnames_to_nlatrack(gap_name, anim_type, prop_anim.name)
 
     nodes_action = bpy.data.actions.new(action_name)
-    if is_blend:
-        scale_action = bpy.data.actions.new(action_name + "_scale")
 
     bpy_bones = bpy_armature_obj.data.bones
     available_names = {
@@ -286,7 +310,7 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
             continue
 
         if is_blend:
-            build_blend_fcurves(nodes_action, scale_action, bpy_armature_obj, bone_name, fps, data_track.positions,
+            build_blend_fcurves(nodes_action, bpy_armature_obj, bone_name, fps, data_track.positions,
                                 data_track.rotations, data_track.scales, fcurve_bank, import_policies.align_quats)
         else:
             build_transformed_fcurves(nodes_action, bpy_armature_obj, bone_name, fps, data_track.positions, data_track.rotations,
@@ -296,13 +320,6 @@ def prop_anim_from_gfs_anim(ap_props, gap_name, anim_type, anim_name, gfs_anim, 
     # CONSTRUCT THE NODE ANIMATION PROPERTY DATA #
     ##############################################
     # Actions
-    if is_blend:
-        if len(scale_action.fcurves):
-            prop_anim.has_blendscale_animation = True
-            prop_anim.blendscale_node_animation.from_action(scale_action)
-        else:
-            scale_action.user_clear()
-            bpy.data.actions.remove(scale_action)
     prop_anim.node_animation.from_action(nodes_action)
 
     # Flags

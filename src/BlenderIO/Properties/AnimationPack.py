@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import bpy
 
-from ..Globals import NAMESPACE, BASE_ANIM_TYPE, BLEND_ANIM_TYPE, BLENDSCALE_ANIM_TYPE, LOOKAT_ANIM_TYPE, LOOKATSCALE_ANIM_TYPE
+from ..Globals import NAMESPACE, BASE_ANIM_TYPE, BLEND_ANIM_TYPE, LOOKAT_ANIM_TYPE
 from ..modelUtilsTest.Misc.ID import new_unique_name
 from .MixIns.Version import GFSVersionedProperty
 from ..Utils.Animation import gapnames_from_nlatrack, gapnames_to_nlatrack, is_anim_restpose
@@ -305,9 +305,7 @@ class AnimationPropertiesBase:
 
     # Animation Data
     has_node_animation:        bpy.props.BoolProperty(name="Has Node Animation", default=True)
-    has_blendscale_animation:  bpy.props.BoolProperty(name="Has Scale Animation", default=False)
     node_animation:            bpy.props.PointerProperty(type=NodeAnimationProperties)
-    blendscale_node_animation: bpy.props.PointerProperty(type=NodeAnimationProperties)
     material_animations:       bpy.props.CollectionProperty(type=MaterialAnimationProperties)
     camera_animations:         bpy.props.CollectionProperty(type=CameraAnimationProperties)
     type4_animations:          bpy.props.CollectionProperty(type=Type4AnimationProperties)
@@ -507,7 +505,6 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
     class NLAOrganizerStruct:
         def __init__(self):
             self.node_nla = None
-            self.node_scale_nla = None
             self.material_nlas = []
             self.camera_nlas = []
             self.type4_nlas = []
@@ -572,12 +569,6 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         else:
             prop_anim.has_node_animation = False
             prop_anim.node_animation.strips.clear()
-        if nla_organizer.node_scale_nla is not None:
-            prop_anim.has_blendscale_animation = True
-            prop_anim.blendscale_node_animation.from_nla_track(nla_organizer.node_scale_nla, bpy_object.name)
-        else:
-            prop_anim.has_blendscale_animation = False
-            prop_anim.blendscale_node_animation.strips.clear()
 
         # if anim_name in gap_anims:
         #     gap_anim = gap_anims[anim_name]
@@ -631,12 +622,8 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
                 normal_nlas[anim_name].node_nla = nla_track
             elif category == BLEND_ANIM_TYPE:
                 blend_nlas[anim_name].node_nla = nla_track
-            elif category == BLENDSCALE_ANIM_TYPE:
-                blend_nlas[anim_name].node_scale_nla = nla_track
             elif category == LOOKAT_ANIM_TYPE:
                 lookat_nlas[anim_name].node_nla = nla_track
-            elif category == LOOKATSCALE_ANIM_TYPE:
-                lookat_nlas[anim_name].node_scale_nla = nla_track
             else:
                 ShowMessageBox(f"Unknown animation type '{category}'. Set to a valid type to deactivate the GAP.")
                 return False
@@ -677,19 +664,11 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             if prop_anim.has_node_animation:
                 track = prop_anim.node_animation.to_nla_track(ad, self.name, BLEND_ANIM_TYPE, prop_anim.name)
                 for strip in track.strips:
-                    strip.blend_type = "COMBINE"
-            if prop_anim.has_blendscale_animation:
-                track = prop_anim.blendscale_node_animation.to_nla_track(ad, self.name, BLENDSCALE_ANIM_TYPE, prop_anim.name)
-                for strip in track.strips:
                     strip.blend_type = "ADD"
 
         # Lookat Anims
         for prop_anim in self.test_lookat_anims:
             if prop_anim.has_node_animation:
                 track = prop_anim.node_animation.to_nla_track(ad, self.name, LOOKAT_ANIM_TYPE, prop_anim.name)
-                for strip in track.strips:
-                    strip.blend_type = "COMBINE"
-            if prop_anim.has_blendscale_animation:
-                track = prop_anim.blendscale_node_animation.to_nla_track(ad, self.name, LOOKATSCALE_ANIM_TYPE, prop_anim.name)
                 for strip in track.strips:
                     strip.blend_type = "ADD"

@@ -1,6 +1,6 @@
 import bpy
 
-from ....Globals import NAMESPACE, BASE_ANIM_TYPE, LOOKAT_ANIM_TYPE, LOOKATSCALE_ANIM_TYPE
+from ....Globals import NAMESPACE, BASE_ANIM_TYPE, LOOKAT_ANIM_TYPE
 from ....Utils.Animation import gapnames_to_nlatrack, is_anim_restpose
 
 
@@ -74,11 +74,9 @@ class ToggleLookAtAnimation(bpy.types.Operator):
         anim = gap.test_lookat_anims[self.index]
         anim.is_active = not anim.is_active
         name = gapnames_to_nlatrack(gap.name, LOOKAT_ANIM_TYPE, anim.name)
-        name2 = gapnames_to_nlatrack(gap.name, LOOKATSCALE_ANIM_TYPE, anim.name)
-        names = set((name, name2))
-
+            
         for nla_track in anim_data.nla_tracks:
-            if nla_track.name in names:
+            if nla_track.name == name:
                 nla_track.mute = not anim.is_active
 
         return {'FINISHED'}
