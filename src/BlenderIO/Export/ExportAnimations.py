@@ -57,7 +57,7 @@ def export_gap_props(gfs, bpy_armature_object, ap_props, keep_unused_anims, erro
     for prop_anim in ap_props.test_anims:
         export_prop_to_anim(gfs, gfs.add_animation(), prop_anim, bpy_armature_object, lookat_collection, lookat_map, keep_unused_anims, errorlog, [], extract_base_anim_keyframes)
     for prop_anim in ap_props.test_blend_anims:
-        export_prop_to_anim(gfs, gfs.add_animation(), prop_anim, bpy_armature_object, lookat_collection, lookat_map, keep_unused_anims, errorlog, [], extract_blend_anim_keyframes)
+        export_prop_to_anim(gfs, gfs.add_blend_animation(), prop_anim, bpy_armature_object, lookat_collection, lookat_map, keep_unused_anims, errorlog, [], extract_blend_anim_keyframes)
 
     export_prop_lookat_anims(gfs, bpy_armature_object, ap_props, gfs, lookat_collection, lookat_map, keep_unused_anims, errorlog, [])
 
