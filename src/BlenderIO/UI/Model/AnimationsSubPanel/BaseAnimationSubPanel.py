@@ -28,7 +28,8 @@ class SwitchAnimation(bpy.types.Operator):
 
         # Reset armature pose, deactivate tracks
         for nla_track in anim_data.nla_tracks:
-            nla_track.mute = True
+            if gap.is_track_tagged_as_this_pack_base(nla_track):
+                nla_track.mute = True
         for bone in bpy_armature_object.pose.bones:
             bone.location            = (0., 0., 0.)
             bone.rotation_quaternion = (1., 0., 0., 0.)
@@ -74,6 +75,12 @@ class ToggleLookAtAnimation(bpy.types.Operator):
         anim = gap.test_lookat_anims[self.index]
         anim.is_active = not anim.is_active
         name = gapnames_to_nlatrack(gap.name, LOOKAT_ANIM_TYPE, anim.name)
+        
+        for bone in bpy_armature_object.pose.bones:
+            bone.location            = (0., 0., 0.)
+            bone.rotation_quaternion = (1., 0., 0., 0.)
+            bone.rotation_euler      = (0., 0., 0.)
+            bone.scale               = (1., 1., 1.)
             
         for nla_track in anim_data.nla_tracks:
             if nla_track.name == name:

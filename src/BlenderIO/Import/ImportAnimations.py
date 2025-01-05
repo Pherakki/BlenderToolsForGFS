@@ -31,10 +31,10 @@ def import_animations(gfs, bpy_armature_object, filename, is_external, import_po
     # Refresh animation data
     bpy_armature_object.animation_data_create()
     mprops = bpy_armature_object.data.GFSTOOLS_ModelProperties
-    active_gap = mprops.get_active_gap()
-    if active_gap is not None:
-        active_gap.store_animation_pack(bpy_armature_object)
-        active_gap.remove_animations_from(bpy_armature_object)
+    # active_gap = mprops.get_active_gap()
+    # if active_gap is not None:
+    #     active_gap.store_animation_pack(bpy_armature_object)
+    #     active_gap.remove_animations_from(bpy_armature_object)
     
     bpy.context.view_layer.objects.active = bpy_armature_object
     

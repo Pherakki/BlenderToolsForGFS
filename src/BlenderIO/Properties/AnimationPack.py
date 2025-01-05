@@ -514,6 +514,18 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
         return gap_name == self.name
 
+    def is_track_tagged_as_this_pack_base(self, nla_track):
+        gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
+        return gap_name == self.name and anim_type == BASE_ANIM_TYPE
+    
+    def is_track_tagged_as_this_pack_blend(self, nla_track):
+        gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
+        return gap_name == self.name and anim_type == BLEND_ANIM_TYPE
+    
+    def is_track_tagged_as_this_pack_lookat(self, nla_track):
+        gap_name, anim_type, anim_name = gapnames_from_nlatrack(nla_track)
+        return gap_name == self.name and anim_type == LOOKAT_ANIM_TYPE
+    
     def relevant_nla_to_list(self, bpy_object):
         if bpy_object.animation_data is None:
             return
@@ -653,9 +665,11 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
             bpy_object.animation_data_create()
 
         ad = bpy_object.animation_data
+        
         # Normal anims
-        for prop_anim in self.test_anims:
+        for i, prop_anim in enumerate(self.test_anims):
             track = prop_anim.node_animation.to_nla_track(ad, self.name, BASE_ANIM_TYPE, prop_anim.name)
+            track.mute = i != self.active_anim_idx
             for strip in track.strips:
                 strip.blend_type = "REPLACE"
 
@@ -663,6 +677,7 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         for prop_anim in self.test_blend_anims:
             if prop_anim.has_node_animation:
                 track = prop_anim.node_animation.to_nla_track(ad, self.name, BLEND_ANIM_TYPE, prop_anim.name)
+                track.mute = not prop_anim.is_active
                 for strip in track.strips:
                     strip.blend_type = "ADD"
 
@@ -670,5 +685,6 @@ class GFSToolsAnimationPackProperties(GFSVersionedProperty, bpy.types.PropertyGr
         for prop_anim in self.test_lookat_anims:
             if prop_anim.has_node_animation:
                 track = prop_anim.node_animation.to_nla_track(ad, self.name, LOOKAT_ANIM_TYPE, prop_anim.name)
+                track.mute = not prop_anim.is_active
                 for strip in track.strips:
                     strip.blend_type = "ADD"
