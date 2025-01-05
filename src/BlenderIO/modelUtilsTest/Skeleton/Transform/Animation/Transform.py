@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from mathutils import Euler
+from mathutils import Euler, Quaternion
 
 from .Translation      import parent_to_bind_translation
 from .Translation      import bind_to_parent_translation
@@ -77,7 +77,7 @@ def align_quaternion_sign(comparison_quat, quat):
     dp = np.dot(comparison_quat, quat)
     sign = np.sign(dp)
 
-    return sign * quat
+    return Quaternion(sign * quat)
 
 
 
