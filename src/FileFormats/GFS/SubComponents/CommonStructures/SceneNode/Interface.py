@@ -11,16 +11,26 @@ from . import EPLLeaf
 
 def generate_morphs(node_list, mesh_list):
     out = []
+    morph_objects = {}
     for mesh in mesh_list:
         if len(mesh.morphs):
-            mi = MorphInterface()
-            mi.node = mesh.node
-            binary = MorphBinary()
-            binary.target_count = len(mesh.morphs)
-            binary.targets      = [0]*binary.target_count  # Always seems to be 0...
-            binary.parent_name  = binary.parent_name.from_name(node_list[mi.node].name)
-            mi.binary = binary
-            out.append(mi)
+            node_idx = mesh.node
+            if node_idx in morph_objects:
+                mi = morph_objects[node_idx]
+                binary = mi.binary
+                binary.target_count = max(binary.target_count, len(mesh.morphs))
+                binary.targets      = [0]*binary.target_count  # Always seems to be 0...
+            else:
+                mi = MorphInterface()
+                mi.node = mesh.node
+            
+                binary = MorphBinary()
+                binary.target_count = len(mesh.morphs)
+                binary.targets      = [0]*binary.target_count  # Always seems to be 0...
+                binary.parent_name  = binary.parent_name.from_name(node_list[mi.node].name)
+                mi.binary = binary
+                out.append(mi)
+                morph_objects[node_idx] = mi
     return out
 
         
