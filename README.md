@@ -48,9 +48,6 @@ All data from the GFS or GAP file should be preserved from import to export, but
 - EPL data is not displayed.
 - All animations other than Node/Bone animations are not displayed.
 
-## Known Bugs
-- Names not decodable as UTF-8 will cause import errors. Since all vanilla models use UTF-8, this bug can only be triggered by edited files.
-
 ## Future Development
 The highest-priority features are, in order of importance:
 1) A custom Material Node that faithfully reproduces the material rendering.
@@ -76,6 +73,10 @@ The status of the code is tabulated for the different filetypes and versions giv
 
 | Version | Present In | Import | Export | Notes |
 |:---:|:---:|:---:|:---:|:---:|
+| TBC | Persona 3 Dancing | 🟡 | 🟡 | (1) |
+| TBC | Persona 4 Dancing | 🟡 | 🟡 | (1) |
+| TBC | Persona 5 Dancing | 🟡 | 🟡 | (1) |
 | 0x01104920 - 0x01105100 | Persona 5 Royal (PC) | 🟡 | 🟡 | (1) |
+| TBC |Metaphor Refantazio (PC) | 🟡 | 🟡 | (1) |
 
 (1) There are several missing features, noted in [Future Development](#future-development), that would be necessary for full GFS support.
