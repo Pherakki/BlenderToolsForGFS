@@ -197,7 +197,9 @@ def init_bpy():
     
     LIST_ITEMS = (
         (bpy.types.TOPBAR_MT_file_import, menu_func_import),
-        (bpy.types.TOPBAR_MT_file_export, menu_func_export)
+        (bpy.types.INFO_MT_file_import,  menu_func_import),
+        (bpy.types.TOPBAR_MT_file_export, menu_func_export),
+        (bpy.types.INFO_MT_file_export,  menu_func_export),
     )
     
     MODULES = (
@@ -213,6 +215,8 @@ def register():
     import traceback
     from .src.BlenderIO.Preferences import get_preferences
     
+    print("[GFSTools] === REGISTRATION START ===")
+    
     def create_welcome_message():
         prefs = get_preferences()
         if not prefs.initialized:
@@ -220,84 +224,130 @@ def register():
             try:
                 bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
             except Exception:
-                # Fallback: ignore if operator isn't available yet
                 traceback.print_exc()
     
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
+    print(f"[GFSTools] init_bpy() returned {len(CLASSES)} classes, {len(PROP_GROUPS)} prop groups, {len(LIST_ITEMS)} menu items")
     
    # Note for later: multi-language support can be implemented by checking
    #     - bpy.context.preferences.view.language
    #     - bpy.context.preferences.view.use_translate_interface
    #     - bpy.context.preferences.view.use_translate_new_dataname
    #     - bpy.context.preferences.view.use_translate_tooltips
-    for classtype in CLASSES:
+    
+    # Register classes
+    print("[GFSTools] Registering classes...")
+    for i, classtype in enumerate(CLASSES):
         try:
             bpy.utils.register_class(classtype)
-        except Exception:
-            # Continue if already registered or if there's a specific ordering issue
+            if 'Import' in classtype.__name__ or 'Export' in classtype.__name__:
+                print(f"[GFSTools]   + {classtype.__name__} registered")
+        except Exception as e:
+            print(f"[GFSTools]   ERROR registering {classtype.__name__}: {e}")
             traceback.print_exc()
     
+    # Register property groups
+    print("[GFSTools] Registering property groups...")
     for obj, name, prop_type in PROP_GROUPS:
         try:
             bpy.utils.register_class(prop_type)
-        except Exception:
-            # Already registered or registration error; continue
+        except Exception as e:
+            print(f"[GFSTools]   ERROR registering prop group {prop_type.__name__}: {e}")
             traceback.print_exc()
         try:
             setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
-        except Exception:
+        except Exception as e:
+            print(f"[GFSTools]   ERROR setting property {name} on {obj}: {e}")
             traceback.print_exc()
-        
+    
+    # Append menu items
+    print("[GFSTools] Appending menu items...")
     for obj, elem in LIST_ITEMS:
         try:
             obj.append(elem)
-        except Exception:
+            print(f"[GFSTools]   + Appended menu to {obj.__name__}")
+        except Exception as e:
+            print(f"[GFSTools]   ERROR appending menu to {obj}: {e}")
             traceback.print_exc()
-        
+    
+    # Register modules
+    print("[GFSTools] Registering modules...")
     for mod in MODULES:
         try:
             mod.register()
-        except Exception:
+        except Exception as e:
+            print(f"[GFSTools]   ERROR registering module {mod}: {e}")
             traceback.print_exc()
     
+    # Check operator registration
+    print("[GFSTools] Checking operator registration...")
+    print(f"[GFSTools]   hasattr(bpy.ops.import_file, 'import_gfs') = {hasattr(bpy.ops.import_file, 'import_gfs')}")
+    print(f"[GFSTools]   hasattr(bpy.ops.import_file, 'import_gap') = {hasattr(bpy.ops.import_file, 'import_gap')}")
+    print(f"[GFSTools]   hasattr(bpy.ops.export_file, 'export_gfs') = {hasattr(bpy.ops.export_file, 'export_gfs')}")
+    
     # Fire off the welcome message
+    print("[GFSTools] Registering timer for welcome message...")
     try:
         bpy.app.timers.register(create_welcome_message, first_interval=.01)
-    except Exception:
+        print("[GFSTools] Timer registered successfully")
+    except Exception as e:
+        print(f"[GFSTools] ERROR registering timer: {e}")
         traceback.print_exc()
+    
+    print("[GFSTools] === REGISTRATION COMPLETE ===\n")
 
 
 def unregister():
     import bpy
     import traceback
     
+    print("[GFSTools] === UNREGISTRATION START ===")
+    
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
+    # Unregister classes (reverse order)
+    print("[GFSTools] Unregistering classes...")
     for classtype in CLASSES[::-1]:
         try:
             bpy.utils.unregister_class(classtype)
-        except Exception:
+            if 'Import' in classtype.__name__ or 'Export' in classtype.__name__:
+                print(f"[GFSTools]   - {classtype.__name__} unregistered")
+        except Exception as e:
+            print(f"[GFSTools]   ERROR unregistering {classtype.__name__}: {e}")
             traceback.print_exc()
 
+    # Unregister property groups
+    print("[GFSTools] Unregistering property groups...")
     for obj, name, prop_type in PROP_GROUPS[::-1]:
         try:
             delattr(obj, name)
-        except Exception:
+        except Exception as e:
+            print(f"[GFSTools]   ERROR delattr {name}: {e}")
             traceback.print_exc()
         try:
             bpy.utils.unregister_class(prop_type)
-        except Exception:
+        except Exception as e:
+            print(f"[GFSTools]   ERROR unregistering prop {prop_type.__name__}: {e}")
             traceback.print_exc()
-        
+    
+    # Remove menu items
+    print("[GFSTools] Removing menu items...")
     for obj, elem in LIST_ITEMS:
         try:
             obj.remove(elem)
-        except Exception:
+            print(f"[GFSTools]   - Removed menu from {obj.__name__}")
+        except Exception as e:
+            print(f"[GFSTools]   ERROR removing menu from {obj}: {e}")
             traceback.print_exc()
-        
+    
+    # Unregister modules
+    print("[GFSTools] Unregistering modules...")
     for mod in MODULES:
         try:
             mod.unregister()
-        except Exception:
+        except Exception as e:
+            print(f"[GFSTools]   ERROR unregistering module {mod}: {e}")
             traceback.print_exc()
+    
+    print("[GFSTools] === UNREGISTRATION COMPLETE ===\n")
         
