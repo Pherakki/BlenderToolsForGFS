@@ -210,13 +210,18 @@ def init_bpy():
 
 def register():
     import bpy
+    import traceback
     from .src.BlenderIO.Preferences import get_preferences
     
     def create_welcome_message():
         prefs = get_preferences()
         if not prefs.initialized:
             prefs.initialized = True
-            bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
+            try:
+                bpy.ops.gfstools.registerwindow('INVOKE_DEFAULT')
+            except Exception:
+                # Fallback: ignore if operator isn't available yet
+                traceback.print_exc()
     
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
@@ -226,37 +231,73 @@ def register():
    #     - bpy.context.preferences.view.use_translate_new_dataname
    #     - bpy.context.preferences.view.use_translate_tooltips
     for classtype in CLASSES:
-        bpy.utils.register_class(classtype)
+        try:
+            bpy.utils.register_class(classtype)
+        except Exception:
+            # Continue if already registered or if there's a specific ordering issue
+            traceback.print_exc()
     
     for obj, name, prop_type in PROP_GROUPS:
-        bpy.utils.register_class(prop_type)
-        setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
+        try:
+            bpy.utils.register_class(prop_type)
+        except Exception:
+            # Already registered or registration error; continue
+            traceback.print_exc()
+        try:
+            setattr(obj, name, bpy.props.PointerProperty(type=prop_type))
+        except Exception:
+            traceback.print_exc()
         
     for obj, elem in LIST_ITEMS:
-        obj.append(elem)
+        try:
+            obj.append(elem)
+        except Exception:
+            traceback.print_exc()
         
-    for obj in MODULES:
-        obj.register()
+    for mod in MODULES:
+        try:
+            mod.register()
+        except Exception:
+            traceback.print_exc()
     
     # Fire off the welcome message
-    bpy.app.timers.register(create_welcome_message, first_interval=.01)
+    try:
+        bpy.app.timers.register(create_welcome_message, first_interval=.01)
+    except Exception:
+        traceback.print_exc()
 
 
 def unregister():
     import bpy
+    import traceback
     
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     
     for classtype in CLASSES[::-1]:
-        bpy.utils.unregister_class(classtype)
+        try:
+            bpy.utils.unregister_class(classtype)
+        except Exception:
+            traceback.print_exc()
 
     for obj, name, prop_type in PROP_GROUPS[::-1]:
-        delattr(obj, name)
-        bpy.utils.unregister_class(prop_type)
+        try:
+            delattr(obj, name)
+        except Exception:
+            traceback.print_exc()
+        try:
+            bpy.utils.unregister_class(prop_type)
+        except Exception:
+            traceback.print_exc()
         
     for obj, elem in LIST_ITEMS:
-        obj.remove(elem)
+        try:
+            obj.remove(elem)
+        except Exception:
+            traceback.print_exc()
         
-    for obj in MODULES:
-        obj.unregister()
+    for mod in MODULES:
+        try:
+            mod.unregister()
+        except Exception:
+            traceback.print_exc()
         
