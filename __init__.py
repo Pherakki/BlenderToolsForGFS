@@ -6,7 +6,7 @@ bl_info = {
         "description": "Imports GFS files.",
         "author": "Pherakki",
         "version": (0, 3, 1),
-        "blender": (2, 81, 0),
+        "blender": (5, 2, 0),
         "location": "File > Import, File > Export",
         "warning": "",
         #"wiki_url": "https://github.com/Pherakki/BlenderToolsforGFS",
