@@ -194,12 +194,10 @@ def init_bpy():
         (bpy.types.Scene,    "GFSTOOLS_SceneProperties",           GFSToolsSceneProperties          )
     )
     
-    
+    # Blender 5.2 removed INFO_MT_file_import/export menus; only use TOPBAR menus
     LIST_ITEMS = (
         (bpy.types.TOPBAR_MT_file_import, menu_func_import),
-        (bpy.types.INFO_MT_file_import,  menu_func_import),
         (bpy.types.TOPBAR_MT_file_export, menu_func_export),
-        (bpy.types.INFO_MT_file_export,  menu_func_export),
     )
     
     MODULES = (
@@ -229,11 +227,11 @@ def register():
     CLASSES, PROP_GROUPS, LIST_ITEMS, MODULES = init_bpy()
     print(f"[GFSTools] init_bpy() returned {len(CLASSES)} classes, {len(PROP_GROUPS)} prop groups, {len(LIST_ITEMS)} menu items")
     
-   # Note for later: multi-language support can be implemented by checking
-   #     - bpy.context.preferences.view.language
-   #     - bpy.context.preferences.view.use_translate_interface
-   #     - bpy.context.preferences.view.use_translate_new_dataname
-   #     - bpy.context.preferences.view.use_translate_tooltips
+    # Note for later: multi-language support can be implemented by checking
+    #     - bpy.context.preferences.view.language
+    #     - bpy.context.preferences.view.use_translate_interface
+    #     - bpy.context.preferences.view.use_translate_new_dataname
+    #     - bpy.context.preferences.view.use_translate_tooltips
     
     # Register classes
     print("[GFSTools] Registering classes...")
@@ -350,4 +348,3 @@ def unregister():
             traceback.print_exc()
     
     print("[GFSTools] === UNREGISTRATION COMPLETE ===\n")
-        
